@@ -9,7 +9,7 @@ namespace vega
 {
 	namespace
 	{
-		using namespace ly::content;
+		using namespace vega::content;
 		Json* Find(const ContentSchemaRegistry& registry, ContentDocuments& documents, const std::string& type, const std::string& id)
 		{
 			const auto* schema = registry.Find(type);

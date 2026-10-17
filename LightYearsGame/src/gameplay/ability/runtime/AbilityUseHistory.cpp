@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	std::uint64_t AbilityUseHistory::Record(AbilityUseRecord record)
 	{

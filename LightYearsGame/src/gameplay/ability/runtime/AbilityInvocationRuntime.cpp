@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	AbilityInvocationRuntime::AbilityInvocationRuntime(
 		LightYearsAbilitySystemComponent& abilitySystem

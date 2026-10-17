@@ -5,7 +5,7 @@
 #include "visual/PipelineSettings.h"
 #include "visual/ShaderLibrary.h"
 #include "visual/ShipVisual.h"
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::ReloadReport;
 	// Game art is loaded on top of the optional sky module, never by it.

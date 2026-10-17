@@ -5,7 +5,7 @@
 #include <framework/World.h>
 #include "environment/AsteroidSpawner.h"
 
-namespace ly
+namespace vega
 {
 	ChaosStage::ChaosStage(World* world) :
 		GameStage{ world },

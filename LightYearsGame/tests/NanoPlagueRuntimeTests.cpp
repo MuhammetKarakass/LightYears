@@ -12,7 +12,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 
 	bool Expect(bool condition, const char* message)
 	{
@@ -152,14 +152,14 @@ namespace
 		const shared_ptr<TestCombatant> infectedTarget = world.SpawnActor<TestCombatant>().lock();
 		const shared_ptr<TestCombatant> spreadTarget = world.SpawnActor<TestCombatant>().lock();
 		if (!Expect(owner && infectedTarget && spreadTarget, "Could not spawn infection test combatants")) return false;
-		owner->SetCollisionLayer(ly::GameCollision::Player);
-		owner->SetCollisionMask(ly::GameCollision::Enemy);
+		owner->SetCollisionLayer(vega::GameCollision::Player);
+		owner->SetCollisionMask(vega::GameCollision::Enemy);
 		owner->SetActorLocation({ 0.f, 0.f });
-		infectedTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-		infectedTarget->SetCollisionMask(ly::GameCollision::Player);
+		infectedTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+		infectedTarget->SetCollisionMask(vega::GameCollision::Player);
 		infectedTarget->SetActorLocation({ 100.f, 0.f });
-		spreadTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-		spreadTarget->SetCollisionMask(ly::GameCollision::Player);
+		spreadTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+		spreadTarget->SetCollisionMask(vega::GameCollision::Player);
 		spreadTarget->SetActorLocation({ 120.f, 0.f });
 
 		const shared_ptr<NanoPlagueControllerActor> controller =
@@ -257,7 +257,7 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (!TestWorldOwnedRegistryReuseAndIsolation() ||
 		!TestRejectsUnmanagedAndForeignOwners() ||
 		!TestRegistrationReplacementKeepsNewestGeneration() ||

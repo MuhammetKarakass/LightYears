@@ -4,7 +4,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// This profile owns only Seismic Charge's visual identity. Gameplay radius,
 	// timing and damage remain actor attributes in shipped ability content.

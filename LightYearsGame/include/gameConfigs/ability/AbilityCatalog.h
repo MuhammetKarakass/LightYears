@@ -48,16 +48,16 @@ namespace AbilityData
 {
 	namespace Definitions
 	{
-		inline ly::GameAbilityDefinition MakePrimaryFireAbilityDefinition(
+		inline vega::GameAbilityDefinition MakePrimaryFireAbilityDefinition(
 			const PrimaryWeaponDefinition& weaponDefinition)
 		{
 			const bool automaticFire = weaponDefinition.automaticFire;
-			const auto toAbilitySteps = [](const ly::List<PrimaryWeaponLevelStep>& weaponSteps)
+			const auto toAbilitySteps = [](const vega::List<PrimaryWeaponLevelStep>& weaponSteps)
 			{
-				ly::List<ly::AbilityLevelStep> abilitySteps;
+				vega::List<vega::AbilityLevelStep> abilitySteps;
 				for (const PrimaryWeaponLevelStep& weaponLevelStep : weaponSteps)
 				{
-					ly::AbilityLevelStep abilityLevelStep;
+					vega::AbilityLevelStep abilityLevelStep;
 					abilityLevelStep.attributeModifiers = weaponLevelStep.attributeModifiers;
 					abilityLevelStep.scalingRules = weaponLevelStep.scalingRules;
 					abilityLevelStep.unlockedUpgradeIds = weaponLevelStep.unlockedUpgradeIds;
@@ -74,7 +74,7 @@ namespace AbilityData
 			const ResolvedWeaponProgression resolvedProgression =
 				weaponDefinition.progressionProfile.ResolveProgression();
 
-			ly::GameAbilityDefinition definition;
+			vega::GameAbilityDefinition definition;
 			definition.abilityId = weaponDefinition.weaponId;
 			definition.slot = sas::AbilitySlot::PrimaryFire;
 			definition.activationPolicy = automaticFire
@@ -87,18 +87,18 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTagSchema::AbilityPrimary,
-				ly::GameplayTagSchema::AbilityOffense
+				vega::GameplayTagSchema::AbilityPrimary,
+				vega::GameplayTagSchema::AbilityOffense
 			};
 			definition.displayName = weaponDefinition.weaponId;
 			definition.iconPath = weaponDefinition.presentationDefinition.texturePath;
 			definition.accentColor = sf::Color{ 100, 220, 255, 255 };
 			definition.actions = {
-				ly::AbilityActionSpec{
+				vega::AbilityActionSpec{
 					automaticFire
 						? sas::AbilityActionPhase::WhileActive
 						: sas::AbilityActionPhase::OnActivate,
-					ly::FireWeaponAction{ weaponDefinition },
+					vega::FireWeaponAction{ weaponDefinition },
 					0.f,
 					automaticFire ? 0 : 1
 				}
@@ -107,22 +107,22 @@ namespace AbilityData
 			definition.repeatingLevelProgression = toAbilitySteps(resolvedProgression.cycle);
 			definition.scrapCost = weaponDefinition.progressionProfile.scrapCost;
 			definition.damageTags = weaponDefinition.damageTags.empty()
-				? ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic }
+				? vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Photonic }
 				: weaponDefinition.damageTags;
 			return definition;
 		}
 	}
 
-	inline ly::GameAbilityDefinition MakePrimaryFireAbilityDefinition(
+	inline vega::GameAbilityDefinition MakePrimaryFireAbilityDefinition(
 		const PrimaryWeaponDefinition& weaponDefinition)
 	{
 		return Definitions::MakePrimaryFireAbilityDefinition(weaponDefinition);
 	}
 
-	const ly::List<const ly::GameAbilityDefinition*>& GetBuiltinShippedAbilityDefinitions();
-	const ly::List<const ly::AbilityActorDefinition*>& GetBuiltinAbilityActorDefinitions();
-	const ly::List<const ly::GameAbilityDefinition*>& GetShippedAbilityDefinitions();
-	const ly::GameAbilityDefinition* FindShippedAbilityDefinition(
+	const vega::List<const vega::GameAbilityDefinition*>& GetBuiltinShippedAbilityDefinitions();
+	const vega::List<const vega::AbilityActorDefinition*>& GetBuiltinAbilityActorDefinitions();
+	const vega::List<const vega::GameAbilityDefinition*>& GetShippedAbilityDefinitions();
+	const vega::GameAbilityDefinition* FindShippedAbilityDefinition(
 		const std::string& abilityId
 	);
 }

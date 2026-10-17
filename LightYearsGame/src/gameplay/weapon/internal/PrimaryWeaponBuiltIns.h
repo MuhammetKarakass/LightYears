@@ -2,7 +2,7 @@
 
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 
-namespace ly::PrimaryWeaponBuiltIns
+namespace vega::PrimaryWeaponBuiltIns
 {
 	unique_ptr<PrimaryWeaponHandler> CreateStandardProjectileWeaponHandler();
 	unique_ptr<PrimaryWeaponHandler> CreateShotgunWeaponHandler();

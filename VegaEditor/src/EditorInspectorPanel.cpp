@@ -24,18 +24,18 @@ namespace vega
 	{
 		struct PropertyGesture { bool activated = false; bool continuous = false; };
 		// headerMenu draws right after a struct or struct-list header, the item a revert menu must anchor to.
-		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed = false,
+		bool DrawProperty(const vega::reflect::PropertyInfo& property, vega::reflect::PropertyValue& value, bool mixed = false,
 			EditorContext* context = nullptr, const std::function<void(int)>& pick = {}, PropertyGesture* gesture = nullptr, const std::filesystem::path& assetRoot = {},
 			const std::function<void()>& headerMenu = {});
-		bool DrawStructFields(const ly::reflect::PropertyInfo& property, ly::reflect::StructValue& fields, EditorContext* context,
+		bool DrawStructFields(const vega::reflect::PropertyInfo& property, vega::reflect::StructValue& fields, EditorContext* context,
 			PropertyGesture* gesture, const std::filesystem::path& assetRoot);
-		bool DrawStructElements(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyList& list, EditorContext* context,
+		bool DrawStructElements(const vega::reflect::PropertyInfo& property, vega::reflect::PropertyList& list, EditorContext* context,
 			PropertyGesture* gesture, const std::filesystem::path& assetRoot);
-		bool DrawPropertyBody(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
+		bool DrawPropertyBody(const vega::reflect::PropertyInfo& property, vega::reflect::PropertyValue& value, bool mixed,
 			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot,
 			const std::function<void()>& headerMenu)
 		{
-			using ly::reflect::PropertyKind;
+			using vega::reflect::PropertyKind;
 			const char* label = property.name.c_str();
 			const float min = property.min.value_or(0.f);
 			const float max = property.max.value_or(0.f);
@@ -43,9 +43,9 @@ namespace vega
 			{
 			case PropertyKind::ActorRef:
 			{
-				auto& ref = std::get<ly::ActorRef>(value);
+				auto& ref = std::get<vega::ActorRef>(value);
 				const auto target = context && context->world ? ref.Resolve(*context->world) : nullptr;
-				const auto* identity = target ? target->FindComponent<ly::SceneEntityComponent>() : nullptr;
+				const auto* identity = target ? target->FindComponent<vega::SceneEntityComponent>() : nullptr;
 				const auto preview = mixed ? std::string{ "\xe2\x80\x94" } : identity ? identity->name : ref.Guid().empty() ? "None" : "Missing: " + ref.Guid();
 				bool changed = false;
 				ImGui::PushID(label);
@@ -53,16 +53,16 @@ namespace vega
 				{
 					static ImGuiTextFilter filter;
 					filter.Draw("Search");
-					if (ImGui::Selectable("None", ref.Guid().empty())) { ref = ly::ActorRef{}; changed = true; }
-					if (context && context->world) for (const auto& weak : context->world->GetActorsByTypeIncludingPending<ly::Actor>())
+					if (ImGui::Selectable("None", ref.Guid().empty())) { ref = vega::ActorRef{}; changed = true; }
+					if (context && context->world) for (const auto& weak : context->world->GetActorsByTypeIncludingPending<vega::Actor>())
 					{
 						const auto actor = weak.lock();
 						if (!actor || actor->GetIsPendingDestroy()) continue;
-						const auto* data = actor->FindComponent<ly::SceneEntityComponent>();
+						const auto* data = actor->FindComponent<vega::SceneEntityComponent>();
 						const auto* type = property.requiredType.empty() ? nullptr : context->Engine().Types().Find(property.requiredType);
-						if (!data || (!property.requiredType.empty() && (!type || type->root != ly::reflect::TypeRoot::Actor || !type->isInstance(actor.get()))) || !filter.PassFilter(data->name.c_str())) continue;
+						if (!data || (!property.requiredType.empty() && (!type || type->root != vega::reflect::TypeRoot::Actor || !type->isInstance(actor.get()))) || !filter.PassFilter(data->name.c_str())) continue;
 						ImGui::PushID(data->guid.c_str());
-						if (ImGui::Selectable(data->name.c_str(), ref.Guid() == data->guid)) { ref = ly::ActorRef{ *actor }; changed = true; }
+						if (ImGui::Selectable(data->name.c_str(), ref.Guid() == data->guid)) { ref = vega::ActorRef{ *actor }; changed = true; }
 						ImGui::PopID();
 					}
 					ImGui::EndCombo();
@@ -81,7 +81,7 @@ namespace vega
 				if (!property.structInfo)
 				{
 					if (mixed) ImGui::Text("%s: \xe2\x80\x94", label);
-					else ImGui::Text("%s: %s {%zu fields}", label, property.structType.c_str(), std::get<ly::reflect::StructValue>(value).size());
+					else ImGui::Text("%s: %s {%zu fields}", label, property.structType.c_str(), std::get<vega::reflect::StructValue>(value).size());
 					return false;
 				}
 				ImGui::PushID(label);
@@ -93,7 +93,7 @@ namespace vega
 					if (headerMenu) headerMenu();
 					if (open)
 					{
-						changed = DrawStructFields(property, std::get<ly::reflect::StructValue>(value), context, gesture, assetRoot);
+						changed = DrawStructFields(property, std::get<vega::reflect::StructValue>(value), context, gesture, assetRoot);
 						ImGui::TreePop();
 					}
 				}
@@ -113,7 +113,7 @@ namespace vega
 						if (headerMenu) headerMenu();
 						if (open)
 						{
-							changed = DrawStructElements(property, std::get<ly::reflect::PropertyList>(value), context, gesture, assetRoot);
+							changed = DrawStructElements(property, std::get<vega::reflect::PropertyList>(value), context, gesture, assetRoot);
 							ImGui::TreePop();
 						}
 					}
@@ -121,7 +121,7 @@ namespace vega
 					return changed;
 				}
 				if (mixed) { ImGui::Text("%s: \xe2\x80\x94", label); ImGui::PopID(); return false; }
-				auto& list = std::get<ly::reflect::PropertyList>(value);
+				auto& list = std::get<vega::reflect::PropertyList>(value);
 				bool changed = false;
 				if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen))
 				{
@@ -129,9 +129,9 @@ namespace vega
 					{
 						ImGui::PushID(static_cast<int>(i));
 						auto element = property.Element(); element.name = "[" + std::to_string(i) + "]";
-						auto item = ly::reflect::ToValue(list[i]);
+						auto item = vega::reflect::ToValue(list[i]);
 						if (DrawProperty(element, item, false, context, pick ? std::function<void(int)>{ [&, i](int) { pick(static_cast<int>(i)); } } : std::function<void(int)>{}, gesture))
-						{ list[i] = ly::reflect::ToScalar(item); changed = true; }
+						{ list[i] = vega::reflect::ToScalar(item); changed = true; }
 						if (ListRowActions(list, i)) { changed = true; if (gesture) *gesture = {}; ImGui::PopID(); break; }
 						ImGui::PopID();
 					}
@@ -146,7 +146,7 @@ namespace vega
 						case PropertyKind::Vector2: list.emplace_back(sf::Vector2f{}); break;
 						case PropertyKind::Color: list.emplace_back(sf::Color::White); break;
 						case PropertyKind::String: list.emplace_back(std::string{}); break;
-						case PropertyKind::ActorRef: list.emplace_back(ly::ActorRef{}); break;
+						case PropertyKind::ActorRef: list.emplace_back(vega::ActorRef{}); break;
 						default: break;
 						}
 						changed = true;
@@ -182,7 +182,7 @@ namespace vega
 				return changed;
 			}
 			case PropertyKind::String:
-				if (property.assetKind != ly::reflect::AssetKind::None) return DrawAssetField(property, std::get<std::string>(value), mixed, assetRoot);
+				if (property.assetKind != vega::reflect::AssetKind::None) return DrawAssetField(property, std::get<std::string>(value), mixed, assetRoot);
 				return InputStringProperty(label, std::get<std::string>(value), mixed);
 			case PropertyKind::Flags:
 			{
@@ -225,28 +225,28 @@ namespace vega
 			}
 			return false;
 		}
-		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
+		bool DrawProperty(const vega::reflect::PropertyInfo& property, vega::reflect::PropertyValue& value, bool mixed,
 			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot,
 			const std::function<void()>& headerMenu)
 		{
 			const bool changed = DrawPropertyBody(property, value, mixed, context, pick, gesture, assetRoot, headerMenu);
 			// Asset edits are discrete: a picker choice or a drop is one undo step, never a merged drag.
-			if (property.assetKind != ly::reflect::AssetKind::None)
+			if (property.assetKind != vega::reflect::AssetKind::None)
 			{
 				if (gesture) *gesture = {};
 				return changed;
 			}
 			// Struct gestures come from their fields, so the last widget of the header must not overwrite them.
-			if (gesture && property.kind != ly::reflect::PropertyKind::List && property.kind != ly::reflect::PropertyKind::Struct &&
+			if (gesture && property.kind != vega::reflect::PropertyKind::List && property.kind != vega::reflect::PropertyKind::Struct &&
 				(changed || ImGui::IsItemActivated()))
 			{
 				gesture->activated = ImGui::IsItemActivated();
-				gesture->continuous = property.kind != ly::reflect::PropertyKind::ActorRef && (ImGui::IsItemActive() || ImGui::IsItemDeactivated());
+				gesture->continuous = property.kind != vega::reflect::PropertyKind::ActorRef && (ImGui::IsItemActive() || ImGui::IsItemDeactivated());
 			}
 			return changed;
 		}
 		// Names a list element by its first non-empty text field, such as a prefab path, else by its struct type.
-		std::string StructSummary(const ly::reflect::PropertyInfo& property, const ly::reflect::StructValue& fields)
+		std::string StructSummary(const vega::reflect::PropertyInfo& property, const vega::reflect::StructValue& fields)
 		{
 			for (const auto& entry : fields)
 				if (const auto* text = std::get_if<std::string>(&entry.second); text && !text->empty()) return *text;
@@ -254,7 +254,7 @@ namespace vega
 		}
 		// Each field is drawn from its own descriptor, so ranges, labels, asset kinds, type filters and tooltips
 		// match top-level properties. Field values are copies: the caller stores the whole struct once a field changes.
-		bool DrawStructFields(const ly::reflect::PropertyInfo& property, ly::reflect::StructValue& fields, EditorContext* context,
+		bool DrawStructFields(const vega::reflect::PropertyInfo& property, vega::reflect::StructValue& fields, EditorContext* context,
 			PropertyGesture* gesture, const std::filesystem::path& assetRoot)
 		{
 			bool changed = false;
@@ -265,7 +265,7 @@ namespace vega
 				const auto entry = std::find_if(fields.begin(), fields.end(), [&](const auto& item) { return item.first == field.name; });
 				if (entry == fields.end()) continue;
 				ImGui::PushID(field.name.c_str());
-				auto fieldValue = ly::reflect::ToPropertyValue(entry->second);
+				auto fieldValue = vega::reflect::ToPropertyValue(entry->second);
 				// A field's own gesture decides merging; the struct keeps the activation and the last change's continuity.
 				PropertyGesture local;
 				const bool fieldChanged = DrawProperty(field, fieldValue, false, context, {}, &local, assetRoot);
@@ -274,7 +274,7 @@ namespace vega
 				if (gesture && local.activated) gesture->activated = true;
 				if (fieldChanged)
 				{
-					entry->second = ly::reflect::ToLeaf(fieldValue);
+					entry->second = vega::reflect::ToLeaf(fieldValue);
 					changed = true;
 					if (gesture) gesture->continuous = local.continuous;
 				}
@@ -283,19 +283,19 @@ namespace vega
 		}
 		// One sub-tree per element. Remove, Up and Down edit the list; the loop ends after a structural edit
 		// because the element indices it holds are then stale.
-		bool DrawStructElements(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyList& list, EditorContext* context,
+		bool DrawStructElements(const vega::reflect::PropertyInfo& property, vega::reflect::PropertyList& list, EditorContext* context,
 			PropertyGesture* gesture, const std::filesystem::path& assetRoot)
 		{
 			bool changed = false;
 			for (std::size_t i = 0; i < list.size(); ++i)
 			{
 				ImGui::PushID(static_cast<int>(i));
-				auto item = ly::reflect::ToValue(list[i]);
-				auto& fields = std::get<ly::reflect::StructValue>(item);
+				auto item = vega::reflect::ToValue(list[i]);
+				auto& fields = std::get<vega::reflect::StructValue>(item);
 				bool structural = false;
 				if (ImGui::TreeNodeEx("element", ImGuiTreeNodeFlags_DefaultOpen, "[%zu]  %s", i, StructSummary(property, fields).c_str()))
 				{
-					if (DrawStructFields(property, fields, context, gesture, assetRoot)) { list[i] = ly::reflect::ToScalar(item); changed = true; }
+					if (DrawStructFields(property, fields, context, gesture, assetRoot)) { list[i] = vega::reflect::ToScalar(item); changed = true; }
 					structural = ListRowActions(list, i);
 					ImGui::TreePop();
 				}
@@ -336,21 +336,21 @@ namespace vega
 			ImGui::PopStyleColor();
 		}
 		// Draws one Actions group per reflected type of the actor that declares functions.
-		void DrawActorFunctions(EditorContext& context, ly::Actor& actor)
+		void DrawActorFunctions(EditorContext& context, vega::Actor& actor)
 		{
 			struct Group
 			{
 				void* object = nullptr;
-				const ly::reflect::TypeInfo* type = nullptr;
-				std::optional<ly::ComponentIdentity> identity;
+				const vega::reflect::TypeInfo* type = nullptr;
+				std::optional<vega::ComponentIdentity> identity;
 			};
 			std::vector<Group> groups;
 			if (const auto root = ResolvePropertyTarget(actor, {}); root.type) groups.push_back({ root.object, root.type, {} });
-			actor.ForEachComponent([&](ly::ActorComponent& component)
+			actor.ForEachComponent([&](vega::ActorComponent& component)
 			{
-				if (dynamic_cast<ly::SceneEntityComponent*>(&component)) return;
+				if (dynamic_cast<vega::SceneEntityComponent*>(&component)) return;
 				if (const auto* type = context.Engine().Types().FindMostDerived(component))
-					groups.push_back({ &component, type, ly::IdentifyComponent(actor, component) });
+					groups.push_back({ &component, type, vega::IdentifyComponent(actor, component) });
 			});
 			bool any = false;
 			for (const auto& group : groups)
@@ -399,7 +399,7 @@ namespace vega
 
 	void EditorApplication::BuildInspectorPanel()
 	{
-		LY_PROFILE_SCOPE("Editor Inspector");
+		VEGA_PROFILE_SCOPE("Editor Inspector");
 		auto& context = mPrefabWorld ? mPrefabContext : mContext;
 		auto& selection = mPrefabWorld ? mPrefabSelection : mSelection;
 		auto& history = mPrefabWorld ? mPrefabHistory : mHistory;
@@ -421,7 +421,7 @@ namespace vega
 				bool mixed = false;
 				for (const auto& selected : selection.GetAll())
 				{
-					const auto* identity = selected->FindComponent<ly::SceneEntityComponent>();
+					const auto* identity = selected->FindComponent<vega::SceneEntityComponent>();
 					if (!identity || identity->prefab.empty()) continue;
 					if (prefabCount && prefab != identity->prefab) mixed = true;
 					prefab = identity->prefab;
@@ -460,7 +460,7 @@ namespace vega
 			else if (const auto actor = selection.Get())
 			{
 				if (!mPrefabWorld)
-					if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>(); identity && !identity->prefab.empty())
+					if (const auto* identity = actor->FindComponent<vega::SceneEntityComponent>(); identity && !identity->prefab.empty())
 					{
 						ImGui::Text("Prefab: %s", std::filesystem::path(identity->prefab).stem().stem().u8string().c_str());
 						ImGui::SameLine();
@@ -470,18 +470,18 @@ namespace vega
 						if (ImGui::SmallButton("Apply all")) ChangeAllPrefab(context, history, true);
 					}
 				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
-				const auto* parentIdentity = actor->GetParent() ? actor->GetParent()->FindComponent<ly::SceneEntityComponent>() : nullptr;
+				const auto* parentIdentity = actor->GetParent() ? actor->GetParent()->FindComponent<vega::SceneEntityComponent>() : nullptr;
 				ImGui::Text("Parent: %s", parentIdentity ? parentIdentity->name.c_str() : "none");
 				ImGui::Checkbox("Relative Location / Rotation", &context.relativeTransforms);
 				if (ImGui::Button("Focus")) context.FocusSelection();
 				if (context.playMode) ImGui::TextWrapped("Play inspection only. Runtime changes are discarded on Stop.");
 				ImGui::BeginDisabled(context.playMode || context.transitioning);
-				if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>())
+				if (const auto* identity = actor->FindComponent<vega::SceneEntityComponent>())
 				{
-					ly::reflect::PropertyInfo nameProperty;
+					vega::reflect::PropertyInfo nameProperty;
 					nameProperty.name = "Name";
-					nameProperty.kind = ly::reflect::PropertyKind::String;
-					ly::reflect::PropertyValue value = identity->name;
+					nameProperty.kind = vega::reflect::PropertyKind::String;
+					vega::reflect::PropertyValue value = identity->name;
 					const bool changed = DrawProperty(nameProperty, value);
 					if (ImGui::IsItemActivated()) mPropertyMergeGroup = history.BeginMergeGroup();
 					if (changed) RenameSceneEntity(context, history, std::get<std::string>(value), mPropertyMergeGroup);
@@ -550,7 +550,7 @@ namespace vega
 					if (open)
 					{
 						auto* scriptComponent = target.componentIdentity
-							? dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)) : nullptr;
+							? dynamic_cast<script::ScriptComponent*>(static_cast<vega::ActorComponent*>(target.object)) : nullptr;
 						if (scriptComponent)
 						{
 							ImGui::TextWrapped("Script: %s", scriptComponent->ScriptPath().c_str());
@@ -567,9 +567,9 @@ namespace vega
 							}
 							for (const auto& entry : scriptComponent->Properties())
 							{
-								ly::reflect::PropertyInfo property;
+								vega::reflect::PropertyInfo property;
 								property.name = entry.first;
-								property.kind = ly::reflect::KindOf(entry.second);
+								property.kind = vega::reflect::KindOf(entry.second);
 								auto value = entry.second;
 								const bool overridden = !mPrefabWorld && PrefabPropertyOverridden(context, *actor, target, entry.first);
 								if (overridden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
@@ -610,8 +610,8 @@ namespace vega
 								if (overridden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
 								PropertyGesture gesture;
 								// Struct and struct-list headers anchor the revert menu, because their last widget is a field, not the property.
-								const bool anchorsHeader = property->kind == ly::reflect::PropertyKind::Struct ||
-									(property->kind == ly::reflect::PropertyKind::List && property->elementKind == ly::reflect::PropertyKind::Struct);
+								const bool anchorsHeader = property->kind == vega::reflect::PropertyKind::Struct ||
+									(property->kind == vega::reflect::PropertyKind::List && property->elementKind == vega::reflect::PropertyKind::Struct);
 								const std::function<void()> headerMenu = [&] { PrefabPropertyMenu(*actor, target, property->name); };
 								const bool changed = DrawProperty(*property, value, false, &context, [&](int index)
 								{
@@ -641,17 +641,17 @@ namespace vega
 				};
 				drawSection(ResolvePropertyTarget(*actor, {}));
 
-				actor->ForEachComponent([&](ly::ActorComponent& component)
+				actor->ForEachComponent([&](vega::ActorComponent& component)
 				{
-					if (!dynamic_cast<ly::SceneEntityComponent*>(&component))
-						drawSection({ &component, context.Engine().Types().FindMostDerived(component), ly::IdentifyComponent(*actor, component) });
+					if (!dynamic_cast<vega::SceneEntityComponent*>(&component))
+						drawSection({ &component, context.Engine().Types().FindMostDerived(component), vega::IdentifyComponent(*actor, component) });
 
 				});
 				if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::Text("Physics enabled: %s", actor->IsPhysicsEnabled() ? "Yes" : "No");
 					ImGui::Text("Has body: %s", actor->HasPhysicsBody() ? "Yes" : "No");
-					ImGui::Text("Body type: %s", actor->GetPhysicsBodyType() == ly::PhysicsBodyType::Static ? "Static" : "Dynamic");
+					ImGui::Text("Body type: %s", actor->GetPhysicsBodyType() == vega::PhysicsBodyType::Static ? "Static" : "Dynamic");
 					ImGui::Text("Collision layer: 0x%02X", static_cast<unsigned int>(actor->GetCollisionLayer()));
 					ImGui::Text("Collision mask: 0x%02X", static_cast<unsigned int>(actor->GetCollisionMask()));
 				}
@@ -662,7 +662,7 @@ namespace vega
 					ImGui::Text("Size: %.2f, %.2f", bounds.size.x, bounds.size.y);
 				}
 				ImGui::Separator();
-				if (ImGui::Button("Delete entity") && actor->FindComponent<ly::SceneEntityComponent>())
+				if (ImGui::Button("Delete entity") && actor->FindComponent<vega::SceneEntityComponent>())
 					history.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
 				ImGui::EndDisabled();
 				// Actions stay outside the disabled block so play-mode-callable functions remain clickable.

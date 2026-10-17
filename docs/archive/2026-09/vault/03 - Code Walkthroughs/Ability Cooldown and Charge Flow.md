@@ -18,7 +18,7 @@ symbols:
   - sas::GameplayAbilityInstance::UpdateCooldown
   - sas::GameplayAbilityInstance::EndAbility
   - sas::GameplayAbilityInstance::ReduceCooldownRemaining
-  - ly::GameAbility::ResolveCooldownDuration
+  - vega::GameAbility::ResolveCooldownDuration
 related:
   - "[[Ability System]]"
   - "[[Ability Grant and Activation Flow]]"

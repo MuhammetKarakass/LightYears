@@ -1,7 +1,7 @@
 #include "presentation/ability/moduleGenerated/ModuleGeneratedPresentationProfile.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterModuleGeneratedPresentationProfiles()
 	{

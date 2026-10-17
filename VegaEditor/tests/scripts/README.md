@@ -244,7 +244,7 @@ Changes apply to the game after restart.
 The runner waits for the first live world, executes one command per completed UI
 frame, and exits at EOF or `quit`. It continues after failed lines so the report
 can include later checks. Exit code is 0 only when every executed line and report
-write succeeded. Results are logged through `LY_GAME_INFO` and written alongside
+write succeeded. Results are logged through `VEGA_GAME_INFO` and written alongside
 the script to `<file>.report.txt` as `OK|FAIL <source line> -- <detail>`.
 
 Commands are case-sensitive and whitespace-separated. Blank lines and `#`

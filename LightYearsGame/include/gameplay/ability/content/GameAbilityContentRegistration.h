@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly
+namespace vega
 {
 	// Owns concrete game ability registrations. The startup bootstrap only
 	// orchestrates content loading and validation.

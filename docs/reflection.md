@@ -3,7 +3,7 @@
 Reflection describes the C++ properties shared by the Inspector, scene and
 prefab serializers, and Lua. Include `framework/reflection/Reflection.h`; it
 includes `ReflectionMacros.h` at the end. The macros are a thin spelling of the
-existing `ly::reflect::Class<T, Base>` builder, which remains available.
+existing `vega::reflect::Class<T, Base>` builder, which remains available.
 
 ## Runtime model
 
@@ -55,7 +55,7 @@ function. Its braces form the body of `Describe(Builder& type)`.
 | `VEGA_REGISTER(Type)` | Register a type through argument-dependent lookup (ADL). Include its header and register bases first. Explicit references retain static-library objects that the linker could otherwise discard. |
 | `VEGA_PROPERTY("Name", Getter, Setter)` | Call `o.Getter()` and `o.Setter(v)` through lambdas; overloaded/default-argument setters work normally. |
 | `VEGA_READONLY("Name", Getter)` | Register a getter without a setter. |
-| `VEGA_ACTOR_REF("Target", Getter, Setter)` | Register an `ly::ActorRef`. Append `.RequiredType("Door")` to filter types, including subclasses. |
+| `VEGA_ACTOR_REF("Target", Getter, Setter)` | Register an `vega::ActorRef`. Append `.RequiredType("Door")` to filter types, including subclasses. |
 | `VEGA_LIST("Patrol", Getter, Setter)` | Register a `std::vector<T>`. Element metadata is inferred; enum lists support `.Labels(...)`. |
 | `VEGA_FIELD("Name", Member)` | Bind a data member directly; no getter or setter is written. Chain `.Range(...)` to clamp numeric values. |
 | `VEGA_FIELD_NOTIFY("Name", Member, OnChanged)` | As `VEGA_FIELD`, and call the member function `OnChanged` after each stored write. |
@@ -169,7 +169,7 @@ VEGA_FIELD("Icon", mIconPath).Asset(AssetKind::Texture);
 VEGA_PROPERTY("Sound", GetSound, SetSound).Asset(AssetKind::Sound);
 ```
 
-`AssetKind` lives in `ly::reflect` (`framework/reflection/AssetKind.h`). The value
+`AssetKind` lives in `vega::reflect` (`framework/reflection/AssetKind.h`). The value
 stays a plain `std::string` with `/` separators, so scenes, prefabs, Lua and
 serialization do not change. Kinds and the names they accept (case-insensitive;
 prefab and scene need the compound suffix, so `level.json` is not a scene):
@@ -220,7 +220,7 @@ property metadata, playing a role similar to `UPROPERTY` declarations.
 #pragma once
 #include <framework/Actor.h>
 
-namespace ly
+namespace vega
 {
 	class ExampleBeacon : public Actor
 	{
@@ -240,7 +240,7 @@ namespace ly
 #include <framework/SpriteComponent.h>
 #include <framework/reflection/Reflection.h>
 
-namespace ly
+namespace vega
 {
 	ExampleBeacon::ExampleBeacon(World* world) : Actor{ world }
 	{
@@ -258,9 +258,9 @@ namespace ly
 }
 ```
 
-Add `VEGA_REGISTER(ExampleBeacon);` to `ly::RegisterGameTypes()` after Actor has
+Add `VEGA_REGISTER(ExampleBeacon);` to `vega::RegisterGameTypes()` after Actor has
 been registered by `reflect::RegisterEngineTypes()`. Engine types are registered
-directly in `ly::reflect::RegisterEngineTypes()`; ScriptComponent follows the
+directly in `vega::reflect::RegisterEngineTypes()`; ScriptComponent follows the
 same pattern in `vega::script`. Keep module guards and custom scene
 spawn/component serializers in their module entry points.
 
@@ -326,7 +326,7 @@ registered setter or field. Lua enum/flag values use integers; scene JSON uses l
 
 ## Actor references and lists
 
-`ly::ActorRef` persists a scene GUID and caches a weak actor pointer. It never
+`vega::ActorRef` persists a scene GUID and caches a weak actor pointer. It never
 owns its target. `ref.Resolve(world)` returns a live actor for the duration of a
 call, or null for an empty, destroyed or missing target. Construct from `Actor&`
 to capture scene identity, or from a GUID string for authored data. Failed lookups
@@ -334,8 +334,8 @@ are cached by the world's actor reference revision. Code directly changing a
 public scene GUID must call `world.InvalidateActorReferences()`.
 
 ```cpp
-ly::ActorRef GetTarget() const { return mTarget; }
-void SetTarget(const ly::ActorRef& value) { mTarget = value; }
+vega::ActorRef GetTarget() const { return mTarget; }
+void SetTarget(const vega::ActorRef& value) { mTarget = value; }
 const std::vector<sf::Vector2f>& GetPatrol() const { return mPatrol; }
 void SetPatrol(const std::vector<sf::Vector2f>& value) { mPatrol = value; }
 // Inside VEGA_REFLECT:
@@ -390,7 +390,7 @@ struct WaveEntry
 // src/level/WaveEntry.cpp
 VEGA_REFLECT_STRUCT(WaveEntry)
 {
-	VEGA_FIELD("Prefab", prefab).Asset(ly::reflect::AssetKind::Prefab);
+	VEGA_FIELD("Prefab", prefab).Asset(vega::reflect::AssetKind::Prefab);
 	VEGA_FIELD("Count", count).Range(1.f, 50.f);
 	VEGA_FIELD("Delay", delay).Range(0.f, 60.f);
 }
@@ -461,7 +461,7 @@ has kind `Struct` (10), and its `elementKind` is `Struct` for a list of structs.
 `LightYearsReflectionMacros` tests setter dispatch, metadata, factories and
 inherited requirements. `LightYearsReflectionRegistryGolden` compares the full
 engine, game and scripting descriptors, in registration order, against
-`LightYearsEngine/tests/reflection-registry.golden.json`, captured from the
+`VegaEngine/tests/reflection-registry.golden.json`, captured from the
 fluent registrations before conversion. It includes local property order,
 setter availability, all authoring metadata, and each type's local `functions`
 (name, label, tooltip, play-mode flag) in declaration order. Intentional schema

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::EnemyIds
+namespace vega::EnemyIds
 {
 	inline static constexpr const char* ApproachGunnerBasic = "Enemy.ApproachGunner.Basic";
 	inline static constexpr const char* StrafeSkirmisherBasic = "Enemy.StrafeSkirmisher.Basic";

@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

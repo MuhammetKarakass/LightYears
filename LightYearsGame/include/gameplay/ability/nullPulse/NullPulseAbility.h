@@ -3,7 +3,7 @@
 #include "effects/GameplayEffectRuntimeEntry.h"
 #include "gameplay/ability/GameAbility.h"
 
-namespace ly
+namespace vega
 {
 	// Source metadata travels with the reusable Stun effect without adding
 	// Null Pulse fields to the generic SAS GameplayEffectSpec.

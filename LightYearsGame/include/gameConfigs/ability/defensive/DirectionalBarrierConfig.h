@@ -7,9 +7,9 @@
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition DirectionalBarrier_Basic = []
+	inline const vega::GameAbilityDefinition DirectionalBarrier_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::DirectionalBarrier::AbilityId::Basic;
 		// Runtime loadout bindings own the player's actual slot. This fallback
 		// slot exists only for legacy validation and content materialization.
@@ -17,13 +17,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::Toggle;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Defense,
-			ly::GameplayTags::Ability::Family::DirectionalBarrier
+			vega::GameplayTags::Ability::Defense,
+			vega::GameplayTags::Ability::Family::DirectionalBarrier
 		};
 		definition.displayName = "Directional Barrier";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 		definition.accentColor = sf::Color{ 90, 190, 255, 235 };
-		definition.behaviorType = ly::AbilityBehaviorType::DirectionalBarrier;
+		definition.behaviorType = vega::AbilityBehaviorType::DirectionalBarrier;
 		return definition;
 	}();
 }

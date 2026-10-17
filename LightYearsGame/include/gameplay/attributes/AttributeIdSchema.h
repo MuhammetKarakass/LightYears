@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace ly
+namespace vega
 {
 	// This is a structural boundary, not a registry of shipped attributes.
 	// Feature contracts and catalogs remain the owners of which IDs exist.

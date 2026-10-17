@@ -4,7 +4,7 @@
 #include "widget/Panel.h"
 #include "widget/TextWidget.h"
 
-namespace ly
+namespace vega
 {
 	class NotificationView : public Panel
 	{

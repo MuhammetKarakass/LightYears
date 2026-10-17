@@ -30,27 +30,27 @@ namespace
 		std::filesystem::create_directories((root / path).parent_path());
 		std::ofstream{ root / path, std::ios::binary | std::ios::trunc } << text;
 	}
-	ScriptComponent& Attach(ly::Actor& actor, const std::string& name, const std::string& text)
+	ScriptComponent& Attach(vega::Actor& actor, const std::string& name, const std::string& text)
 	{
 		Write(name + ".lua", text);
 		return actor.AddComponent<ScriptComponent>(name + ".lua");
 	}
 	void Healthy(const ScriptComponent& script) { Check(script.LastError().empty(), script.ScriptPath() + ": " + script.LastError()); }
-	class LuaActor : public ly::Actor
+	class LuaActor : public vega::Actor
 	{
 	public:
-		using ly::Actor::Actor;
+		using vega::Actor::Actor;
 	};
-	std::shared_ptr<ly::Actor> Named(ly::World& world, const std::string& name)
+	std::shared_ptr<vega::Actor> Named(vega::World& world, const std::string& name)
 	{
 		auto actor = world.SpawnActor<LuaActor>().lock();
-		actor->AddComponent<ly::SceneEntityComponent>("", name);
+		actor->AddComponent<vega::SceneEntityComponent>("", name);
 		return actor;
 	}
-	class TestBody : public ly::Actor
+	class TestBody : public vega::Actor
 	{
 	public:
-		explicit TestBody(ly::World* world) : Actor{ world }
+		explicit TestBody(vega::World* world) : Actor{ world }
 		{
 			SetCollisionLayer(CollisionLayer::Layer0);
 			SetCollisionMask(CollisionLayer::Layer0);
@@ -58,9 +58,9 @@ namespace
 		}
 		float GetPhysicsCollisionRadius() const override { return 20.f; }
 		// Deliberately does not forward to Actor: component events must still arrive.
-		void OnActorBeginOverlap(ly::Actor*) override {}
+		void OnActorBeginOverlap(vega::Actor*) override {}
 	};
-	class InputViewport : public ly::RenderViewport
+	class InputViewport : public vega::RenderViewport
 	{
 	public:
 		bool focused = true;
@@ -77,7 +77,7 @@ namespace
 	};
 	void Hierarchy()
 	{
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		auto owner = Named(world, "Director");
 		Write("prefabs/tree.prefab.json", R"({"format":"vega.prefab","version":1,"base":{"type":"LuaActor"},"children":[{"id":"branch","name":"Branch","type":"LuaActor","properties":{"Location":[10,0]}}]})");
 		world.TickInternal(0.f);
@@ -110,13 +110,13 @@ end
 	}
 	void WorldApi()
 	{
-		ly::World world{ nullptr }, foreign{ nullptr };
+		vega::World world{ nullptr }, foreign{ nullptr };
 		auto owner = Named(world, "Director");
 		auto near = Named(world, "Near");
 		near->SetActorLocation({ 3, 4 });
 		auto far = Named(world, "Far");
 		far->SetActorLocation({ 500, 500 });
-		ScriptRuntime::Get().SetPlayerResolver([near](ly::World&) { return near; });
+		ScriptRuntime::Get().SetPlayerResolver([near](vega::World&) { return near; });
 		Write("prefabs/test.prefab.json", R"({"format":"vega.prefab","version":1,"name":"Test","base":{"type":"LuaActor"},"properties":{"Rotation":17}})");
 		world.TickInternal(0.f);
 		auto& script = Attach(*owner, "world", R"(
@@ -145,17 +145,17 @@ end }
 )");
 		Healthy(script);
 		Check(owner->GetActorRotation() == 99.f, "World/handle assertions did not finish");
-		const auto saved = ly::SceneSerializer::Save(world);
+		const auto saved = vega::SceneSerializer::Save(world);
 		Check(saved["entities"].size() == 4, "Lua spawns must have scene identities; destroyed spawns omitted");
 		Check(world.unresolvedPrefabs.empty(), "Rejected runtime prefab spawns must not become unresolved authored entities");
-		ScriptRuntime::Get().SetPlayerResolver([other = Named(foreign, "WrongWorld")](ly::World&) { return other; });
+		ScriptRuntime::Get().SetPlayerResolver([other = Named(foreign, "WrongWorld")](vega::World&) { return other; });
 		auto& wrong = Attach(*owner, "wrong-player", "function on_start(self) assert(world.player()==nil) end");
 		Healthy(wrong);
 		ScriptRuntime::Get().SetPlayerResolver({});
 	}
 	void Events()
 	{
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		auto actor = world.SpawnActor<TestBody>().lock();
 		auto other = world.SpawnActor<TestBody>().lock();
 		other->SetActorLocation({ 300, 0 });
@@ -201,11 +201,11 @@ return {
 		}
 		// Reset this fixture's script counters before compound-contact checks.
 		Check(script.Reload(), "Event fixture reload failed");
-		auto* resetCollision = actor->FindComponent<ly::CollisionComponent>();
+		auto* resetCollision = actor->FindComponent<vega::CollisionComponent>();
 		resetCollision->NotifyContact(other.get(), true);
 		resetCollision->NotifyContact(other.get(), false);
 		// Simulate the multiple shape contacts emitted by compound bodies.
-		auto* collision = actor->FindComponent<ly::CollisionComponent>();
+		auto* collision = actor->FindComponent<vega::CollisionComponent>();
 		collision->NotifyContact(other.get(), true);
 		collision->NotifyContact(other.get(), true);
 		collision->NotifyContact(other.get(), false);
@@ -224,7 +224,7 @@ return {
 		std::vector<std::int16_t> silence(48000 * 10, 0);
 		sf::SoundBuffer buffer;
 		Check(buffer.loadFromSamples(silence.data(), silence.size(), 1, 48000, { sf::SoundChannel::Mono }) && buffer.saveToFile(root / "silence.wav"), "Cannot generate silent audio fixture");
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		auto actor = Named(world, "Audio");
 		world.TickInternal(0.f);
 		auto& script = Attach(*actor, "audio", R"(
@@ -285,7 +285,7 @@ end
 	}
 	void Timers()
 	{
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		auto actor = Named(world, "Timer");
 		world.TickInternal(0.f);
 		auto& script = Attach(*actor, "timers", R"(
@@ -332,7 +332,7 @@ end
 	}
 	void Messages()
 	{
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		auto receiver = Named(world, "Receiver"), sender = Named(world, "Sender");
 		world.TickInternal(0.f);
 		auto& target = Attach(*receiver, "receiver", R"(
@@ -373,7 +373,7 @@ end
 	void InputVectors()
 	{
 		InputViewport viewport;
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		world.SetRenderViewport(&viewport);
 		world.SetViewOverride(sf::View{ { 100,200 }, { 800,600 } });
 		bool held = false;
@@ -419,7 +419,7 @@ end
 		Check(vega::script::GenerateLuaTypes(output, error), error);
 		std::ifstream input{ output };
 		const std::string text{ std::istreambuf_iterator<char>{ input }, {} };
-		for (const auto* type : ly::reflect::TypeRegistry::Get().RegisteredTypes())
+		for (const auto* type : vega::reflect::TypeRegistry::Get().RegisteredTypes())
 		{
 			Check(text.find("-- Reflected type: " + type->name) != std::string::npos, "Missing annotation type " + type->name);
 			for (const auto* property : type->AllProperties())
@@ -432,21 +432,21 @@ end
 	{
 		// Same three script hosts, plus a player and three spawned wave actors in
 		// each world. Warm up first; alternate order to reduce drift in Debug runs.
-		ly::World baseline{ nullptr }, scripted{ nullptr };
-		auto setup = [](ly::World& world)
+		vega::World baseline{ nullptr }, scripted{ nullptr };
+		auto setup = [](vega::World& world)
 		{
-			Named(world, "Trigger")->AddComponent<ly::CollisionComponent>();
+			Named(world, "Trigger")->AddComponent<vega::CollisionComponent>();
 			Named(world, "Hazard"); Named(world, "Receiver");
 			Named(world, "Player");
 			world.TickInternal(0.f);
 		};
 		setup(baseline); setup(scripted);
 		for (int index = 0; index < 3; ++index) Named(baseline, "Wave");
-		auto actors = scripted.GetActorsByTypeIncludingPending<ly::Actor>();
+		auto actors = scripted.GetActorsByTypeIncludingPending<vega::Actor>();
 		auto& trigger = Attach(*actors[0].lock(), "example-trigger", "local done=false\nfunction on_overlap_begin(self,other) if not done and other:name()=='Player' then done=true; for i=1,3 do world.spawn('LuaActor',i*100,0) end; world.find('Receiver'):send('wave',{count=3}) end end");
 		auto& hazard = Attach(*actors[1].lock(), "example-hazard", "function on_start(self) timer.every(0.02,function() self.actor:set_rotation(self.actor:rotation()+2) end) end");
 		auto& receiver = Attach(*actors[2].lock(), "example-receiver", "function on_message(self,name,data) if name=='wave' then self.actor:set_rotation(data.count) end end");
-		actors[0].lock()->FindComponent<ly::CollisionComponent>()->NotifyContact(actors[3].lock().get(), true);
+		actors[0].lock()->FindComponent<vega::CollisionComponent>()->NotifyContact(actors[3].lock().get(), true);
 		scripted.TickInternal(0.f);
 		Check(scripted.GetActorCountIncludingPending() == baseline.GetActorCountIncludingPending() &&
 			actors[2].lock()->GetActorRotation() == 3.f, "Three-example setup did not spawn/message the wave");
@@ -455,7 +455,7 @@ end
 		std::vector<double> without, with;
 		for (int batch = 0; batch < 9; ++batch)
 		{
-			const auto measure = [](ly::World& world)
+			const auto measure = [](vega::World& world)
 			{
 				const auto start = Clock::now();
 				for (int i = 0; i < 3000; ++i) world.TickInternal(1.f/60.f);
@@ -473,15 +473,15 @@ end
 
 int main(int argc, char** argv)
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	const std::string group = argc > 1 ? argv[1] : "World";
 	root = std::filesystem::path{ VEGA_SCRIPT_TEST_ROOT } / group;
 	std::filesystem::create_directories(root);
 	vega::script::SetScriptRoot(root);
-	ly::PrefabLibrary::Get().SetRoot(root);
+	vega::PrefabLibrary::Get().SetRoot(root);
 	vega::script::RegisterScriptTypes();
-	ly::reflect::Class<LuaActor, ly::Actor>("LuaActor").Spawnable();
+	vega::reflect::Class<LuaActor, vega::Actor>("LuaActor").Spawnable();
 	ScriptRuntime::Get().SetHotReload(false);
 	if (group == "World") WorldApi();
 	else if (group == "Hierarchy") Hierarchy();

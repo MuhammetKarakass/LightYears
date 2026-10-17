@@ -31,8 +31,8 @@ selection, smoke captures and the existing overwrite protection.
 | Area | Added or changed files |
 | --- | --- |
 | Root integration | `CMakeLists.txt` |
-| Engine contract/lifecycle | `LightYearsEngine/include/framework/GameModule.h`, `LightYearsEngine/include/framework/Application.h`, `LightYearsEngine/src/framework/Application.cpp` |
-| Project schema | `LightYearsEngine/include/framework/ProjectSettings.h`, `LightYearsEngine/src/framework/ProjectSettings.cpp`, `LightYearsEngine/tests/ProjectSettingsTests.cpp` |
+| Engine contract/lifecycle | `VegaEngine/include/framework/GameModule.h`, `VegaEngine/include/framework/Application.h`, `VegaEngine/src/framework/Application.cpp` |
+| Project schema | `VegaEngine/include/framework/ProjectSettings.h`, `VegaEngine/src/framework/ProjectSettings.cpp`, `VegaEngine/tests/ProjectSettingsTests.cpp` |
 | Game integration | `LightYearsGame/CMakeLists.txt`, `LightYearsGame/editor.cmake`, `LightYearsGame/assets/vega.project.json` |
 | Shared game services | `LightYearsGame/include/gameFramework/LightYearsGameModule.h`, `LightYearsGame/src/gameFramework/LightYearsGameModule.cpp`, `LightYearsGame/include/gameFramework/GameApplication.h`, `LightYearsGame/src/gameFramework/GameApplication.cpp` |
 | Game editor adapter | `LightYearsGame/include/editor/LightYearsEditorModule.h`, `LightYearsGame/src/editor/LightYearsGameModule.cpp`, `VegaEditor/app/LightYearsEditorMain.cpp` |

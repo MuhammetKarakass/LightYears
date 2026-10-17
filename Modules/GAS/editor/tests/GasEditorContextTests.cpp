@@ -6,9 +6,9 @@
 
 int main()
 {
-	ly::EngineContext host;
-	ly::EngineContext unrelated;
-	ly::EngineContext::Scope unrelatedScope{ unrelated };
+	vega::EngineContext host;
+	vega::EngineContext unrelated;
+	vega::EngineContext::Scope unrelatedScope{ unrelated };
 	vega::EditorExtensions extensions{ host };
 	sas::RegisterEditorExtension(extensions);
 	if (!host.ContentSchemas().Find("ability") || !host.ContentSchemas().Find("effect")) return 1;

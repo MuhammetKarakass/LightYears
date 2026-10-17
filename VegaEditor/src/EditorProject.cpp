@@ -17,7 +17,7 @@ namespace vega
 		}
 #endif
 		project.file = std::filesystem::absolute(project.file).lexically_normal();
-		if (std::filesystem::exists(project.file)) project.settings = ly::ProjectSettings::Load(project.file);
+		if (std::filesystem::exists(project.file)) project.settings = vega::ProjectSettings::Load(project.file);
 		const auto resolve = [&](const char* key, const std::string& fallback = std::string{}) -> std::filesystem::path
 		{
 			const auto value = project.settings.editor.value(key, fallback);

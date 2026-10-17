@@ -2,7 +2,7 @@
 #include "presentation/hud/modules/ModuleScreenView.h"
 #include "widget/GameHUD.h"
 
-namespace ly
+namespace vega
 {
 	ModuleScreenHUDController::ModuleScreenHUDController(weak_ptr<GameHUD> gameHUD)
 		: mGameHUD{ gameHUD }, mPresenter{ std::make_shared<ModuleScreenPresenter>() }

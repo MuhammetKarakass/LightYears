@@ -26,10 +26,10 @@ namespace
 {
 	using Json = nlohmann::json;
 
-	class HeadlessVitalsLevel final : public ly::GameLevel
+	class HeadlessVitalsLevel final : public vega::GameLevel
 	{
 	public:
-		explicit HeadlessVitalsLevel(ly::Application* application) : GameLevel{ application } {}
+		explicit HeadlessVitalsLevel(vega::Application* application) : GameLevel{ application } {}
 
 	protected:
 		void InitializeLevelSystems() override {}
@@ -40,7 +40,7 @@ namespace
 
 	struct PlayerManagerResetGuard
 	{
-		ly::PlayerManager& manager;
+		vega::PlayerManager& manager;
 		~PlayerManagerResetGuard() { manager.Reset(); }
 	};
 
@@ -72,7 +72,7 @@ namespace
 
 	void RunTests(Report& report)
 	{
-		using namespace ly;
+		using namespace vega;
 		VitalsViewModel colorModel;
 		colorModel.healthMax = 0.f;
 		report.Check(ComputeHealthBarColor(colorModel) == sf::Color{ 255, 0, 0, 255 }, "zero maximum health is red");
@@ -253,7 +253,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: LightYearsVitalsHUDTests <artifact-path>\n";
@@ -264,10 +264,10 @@ int main(int argc, char** argv)
 	const std::filesystem::path artifactPath{ argv[1] };
 	try
 	{
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
-		if (!ly::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
+		if (!vega::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
 		RunTests(report);
 	}
 	catch (const std::exception& exception)

@@ -4,7 +4,7 @@
 
 #include <SFML/System/Vector2.hpp>
 
-namespace ly
+namespace vega
 {
 	class ReclaimerProtocolAbility final : public GameAbilityBehavior
 	{

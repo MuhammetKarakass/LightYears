@@ -12,7 +12,7 @@
 #include <variant>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class GameAbility;
 	class LightYearsAbilitySystemComponent;

@@ -7,9 +7,9 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition ChainLightning_Basic = []
+	inline const vega::GameAbilityDefinition ChainLightning_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::ChainLightning::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// The runtime loadout manager may bind this ability to any Ability1-4
@@ -19,15 +19,15 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::ChainLightning
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::ChainLightning
 		};
 		definition.displayName = "Chain Lightning";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 		definition.accentColor = sf::Color{ 90, 230, 255, 255 };
 		// The chain traversal owns targeting and delayed impact. There must be no
 		// generic action here that could apply damage immediately on activation.
-		definition.behaviorType = ly::AbilityBehaviorType::ChainLightning;
+		definition.behaviorType = vega::AbilityBehaviorType::ChainLightning;
 		return definition;
 	}();
 }

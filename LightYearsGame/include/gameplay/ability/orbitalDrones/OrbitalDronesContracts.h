@@ -11,25 +11,25 @@ namespace AbilityData::OrbitalDrones
 		inline static constexpr char Basic[] = "Ability.Offense.OrbitalDrones.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::OrbitalDrones
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Offense };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::OrbitalDrones
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::OrbitalDrones::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::OrbitalDrones::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::OrbitalDrones::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::OrbitalDrones::Started
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::OrbitalDrones::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::OrbitalDrones::Ended
 		};
 	};
 
@@ -37,8 +37,8 @@ namespace AbilityData::OrbitalDrones
 	{
 		// Damage and orbit radius are shared numeric concepts. Reusing Common.*
 		// keeps this family compatible with the generic ability attribute pipeline.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId Radius = ly::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId Radius = vega::CommonAttributeIds::Radius;
 
 		// These values describe drone-specific rules, so they are owned by this
 		// ability family instead of being placed in a generic Damage.* namespace.

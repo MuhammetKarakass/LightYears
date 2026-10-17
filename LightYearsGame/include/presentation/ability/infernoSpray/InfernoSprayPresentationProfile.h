@@ -5,7 +5,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct InfernoSprayVisualDefinition
 	{

@@ -8,7 +8,7 @@
 #include "gameplay/module/ModuleTriggerRuntime.h"
 #include "gameplay/module/ShipModuleApplier.h"
 
-namespace ly
+namespace vega
 {
 	class World;
 	class PlayerSpaceShip : public SpaceShip

@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

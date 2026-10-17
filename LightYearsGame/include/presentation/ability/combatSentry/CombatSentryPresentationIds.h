@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::CombatSentryPresentationIds
+namespace vega::CombatSentryPresentationIds
 {
 	inline constexpr char TurretBasic[] =
 		"Presentation.Ability.CombatSentry.Turret.Basic";

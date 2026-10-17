@@ -5,7 +5,7 @@
 #include "framework/TimerManager.h"
 #include "framework/Delegate.h"
 
-namespace ly
+namespace vega
 {
 	class AsteroidSpawner;
 	class ChaosStage : public GameStage

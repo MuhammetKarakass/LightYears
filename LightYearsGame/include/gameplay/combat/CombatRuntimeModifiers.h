@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	struct CombatRuntimeModifier
 	{

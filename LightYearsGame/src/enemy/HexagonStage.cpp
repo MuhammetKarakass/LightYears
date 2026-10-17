@@ -3,7 +3,7 @@
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/enemy/EnemyIds.h"
 
-namespace ly
+namespace vega
 {
 	HexagonStage::HexagonStage(World* world):
 		GameStage{world},

@@ -202,7 +202,7 @@ Satın alma doğrulaması ve level commit'i ayrılacak. **Level gerçekten commi
 
 ## P6 — One-shot timer
 
-**Owner:** `LightYearsEngine/src/framework/TimerManager.cpp`; header ancak zorunluysa. E2E: `LightYearsGame/tests/TimerManagerSceneE2E.cpp`.
+**Owner:** `VegaEngine/src/framework/TimerManager.cpp`; header ancak zorunluysa. E2E: `LightYearsGame/tests/TimerManagerSceneE2E.cpp`.
 
 1. One-shot timer'ın tüketilmiş/expired state'ini callback'ten önce commit et. Callback throw olsa da sonraki Update aynı timer'ı yeniden çalıştırmaz. Otomatik retry ekleme.
 2. Listener expired/pending ise çağrı yok. Callback boyunca listener ömrünü doğrula; timer clear/scene geçişinde var olan weak-owner sözleşmesi korunsun.

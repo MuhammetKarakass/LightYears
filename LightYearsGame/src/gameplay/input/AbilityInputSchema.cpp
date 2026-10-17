@@ -1,6 +1,6 @@
 #include "gameplay/input/AbilityInputSchema.h"
 
-namespace ly
+namespace vega
 {
 	const List<AbilityInputBinding>& AbilityInputSchema::GetBindings()
 	{

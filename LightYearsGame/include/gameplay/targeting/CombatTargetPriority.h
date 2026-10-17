@@ -5,7 +5,7 @@
 #include "framework/Actor.h"
 #include "gameplay/targeting/TargetingTypes.h"
 
-namespace ly::targeting
+namespace vega::targeting
 {
 	// Target relation answers who *can* be targeted. This policy only ranks valid
 	// candidates: enemy-controlled mechanics protect the player by preferring it

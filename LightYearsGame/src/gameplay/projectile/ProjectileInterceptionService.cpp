@@ -4,7 +4,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/projectile/ProjectileInterceptionBoundary.h"
 
-namespace ly
+namespace vega
 {
 	bool ProjectileInterceptionService::TryInterceptProjectile(
 		AbilityWorldActor& projectile,

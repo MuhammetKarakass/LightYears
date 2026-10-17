@@ -9,7 +9,7 @@
 #include <framework/MathUtility.h>
 #include <framework/reflection/Reflection.h>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(PlayerSpaceShip, SpaceShip)
 	{
@@ -39,7 +39,7 @@ namespace ly
 			std::string failureReason;
 			if (!mAbilityLoadout.EquipAbility(entry.abilityId, entry.slot, &failureReason))
 			{
-				LY_GAME_ERROR(
+				VEGA_GAME_ERROR(
 					"Invalid default player loadout ability '%s': %s",
 					entry.abilityId.c_str(),
 					failureReason.c_str()
@@ -99,10 +99,10 @@ namespace ly
 		}
 
 		const float currentHealth = GetHealthComponent().GetHealth();
-		LY_GAME_DEBUG("PlayerSpaceShip::ReceiveDamage - Current Health: %.1f, Damage: %.1f", currentHealth, context.remainingDamage);
+		VEGA_GAME_DEBUG("PlayerSpaceShip::ReceiveDamage - Current Health: %.1f, Damage: %.1f", currentHealth, context.remainingDamage);
 		if (currentHealth - context.remainingDamage <= 0.f)
 		{
-			LY_GAME_INFO("Player ship dying");
+			VEGA_GAME_INFO("Player ship dying");
 		}
 		SpaceShip::ReceiveDamage(context);
 	}

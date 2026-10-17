@@ -5,7 +5,7 @@
 #include "gameplay/projectile/ProjectileInterceptionBoundary.h"
 #include "presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	// One actor owns the complete delivery lifecycle: it travels as a visible
 	// projectile, forms at its destination, then becomes the interception field.

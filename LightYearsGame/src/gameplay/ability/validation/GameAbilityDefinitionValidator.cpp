@@ -13,7 +13,7 @@
 #include <cmath>
 #include <string_view>
 
-namespace ly
+namespace vega
 {
 	// Keep this translation unit dependent on the complete behavior selector so
 	// newly registered concrete families are reflected in runtime validation.

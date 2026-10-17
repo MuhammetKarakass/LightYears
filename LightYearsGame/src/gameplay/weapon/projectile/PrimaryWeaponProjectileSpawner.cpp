@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-namespace ly::ProjectileMotion
+namespace vega::ProjectileMotion
 {
 	sf::Vector2f ResolveCarrierVelocity(
 		const sf::Vector2f& ownerVelocity,
@@ -43,7 +43,7 @@ namespace ly::ProjectileMotion
 	}
 }
 
-namespace ly::PrimaryWeaponProjectileSpawner
+namespace vega::PrimaryWeaponProjectileSpawner
 {
 	namespace
 	{

@@ -10,21 +10,21 @@ namespace AbilityData::InertialWake
 {
 	// C++ declares only shape/type/presentation ownership. Numeric balance is
 	// loaded from abilities.json so design tuning never forks between code/data.
-	inline const ly::AbilityActorDefinition ActorWakeBasic = []
+	inline const vega::AbilityActorDefinition ActorWakeBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Wake::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::InertialWake;
-		definition.presentationProfileId = ly::InertialWakePresentationIds::WakeBasic;
+		definition.actorType = vega::AbilityActorType::InertialWake;
+		definition.presentationProfileId = vega::InertialWakePresentationIds::WakeBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition InertialWake_Basic = []
+	inline const vega::GameAbilityDefinition InertialWake_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::InertialWake::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Runtime loadouts, not this catalog fallback, own the player's key slot.
@@ -32,22 +32,22 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::InertialWake
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::InertialWake
 		};
 		definition.displayName = "Inertial Wake";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 105, 225, 255, 255 };
 		definition.actions = {
-			ly::AbilityActionSpec{
+			vega::AbilityActionSpec{
 				sas::AbilityActionPhase::OnActivate,
-				ly::SpawnActorAction{ AbilityData::InertialWake::ActorWakeBasic.actorDefinitionId,
+				vega::SpawnActorAction{ AbilityData::InertialWake::ActorWakeBasic.actorDefinitionId,
 					sas::AbilitySpawnPolicy::AtOwner },
 				0.f,
 				1
 			}
 		};
-		definition.behaviorType = ly::AbilityBehaviorType::InertialWake;
+		definition.behaviorType = vega::AbilityBehaviorType::InertialWake;
 		return definition;
 	}();
 }

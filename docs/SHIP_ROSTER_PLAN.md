@@ -181,7 +181,7 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 
 1. **ShipContentCatalog:**
    - `static List<std::string> GetPlayerShipIds();` → yüklü tanımlardan `Ship.Player.` ile başlayanlar, dosya sırasıyla.
-   - `static const ShipDefinition& GetPlayerShipDefinition(const std::string& shipId);` → bulunursa onu, bulunmazsa `LY_GAME_ERROR` ile Fighter'ı döndürür.
+   - `static const ShipDefinition& GetPlayerShipDefinition(const std::string& shipId);` → bulunursa onu, bulunmazsa `VEGA_GAME_ERROR` ile Fighter'ı döndürür.
    - `GetPlayerFighterDefinition()` korunur (testler kullanıyor), içi `GetPlayerShipDefinition("Ship.Player.Fighter.Basic")` olur.
 2. **PlayerManager:** `SetSelectedShipId(std::string)` / `GetSelectedShipId()`; varsayılan `"Ship.Player.Fighter.Basic"`. **`Reset()` seçimi silmez** (yalnız oyuncuları siler) — böylece restart'ta seçim korunur.
 3. **Player:**
@@ -207,7 +207,7 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 3. Kısıtlar:
    - Game Over ekranı açıkken ve pause'dayken F tuşları yok sayılır (Escape kuralıyla aynı mantık).
    - Aynı geminin tuşuna basmak da koşuyu yeniden başlatır.
-   - Seçim kaydı `LY_GAME_INFO` ile yazılır; `LY_GAME_LOG` sembolü mevcut değildir.
+   - Seçim kaydı `VEGA_GAME_INFO` ile yazılır; `VEGA_GAME_LOG` sembolü mevcut değildir.
 4. Ekranda geçici bilgi: mevcut notification HUD'u kullanılabiliyorsa "Gemi: Breacher" bildirimi gösterilir; yeni widget yazılmaz.
 
 **Kabul:** Build exit 0. Hedefli test (Adım 5) F tuşu → seçim → restart → doğru gemi zincirini doğrular. Oyun içi görsel kontrol kullanıcıya bırakılır.

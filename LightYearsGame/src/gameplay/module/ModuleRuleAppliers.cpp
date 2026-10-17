@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	ModuleAbilityRuleApplier::~ModuleAbilityRuleApplier() noexcept { Reset(); }
 

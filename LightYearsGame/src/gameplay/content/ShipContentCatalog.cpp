@@ -9,7 +9,7 @@
 
 #include <cmath>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{
@@ -228,7 +228,7 @@ namespace ly::content
 			}
 		}
 
-		LY_GAME_ERROR("Cannot resolve player ship '%s'; using Fighter.", shipId.c_str());
+		VEGA_GAME_ERROR("Cannot resolve player ship '%s'; using Fighter.", shipId.c_str());
 		return GetPlayerFighterDefinition();
 	}
 

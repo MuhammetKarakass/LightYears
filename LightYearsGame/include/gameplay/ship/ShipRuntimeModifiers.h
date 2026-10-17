@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <SFML/System/Vector2.hpp>
 
-namespace ly
+namespace vega
 {
 	// Temporary ship modifiers are owned by a source ID instead of by one
 	// ability family. This keeps Phase Drift (and future buffs) from adding

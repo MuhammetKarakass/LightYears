@@ -8,35 +8,35 @@
 
 namespace AbilityData::AegisReaver
 {
-	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+	inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::AegisReaverProjectile;
-		definition.presentationProfileId = ly::AegisReaverPresentationIds::ProjectileBasic;
+		definition.actorType = vega::AbilityActorType::AegisReaverProjectile;
+		definition.presentationProfileId = vega::AegisReaverPresentationIds::ProjectileBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition AegisReaver_Basic = []
+	inline const vega::GameAbilityDefinition AegisReaver_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::AegisReaver::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability3;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::AegisReaver
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::AegisReaver
 		};
 		definition.displayName = "Aegis Reaver";
 		// Reuse an already shipped sprite until Aegis receives its own UI icon.
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
 		definition.accentColor = sf::Color{ 100, 225, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::AegisReaver;
+		definition.behaviorType = vega::AbilityBehaviorType::AegisReaver;
 		return definition;
 	}();
 }

@@ -137,7 +137,7 @@ Eksiksiz mevcut içerik, çağrı yolu ve düzenlenebilir alan envanteri için:
 
 | Konu | Kaynak odak noktası | Not alınacak yer |
 | --- | --- | --- |
-| Genel mimari | LightYearsEngine, SpaceAbilitySystem ve LightYearsGame | Bu dosya, §1 |
+| Genel mimari | VegaEngine, SpaceAbilitySystem ve LightYearsGame | Bu dosya, §1 |
 | Mevcut içerik / durum envanteri | Tüm config ve runtime bağlantıları | Current Implementation Catalog |
 | Hasar, zırh, kritik, statüler | gameplay/combat, gameplay/damage, gameplay/effects | §2 (tarihsel: Notebook §4) |
 | Attribute / ability scaling | gameplay/attributes, gameplay/ability | §3; ability değerleri: [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) |
@@ -154,7 +154,7 @@ LightYears üç build katmanından oluşur:
 
 | Katman | Sorumluluk | Önemli dizinler |
 | --- | --- | --- |
-| LightYearsEngine | Yeniden kullanılabilir oyun çatısı: uygulama, dünya, aktör, fizik, kamera, ses, shader, widget | LightYearsEngine/include/framework, LightYearsEngine/src/framework |
+| VegaEngine | Yeniden kullanılabilir oyun çatısı: uygulama, dünya, aktör, fizik, kamera, ses, shader, widget | VegaEngine/include/framework, VegaEngine/src/framework |
 | SpaceAbilitySystem | Statik gameplay-system kütüphanesi; aşamalı olarak taşınan generic attribute, ability ve effect çekirdeği | SpaceAbilitySystem/include, SpaceAbilitySystem/src |
 | LightYearsGameplayCore | LightYearsGame ile engine arasındaki statik oyun çekirdeği; gameplay contract, combat/ability integration ve ortak game runtime kodu | LightYearsGame gameplay core target ve ilgili include/src dizinleri |
 | LightYearsGame | Oyuna özgü gemiler, combat, yetenekler, silahlar, level akışı, UI ve VFX | LightYearsGame/include, LightYearsGame/src |
@@ -199,22 +199,22 @@ Application
 ### 1.1 Engine diagnostics: assert, logging ve profiling
 
 Engine seviyesindeki ortak tanılama API'si
-`LightYearsEngine/include/framework/debug/` altında üç parçadan oluşur:
+`VegaEngine/include/framework/debug/` altında üç parçadan oluşur:
 
 | Parça | Kullanım | Debug | Release |
 | --- | --- | --- | --- |
-| Assert | `LY_ASSERT`, `LY_CORE_ASSERT`, `LY_DEBUG_BREAK` | Başarısız koşulu `FATAL` olarak loglar; debugger bağlıysa break, değilse abort üretir | Derleme dışıdır; koşul değerlendirilmez |
-| Verify | `LY_VERIFY` | Assert gibi durur | Koşulu her zaman değerlendirir; başarısızlıkta `ERROR` loglayıp devam eder |
-| Logging | `LY_CORE_*`, `LY_GAME_*` | TRACE ve üstü | Varsayılan WARNING ve üstü |
-| Profiling | `LY_PROFILE_SCOPE`, `LY_PROFILE_FUNCTION`, `LY_PROFILE_FRAME`, `LY_PROFILE_COUNTER` | Süre ve sayaç aggregate'leri toplar | Derleme dışıdır |
+| Assert | `VEGA_ASSERT`, `VEGA_CORE_ASSERT`, `VEGA_DEBUG_BREAK` | Başarısız koşulu `FATAL` olarak loglar; debugger bağlıysa break, değilse abort üretir | Derleme dışıdır; koşul değerlendirilmez |
+| Verify | `VEGA_VERIFY` | Assert gibi durur | Koşulu her zaman değerlendirir; başarısızlıkta `ERROR` loglayıp devam eder |
+| Logging | `VEGA_CORE_*`, `VEGA_GAME_*` | TRACE ve üstü | Varsayılan WARNING ve üstü |
+| Profiling | `VEGA_PROFILE_SCOPE`, `VEGA_PROFILE_FUNCTION`, `VEGA_PROFILE_FRAME`, `VEGA_PROFILE_COUNTER` | Süre ve sayaç aggregate'leri toplar | Derleme dışıdır |
 
 Logging satırı saat, `CORE`/`GAME` kanalı, seviye, mesaj ve kaynak
 dosya/satırını taşır. `EntryPoint.cpp` logger'ı `LightYears.log` hedefiyle,
 profiler'ı da uygulama oluşturulmadan önce başlatır; normal kapanışta ve
 yakalanan exception yollarında profiler/logger açıkça kapatılır. Kritik hata
-mesajları kapanmadan önce flush edilir. `LY_*_FATAL` yalnız log seviyesidir;
+mesajları kapanmadan önce flush edilir. `VEGA_*_FATAL` yalnız log seviyesidir;
 tek başına programı durdurmaz. Programı durdurması gereken invariant için
-`LY_ASSERT` kullanılır.
+`VEGA_ASSERT` kullanılır.
 
 Profiler isim bazında çağrı sayısı, toplam/minimum/maksimum mikrosaniye
 değerlerini aggregate eder ve kapanışta en pahalı scope'ların özetini logging
@@ -228,14 +228,14 @@ kanalına gönderir. Şu kritik yollar başlangıç kapsamına alınmıştır:
 
 Makrolar `framework/Core.h` üzerinden engine/game koduna açılır. Assert
 ifadesinde side effect bulunmamalıdır; Release'te de çalışması gereken kontrol
-`LY_VERIFY` veya normal hata yönetimi olmalıdır. Kullanıcı girdisi, dosya veya
+`VEGA_VERIFY` veya normal hata yönetimi olmalıdır. Kullanıcı girdisi, dosya veya
 network gibi beklenen runtime hataları assert değil, doğrulama ve log ile ele
 alınır.
 
-Derleme politikası `LightYearsEngine/CMakeLists.txt` içinde
-`LY_ENABLE_LOGGING`, `LY_ENABLE_ASSERTS` ve `LY_ENABLE_PROFILING` tanımlarıyla
+Derleme politikası `VegaEngine/CMakeLists.txt` içinde
+`VEGA_ENABLE_LOGGING`, `VEGA_ENABLE_ASSERTS` ve `VEGA_ENABLE_PROFILING` tanımlarıyla
 merkezidir. Engine lifetime testleri structured log kaydını, seviye filtresini,
-`LY_VERIFY` değerlendirmesini, Debug profiler aggregate/counter üretimini ve
+`VEGA_VERIFY` değerlendirmesini, Debug profiler aggregate/counter üretimini ve
 Release no-op kontratını kapsar.
 
 ## 2. Hasar ve savunma matematiği
@@ -299,7 +299,7 @@ Attribute çekirdeğinin public yüzeyi `sas` namespace'indedir:
 uygulama dosyası `SpaceAbilitySystem/src/attributes` altındadır.
 `OwnerAttributeIds`, `ShipAttributeIds` ve `CommonAttributeIds` oyun content
 kataloğu oldukları için `LightYearsGame/include/gameplay/attributes/AttributeIds.h`
-içinde `ly` namespace'inde kalır.
+içinde `vega` namespace'inde kalır.
 
 Ability taşımasının 2A diliminde yalnızca bağımsız temel sözleşmeler SAS
 sahipliğine alınmıştır. `sas::AbilityHandle` ile slot, activation, lifetime,
@@ -324,7 +324,7 @@ sonra kaldırılmıştır.
 Ability 2C diliminde definition ve event ortak gövdeleri ayrılmıştır.
 `sas::AbilityDefinition`; kimlik, slot/activation/lifetime, cooldown/duration/
 charge, owner tag koşulları ve generic attribute/scaling listelerini taşır.
-`ly::GameAbilityDefinition` bu tabanı action/trigger/level progression, scrap,
+`vega::GameAbilityDefinition` bu tabanı action/trigger/level progression, scrap,
 damage/attachment, behavior ID ve UI metadata'sıyla genişletir. ID, negatif
 değer, duration ve passive-lifetime kontrolleri
 `sas::ValidateAbilityDefinition()` içinde SAS kaynak kodunda çalışır; action,
@@ -334,7 +334,7 @@ weapon, behavior ve game content doğrulaması LightYearsGame'de devam eder.
 source/target/context referanslarını taşır. Actor ile `DamageContext` doğrudan
 SAS tipine dahil edilmez; oyun bağlama katmanı `SetSource`, `SetTarget` ve
 `SetContext` ile bunları olaya ekler, ilgili somut tip üzerinden geri alır.
-Önceki `ly::GameAbilityEvent` uzantısı kaldırılmıştır.
+Önceki `vega::GameAbilityEvent` uzantısı kaldırılmıştır.
 
 Ability 2D diliminde mutable fakat oyundan bağımsız runtime state
 `sas::AbilityRuntimeState` altında toplanmıştır. Sınıf level clamp/set, held
@@ -385,7 +385,7 @@ kontratını, `sas::AbilityRuntimeEntry<Definition, Execution>` handle/base
 definition/resolved definition/runtime state/execution sahipliğini taşır.
 `sas::ValidateAbilityGrant`, passive kapasite ve lifetime kabulünü;
 `sas::AbilityTrigger` ile trigger eşleştirme/cooldown anahtarı üretimi de
-oyundan bağımsız kararları sahiplenir. `ly::GameAbilityBehavior` artık SAS
+oyundan bağımsız kararları sahiplenir. `vega::GameAbilityBehavior` artık SAS
 template'inin game context alias'ıdır. Eski `GameAbilityInstance`,
 `GameAbilityBehaviorRegistry`, `GameAbilityEvent` ve `GameAbilityExecution`
 dosyaları kaldırılmıştır. Game tarafında kalan `LightYearsAbilitySystemComponent`,
@@ -1251,7 +1251,7 @@ konfigürasyonda da 2/2 passed oldu.
 
 ### 3.6 Enemy Combat Runtime ve Hasar Modeli
 
-Düşman foundation modeli `ly::EnemyActor : public SpaceShip` ve composition tabanlı `ly::EnemyRuntime` (`gameplay/enemy/EnemyRuntime.h`) ile çalışır. `ShipRuntime` aktör taban sınıfı yapılmaz. UFO, boss ve `EnemySpaceShip` legacy aktör sistemi kaldırılmıştır; yeni düşmanlar yalnız generic actor üzerinden üretilir.
+Düşman foundation modeli `vega::EnemyActor : public SpaceShip` ve composition tabanlı `vega::EnemyRuntime` (`gameplay/enemy/EnemyRuntime.h`) ile çalışır. `ShipRuntime` aktör taban sınıfı yapılmaz. UFO, boss ve `EnemySpaceShip` legacy aktör sistemi kaldırılmıştır; yeni düşmanlar yalnız generic actor üzerinden üretilir.
 
 #### Mimari ve Sorumluluklar
 - `EnemyCombatProfile`: Yalnızca muharebe loadout'unu taşır (`profileId`, çoklu `weapons[]`, `abilities`, `powerScalingPolicy`, enemy progression). Şasi, can, ödül ve hareket bilgileri `ShipDefinition` içinde kalır.
@@ -1678,8 +1678,8 @@ the per-level ship values are sourced from [`ships.json`](../LightYearsGame/asse
 
 ## 6. Kamera
 
-İlgili kaynak: LightYearsEngine/include/framework/camera/CameraManager.h ve
-LightYearsEngine/src/framework/camera/CameraManager.cpp.
+İlgili kaynak: VegaEngine/include/framework/camera/CameraManager.h ve
+VegaEngine/src/framework/camera/CameraManager.cpp.
 
 Kamera üç ayrı look-ahead kaynağını işler:
 
@@ -1817,13 +1817,13 @@ Gameplay modeli ── delegate / poll ──▶ Presenter ── SetIfChanged �
 
 Engine yapı taşları:
 
-- `UILayout` / `UIAnchor`, parent rect ve intrinsic boyuttan anchor, offset ve inset kullanarak resolved rect üretir ([UILayout.h](../LightYearsEngine/include/widget/UILayout.h), [UILayout.cpp](../LightYearsEngine/src/widget/UILayout.cpp)).
-- `Widget`, çocuk ağacını ve layout çözümünü yönetir; `Panel::GetBound()` gerçek şeklin global bounds'unu verir ve `Panel::PlaceAt()` boyutu ayarlayıp temel widget hareketini uygular ([Widget.h](../LightYearsEngine/include/widget/Widget.h), [Panel.cpp](../LightYearsEngine/src/widget/Panel.cpp)).
-- `Panel` çizilebilir arka planlı kutu widget'ıdır; `StackPanel` görünür çocukları yönelim, spacing, padding ve çapraz hizaya göre dizer ([Panel.h](../LightYearsEngine/include/widget/Panel.h), [StackPanel.h](../LightYearsEngine/include/widget/StackPanel.h)).
-- `HUD`, legacy widget listesine ek olarak viewport'a yayılan Hud, Menu, Modal ve Tooltip katmanlarını sunar ([HUD.h](../LightYearsEngine/include/widget/HUD.h)).
-- `SubscriptionSet`, delegate aboneliklerini sahip nesnenin ömrü boyunca saklar ve temizler ([SubscriptionSet.h](../LightYearsEngine/include/framework/SubscriptionSet.h)).
-- `UIRevision` / `SetIfChanged`, yalnız alan değeri değiştiğinde revision artırır; `UIRevisionWatcher` View'ın son revision'ı bir kez işlemesini sağlar ([UIViewModel.h](../LightYearsEngine/include/widget/UIViewModel.h)).
-- `UIStyle`, font, renk ve metin boyutu rollerini merkezi varsayılanlarla sağlar ([UIStyle.h](../LightYearsEngine/include/widget/UIStyle.h)).
+- `UILayout` / `UIAnchor`, parent rect ve intrinsic boyuttan anchor, offset ve inset kullanarak resolved rect üretir ([UILayout.h](../VegaEngine/include/widget/UILayout.h), [UILayout.cpp](../VegaEngine/src/widget/UILayout.cpp)).
+- `Widget`, çocuk ağacını ve layout çözümünü yönetir; `Panel::GetBound()` gerçek şeklin global bounds'unu verir ve `Panel::PlaceAt()` boyutu ayarlayıp temel widget hareketini uygular ([Widget.h](../VegaEngine/include/widget/Widget.h), [Panel.cpp](../VegaEngine/src/widget/Panel.cpp)).
+- `Panel` çizilebilir arka planlı kutu widget'ıdır; `StackPanel` görünür çocukları yönelim, spacing, padding ve çapraz hizaya göre dizer ([Panel.h](../VegaEngine/include/widget/Panel.h), [StackPanel.h](../VegaEngine/include/widget/StackPanel.h)).
+- `HUD`, legacy widget listesine ek olarak viewport'a yayılan Hud, Menu, Modal ve Tooltip katmanlarını sunar ([HUD.h](../VegaEngine/include/widget/HUD.h)).
+- `SubscriptionSet`, delegate aboneliklerini sahip nesnenin ömrü boyunca saklar ve temizler ([SubscriptionSet.h](../VegaEngine/include/framework/SubscriptionSet.h)).
+- `UIRevision` / `SetIfChanged`, yalnız alan değeri değiştiğinde revision artırır; `UIRevisionWatcher` View'ın son revision'ı bir kez işlemesini sağlar ([UIViewModel.h](../VegaEngine/include/widget/UIViewModel.h)).
+- `UIStyle`, font, renk ve metin boyutu rollerini merkezi varsayılanlarla sağlar ([UIStyle.h](../VegaEngine/include/widget/UIStyle.h)).
 
 Referans uygulamalar ve kaynak yolları:
 

@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/aegisReaver/AegisReaverPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

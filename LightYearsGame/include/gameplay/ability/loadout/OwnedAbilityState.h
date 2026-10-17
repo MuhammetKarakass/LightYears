@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct OwnedAbilityState
 	{

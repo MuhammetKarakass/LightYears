@@ -18,10 +18,10 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
-	ly::Actor firstTarget{ nullptr, "" };
-	ly::Actor secondTarget{ nullptr, "" };
-	ly::targeting::ActorHitCooldowns cooldowns;
+	vega::InstallVegaEngineAssets();
+	vega::Actor firstTarget{ nullptr, "" };
+	vega::Actor secondTarget{ nullptr, "" };
+	vega::targeting::ActorHitCooldowns cooldowns;
 	cooldowns.RecordHit(firstTarget, 2.f);
 	if (!Expect(cooldowns.GetEntryCount() == 1, "A hit did not create one cooldown entry") ||
 		!Expect(cooldowns.IsCoolingDown(firstTarget, 1.999f), "The first target was not blocked before expiry") ||
@@ -53,12 +53,12 @@ int main()
 
 	unsigned int previousTargetId = 0;
 	{
-		ly::Actor previousTarget{ nullptr, "" };
+		vega::Actor previousTarget{ nullptr, "" };
 		previousTargetId = previousTarget.GetUniqueID();
 		cooldowns.RecordHit(previousTarget, 10.f);
 		previousTarget.Destroy();
 	}
-	ly::Actor replacementTarget{ nullptr, "" };
+	vega::Actor replacementTarget{ nullptr, "" };
 	if (!Expect(replacementTarget.GetUniqueID() != previousTargetId, "A replacement actor reused the destroyed actor ID") ||
 		!Expect(!cooldowns.IsCoolingDown(replacementTarget, 0.f), "A replacement actor inherited the destroyed actor's cooldown"))
 	{
@@ -67,7 +67,7 @@ int main()
 	cooldowns.PruneExpired(10.f);
 	for (int index = 0; index < 32; ++index)
 	{
-		ly::Actor shortLivedTarget{ nullptr, "" };
+		vega::Actor shortLivedTarget{ nullptr, "" };
 		cooldowns.RecordHit(shortLivedTarget, 11.f);
 	}
 	if (!Expect(cooldowns.GetEntryCount() == 32, "Short-lived targets did not create 32 distinct cooldown entries"))

@@ -10,8 +10,8 @@ source_files:
   - LightYearsGame/src/gameplay/ability/GameAbility.cpp
 symbols:
   - sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>
-  - ly::GameAbilityBehavior
-  - ly::GameAbilityBehaviorContext
+  - vega::GameAbilityBehavior
+  - vega::GameAbilityBehaviorContext
 related:
   - "[[Ability Behavior System]]"
   - "[[Ability Behavior Registration and Dispatch Flow]]"
@@ -23,12 +23,12 @@ related:
 
 ## Rol
 
-`ly::GameAbilityBehavior`, SAS'ın `sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>` tabanını game definition/context ile özelleştiren ability-family hook sınıfıdır. Ability'yi grant eden container değildir, cooldown/charge state'ini sahiplenmez ve action payload'larını kendisi dispatch etmek zorunda değildir.
+`vega::GameAbilityBehavior`, SAS'ın `sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>` tabanını game definition/context ile özelleştiren ability-family hook sınıfıdır. Ability'yi grant eden container değildir, cooldown/charge state'ini sahiplenmez ve action payload'larını kendisi dispatch etmek zorunda değildir.
 
 ## Context kontratı
 
 Dosya: `LightYearsGame/include/gameplay/ability/GameAbility.h`  
-Sembol: `ly::GameAbilityBehaviorContext`
+Sembol: `vega::GameAbilityBehaviorContext`
 
 ```cpp
 struct AbilityBehaviorContext

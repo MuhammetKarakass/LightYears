@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	class AbilityInventory
 	{

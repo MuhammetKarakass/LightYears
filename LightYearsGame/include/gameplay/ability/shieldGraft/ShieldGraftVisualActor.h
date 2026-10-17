@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	// A short-lived, non-colliding visual actor centered on the owner.
 	// Renders a brief outer-to-inner converging visual effect that collapses

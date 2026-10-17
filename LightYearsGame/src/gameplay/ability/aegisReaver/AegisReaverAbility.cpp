@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	bool AegisReaverAbility::Activate(GameAbilityBehaviorContext& context)
 	{

@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace ly::AbilityActionAttributeResolver
+namespace vega::AbilityActionAttributeResolver
 {
 	namespace
 	{

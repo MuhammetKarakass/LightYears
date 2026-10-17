@@ -6,9 +6,9 @@
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition ReturnProtocol_Basic = []
+	inline const vega::GameAbilityDefinition ReturnProtocol_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::ReturnProtocol::AbilityId::Basic;
 		// Runtime loadouts decide the real key/slot. This is only the required
 		// fallback slot for content validation before an ability is equipped.
@@ -16,13 +16,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Defense,
-			ly::GameplayTags::Ability::Family::ReturnProtocol
+			vega::GameplayTags::Ability::Defense,
+			vega::GameplayTags::Ability::Family::ReturnProtocol
 		};
 		definition.displayName = "Return Protocol";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 105, 225, 255, 235 };
-		definition.behaviorType = ly::AbilityBehaviorType::ReturnProtocol;
+		definition.behaviorType = vega::AbilityBehaviorType::ReturnProtocol;
 		return definition;
 	}();
 }

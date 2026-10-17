@@ -2,7 +2,7 @@
 
 `vega::GameModule` (`framework/GameModule.h`) is the boundary between a game
 and its host. Both standalone LightYears and Vega Editor use
-`ly::LightYearsGameModule`. The editor derives from `ly::Application`; it no
+`vega::LightYearsGameModule`. The editor derives from `vega::Application`; it no
 longer inherits the game's application or includes its scene, player or spawn
 marker classes.
 
@@ -51,8 +51,8 @@ class MinimalModule final : public vega::GameModule
 {
 public:
 	const char* Name() const override { return "Minimal"; }
-	void RegisterTypes() override { ly::reflect::RegisterEngineTypes(); }
-	std::shared_ptr<ly::World> CreateLevel(ly::Application& application,
+	void RegisterTypes() override { vega::reflect::RegisterEngineTypes(); }
+	std::shared_ptr<vega::World> CreateLevel(vega::Application& application,
 		const nlohmann::json& scene, bool edit) override
 	{
 		return std::make_shared<MySceneWorld>(&application, scene, edit);
@@ -106,7 +106,7 @@ Implement `IEditorProvider::RegisterEditorExtensions(vega::EditorExtensions&)` i
 editor adapter. Include `editor/EditorExtensions.h` there; standalone games
 need no editor dependency.
 
-The host constructs `EditorExtensions{ context }` with its `ly::EngineContext`.
+The host constructs `EditorExtensions{ context }` with its `vega::EngineContext`.
 Use `extensions.Engine()` for schema registration; the context must outlive the
 extensions. This keeps registration on the correct host even under another
 ambient compatibility binding. GAS does this in `sas::RegisterEditorExtension`.
@@ -170,7 +170,7 @@ The concrete entry point can be:
 #include <editor/EditorHost.h>
 #include "MyEditorModule.h"
 
-ly::Application* GetApplication()
+vega::Application* GetApplication()
 {
 	return vega::CreateEditorApplication(std::make_unique<MyEditorModule>());
 }

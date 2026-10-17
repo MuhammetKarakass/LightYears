@@ -10,15 +10,15 @@ source_files:
   - LightYearsGame/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp
   - LightYearsGame/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
 symbols:
-  - ly::FireWeaponAction
-  - ly::FireWeaponRuntimeState
-  - ly::FireWeaponActionRuntime::Execute
-  - ly::FireWeaponActionRuntime::Tick
-  - ly::FireWeaponActionRuntime::End
-  - ly::PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured
-  - ly::PrimaryWeaponExecutionSystem::BeginFire
-  - ly::PrimaryWeaponExecutionSystem::FireOnce
-  - ly::PrimaryWeaponExecutionSystem::EndFire
+  - vega::FireWeaponAction
+  - vega::FireWeaponRuntimeState
+  - vega::FireWeaponActionRuntime::Execute
+  - vega::FireWeaponActionRuntime::Tick
+  - vega::FireWeaponActionRuntime::End
+  - vega::PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured
+  - vega::PrimaryWeaponExecutionSystem::BeginFire
+  - vega::PrimaryWeaponExecutionSystem::FireOnce
+  - vega::PrimaryWeaponExecutionSystem::EndFire
 related:
   - "[[Weapon System]]"
   - "[[PrimaryWeaponExecutionSystem]]"

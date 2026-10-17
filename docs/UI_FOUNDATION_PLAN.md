@@ -28,8 +28,8 @@ Gameplay (Model) ──delegate/poll──▶ Presenter ──SetIfChanged──
 
 - Luna yalnız kendisine atanan ADIM'ı uygular. Git komutu (commit, stash, restore, checkout) çalıştırmaz. Çalışma ağacındaki ilgisiz dirty değişiklikler korunur.
 - Kod yazmadan önce ilgili mevcut sahip dosyalar okunur (adımda listelenenler).
-- C++17, SFML 3 (`event.getIf<sf::Event::X>()`, `sf::FloatRect{position,size}`), namespace `ly`, tab girinti, mevcut dosyaların adlandırma ve yorum yoğunluğu.
-- Engine kodu Game'e bağımlı olamaz. Yeni engine dosyaları `D:\LightYears\LightYearsEngine\include\...` ve `src\...` altına eklenir ve `D:\LightYears\LightYearsEngine\CMakeLists.txt` kaynak listesine eklenir.
+- C++17, SFML 3 (`event.getIf<sf::Event::X>()`, `sf::FloatRect{position,size}`), namespace `vega`, tab girinti, mevcut dosyaların adlandırma ve yorum yoğunluğu.
+- Engine kodu Game'e bağımlı olamaz. Yeni engine dosyaları `D:\LightYears\VegaEngine\include\...` ve `src\...` altına eklenir ve `D:\LightYears\VegaEngine\CMakeLists.txt` kaynak listesine eklenir.
 - Yeni Game kaynakları `LIGHT_YEARS_UI_HUD_SOURCES` adlı tek bir CMake değişkeninde toplanır (`LIGHT_YEARS_ENCOUNTER_HUD_SOURCES` deseni gibi). Bu değişken hem oyun hedef listesine hem de `LIGHT_YEARS_GAS_LITE_TEST_SOURCES` listesine eklenir. Dosya: `D:\LightYears\LightYearsGame\CMakeLists.txt`.
 - İlgisiz refactor, denge değişikliği veya biçimlendirme yapılmaz. `TEMPORARY TEST UI` işaretli parçalar (hız yazısı, hasar sayıları, ability stat readout) taşınmaz.
 - **Luna kendi adımını derler ve testlerini koşar** (aşağıdaki komutlar, adımın "Doğrulama" satırındaki hedef ve regex ile). Build veya test kırmızıysa adım bitmiş sayılmaz.
@@ -61,9 +61,9 @@ ctest --test-dir build -R "<REGEX>" --output-on-failure --timeout 60
 **Amaç:** Pencere veya SFML çizimi gerektirmeyen, test edilebilir anchor/pivot layout matematiği.
 
 **Yeni dosyalar**
-- `D:\LightYears\LightYearsEngine\include\widget\UILayout.h`
-- `D:\LightYears\LightYearsEngine\src\widget\UILayout.cpp`
-- `D:\LightYears\LightYearsEngine\tests\UIFoundationTests.cpp`
+- `D:\LightYears\VegaEngine\include\widget\UILayout.h`
+- `D:\LightYears\VegaEngine\src\widget\UILayout.cpp`
+- `D:\LightYears\VegaEngine\tests\UIFoundationTests.cpp`
 
 **Sözleşme**
 ```cpp
@@ -95,7 +95,7 @@ UIRect ResolveLayout(const UILayout& layout, const UIRect& parent, const sf::Vec
 - Sonuç pozisyonu `std::round` ile tam piksele yuvarlanır (bulanık metni önlemek için), boyut yuvarlanmaz.
 - Eksenler bağımsızdır: x stretch, y nokta olabilir.
 
-**Test hedefi** (`D:\LightYears\LightYearsEngine\CMakeLists.txt` içinde `BUILD_TESTING` bloğuna, `LightYearsWorldSpatialQueryTests` desenini kopyalayarak):
+**Test hedefi** (`D:\LightYears\VegaEngine\CMakeLists.txt` içinde `BUILD_TESTING` bloğuna, `LightYearsWorldSpatialQueryTests` desenini kopyalayarak):
 `add_executable(LightYearsUIFoundationTests tests/UIFoundationTests.cpp)`, engine'e link ve `add_test(NAME LightYearsUIFoundation COMMAND LightYearsUIFoundationTests)`.
 
 Test dosyası basit bir `Check(cond, msg)` yardımcısı ve `main` içerir. Hata olursa stderr'e yazar ve 1 döndürür. Test framework eklenmez. Kapsam:
@@ -116,10 +116,10 @@ Test dosyası basit bir `Check(cond, msg)` yardımcısı ve `main` içerir. Hata
 **Amaç:** `Widget`'a parent/child ağacı, layout uygulama, özyinelemeli tick/draw/event ve miras alınan alpha eklemek. Mevcut alt sınıflar (`TextWidget`, `ImageWidget`, `ValueGauge`, `Button`) değişmeden çalışmaya devam eder.
 
 **Değişen dosyalar**
-- `D:\LightYears\LightYearsEngine\include\widget\Widget.h`, `D:\LightYears\LightYearsEngine\src\widget\Widget.cpp`
-- `D:\LightYears\LightYearsEngine\src\widget\TextWidget.cpp` (yalnız `SetString`/`SetTextSize` sonunda `InvalidateLayout()` çağrısı)
-- `D:\LightYears\LightYearsEngine\src\widget\ImageWidget.cpp` (yalnız `SetImage` sonunda `InvalidateLayout()`)
-- `D:\LightYears\LightYearsEngine\tests\UIFoundationTests.cpp` (yeni testler)
+- `D:\LightYears\VegaEngine\include\widget\Widget.h`, `D:\LightYears\VegaEngine\src\widget\Widget.cpp`
+- `D:\LightYears\VegaEngine\src\widget\TextWidget.cpp` (yalnız `SetString`/`SetTextSize` sonunda `InvalidateLayout()` çağrısı)
+- `D:\LightYears\VegaEngine\src\widget\ImageWidget.cpp` (yalnız `SetImage` sonunda `InvalidateLayout()`)
+- `D:\LightYears\VegaEngine\tests\UIFoundationTests.cpp` (yeni testler)
 
 **Eklenecek API (Widget)**
 ```cpp
@@ -168,8 +168,8 @@ virtual sf::Vector2f GetIntrinsicSize() const;    // varsayılan: GetBound().siz
 ## ADIM 3: Panel ve StackPanel container'ları (engine)
 
 **Yeni dosyalar**
-- `D:\LightYears\LightYearsEngine\include\widget\Panel.h`, `D:\LightYears\LightYearsEngine\src\widget\Panel.cpp`
-- `D:\LightYears\LightYearsEngine\include\widget\StackPanel.h`, `D:\LightYears\LightYearsEngine\src\widget\StackPanel.cpp`
+- `D:\LightYears\VegaEngine\include\widget\Panel.h`, `D:\LightYears\VegaEngine\src\widget\Panel.cpp`
+- `D:\LightYears\VegaEngine\include\widget\StackPanel.h`, `D:\LightYears\VegaEngine\src\widget\StackPanel.cpp`
 
 **Panel:** Kutu tabanlı widget.
 - `Panel(const sf::Vector2f& size = {0,0})`. `SetPanelSize`, `SetBackgroundColor` (varsayılan şeffaf; alfa 0 ise çizilmez).
@@ -194,7 +194,7 @@ void SetSpacing(float); void SetPadding(const sf::Vector2f&); void SetCrossAlign
 
 ## ADIM 4: HUD katmanları ve viewport (engine)
 
-**Değişen dosyalar:** `D:\LightYears\LightYearsEngine\include\widget\HUD.h`, `D:\LightYears\LightYearsEngine\src\widget\HUD.cpp`, testler; `MainMenuHUD.cpp`, `PauseMenuHUD.cpp`, `GameOverHUD.cpp` yalnız event yönlendirme sırası için.
+**Değişen dosyalar:** `D:\LightYears\VegaEngine\include\widget\HUD.h`, `D:\LightYears\VegaEngine\src\widget\HUD.cpp`, testler; `MainMenuHUD.cpp`, `PauseMenuHUD.cpp`, `GameOverHUD.cpp` yalnız event yönlendirme sırası için.
 
 **API**
 ```cpp
@@ -219,7 +219,7 @@ sf::Vector2u GetViewportSize() const;
 
 ## ADIM 5: SubscriptionSet (engine)
 
-**Yeni dosya:** `D:\LightYears\LightYearsEngine\include\framework\SubscriptionSet.h` (header-only). CMake kaynak listesine header olarak eklenir.
+**Yeni dosya:** `D:\LightYears\VegaEngine\include\framework\SubscriptionSet.h` (header-only). CMake kaynak listesine header olarak eklenir.
 
 **API**
 ```cpp
@@ -254,8 +254,8 @@ public:
 ## ADIM 6: UIRevision / ViewModel yardımcıları ve UIStyle (engine)
 
 **Yeni dosyalar**
-- `D:\LightYears\LightYearsEngine\include\widget\UIViewModel.h` (header-only)
-- `D:\LightYears\LightYearsEngine\include\widget\UIStyle.h`, `D:\LightYears\LightYearsEngine\src\widget\UIStyle.cpp`
+- `D:\LightYears\VegaEngine\include\widget\UIViewModel.h` (header-only)
+- `D:\LightYears\VegaEngine\include\widget\UIStyle.h`, `D:\LightYears\VegaEngine\src\widget\UIStyle.cpp`
 
 **UIViewModel.h**
 ```cpp

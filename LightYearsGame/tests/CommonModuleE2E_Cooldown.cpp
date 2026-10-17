@@ -2,9 +2,9 @@
 
 namespace common_module_e2e
 {
-	void RunCooldownModuleChecks(Report& report, ly::Application& application)
+	void RunCooldownModuleChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		const ShipDefinition& shipDefinition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
 		const ModuleRulesContext rules{ *shipDefinition.schematic,
 			[](const sas::ContentId& moduleId) { return content::ModuleContentCatalog::FindById(moduleId); },

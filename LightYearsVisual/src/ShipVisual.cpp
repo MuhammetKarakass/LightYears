@@ -6,7 +6,7 @@
 
 #include "FileUtil.h"
 
-namespace ly::visual
+namespace vega::visual
 {
 	namespace
 	{

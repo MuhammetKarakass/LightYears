@@ -8,7 +8,7 @@
 
 #include <cmath>
 
-namespace ly::movement
+namespace vega::movement
 {
 	bool MovementInfluenceService::ApplyImpulse(
 		Actor& target,

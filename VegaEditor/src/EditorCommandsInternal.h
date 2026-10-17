@@ -7,7 +7,7 @@ namespace vega
 {
 	namespace editor_commands_internal
 	{
-		inline bool HasSelectedAncestor(const EditorSelection& selection, const ly::Actor& actor)
+		inline bool HasSelectedAncestor(const EditorSelection& selection, const vega::Actor& actor)
 		{
 			for (auto* parent = actor.GetParent(); parent; parent = parent->GetParent())
 				if (selection.Contains(parent->GetWeakActor().lock())) return true;
@@ -19,7 +19,7 @@ namespace vega
 			for (const auto& actor : context.selection.GetAll())
 			{
 				if (HasSelectedAncestor(context.selection, *actor)) continue;
-				auto entity = ly::SceneSerializer::SaveSubtree(*actor);
+				auto entity = vega::SceneSerializer::SaveSubtree(*actor);
 				if (entity.is_null()) return nlohmann::json::array();
 				entity.erase("parent");
 				entity["properties"]["Location"] = { actor->GetActorLocation().x, actor->GetActorLocation().y };

@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class CrescentReaverProjectileActor final : public AbilityWorldActor
 	{

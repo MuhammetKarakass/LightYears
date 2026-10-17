@@ -15,7 +15,7 @@
 #include "framework/BackgroundLayer.h"
 #include "gameConfigs/world/EnvironmentConfig.h"
 
-namespace ly
+namespace vega
 {
 	LevelOne::LevelOne(Application* owningApp)
 		:GameLevel(owningApp),

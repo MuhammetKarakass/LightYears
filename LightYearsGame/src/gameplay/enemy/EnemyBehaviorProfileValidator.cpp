@@ -5,7 +5,7 @@
 #include <cmath>
 #include <set>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

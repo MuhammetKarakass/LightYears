@@ -1,6 +1,6 @@
 #include "gameplay/ability/loadout/AbilityInventory.h"
 
-namespace ly
+namespace vega
 {
 	bool AbilityInventory::Add(const std::string& abilityId)
 	{

@@ -6,7 +6,7 @@
 #include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
 #include "gameplay/temporal/TemporalRateModifierLedger.h"
 
-namespace ly
+namespace vega
 {
 	class IroncladProtocolAbility final : public GameAbilityBehavior
 	{

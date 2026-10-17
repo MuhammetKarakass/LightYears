@@ -9,7 +9,7 @@
 #include "player/PlayerRespawnDefinition.h"
 #include "player/PlayerRespawnSystem.h"
 
-namespace ly
+namespace vega
 {
 	class ArenaBoundaryIndicator;
 	class PlayerSpaceShip;

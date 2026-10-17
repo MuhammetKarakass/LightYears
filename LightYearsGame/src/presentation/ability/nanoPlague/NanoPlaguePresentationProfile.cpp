@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/nanoPlague/NanoPlaguePresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterNanoPlaguePresentationProfiles()
 	{

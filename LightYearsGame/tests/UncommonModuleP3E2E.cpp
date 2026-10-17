@@ -8,7 +8,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace common_module_e2e;
 	void ContentChecks(Report& report)
 	{
@@ -96,7 +96,7 @@ namespace
 			const auto enemy = level->SpawnActor<SpaceShip>(definition).lock();
 			report.Check(enemy != nullptr, "P3 creates a real enemy combatant");
 			level->TickInternal(0.f);
-			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
+			enemy->SetCollisionLayer(vega::GameCollision::Enemy);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
 			DamagePayload payload;
 			payload.criticalPolicy = DamageCriticalPolicy::Disabled;
@@ -371,7 +371,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2 && argc != 3) return 2;
 	const bool killsOnly = argc == 3 && std::string{ argv[2] } == "kills";
 	const bool wardOnly = argc == 3 && std::string{ argv[2] } == "killward";

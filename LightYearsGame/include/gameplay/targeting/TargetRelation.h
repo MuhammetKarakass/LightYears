@@ -4,7 +4,7 @@
 
 #include "framework/Actor.h"
 
-namespace ly::targeting
+namespace vega::targeting
 {
 	// Combat target selection should derive allegiance from the source actor in
 	// exactly one place. Ability-specific code may still add its own shape,

@@ -5,7 +5,7 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/HealthComponent.h"
 
-namespace ly
+namespace vega
 {
 	// Shared base for player-owned summons that are real combat targets. It keeps
 	// life/armor/critical ownership outside individual abilities while leaving

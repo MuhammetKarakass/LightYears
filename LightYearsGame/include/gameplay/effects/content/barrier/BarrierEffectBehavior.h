@@ -3,7 +3,7 @@
 #include "effects/ActiveGameplayEffect.h"
 #include "effects/GameplayEffectBehaviorResult.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	struct DamageContext;

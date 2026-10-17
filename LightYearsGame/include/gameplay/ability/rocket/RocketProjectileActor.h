@@ -7,7 +7,7 @@
 
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class AreaTelegraphActor;
 	class RocketVisualActor;

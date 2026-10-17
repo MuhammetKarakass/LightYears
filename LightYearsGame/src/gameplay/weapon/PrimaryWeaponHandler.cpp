@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	float PrimaryWeaponRuntimeState::GetFeatureValue(
 		const sas::AttributeId& key,

@@ -14,7 +14,7 @@
 #include <cmath>
 #include <unordered_set>
 
-namespace ly
+namespace vega
 {
 	ScorchDriveTrailCoordinatorActor::ScorchDriveTrailCoordinatorActor(
 		World* world,

@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <variant>
 
-namespace ly
+namespace vega
 {
 	GameAbility::GameAbility(
 		LightYearsAbilitySystemComponent& abilitySystem,
@@ -729,7 +729,7 @@ namespace ly
 	}
 }
 
-namespace ly
+namespace vega
 {
 	std::string GameAbility::DebugActivationBlockReason() const
 	{

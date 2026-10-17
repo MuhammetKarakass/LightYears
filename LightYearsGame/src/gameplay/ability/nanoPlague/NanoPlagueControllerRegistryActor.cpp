@@ -6,7 +6,7 @@
 #include <limits>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	NanoPlagueControllerRegistryActor::Registration::Registration(
 		weak_ptr<NanoPlagueControllerRegistryActor> registry,

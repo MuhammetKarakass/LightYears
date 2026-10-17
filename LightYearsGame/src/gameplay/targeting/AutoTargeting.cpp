@@ -8,7 +8,7 @@
 #include <cmath>
 #include <unordered_set>
 
-namespace ly
+namespace vega
 {
 	namespace targeting
 	{

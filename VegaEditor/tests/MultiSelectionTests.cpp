@@ -13,14 +13,14 @@
 
 namespace
 {
-	class MultiActor : public ly::Actor
+	class MultiActor : public vega::Actor
 	{
 	public:
 		using Actor::Actor;
 		bool reject = false;
 		int value = 0;
 		std::vector<sf::Vector2f> points;
-		ly::ActorRef target;
+		vega::ActorRef target;
 	};
 	// A reflected struct used by the struct Inspector and editor-script paths; members are public for assertions.
 	struct StructWave
@@ -31,14 +31,14 @@ namespace
 		float delay = 0.f;
 		bool armed = false;
 	};
-	class StructHost : public ly::Actor
+	class StructHost : public vega::Actor
 	{
 	public:
 		using Actor::Actor;
 		StructWave boss;
 		std::vector<StructWave> waves;
 	};
-	class SharedComponent : public ly::ActorComponent
+	class SharedComponent : public vega::ActorComponent
 	{
 	public:
 		using ActorComponent::ActorComponent;
@@ -68,7 +68,7 @@ namespace
 	void TestMultiCommands()
 	{
 		using namespace vega;
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		EditorSelection selection;
 		EditorContext context{ &world, selection };
 		EditorCamera camera;
@@ -76,17 +76,17 @@ namespace
 		CommandHistory history{ context };
 		auto a = world.SpawnActor<MultiActor>().lock();
 		auto b = world.SpawnActor<MultiActor>().lock();
-		auto c = world.SpawnActor<ly::Actor>().lock();
-		const auto guidA = a->AddComponent<ly::SceneEntityComponent>().guid;
-		const auto guidB = b->AddComponent<ly::SceneEntityComponent>().guid;
-		const auto guidC = c->AddComponent<ly::SceneEntityComponent>().guid;
+		auto c = world.SpawnActor<vega::Actor>().lock();
+		const auto guidA = a->AddComponent<vega::SceneEntityComponent>().guid;
+		const auto guidB = b->AddComponent<vega::SceneEntityComponent>().guid;
+		const auto guidC = c->AddComponent<vega::SceneEntityComponent>().guid;
 		a->SetActorLocation({ 0.f, 0.f });
 		b->SetActorLocation({ 100.f, 0.f });
 		c->SetActorLocation({ 50.f, 30.f });
 		a->AddComponent<FirstComponent>();
 		b->AddComponent<SecondComponent>();
-		a->AddComponent<ly::SpriteComponent>();
-		b->AddComponent<ly::SpriteComponent>();
+		a->AddComponent<vega::SpriteComponent>();
+		b->AddComponent<vega::SpriteComponent>();
 		selection.Add(a); selection.Add(b); selection.Add(c);
 		const auto starts = CaptureSelectionTransform(selection);
 		const auto group = history.BeginMergeGroup();
@@ -154,9 +154,9 @@ namespace
 		Check(bounds && camera.GetView().getCenter() == bounds->position + bounds->size * .5f, "Focus must frame combined bounds");
 		Check(DuplicateSceneEntity(context, history) && selection.Count() == 3 && history.UndoCount() == 1, "Duplicate must select three copies as one command");
 		const auto copies = selection.GetAll();
-		Check(copies[0]->FindComponent<ly::SceneEntityComponent>()->guid != guidA && Near(copies[1]->GetActorLocation() - copies[0]->GetActorLocation(), { 100.f, 0.f }), "Duplicate must generate GUIDs and preserve layout");
+		Check(copies[0]->FindComponent<vega::SceneEntityComponent>()->guid != guidA && Near(copies[1]->GetActorLocation() - copies[0]->GetActorLocation(), { 100.f, 0.f }), "Duplicate must generate GUIDs and preserve layout");
 		Check(history.Undo() && selection.Count() == 3 && selection.Get() == c && context.ResolveGuid(guidA) == a, "Duplicate undo must restore original ordered selection");
-		Check(history.Redo() && selection.Count() == 3 && selection.Get()->FindComponent<ly::SceneEntityComponent>()->guid == copies[2]->FindComponent<ly::SceneEntityComponent>()->guid,
+		Check(history.Redo() && selection.Count() == 3 && selection.Get()->FindComponent<vega::SceneEntityComponent>()->guid == copies[2]->FindComponent<vega::SceneEntityComponent>()->guid,
 			"Duplicate redo must restore all copies by GUID");
 		history.Undo(); history.Clear();
 		Check(DeleteSelection(context, history) && selection.Count() == 0 && history.UndoCount() == 1, "Delete must remove the whole selection in one entry");
@@ -169,8 +169,8 @@ namespace
 		Check(history.Execute(std::make_unique<AddComponentCommand>(first->GetUniqueID(), "SpriteComponent")) && selection.Count() == 3 && selection.Get() == primary,
 			"Component replacement must preserve secondary selection and primary");
 		Check(history.Undo() && selection.Count() == 3, "Component undo must preserve every selection");
-		ly::World restored{ nullptr };
-		ly::SceneSerializer::Load(restored, ly::SceneSerializer::Save(world));
+		vega::World restored{ nullptr };
+		vega::SceneSerializer::Load(restored, vega::SceneSerializer::Save(world));
 		context.world = &restored;
 		context.SceneChanged();
 		Check(selection.Count() == 3 && selection.Get() == context.ResolveGuid(guidC), "World reconstruction must rebind the whole selection");
@@ -184,24 +184,24 @@ namespace
 
 	void TestCollisionInspector()
 	{
-		ly::EngineContext first, second;
-		ly::ProjectSettings project;
+		vega::EngineContext first, second;
+		vega::ProjectSettings project;
 		project.collisionLayers = { { 0, "Solid", {} }, { 7, "Sensor", {} } };
 		project.ApplyCollisionLayers(first);
 		project.collisionLayers = { { 0, "Other", {} } };
 		project.ApplyCollisionLayers(second);
 		for (auto* services : { &first, &second })
 		{
-			ly::World world{ *services };
+			vega::World world{ *services };
 			vega::EditorSelection selection;
 			vega::EditorContext context{ &world, selection };
 			context.services = services;
 			vega::CommandHistory history{ context };
 			for (int index = 0; index < 2; ++index)
 			{
-				auto actor = world.SpawnActor<ly::Actor>().lock();
-				actor->AddComponent<ly::SceneEntityComponent>();
-				actor->AddComponent<ly::CollisionComponent>();
+				auto actor = world.SpawnActor<vega::Actor>().lock();
+				actor->AddComponent<vega::SceneEntityComponent>();
+				actor->AddComponent<vega::CollisionComponent>();
 				selection.Add(actor);
 			}
 			vega::MultiInspectorCache cache;
@@ -221,13 +221,13 @@ namespace
 	}
 	void TestSelectionInvalidation()
 	{
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &world, selection };
 		auto a = world.SpawnActor<MultiActor>().lock();
 		auto b = world.SpawnActor<MultiActor>().lock();
 		auto c = world.SpawnActor<MultiActor>().lock();
-		const auto guid = a->AddComponent<ly::SceneEntityComponent>().guid;
+		const auto guid = a->AddComponent<vega::SceneEntityComponent>().guid;
 		selection.Add(a); selection.Add(b); selection.Add(c);
 		vega::MultiInspectorCache cache;
 		Check(!cache.Get(context).empty(), "Inspector cache fixture must expose properties");
@@ -236,7 +236,7 @@ namespace
 		Check(selection.Revision() > revision && selection.Count() == 2, "Pending destruction must invalidate cached selection values");
 		for (const auto& row : cache.Get(context)) Check(row.targets.size() == 2, "Inspector retained a destroyed secondary target");
 		const auto replacement = world.SpawnActor<MultiActor>().lock();
-		replacement->AddComponent<ly::SceneEntityComponent>().guid = guid;
+		replacement->AddComponent<vega::SceneEntityComponent>().guid = guid;
 		selection.Add(replacement);
 		context.SceneChanged();
 		Check(selection.Count() == 3, "Re-adding a recreated GUID must preserve set uniqueness");
@@ -247,12 +247,12 @@ namespace
 	void TestRichProperties()
 	{
 		using namespace vega;
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		EditorSelection selection;
 		EditorContext context{ &world, selection };
 		CommandHistory history{context};
 		auto a = world.SpawnActor<MultiActor>().lock(), b = world.SpawnActor<MultiActor>().lock();
-		a->AddComponent<ly::SceneEntityComponent>("rich-a", "A"); b->AddComponent<ly::SceneEntityComponent>("rich-b", "B");
+		a->AddComponent<vega::SceneEntityComponent>("rich-a", "A"); b->AddComponent<vega::SceneEntityComponent>("rich-b", "B");
 		a->points = {{1,2}}; b->points = {{3,4}};
 		selection.Add(a); selection.Add(b);
 		MultiInspectorCache cache;
@@ -262,14 +262,14 @@ namespace
 			throw std::runtime_error("Missing list inspector row");
 		};
 		Check(find().mixed, "Different lists must mark the entire common property mixed");
-		Check(SetCommonProperty(context, history, find(), ly::reflect::PropertyList{sf::Vector2f{8,9}}) && history.UndoCount() == 1, "Common list edit must be one undo step");
+		Check(SetCommonProperty(context, history, find(), vega::reflect::PropertyList{sf::Vector2f{8,9}}) && history.UndoCount() == 1, "Common list edit must be one undo step");
 		Check(!find().mixed && a->points == b->points, "Common list cache must refresh by revision");
 		Check(history.Undo() && find().mixed && a->points[0].x == 1 && b->points[0].x == 3, "Undo must restore each complete list");
 		history.Clear();
 		const auto group = history.BeginMergeGroup();
-		for (float x : {10.f,20.f,30.f}) history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, "Points", ly::reflect::PropertyList{sf::Vector2f{x,2}}, group));
+		for (float x : {10.f,20.f,30.f}) history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, "Points", vega::reflect::PropertyList{sf::Vector2f{x,2}}, group));
 		Check(history.UndoCount() == 1 && history.Undo() && a->points[0].x == 1, "Point drag updates must merge into one undo gesture");
-		a->target = ly::ActorRef{*b}; b->target = ly::ActorRef{*a};
+		a->target = vega::ActorRef{*b}; b->target = vega::ActorRef{*a};
 		Check(DuplicateSceneEntity(context, history), "Connected multi-selection must duplicate");
 		const auto copies = selection.GetAll();
 		if (copies.size() == 2)
@@ -282,19 +282,19 @@ namespace
 	void TestStructProperties()
 	{
 		using namespace vega;
-		using ly::reflect::PropertyList;
-		using ly::reflect::StructValue;
-		ly::World world{ nullptr };
+		using vega::reflect::PropertyList;
+		using vega::reflect::StructValue;
+		vega::World world{ nullptr };
 		EditorSelection selection;
 		EditorContext context{ &world, selection };
 		CommandHistory history{ context };
 		auto a = world.SpawnActor<StructHost>().lock(), b = world.SpawnActor<StructHost>().lock();
-		a->AddComponent<ly::SceneEntityComponent>("struct-a", "A");
-		b->AddComponent<ly::SceneEntityComponent>("struct-b", "B");
+		a->AddComponent<vega::SceneEntityComponent>("struct-a", "A");
+		b->AddComponent<vega::SceneEntityComponent>("struct-b", "B");
 		const auto target = ResolvePropertyTarget(*a, {});
 		std::string error;
 		// Writes one leaf through a path the way the editor script does, returning whether the command ran.
-		const auto writeLeaf = [&](const std::string& text, ly::reflect::LeafValue leaf)
+		const auto writeLeaf = [&](const std::string& text, vega::reflect::LeafValue leaf)
 		{
 			StructLeafPath path;
 			if (!ResolveStructLeafPath(target, text, path, error)) return false;
@@ -399,31 +399,31 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
-	ly::reflect::RegisterEngineTypes();
-	ly::reflect::Class<ly::Actor>("Actor").Spawnable();
-	ly::reflect::Class<MultiActor, ly::Actor>("MultiActor").Spawnable()
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
+	vega::reflect::RegisterEngineTypes();
+	vega::reflect::Class<vega::Actor>("Actor").Spawnable();
+	vega::reflect::Class<MultiActor, vega::Actor>("MultiActor").Spawnable()
 		.Property("Test Value", [](const MultiActor& actor) { ++getterReads; return actor.value; }, [](MultiActor& actor, int value)
 		{
 			if (actor.reject) throw std::runtime_error("Rejected test value");
 			actor.value = value;
 		});
-	ly::reflect::Class<MultiActor, ly::Actor>("MultiActor")
+	vega::reflect::Class<MultiActor, vega::Actor>("MultiActor")
 		.Property("Points", [](const MultiActor& a) { return a.points; }, [](MultiActor& a, const std::vector<sf::Vector2f>& v) { a.points = v; })
-		.Property("Target", [](const MultiActor& a) { return a.target; }, [](MultiActor& a, const ly::ActorRef& v) { a.target = v; });
-	ly::reflect::Class<StructWave>("StructWave")
+		.Property("Target", [](const MultiActor& a) { return a.target; }, [](MultiActor& a, const vega::ActorRef& v) { a.target = v; });
+	vega::reflect::Class<StructWave>("StructWave")
 		.Field("Prefab", &StructWave::prefab)
 		.Field("Count", &StructWave::count).Range(1.f, 50.f)
 		.Field("Delay", &StructWave::delay).Range(0.f, 60.f)
 		.Field("Armed", &StructWave::armed);
-	ly::reflect::Class<StructHost, ly::Actor>("StructHost").Spawnable()
+	vega::reflect::Class<StructHost, vega::Actor>("StructHost").Spawnable()
 		.Property("Boss", [](const StructHost& host) { return host.boss; }, [](StructHost& host, const StructWave& value) { host.boss = value; })
 		.Property("Waves", [](const StructHost& host) { return host.waves; }, [](StructHost& host, const std::vector<StructWave>& value) { host.waves = value; });
-	ly::reflect::Class<SharedComponent, ly::ActorComponent>("SharedComponent")
+	vega::reflect::Class<SharedComponent, vega::ActorComponent>("SharedComponent")
 		.Property("Strength", [](const SharedComponent& component) { return component.strength; }, [](SharedComponent& component, int value) { component.strength = value; });
-	ly::reflect::Class<FirstComponent, SharedComponent>("FirstComponent").Addable();
-	ly::reflect::Class<SecondComponent, SharedComponent>("SecondComponent").Addable();
+	vega::reflect::Class<FirstComponent, SharedComponent>("FirstComponent").Addable();
+	vega::reflect::Class<SecondComponent, SharedComponent>("SecondComponent").Addable();
 	TestMultiCommands();
 	TestCollisionInspector();
 	TestSelectionInvalidation();

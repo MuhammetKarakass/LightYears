@@ -41,10 +41,10 @@ namespace common_module_e2e
 {
 	using Json = nlohmann::json;
 
-	class HeadlessModuleLevel final : public ly::GameLevel
+	class HeadlessModuleLevel final : public vega::GameLevel
 	{
 	public:
-		explicit HeadlessModuleLevel(ly::Application* application) : GameLevel{ application } {}
+		explicit HeadlessModuleLevel(vega::Application* application) : GameLevel{ application } {}
 
 	protected:
 		void InitializeLevelSystems() override {}
@@ -79,21 +79,21 @@ namespace common_module_e2e
 		return std::abs(left - right) < 0.001f;
 	}
 
-	inline const ly::ModuleDefinition* FindModule(const ly::ModuleRulesContext& rules, const char* moduleId)
+	inline const vega::ModuleDefinition* FindModule(const vega::ModuleRulesContext& rules, const char* moduleId)
 	{
 		return rules.lookup ? rules.lookup(moduleId) : nullptr;
 	}
 
 	inline std::optional<std::pair<sf::Vector2i, int>> FindPlacement(
-		const ly::ModuleRulesContext& rules,
-		const ly::ModuleLoadout& loadout,
-		const ly::ModuleDefinition& module,
+		const vega::ModuleRulesContext& rules,
+		const vega::ModuleLoadout& loadout,
+		const vega::ModuleDefinition& module,
 		std::uint32_t instanceId,
 		std::uint32_t ignoredInstanceId = 0,
 		std::optional<sf::Vector2i> excludedOrigin = std::nullopt
 	)
 	{
-		ly::ModulePlacement candidate;
+		vega::ModulePlacement candidate;
 		candidate.instanceId = instanceId;
 		candidate.moduleId = module.moduleId;
 		for (int rotation = 0; rotation < 4; ++rotation)
@@ -105,8 +105,8 @@ namespace common_module_e2e
 					candidate.origin = { x, y };
 					candidate.rotationQuarterTurns = rotation;
 					if (excludedOrigin && candidate.origin == *excludedOrigin) continue;
-					if (ly::ModulePlacementRules::CanPlace(rules, loadout, candidate, ignoredInstanceId) ==
-						ly::ModulePlacementFailure::None)
+					if (vega::ModulePlacementRules::CanPlace(rules, loadout, candidate, ignoredInstanceId) ==
+						vega::ModulePlacementFailure::None)
 					{
 						return std::make_pair(candidate.origin, rotation);
 					}
@@ -116,17 +116,17 @@ namespace common_module_e2e
 		return std::nullopt;
 	}
 
-	inline std::optional<ly::ModulePlacement> FindPlacementWithBestZoneBonus(
-		const ly::ModuleRulesContext& rules,
-		const ly::ModuleLoadout& loadout,
-		const ly::ModuleDefinition& module,
+	inline std::optional<vega::ModulePlacement> FindPlacementWithBestZoneBonus(
+		const vega::ModuleRulesContext& rules,
+		const vega::ModuleLoadout& loadout,
+		const vega::ModuleDefinition& module,
 		std::uint32_t instanceId
 	)
 	{
-		ly::ModulePlacement candidate;
+		vega::ModulePlacement candidate;
 		candidate.instanceId = instanceId;
 		candidate.moduleId = module.moduleId;
-		std::optional<ly::ModulePlacement> bestPlacement;
+		std::optional<vega::ModulePlacement> bestPlacement;
 		float bestBonus = -1.f;
 		for (int rotation = 0; rotation < 4; ++rotation)
 		{
@@ -136,8 +136,8 @@ namespace common_module_e2e
 				{
 					candidate.origin = { x, y };
 					candidate.rotationQuarterTurns = rotation;
-					if (ly::ModulePlacementRules::CanPlace(rules, loadout, candidate) != ly::ModulePlacementFailure::None) continue;
-					const float bonus = ly::ModuleResolver::GetZoneBonus(rules, module, candidate);
+					if (vega::ModulePlacementRules::CanPlace(rules, loadout, candidate) != vega::ModulePlacementFailure::None) continue;
+					const float bonus = vega::ModuleResolver::GetZoneBonus(rules, module, candidate);
 					if (bonus > bestBonus)
 					{
 						bestBonus = bonus;
@@ -150,15 +150,15 @@ namespace common_module_e2e
 	}
 
 	inline std::optional<std::pair<sf::Vector2i, int>> FindPlacementWithCooldownZone(
-		const ly::ModuleRulesContext& rules,
-		const ly::ModuleLoadout& loadout,
-		const ly::ModuleDefinition& module,
+		const vega::ModuleRulesContext& rules,
+		const vega::ModuleLoadout& loadout,
+		const vega::ModuleDefinition& module,
 		std::uint32_t instanceId,
-		const ly::GameplayTag& zone,
+		const vega::GameplayTag& zone,
 		std::uint32_t ignoredInstanceId = 0
 	)
 	{
-		ly::ModulePlacement candidate;
+		vega::ModulePlacement candidate;
 		candidate.instanceId = instanceId;
 		candidate.moduleId = module.moduleId;
 		for (int rotation = 0; rotation < 4; ++rotation)
@@ -169,27 +169,27 @@ namespace common_module_e2e
 				{
 					candidate.origin = { x, y };
 					candidate.rotationQuarterTurns = rotation;
-					if (ly::ModulePlacementRules::CanPlace(rules, loadout, candidate, ignoredInstanceId) !=
-						ly::ModulePlacementFailure::None) continue;
-					const ly::ModuleSizeVariant& variant = module.sizeVariants[static_cast<std::size_t>(candidate.variantIndex)];
-					const ly::List<sf::Vector2i> cells = ly::ModuleShapeRules::Rotate(variant.shape.cells, rotation);
+					if (vega::ModulePlacementRules::CanPlace(rules, loadout, candidate, ignoredInstanceId) !=
+						vega::ModulePlacementFailure::None) continue;
+					const vega::ModuleSizeVariant& variant = module.sizeVariants[static_cast<std::size_t>(candidate.variantIndex)];
+					const vega::List<sf::Vector2i> cells = vega::ModuleShapeRules::Rotate(variant.shape.cells, rotation);
 					const bool fitsZone = std::all_of(cells.begin(), cells.end(), [&rules, &candidate, &zone](const sf::Vector2i& cell)
 					{
 						return rules.schematic.GetZoneAt(candidate.origin.x + cell.x, candidate.origin.y + cell.y) == zone;
 					});
 					if (!fitsZone) continue;
 
-					ly::List<ly::ModulePlacement> placements = loadout.GetPlacements();
+					vega::List<vega::ModulePlacement> placements = loadout.GetPlacements();
 					placements.erase(std::remove_if(placements.begin(), placements.end(),
-						[instanceId](const ly::ModulePlacement& placement) { return placement.instanceId == instanceId; }), placements.end());
+						[instanceId](const vega::ModulePlacement& placement) { return placement.instanceId == instanceId; }), placements.end());
 					placements.push_back(candidate);
-					const auto effects = ly::ModuleResolver::Resolve(rules, placements);
+					const auto effects = vega::ModuleResolver::Resolve(rules, placements);
 					const bool resolvesZone = std::any_of(effects.cooldownRules.begin(), effects.cooldownRules.end(),
-						[instanceId, &zone](const ly::ResolvedModuleCooldownRule& rule)
+						[instanceId, &zone](const vega::ResolvedModuleCooldownRule& rule)
 						{
 							return rule.instanceId == instanceId && rule.zone == zone;
 						});
-					if (zone == ly::GameplayTag{ "Module.Zone.Nose" } ? !resolvesZone : resolvesZone)
+					if (zone == vega::GameplayTag{ "Module.Zone.Nose" } ? !resolvesZone : resolvesZone)
 						return std::make_pair(candidate.origin, rotation);
 				}
 			}
@@ -199,24 +199,24 @@ namespace common_module_e2e
 
 	inline std::uint32_t AddAndInstall(
 		Report& report,
-		ly::ModuleLoadout& loadout,
-		const ly::ModuleRulesContext& rules,
+		vega::ModuleLoadout& loadout,
+		const vega::ModuleRulesContext& rules,
 		const char* moduleId
 	)
 	{
-		const ly::ModuleDefinition* module = FindModule(rules, moduleId);
+		const vega::ModuleDefinition* module = FindModule(rules, moduleId);
 		report.Check(module != nullptr, std::string{ "catalog contains " } + moduleId);
 		const std::uint32_t instanceId = loadout.AddToInventory(module->moduleId);
 		const auto placement = FindPlacement(rules, loadout, *module, instanceId);
 		report.Check(placement.has_value(), std::string{ "free schematic cell for " } + moduleId);
 		report.Check(loadout.Install(rules, instanceId, placement->first, placement->second) ==
-			ly::ModulePlacementFailure::None, std::string{ "install " } + moduleId);
+			vega::ModulePlacementFailure::None, std::string{ "install " } + moduleId);
 		return instanceId;
 	}
 
-	inline ly::ModulePlacement FindInstalled(const ly::ModuleLoadout& loadout, std::uint32_t instanceId)
+	inline vega::ModulePlacement FindInstalled(const vega::ModuleLoadout& loadout, std::uint32_t instanceId)
 	{
-		const ly::ModulePlacement* placement = loadout.FindPlacement(instanceId);
+		const vega::ModulePlacement* placement = loadout.FindPlacement(instanceId);
 		if (!placement) throw std::runtime_error{ "installed module instance disappeared" };
 		return *placement;
 	}
@@ -224,24 +224,24 @@ namespace common_module_e2e
 	class RemoveModuleOnAttributeChange final
 	{
 	public:
-		RemoveModuleOnAttributeChange(ly::ModuleLoadout& loadout, ly::ShipModuleApplier& applier,
-			const ly::ModuleRulesContext& rules, std::uint32_t instanceId)
+		RemoveModuleOnAttributeChange(vega::ModuleLoadout& loadout, vega::ShipModuleApplier& applier,
+			const vega::ModuleRulesContext& rules, std::uint32_t instanceId)
 			: mLoadout{ loadout }, mApplier{ applier }, mRules{ rules }, mInstanceId{ instanceId }
 		{
 		}
 
 		void OnAttributeChanged(sas::AttributeId id, float previousValue, float value)
 		{
-			if (mRemoved || id != ly::OwnerAttributeIds::EnergyPower || value <= previousValue) return;
+			if (mRemoved || id != vega::OwnerAttributeIds::EnergyPower || value <= previousValue) return;
 			mRemoved = mLoadout.Uninstall(mInstanceId) && mApplier.Apply(mLoadout, mRules);
 		}
 
 		bool WasRemoved() const { return mRemoved; }
 
 	private:
-		ly::ModuleLoadout& mLoadout;
-		ly::ShipModuleApplier& mApplier;
-		const ly::ModuleRulesContext& mRules;
+		vega::ModuleLoadout& mLoadout;
+		vega::ShipModuleApplier& mApplier;
+		const vega::ModuleRulesContext& mRules;
 		std::uint32_t mInstanceId;
 		bool mRemoved = false;
 	};
@@ -250,46 +250,46 @@ namespace common_module_e2e
 	{
 		float originalDamage = 0.f;
 		bool wasCritical = false;
-		ly::List<ly::GameplayTag> damageTags;
-		ly::List<ly::GameplayTag> sourceAbilityTags;
+		vega::List<vega::GameplayTag> damageTags;
+		vega::List<vega::GameplayTag> sourceAbilityTags;
 		bool skippedModuleRules = false;
 	};
 
 	class DamageCapture final
 	{
 	public:
-		void OnDamage(const ly::DamageContext& context)
+		void OnDamage(const vega::DamageContext& context)
 		{
 			records.push_back({ context.originalDamage, context.wasCritical, context.damageTags,
 				context.sourceAbilityTags, context.payload.skipModuleDamageRules });
 		}
 
-		ly::List<CapturedDamage> records;
+		vega::List<CapturedDamage> records;
 	};
 
 	class RemoveShatterCurrentOnPrimaryDamage final
 	{
 	public:
-		RemoveShatterCurrentOnPrimaryDamage(ly::ModuleLoadout& loadout, ly::ShipModuleApplier& applier,
-			const ly::ModuleRulesContext& rules, std::uint32_t instanceId)
+		RemoveShatterCurrentOnPrimaryDamage(vega::ModuleLoadout& loadout, vega::ShipModuleApplier& applier,
+			const vega::ModuleRulesContext& rules, std::uint32_t instanceId)
 			: mLoadout{ loadout }, mApplier{ applier }, mRules{ rules }, mInstanceId{ instanceId }
 		{
 		}
 
-		void OnDamage(const ly::DamageContext& context)
+		void OnDamage(const vega::DamageContext& context)
 		{
 			if (mRemoved || context.payload.skipModuleDamageRules ||
 				!std::any_of(context.sourceAbilityTags.begin(), context.sourceAbilityTags.end(),
-					[](const ly::GameplayTag& tag) { return tag.MatchesTag(ly::GameplayTags::Ability::Primary); })) return;
+					[](const vega::GameplayTag& tag) { return tag.MatchesTag(vega::GameplayTags::Ability::Primary); })) return;
 			mRemoved = mLoadout.Uninstall(mInstanceId) && mApplier.Apply(mLoadout, mRules);
 		}
 
 		bool WasRemoved() const { return mRemoved; }
 
 	private:
-		ly::ModuleLoadout& mLoadout;
-		ly::ShipModuleApplier& mApplier;
-		const ly::ModuleRulesContext& mRules;
+		vega::ModuleLoadout& mLoadout;
+		vega::ShipModuleApplier& mApplier;
+		const vega::ModuleRulesContext& mRules;
 		std::uint32_t mInstanceId;
 		bool mRemoved = false;
 	};
@@ -297,22 +297,22 @@ namespace common_module_e2e
 	class DestroyTargetOnPrimaryDamage final
 	{
 	public:
-		explicit DestroyTargetOnPrimaryDamage(ly::Actor& target) : mTarget{ target } {}
+		explicit DestroyTargetOnPrimaryDamage(vega::Actor& target) : mTarget{ target } {}
 
-		void OnDamage(const ly::DamageContext& context)
+		void OnDamage(const vega::DamageContext& context)
 		{
 			if (!context.payload.skipModuleDamageRules && std::any_of(context.sourceAbilityTags.begin(), context.sourceAbilityTags.end(),
-				[](const ly::GameplayTag& tag) { return tag.MatchesTag(ly::GameplayTags::Ability::Primary); })) mTarget.Destroy();
+				[](const vega::GameplayTag& tag) { return tag.MatchesTag(vega::GameplayTags::Ability::Primary); })) mTarget.Destroy();
 		}
 
 	private:
-		ly::Actor& mTarget;
+		vega::Actor& mTarget;
 	};
 
 
-	void RunCommonModuleChecks(Report& report, ly::Application& application);
-	void RunCooldownModuleChecks(Report& report, ly::Application& application);
-	void RunFullMagazineChecks(Report& report, ly::Application& application);
+	void RunCommonModuleChecks(Report& report, vega::Application& application);
+	void RunCooldownModuleChecks(Report& report, vega::Application& application);
+	void RunFullMagazineChecks(Report& report, vega::Application& application);
 
 	inline void WriteArtifact(const std::filesystem::path& path, const Json& artifact)
 	{

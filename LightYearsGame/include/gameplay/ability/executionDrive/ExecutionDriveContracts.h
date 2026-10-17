@@ -12,25 +12,25 @@ namespace AbilityData::ExecutionDrive
 			"Ability.Offense.ExecutionDrive.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::ExecutionDrive
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Offense };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::ExecutionDrive
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::ExecutionDrive::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::ExecutionDrive::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::ExecutionDrive::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::ExecutionDrive::Started
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::ExecutionDrive::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::ExecutionDrive::Ended
 		};
 	};
 
@@ -51,6 +51,6 @@ namespace AbilityData::ExecutionDrive
 		inline static const sas::AttributeId MoveSpeedBonus{
 			"Ability.Offense.ExecutionDrive.MoveSpeedBonus"
 		};
-		inline static const sas::AttributeId Range = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Range = vega::CommonAttributeIds::Range;
 	};
 }

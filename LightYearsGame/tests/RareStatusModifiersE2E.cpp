@@ -22,7 +22,7 @@
 
 namespace rare_status_modifiers_e2e
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace uncommon_p4_e2e;
 	using Json = common_module_e2e::Json;
 
@@ -212,7 +212,7 @@ namespace rare_status_modifiers_e2e
 
 		void PrecheckDoT(Report& report)
 		{
-			const auto& balance = ly::content::DamageStatusBalanceCatalog::Get();
+			const auto& balance = vega::content::DamageStatusBalanceCatalog::Get();
 			const float totalDoT = balance.ThermalDamagePerSecond(balance.thermal.maxStacks) * balance.thermal.duration;
 			report.Check(std::abs(totalDoT - kFourStackDoT) < 1e-3f, "precondition: four-stack Thermal DoT is 5 DPS x 5 s from damage_status_balance.json",
 				Json{ { "totalDoT", totalDoT } });
@@ -501,7 +501,7 @@ namespace rare_status_modifiers_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_status_modifiers_e2e;
 	if (argc != 2) return 2;
 	Report report;

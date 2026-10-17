@@ -13,11 +13,11 @@ source_files:
   - LightYearsGame/src/player/Player.cpp
   - LightYearsGame/src/gameplay/ship/ShipRuntime.cpp
 symbols:
-  - ly::ShipProgression
-  - ly::ShipProgression::AddXP
-  - ly::ShipProgression::BindAttributes
-  - ly::ShipRuntime::RecalculateAttributes
-  - ly::Player::AwardShipXP
+  - vega::ShipProgression
+  - vega::ShipProgression::AddXP
+  - vega::ShipProgression::BindAttributes
+  - vega::ShipRuntime::RecalculateAttributes
+  - vega::Player::AwardShipXP
 related:
   - "[[Ship Progression and Respawn Flow]]"
   - "[[ShipProgression]]"

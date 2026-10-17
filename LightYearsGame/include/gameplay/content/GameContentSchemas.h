@@ -1,2 +1,2 @@
 #pragma once
-namespace ly::content { void RegisterGameContentSchemas(); }
+namespace vega::content { void RegisterGameContentSchemas(); }

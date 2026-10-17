@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	class ChainLightningAbilityLifetimeState;
 

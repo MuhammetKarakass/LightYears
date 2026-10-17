@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	WingSentinelActor::WingSentinelActor(World* world, Actor* owner, const WingSentinelsPresentationProfile& profile, Configuration configuration)
 		: AbilityWorldActor(world, owner), mProfile(profile), mConfiguration(configuration)

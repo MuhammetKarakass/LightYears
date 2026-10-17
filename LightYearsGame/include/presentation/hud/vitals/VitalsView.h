@@ -7,7 +7,7 @@
 #include "widget/ImageWidget.h"
 #include "widget/TextWidget.h"
 
-namespace ly
+namespace vega
 {
 	class VitalsView : public Panel
 	{

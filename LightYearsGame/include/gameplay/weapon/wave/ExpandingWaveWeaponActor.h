@@ -5,7 +5,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 
-namespace ly
+namespace vega
 {
 	// Gameplay actor for a travelling wave. Damage is applied once per target
 	// using a swept, widening collision test; rendering is only its presentation.

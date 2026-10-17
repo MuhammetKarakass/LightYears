@@ -4,7 +4,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Typed, family-local presentation data. Gameplay range, hit width and tick
 	// cadence remain actor attributes and are never visual profile switches.

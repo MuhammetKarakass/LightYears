@@ -12,23 +12,23 @@ namespace AbilityData::LanceDrive
 		inline static constexpr char Basic[] = "Ability.Movement.LanceDrive.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityMovement };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::LanceDrive };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTagSchema::AbilityMovement };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::LanceDrive };
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::LanceDrive::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::LanceDrive::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::LanceDrive::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::LanceDrive::Started
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::LanceDrive::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::LanceDrive::Ended
 		};
 	};
 

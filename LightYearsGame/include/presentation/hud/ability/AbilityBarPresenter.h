@@ -4,7 +4,7 @@
 #include "presentation/hud/ability/AbilityBarViewModel.h"
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	class PlayerSpaceShip;
 

@@ -12,7 +12,7 @@
 
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	bool CombatSentryAbility::Validate(
 		const GameAbilityDefinition& definition,

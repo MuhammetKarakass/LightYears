@@ -45,7 +45,7 @@ namespace vega
 		return true;
 	}
 
-	std::string ActorTypeName(const ly::Actor& actor)
+	std::string ActorTypeName(const vega::Actor& actor)
 	{
 		std::string name = typeid(actor).name();
 #ifdef __GNUG__
@@ -77,18 +77,18 @@ namespace vega
 		actorsByGuid.clear();
 		cachedWorldID = world->GetUniqueID();
 		cachedActorCount = count;
-		for (const auto& weak : world->GetActorsByTypeIncludingPending<ly::Actor>())
+		for (const auto& weak : world->GetActorsByTypeIncludingPending<vega::Actor>())
 		{
 			if (const auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy() && actor->GetWorld() == world)
 			{
 				actorsByID.emplace(actor->GetUniqueID(), actor);
-				if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>())
+				if (const auto* identity = actor->FindComponent<vega::SceneEntityComponent>())
 					actorsByGuid.emplace(identity->guid, actor);
 			}
 		}
 	}
 
-	std::shared_ptr<ly::Actor> EditorContext::Resolve(unsigned int id) const
+	std::shared_ptr<vega::Actor> EditorContext::Resolve(unsigned int id) const
 	{
 		RefreshActorCache();
 		auto entry = actorsByID.find(id);
@@ -103,16 +103,16 @@ namespace vega
 		return actor && actor->GetWorld() == world && !actor->GetIsPendingDestroy() ? actor : nullptr;
 	}
 
-	std::shared_ptr<ly::Actor> EditorContext::ResolveGuid(const std::string& guid) const
+	std::shared_ptr<vega::Actor> EditorContext::ResolveGuid(const std::string& guid) const
 	{
 		if (!world || guid.empty()) return {};
 		RefreshActorCache();
-		const auto find = [&]() -> std::shared_ptr<ly::Actor>
+		const auto find = [&]() -> std::shared_ptr<vega::Actor>
 		{
 			const auto entry = actorsByGuid.find(guid);
 			const auto actor = entry != actorsByGuid.end() ? entry->second.lock() : nullptr;
 			if (!actor || actor->GetWorld() != world || actor->GetIsPendingDestroy()) return {};
-			const auto* identity = actor->FindComponent<ly::SceneEntityComponent>();
+			const auto* identity = actor->FindComponent<vega::SceneEntityComponent>();
 			return identity && identity->guid == guid ? actor : nullptr;
 		};
 		if (auto actor = find()) return actor;
@@ -122,12 +122,12 @@ namespace vega
 		return find();
 	}
 
-	std::shared_ptr<ly::Actor> EditorContext::Resolve(unsigned int id, std::string& guid) const
+	std::shared_ptr<vega::Actor> EditorContext::Resolve(unsigned int id, std::string& guid) const
 	{
 		// Once captured, GUID is authoritative: a missing entity must not hit an unrelated runtime ID.
 		if (!guid.empty()) return ResolveGuid(guid);
 		const auto actor = Resolve(id);
-		if (const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr) guid = identity->guid;
+		if (const auto* identity = actor ? actor->FindComponent<vega::SceneEntityComponent>() : nullptr) guid = identity->guid;
 		return actor;
 	}
 

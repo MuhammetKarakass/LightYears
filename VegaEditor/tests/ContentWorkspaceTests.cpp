@@ -16,10 +16,10 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	using namespace vega;
-	using namespace ly::content;
+	using namespace vega::content;
 	const auto root = std::filesystem::path{ VEGA_CONTENT_TEST_ROOT };
 	std::filesystem::create_directories(root);
 	const std::string original = "{\r\n\t\"effects\": [\r\n\t\t{\"id\":\"old\", \"duration\":2.00, \"opaque\":{\"id\":\"old\",\"spelling\":1e+03}},\r\n\t\t{\"id\":\"stable\", \"duration\":0.70}\r\n\t]\r\n}\r\n";
@@ -46,8 +46,8 @@ int main()
 	EditorContext context{ nullptr, selection };
 	CommandHistory history{ context };
 	ContentWorkspace workspace{ context.Engine() };
-	ly::EngineContext otherContext;
-	ly::EngineContext::Scope otherScope{ otherContext };
+	vega::EngineContext otherContext;
+	vega::EngineContext::Scope otherScope{ otherContext };
 	Check(workspace.Load(root), "Workspace load failed");
 	Check(workspace.Open("effect", "old"), "Cannot select effect");
 	Check(workspace.Validate().empty(), "Initial validation failed");

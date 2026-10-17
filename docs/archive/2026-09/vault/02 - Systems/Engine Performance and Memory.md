@@ -4,17 +4,17 @@ status: implemented-in-dirty-worktree
 verified_date: 2026-07-27
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/include/framework/Delegate.h
-  - LightYearsEngine/include/framework/TimerManager.h
-  - LightYearsEngine/src/framework/TimerManager.cpp
-  - LightYearsEngine/include/framework/World.h
-  - LightYearsEngine/src/framework/World.cpp
-  - LightYearsEngine/include/framework/PhysicsSystem.h
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
-  - LightYearsEngine/include/framework/SoundComponent.h
-  - LightYearsEngine/src/framework/SoundComponent.cpp
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/tests/EngineLifetimeTests.cpp
+  - VegaEngine/include/framework/Delegate.h
+  - VegaEngine/include/framework/TimerManager.h
+  - VegaEngine/src/framework/TimerManager.cpp
+  - VegaEngine/include/framework/World.h
+  - VegaEngine/src/framework/World.cpp
+  - VegaEngine/include/framework/PhysicsSystem.h
+  - VegaEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/include/framework/SoundComponent.h
+  - VegaEngine/src/framework/SoundComponent.cpp
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/tests/EngineLifetimeTests.cpp
 related:
   - "[[Performance Monitoring]]"
   - "[[Ownership and Lifetime]]"
@@ -27,7 +27,7 @@ related:
 
 ## 7 Eylül 2026 kaynak kontrolü
 
-World::Render view-bounds culling ve render candidate/culled/submitted sayaçları içerir; background/foreground eleme dışında kalır. World query body-less grid kullanır. World::SpawnActor yeni allocation yapar; scratch/bucket reuse actor pool değildir. LightYearsEngine/src/framework/World.cpp ve include/framework/World.h doğrulandı; performans benchmark çalıştırılmadı.
+World::Render view-bounds culling ve render candidate/culled/submitted sayaçları içerir; background/foreground eleme dışında kalır. World query body-less grid kullanır. World::SpawnActor yeni allocation yapar; scratch/bucket reuse actor pool değildir. VegaEngine/src/framework/World.cpp ve include/framework/World.h doğrulandı; performans benchmark çalıştırılmadı.
 
 Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski örnekler tarihsel inceleme kapsamını taşır; bu güncelleme ile çelişen ayrıntılar güncel davranış kabul edilmemeli.
 
@@ -59,7 +59,7 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 
 ## Doğrulama
 
-- `LightYearsEngineLifetimeTests`, delegate self-unbind/bind/clear reentrancy’sini, timer callback sırasında add/clear davranışını ve audio shutdown sonrası `SoundComponent` yıkımını kapsar.
+- `VegaEngineLifetimeTests`, delegate self-unbind/bind/clear reentrancy’sini, timer callback sırasında add/clear davranışını ve audio shutdown sonrası `SoundComponent` yıkımını kapsar.
 - 2026-07-27’de mevcut değişiklikler Release ve AddressSanitizer build’lerinde
   iki CTest hedefiyle doğrulandı; her iki matriste de `2/2` test geçti. Bu
   tarihsel kayıttır; 20 Eylül docs-only denetiminde build/test çalıştırılmadı.

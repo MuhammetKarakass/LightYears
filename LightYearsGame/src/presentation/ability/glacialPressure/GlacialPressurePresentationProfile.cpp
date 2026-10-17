@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/glacialPressure/GlacialPressurePresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterGlacialPressurePresentationProfiles()
 	{

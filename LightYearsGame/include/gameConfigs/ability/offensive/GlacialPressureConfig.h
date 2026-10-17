@@ -6,9 +6,9 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition GlacialPressure_Basic = []
+	inline const vega::GameAbilityDefinition GlacialPressure_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::GlacialPressure::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// The shipped default loadout explicitly binds Glacial Pressure to R
@@ -19,15 +19,15 @@ namespace AbilityData::Definitions
 		// The behavior treats definition.duration as the one-second focus period
 		// and extends the actual active lifetime by the controlled push duration.
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::GlacialPressure
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::GlacialPressure
 		};
 		definition.displayName = "Glacial Pressure";
 		// Keep the icon reference inside the shipped asset set. The ability's
 		// gameplay identity is independent from this presentation texture.
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 155, 235, 255, 235 };
-		definition.behaviorType = ly::AbilityBehaviorType::GlacialPressure;
+		definition.behaviorType = vega::AbilityBehaviorType::GlacialPressure;
 		return definition;
 	}();
 }

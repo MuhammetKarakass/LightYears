@@ -13,13 +13,13 @@ namespace AbilityData
 	{
 		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
 
-		inline const ly::AbilityActorDefinition ActorFlameConeBasic = []
+		inline const vega::AbilityActorDefinition ActorFlameConeBasic = []
 		{
-			ly::AbilityActorDefinition definition;
+			vega::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::FlameCone::BasicDefinitionId;
-			definition.actorType = ly::AbilityActorType::InfernoSprayFlameCone;
+			definition.actorType = vega::AbilityActorType::InfernoSprayFlameCone;
 			definition.presentationProfileId =
-				ly::InfernoSprayPresentationIds::FlameConeBasic;
+				vega::InfernoSprayPresentationIds::FlameConeBasic;
 			return definition;
 		}();
 
@@ -27,29 +27,29 @@ namespace AbilityData
 
 	namespace Definitions
 	{
-		inline const ly::GameAbilityDefinition InfernoSpray_Basic = []
+		inline const vega::GameAbilityDefinition InfernoSpray_Basic = []
 		{
-			ly::GameAbilityDefinition definition;
+			vega::GameAbilityDefinition definition;
 			definition.abilityId = InfernoSpray::AbilityId::Basic;
 			// Numeric balance, progression and costs are authored in abilities.json.
 			definition.slot = sas::AbilitySlot::Ability2;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 			definition.abilityTags = {
-				ly::GameplayTags::Ability::Offense,
-				ly::GameplayTags::Ability::Family::InfernoSpray
+				vega::GameplayTags::Ability::Offense,
+				vega::GameplayTags::Ability::Family::InfernoSpray
 			};
 			definition.damageTags = {
-				ly::DamageTypeSchema::Thermal
+				vega::DamageTypeSchema::Thermal
 			};
 			definition.displayName = "Inferno Spray";
 			definition.iconPath = "SpaceShooterRedux/PNG/Effects/star2.png";
 			definition.accentColor = sf::Color{ 255, 100, 20, 255 };
 
 			definition.actions = {
-				ly::AbilityActionSpec{
+				vega::AbilityActionSpec{
 					sas::AbilityActionPhase::OnActivate,
-					ly::SpawnActorAction{
+					vega::SpawnActorAction{
 						InfernoSpray::ActorFlameConeBasic.actorDefinitionId,
 						sas::AbilitySpawnPolicy::AtOwner
 					},
@@ -57,7 +57,7 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorType = ly::AbilityBehaviorType::InfernoSpray;
+			definition.behaviorType = vega::AbilityBehaviorType::InfernoSpray;
 			return definition;
 		}();
 	}

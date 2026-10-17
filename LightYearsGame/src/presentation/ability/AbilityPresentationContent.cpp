@@ -48,7 +48,7 @@
 #include "presentation/ability/lanceDrive/LanceDrivePresentationProfile.h"
 #include "presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterGameAbilityPresentationContent()
 	{

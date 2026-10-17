@@ -88,7 +88,7 @@ namespace vega
 			auto& success = execution.success;
 			auto actor = execution.context.selection.Get();
 			if (actor && actor->GetWorld() != execution.context.world) actor.reset();
-			if (const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr)
+			if (const auto* identity = actor ? actor->FindComponent<vega::SceneEntityComponent>() : nullptr)
 				success = identity->prefab == (command.text == "none" ? "" : command.text);
 		}
 		void ExecuteReloadPrefabs(ScriptExecution& execution, const EditorScriptCommand&)

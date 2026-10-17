@@ -2,7 +2,7 @@
 
 #include <variant>
 
-namespace ly
+namespace vega
 {
 	bool SunBeamAbility::Validate(
 		const GameAbilityDefinition& definition,

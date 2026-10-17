@@ -15,13 +15,13 @@ source_files:
   - LightYearsGame/src/gameplay/ability/GameAbilityActionExecutor.cpp
   - SpaceAbilitySystem/include/abilities/GameplayAbilityInstance.h
 symbols:
-  - ly::AbilityActionSpec
-  - ly::GameAbilityExecution
-  - ly::ActiveAbilityAction
-  - ly::GameAbilityActionExecutor::BeginExecution
-  - ly::GameAbilityActionExecutor::TickExecution
-  - ly::GameAbilityActionExecutor::EndExecution
-  - ly::GameAbilityActionExecutor::ExecuteAction
+  - vega::AbilityActionSpec
+  - vega::GameAbilityExecution
+  - vega::ActiveAbilityAction
+  - vega::GameAbilityActionExecutor::BeginExecution
+  - vega::GameAbilityActionExecutor::TickExecution
+  - vega::GameAbilityActionExecutor::EndExecution
+  - vega::GameAbilityActionExecutor::ExecuteAction
 related:
   - "[[Ability System]]"
   - "[[Ability Action Execution Flow]]"

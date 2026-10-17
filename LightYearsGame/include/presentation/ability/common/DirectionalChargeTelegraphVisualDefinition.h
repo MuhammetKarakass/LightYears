@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// A reusable line-shaped charge telegraph. The geometry is intentionally
 	// separate from AreaTelegraphVisualDefinition because a path preview has no

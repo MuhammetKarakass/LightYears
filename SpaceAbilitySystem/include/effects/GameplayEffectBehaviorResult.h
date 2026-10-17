@@ -6,7 +6,7 @@ namespace sas
 {
 	struct GameplayEffectBehaviorEvent
 	{
-		ly::GameplayTag eventTag;
+		vega::GameplayTag eventTag;
 		float magnitude = 0.f;
 	};
 
@@ -14,6 +14,6 @@ namespace sas
 	{
 		bool changed = false;
 		bool removeEffect = false;
-		ly::List<GameplayEffectBehaviorEvent> events;
+		vega::List<GameplayEffectBehaviorEvent> events;
 	};
 }

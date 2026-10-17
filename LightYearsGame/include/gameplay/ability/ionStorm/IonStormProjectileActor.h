@@ -10,7 +10,7 @@
 
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class IonStormProjectileActor final
 		: public AbilityWorldActor,

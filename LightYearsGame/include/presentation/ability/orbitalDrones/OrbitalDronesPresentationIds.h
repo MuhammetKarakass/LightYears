@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::OrbitalDronesPresentationIds
+namespace vega::OrbitalDronesPresentationIds
 {
 	// This ID is family-local so a future drone visual variant can be added
 	// without changing the generic actor definition or presentation registry.

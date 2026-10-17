@@ -5,7 +5,7 @@
 #include <deque>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	class PlayerManager
 	{

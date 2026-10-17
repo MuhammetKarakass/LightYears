@@ -2,7 +2,7 @@
 #include "presentation/hud/notification/NotificationView.h"
 #include "widget/GameHUD.h"
 
-namespace ly
+namespace vega
 {
 	NotificationHUDController::NotificationHUDController(weak_ptr<GameHUD> gameHUD) : mGameHUD{ gameHUD }
 	{

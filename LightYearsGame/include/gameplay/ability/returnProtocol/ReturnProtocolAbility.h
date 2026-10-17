@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"
 
-namespace ly
+namespace vega
 {
 	class ReturnProtocolVisualActor;
 

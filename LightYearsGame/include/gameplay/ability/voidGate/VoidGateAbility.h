@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/portal/PortalTransferService.h"
 
-namespace ly
+namespace vega
 {
 	class VoidGatePortalActor;
 

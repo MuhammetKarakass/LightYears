@@ -10,7 +10,7 @@
 
 #include <variant>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

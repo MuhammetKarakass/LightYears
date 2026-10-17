@@ -107,10 +107,10 @@ namespace vega
 			auto& success = execution.success;
 			auto& detail = execution.detail;
 			unsigned int count = 0;
-			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 			{
 				const auto candidate = weak.lock();
-				const auto* identity = candidate ? candidate->FindComponent<ly::SceneEntityComponent>() : nullptr;
+				const auto* identity = candidate ? candidate->FindComponent<vega::SceneEntityComponent>() : nullptr;
 				if (!identity || candidate->GetIsPendingDestroy()) continue;
 				++count;
 				if (command.operation == "select-name" && identity->name == command.text)

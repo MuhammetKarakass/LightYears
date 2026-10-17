@@ -16,7 +16,7 @@
 #include <cmath>
 #include <cstddef>
 
-namespace ly
+namespace vega
 {
 	enum class ModuleRarity
 	{

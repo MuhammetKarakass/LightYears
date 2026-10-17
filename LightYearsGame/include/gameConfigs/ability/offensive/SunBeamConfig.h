@@ -12,12 +12,12 @@ namespace AbilityData
 	{
 		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
 
-		inline const ly::AbilityActorDefinition ActorStrikeBasic = []
+		inline const vega::AbilityActorDefinition ActorStrikeBasic = []
 		{
-			ly::AbilityActorDefinition definition;
+			vega::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::Strike::BasicDefinitionId;
-			definition.actorType = ly::AbilityActorType::SunBeamStrike;
-			definition.presentationProfileId = ly::SunBeamPresentationIds::StrikeBasic;
+			definition.actorType = vega::AbilityActorType::SunBeamStrike;
+			definition.presentationProfileId = vega::SunBeamPresentationIds::StrikeBasic;
 			return definition;
 		}();
 
@@ -25,25 +25,25 @@ namespace AbilityData
 
 	namespace Definitions
 	{
-		inline const ly::GameAbilityDefinition SunBeam_Strike_Basic = []
+		inline const vega::GameAbilityDefinition SunBeam_Strike_Basic = []
 		{
-			ly::GameAbilityDefinition definition;
+			vega::GameAbilityDefinition definition;
 			definition.abilityId = SunBeam::AbilityId::Strike::Basic;
 			// Numeric balance, progression and costs are authored in abilities.json.
 			definition.slot = sas::AbilitySlot::Ability2;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.abilityTags = {
-				ly::GameplayTags::Ability::Offense,
-				ly::GameplayTags::Ability::Family::SunBeam
+				vega::GameplayTags::Ability::Offense,
+				vega::GameplayTags::Ability::Family::SunBeam
 			};
 			definition.displayName = "Sun Beam";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
 			definition.accentColor = sf::Color{ 255, 190, 70, 255 };
 			definition.actions = {
-				ly::AbilityActionSpec{
+				vega::AbilityActionSpec{
 					sas::AbilityActionPhase::OnActivate,
-					ly::SpawnActorAction{
+					vega::SpawnActorAction{
 						SunBeam::ActorStrikeBasic.actorDefinitionId,
 						sas::AbilitySpawnPolicy::MouseWorld
 					},
@@ -51,7 +51,7 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorType = ly::AbilityBehaviorType::SunBeam;
+			definition.behaviorType = vega::AbilityBehaviorType::SunBeam;
 			return definition;
 		}();
 	}

@@ -8,8 +8,8 @@ source_files:
   - LightYearsGame/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
   - LightYearsGame/include/gameplay/ability/actors/AbilityWorldActor.h
 symbols:
-  - ly::PrimaryWeaponProjectileActor
-  - ly::ProjectileImpactBehavior
+  - vega::PrimaryWeaponProjectileActor
+  - vega::ProjectileImpactBehavior
 related:
   - "[[Projectile System]]"
   - "[[Primary Weapon Projectile Lifecycle]]"
@@ -26,7 +26,7 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 
 ## Rol
 
-`ly::PrimaryWeaponProjectileActor`, standard ve shotgun primary weapon handler'larının doğurduğu fiziksel projectile actor'dır. `AbilityWorldActor`dan owner, damage payload/tags, lifetime, collision radius ve target yardımcılarını devralır; bunun üzerine projectile hareketi, range/pierce ve optional impact policy ekler.
+`vega::PrimaryWeaponProjectileActor`, standard ve shotgun primary weapon handler'larının doğurduğu fiziksel projectile actor'dır. `AbilityWorldActor`dan owner, damage payload/tags, lifetime, collision radius ve target yardımcılarını devralır; bunun üzerine projectile hareketi, range/pierce ve optional impact policy ekler.
 
 ## Public yüzey
 

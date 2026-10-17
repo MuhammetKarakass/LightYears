@@ -3,7 +3,7 @@
 #include "framework/Actor.h"
 #include "attributes/GameplayAttribute.h"
 
-namespace ly
+namespace vega
 {
 	struct GameplayEffectVisualStateView
 	{

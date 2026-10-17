@@ -6,7 +6,7 @@
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
 
-namespace ly
+namespace vega
 {
 	PlayerRespawnSystem::~PlayerRespawnSystem()
 	{

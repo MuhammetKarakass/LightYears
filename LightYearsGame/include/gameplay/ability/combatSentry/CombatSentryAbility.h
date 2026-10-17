@@ -2,7 +2,7 @@
 
 #include "gameplay/ability/GameAbility.h"
 
-namespace ly
+namespace vega
 {
 	// Placement is an instant ability. The turret owns its independent twenty
 	// second lifetime, so cooldown begins as soon as the player commits a spawn.

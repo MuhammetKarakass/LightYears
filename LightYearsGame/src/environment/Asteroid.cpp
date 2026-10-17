@@ -4,7 +4,7 @@
 #include <framework/SpriteComponent.h>
 #include <framework/reflection/Reflection.h>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(Asteroid, Actor)
 	{
@@ -84,7 +84,7 @@ namespace ly
 	void Asteroid::ApplyDamage(float amt)
 	{
 		mHealthComponent.ChangeHealth(-amt);
-		LY_GAME_TRACE("Asteroid health: %f", mHealthComponent.GetHealth());
+		VEGA_GAME_TRACE("Asteroid health: %f", mHealthComponent.GetHealth());
 	}
 	void Asteroid::OnActorBeginOverlap(Actor* otherActor)
 	{

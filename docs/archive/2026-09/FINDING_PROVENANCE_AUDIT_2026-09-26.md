@@ -35,7 +35,7 @@ Kanıt koşulu: callback uygulanmakta olan effect'i bulup kaldırır. Böyle bir
 
 ### R2 — Yanlış alt iddianın geri çekilmesi
 
-[AttributeSystem.h](../SpaceAbilitySystem/include/attributes/AttributeSystem.h) `mHandleToAttribute` için `ly::Map` kullanır; [Core.h](../LightYearsEngine/include/framework/Core.h) satır 289 bunu `std::map` olarak tanımlar. Ekleme bu map'te rehash yapmaz ve mevcut iterator'ı geçersizleştirmez. Önceki raporda türü doğrulamadan unordered-map davranışı atfetmişim. Bu gerçek bir inceleme hatasıdır.
+[AttributeSystem.h](../SpaceAbilitySystem/include/attributes/AttributeSystem.h) `mHandleToAttribute` için `vega::Map` kullanır; [Core.h](../VegaEngine/include/framework/Core.h) satır 289 bunu `std::map` olarak tanımlar. Ekleme bu map'te rehash yapmaz ve mevcut iterator'ı geçersizleştirmez. Önceki raporda türü doğrulamadan unordered-map davranışı atfetmişim. Bu gerçek bir inceleme hatasıdır.
 
 Kalan yol: onAttributeChanged içinde aynı handle RemoveModifier edilirse iç çağrı ilgili map düğümünü siler; dış çağrı `erase(foundAttribute)` ile silinmiş iterator'ı kullanır. Callback'in AttributeSystem::Clear çağrısı da map'i boşaltır. [RemoveModifier](../SpaceAbilitySystem/src/attributes/AttributeSystem.cpp) 205–220 HEAD ile aynıdır. Doğrudan okunan SpaceShip attribute dinleyicileri movement refresh yapıyor; bu tetikleyiciyi onlara atfetmiyorum.
 
@@ -95,7 +95,7 @@ Combat context pointer'ının atama/reset/queue sırası diff'te değişmiyor. T
 git show ce14e9308c9d9825c7648c7217661a3d3fbbaafe:SpaceAbilitySystem/include/effects/GameplayEffectRuntimeSystem.h
 git diff ce14e9308c9d9825c7648c7217661a3d3fbbaafe -- SpaceAbilitySystem/include/effects/GameplayEffectRuntimeSystem.h SpaceAbilitySystem/include/abilities/GameplayAbilityInstance.h
 git diff ce14e9308c9d9825c7648c7217661a3d3fbbaafe -- SpaceAbilitySystem/src/attributes/AttributeSystem.cpp SpaceAbilitySystem/src/effects/GameplayEffectBindings.cpp SpaceAbilitySystem/include/abilities/AbilityExecution.h LightYearsGame/src/gameplay/ability/GameAbilityActionExecutor.cpp
-git diff ce14e9308c9d9825c7648c7217661a3d3fbbaafe -- LightYearsGame/src/player/Player.cpp LightYearsGame/src/gameplay/combat/CombatRuntime.cpp LightYearsEngine/src/framework/TimerManager.cpp LightYearsGame/src/gameplay/ability/GameAbility.cpp
+git diff ce14e9308c9d9825c7648c7217661a3d3fbbaafe -- LightYearsGame/src/player/Player.cpp LightYearsGame/src/gameplay/combat/CombatRuntime.cpp VegaEngine/src/framework/TimerManager.cpp LightYearsGame/src/gameplay/ability/GameAbility.cpp
 ```
 
 Üçüncü komut denetim anında boş fark verdi. Bu dört dosyanın ilgili mekanizmalarını son yamaların oluşturmadığının doğrudan kanıtıdır. Diğer dosyalarda yalnız ilgili gövdeler/hunk'lar karşılaştırılmıştır; bütün dosyanın değişmediği iddia edilmez.

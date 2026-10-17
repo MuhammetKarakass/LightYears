@@ -8,33 +8,33 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::AbilityActorDefinition FrostMaelstromFieldBasic = []
+	inline const vega::AbilityActorDefinition FrostMaelstromFieldBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId =
 			AbilityData::FrostMaelstrom::Actor::Field::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::FrostMaelstromField;
+		definition.actorType = vega::AbilityActorType::FrostMaelstromField;
 		definition.presentationProfileId =
-			ly::FrostMaelstromPresentationIds::FieldBasic;
+			vega::FrostMaelstromPresentationIds::FieldBasic;
 		return definition;
 	}();
 
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition FrostMaelstrom_Basic = []
+	inline const vega::GameAbilityDefinition FrostMaelstrom_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::FrostMaelstrom::AbilityId::Basic;
 		definition.slot = sas::AbilitySlot::Ability4;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Utility,
-			ly::GameplayTags::Ability::Family::FrostMaelstrom
+			vega::GameplayTags::Ability::Utility,
+			vega::GameplayTags::Ability::Family::FrostMaelstrom
 		};
 		definition.displayName = "Frost Maelstrom";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 		definition.accentColor = sf::Color{ 115, 220, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::FrostMaelstrom;
+		definition.behaviorType = vega::AbilityBehaviorType::FrostMaelstrom;
 		return definition;
 	}();
 }

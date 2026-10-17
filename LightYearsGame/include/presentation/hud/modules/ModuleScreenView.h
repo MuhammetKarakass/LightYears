@@ -9,7 +9,7 @@
 #include <tuple>
 #include "presentation/hud/modules/ModuleCardTextLayout.h"
 
-namespace ly
+namespace vega
 {
 	class HoloCanvas;
 	// Module screen: schematic grid on the left, inventory list on the right. Mouse and key input is

@@ -13,19 +13,19 @@ namespace AbilityData::SolarBombardment
 			"Ability.Offense.SolarBombardment.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTagSchema::AbilityOffense
+	inline const vega::GameplayTag CategoryTag{
+		vega::GameplayTagSchema::AbilityOffense
 	};
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::SolarBombardment
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::SolarBombardment
 	};
 
 	struct Attribute
 	{
 		// Common damage/range/radius channels stay shared with other abilities.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId OuterRadius = ly::CommonAttributeIds::Radius;
-		inline static const sas::AttributeId CastRange = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId OuterRadius = vega::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId CastRange = vega::CommonAttributeIds::Range;
 
 		// These values are genuinely owned by this projectile family because they
 		// describe its two-zone delivery and distance-based travel curve.

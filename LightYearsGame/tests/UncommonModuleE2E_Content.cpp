@@ -59,14 +59,14 @@ namespace uncommon_module_e2e
 		void CheckModuleRejected(Report& report, const std::filesystem::path& root, const std::string& name, const Json& modules)
 		{
 			const auto path = WriteJson(root, name + ".json", modules);
-			const ly::content::ModuleLoader::Result result = ly::content::ModuleLoader::LoadFromFile(path);
+			const vega::content::ModuleLoader::Result result = vega::content::ModuleLoader::LoadFromFile(path);
 			report.Check(!result.Succeeded(), "reject invalid module fixture: " + name, result.error);
 		}
 
 		void CheckSideRejected(Report& report, const std::filesystem::path& root, const std::string& name, const Json& features)
 		{
 			const auto path = WriteJson(root, name + ".json", features);
-			const ly::content::ModuleSideFeatureLoader::Result result = ly::content::ModuleSideFeatureLoader::LoadFromFile(path);
+			const vega::content::ModuleSideFeatureLoader::Result result = vega::content::ModuleSideFeatureLoader::LoadFromFile(path);
 			report.Check(!result.Succeeded(), "reject invalid side-feature fixture: " + name, result.error);
 		}
 	}
@@ -76,7 +76,7 @@ namespace uncommon_module_e2e
 		const Json originalModules = ReadJson(DataPath("modules.json"));
 		const Json originalFeatures = ReadJson(DataPath("module_side_features.json"));
 		const auto invalidJson = WriteRaw(fixtureRoot, "invalid-syntax.json", "{ invalid json");
-		report.Check(!ly::content::ModuleLoader::LoadFromFile(invalidJson).Succeeded(), "reject malformed JSON syntax");
+		report.Check(!vega::content::ModuleLoader::LoadFromFile(invalidJson).Succeeded(), "reject malformed JSON syntax");
 
 		{
 			Json modules = originalModules;
@@ -155,7 +155,7 @@ namespace uncommon_module_e2e
 			const auto modulesPath = WriteJson(fixtureRoot, "unknown-side-zone-modules.json", originalModules);
 			const auto featuresPath = WriteJson(fixtureRoot, "unknown-side-zone-features.json", features);
 			std::string failure;
-			report.Check(!ly::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
+			report.Check(!vega::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
 				"reject unknown side-feature zone against the module zone catalog", failure);
 		}
 		{
@@ -166,7 +166,7 @@ namespace uncommon_module_e2e
 			const auto modulesPath = WriteJson(fixtureRoot, "any-family-modules.json", originalModules);
 			const auto featuresPath = WriteJson(fixtureRoot, "any-family-features.json", features);
 			std::string failure;
-			report.Check(!ly::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
+			report.Check(!vega::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
 				"reject FamilyOfZone side effects on an any-family zone", failure);
 		}
 		{
@@ -180,7 +180,7 @@ namespace uncommon_module_e2e
 			const auto modulesPath = WriteJson(fixtureRoot, "unknown-pool-modules.json", originalModules);
 			const auto featuresPath = WriteJson(fixtureRoot, "unknown-pool-feature.json", features);
 			std::string failure;
-			report.Check(!ly::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
+			report.Check(!vega::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
 				"reject unknown pool feature reference", failure);
 		}
 		{
@@ -190,7 +190,7 @@ namespace uncommon_module_e2e
 			const auto modulesPath = WriteJson(fixtureRoot, "pool-membership-modules.json", modules);
 			const auto featuresPath = WriteJson(fixtureRoot, "pool-membership-features.json", originalFeatures);
 			std::string failure;
-			report.Check(!ly::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
+			report.Check(!vega::content::ModuleContentCatalog::LoadFromFiles(modulesPath, featuresPath, &failure),
 				"reject a module feature outside its declared pool", failure);
 		}
 		for (const auto& invalidShotCount : std::vector<std::pair<std::string, Json>>{
@@ -234,18 +234,18 @@ namespace uncommon_module_e2e
 			CheckSideRejected(report, fixtureRoot, "next-level-health-condition-range", features);
 		}
 
-		const ly::content::ModuleLoader::Result validModules = ly::content::ModuleLoader::LoadFromFile(DataPath("modules.json"));
-		const ly::content::ModuleSideFeatureLoader::Result validFeatures = ly::content::ModuleSideFeatureLoader::LoadFromFile(DataPath("module_side_features.json"));
+		const vega::content::ModuleLoader::Result validModules = vega::content::ModuleLoader::LoadFromFile(DataPath("modules.json"));
+		const vega::content::ModuleSideFeatureLoader::Result validFeatures = vega::content::ModuleSideFeatureLoader::LoadFromFile(DataPath("module_side_features.json"));
 		report.Check(validModules.Succeeded() && validFeatures.Succeeded(), "load shipped Uncommon module and side-feature JSON");
-		const ly::ModuleDefinition* glass = nullptr;
-		for (const ly::ModuleDefinition& definition : validModules.definitions)
+		const vega::ModuleDefinition* glass = nullptr;
+		for (const vega::ModuleDefinition& definition : validModules.definitions)
 			if (definition.moduleId == "Module.Offense.GlassTopCore.Uncommon") glass = &definition;
-		report.Check(glass && glass->sizeVariants.size() == 2 && glass->sizeLadderCellCounts == ly::List<int>{ 1, 3 },
+		report.Check(glass && glass->sizeVariants.size() == 2 && glass->sizeLadderCellCounts == vega::List<int>{ 1, 3 },
 			"Glass Top catalog keeps only its approved one-to-three-cell ladder");
-		const ly::ModuleSideFeatureDefinition* o1 = nullptr;
-		for (const ly::ModuleSideFeatureDefinition& feature : validFeatures.definitions)
+		const vega::ModuleSideFeatureDefinition* o1 = nullptr;
+		for (const vega::ModuleSideFeatureDefinition& feature : validFeatures.definitions)
 			if (feature.sideFeatureId == "Module.SideFeature.Shared.O1") o1 = &feature;
-		report.Check(o1 && o1->rules.attributeModifiers.front().magnitudeByLevel.values == ly::List<float>{ 8.f, 8.f, 8.f },
+		report.Check(o1 && o1->rules.attributeModifiers.front().magnitudeByLevel.values == vega::List<float>{ 8.f, 8.f, 8.f },
 			"unapproved side-feature growth remains three explicit constant values");
 	}
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sky/UniformWriter.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::UniformWriter;
 }

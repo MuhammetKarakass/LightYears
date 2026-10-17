@@ -7,7 +7,7 @@ namespace vega
 	// Shared with headless tests because constructing a RenderTexture acquires an OpenGL context.
 	sf::Vector2i MapWindowToTexturePixel(sf::Vector2i windowPixel, const sf::FloatRect& imageRect, sf::Vector2u textureSize);
 
-	class EditorViewport final : public ly::RenderViewport
+	class EditorViewport final : public vega::RenderViewport
 	{
 	public:
 		explicit EditorViewport(sf::RenderWindow& window);

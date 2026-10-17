@@ -13,13 +13,13 @@
 #include <exception>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
 		bool IsEffectBehaviorRegistered(const sas::GameplayEffectBehaviorKey& behaviorKey)
 		{
-			return ::ly::GetEffectBehaviorRuntime().IsRegistered(behaviorKey);
+			return ::vega::GetEffectBehaviorRuntime().IsRegistered(behaviorKey);
 		}
 
 		bool ValidateEffectForRuntime(
@@ -73,13 +73,13 @@ namespace ly
 		callbacks.validate =
 			[](const GameAbilityDefinition& definition, std::string* failureReason)
 			{
-				LY_GAME_INFO("Ability validate begin: %s", definition.abilityId.c_str());
+				VEGA_GAME_INFO("Ability validate begin: %s", definition.abilityId.c_str());
 				const bool result = GameAbilityDefinitionValidator::Validate(
 					definition,
 					ValidateEffectForRuntime,
 					failureReason
 				);
-				LY_GAME_INFO("Ability validate returned: %s", result ? "valid" : "invalid");
+				VEGA_GAME_INFO("Ability validate returned: %s", result ? "valid" : "invalid");
 				return result;
 			};
 		callbacks.create =
@@ -89,7 +89,7 @@ namespace ly
 				std::string* failureReason
 			) -> unique_ptr<GameAbility>
 			{
-				LY_GAME_INFO("Ability create begin: %s", definition.abilityId.c_str());
+				VEGA_GAME_INFO("Ability create begin: %s", definition.abilityId.c_str());
 				unique_ptr<GameAbilityBehavior> behavior =
 					GameAbilityBehaviorRegistry::Create(definition.behaviorType);
 				if (!behavior)
@@ -106,12 +106,12 @@ namespace ly
 					definition,
 					std::move(behavior)
 				);
-				LY_GAME_INFO("Ability instance constructed: %s", definition.abilityId.c_str());
+				VEGA_GAME_INFO("Ability instance constructed: %s", definition.abilityId.c_str());
 				// Scoped progression rules may exist before a content ability is
 				// granted. Materialize their level effect immediately so future
 				// abilities receive the same category-based rule as existing ones.
 				ability->RefreshScopedConfiguration();
-				LY_GAME_INFO("Ability create returned: %s", definition.abilityId.c_str());
+				VEGA_GAME_INFO("Ability create returned: %s", definition.abilityId.c_str());
 				return ability;
 			};
 		callbacks.cancel = [](GameAbility& ability, sas::AbilityEndReason reason)
@@ -864,7 +864,7 @@ namespace ly
 	}
 }
 
-namespace ly
+namespace vega
 {
 	void LightYearsAbilitySystemComponent::DescribeDebugAbility(sas::AbilityDebugEntry& entry) const
 	{

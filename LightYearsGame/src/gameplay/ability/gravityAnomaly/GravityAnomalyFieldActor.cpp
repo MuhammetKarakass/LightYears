@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -208,7 +208,7 @@ namespace ly
 
 	void GravityAnomalyFieldActor::UpdateAffectedTargets()
 	{
-		LY_PROFILE_SCOPE("GravityAnomaly.TargetDiscovery");
+		VEGA_PROFILE_SCOPE("GravityAnomaly.TargetDiscovery");
 		World* world = GetWorld();
 		if (!world || !mRuntimeContext || mRadius <= 0.f)
 		{

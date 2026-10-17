@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/railBurst/RailBurstPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

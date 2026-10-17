@@ -4,13 +4,13 @@ status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/include/framework/PhysicsSystem.h
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/include/framework/PhysicsSystem.h
+  - VegaEngine/src/framework/PhysicsSystem.cpp
 symbols:
-  - ly::PhysicsSystem
-  - ly::PhysicsSystem::AddListener
-  - ly::PhysicsSystem::RemoveListener
-  - ly::PhysicsSystem::SetCollisionRadius
+  - vega::PhysicsSystem
+  - vega::PhysicsSystem::AddListener
+  - vega::PhysicsSystem::RemoveListener
+  - vega::PhysicsSystem::SetCollisionRadius
 related:
   - "[[Physics System]]"
   - "[[Physics Step and Contact Flow]]"

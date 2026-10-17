@@ -19,7 +19,7 @@ Kullanıcı doğrudan Codex uygulamasını istedi. AGENTS.md içindeki zorunlu F
 - [Nano Plague](../LightYearsGame/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp)
 - [Health](../LightYearsGame/src/gameplay/HealthComponent.cpp), [Shield](../LightYearsGame/src/gameplay/ShieldComponent.cpp)
 - [Runtime mutation](../SpaceAbilitySystem/include/abilities/AbilityRuntimeSystem.h), [Loadout manager](../LightYearsGame/src/gameplay/ability/loadout/AbilityLoadoutManager.cpp)
-- [World service slot](../LightYearsEngine/include/framework/World.h), [reflection service](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionService.cpp), [registry](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionRegistryActor.cpp)
+- [World service slot](../VegaEngine/include/framework/World.h), [reflection service](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionService.cpp), [registry](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionRegistryActor.cpp)
 - [Static sweep](../LightYearsGame/src/gameplay/movement/MovementCollisionService.cpp)
 
 ## Doğrulama

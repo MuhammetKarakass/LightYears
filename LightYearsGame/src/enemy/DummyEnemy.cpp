@@ -6,7 +6,7 @@
 #include <framework/scene/SceneEntityComponent.h>
 #include <stdexcept>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(DummyEnemy, SpaceShip)
 	{

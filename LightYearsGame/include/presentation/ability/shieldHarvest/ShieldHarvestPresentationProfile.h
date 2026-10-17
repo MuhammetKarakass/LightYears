@@ -3,7 +3,7 @@
 #include "content/ContentId.h"
 #include "presentation/ability/common/AreaTelegraphVisualDefinition.h"
 
-namespace ly
+namespace vega
 {
 	struct ShieldHarvestPresentationProfile
 	{

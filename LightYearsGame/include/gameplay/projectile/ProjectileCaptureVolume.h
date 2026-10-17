@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	class AbilityWorldActor;
 

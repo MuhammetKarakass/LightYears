@@ -2,7 +2,7 @@
 
 #include "framework/Actor.h"
 
-namespace ly
+namespace vega
 {
 	// Presentation-only actor for a short-lived electric arc segment.
 	class ElectricArcVisualActor final : public Actor

@@ -70,13 +70,13 @@ until deliberately registered. Empty list types without a row descriptor cannot
 create rows until that descriptor is supplied.
 
 ```cpp
-ly::content::ContentTypeSchema schema;
+vega::content::ContentTypeSchema schema;
 schema.type = "effect";
 schema.file = "content/data/effects.json";
 schema.collection = "effects";
-ly::content::ContentField duration;
+vega::content::ContentField duration;
 duration.path = "/duration";
-duration.kind = ly::content::FieldKind::Number;
+duration.kind = vega::content::FieldKind::Number;
 duration.defaultValue = 2.0;
 duration.category = "Timing";
 duration.tooltip = "Duration of a content-owned effect.";
@@ -85,7 +85,7 @@ duration.unit = "s";
 schema.fields.push_back(duration);
 // /modifiers/*/attributeId describes every modifier row.
 // Supply schema.validate using the game's existing loader and validators.
-ly::content::ContentSchemaRegistry::Get().Register(std::move(schema));
+vega::content::ContentSchemaRegistry::Get().Register(std::move(schema));
 ```
 
 Field patterns are JSON pointers relative to a definition; `*` matches an array

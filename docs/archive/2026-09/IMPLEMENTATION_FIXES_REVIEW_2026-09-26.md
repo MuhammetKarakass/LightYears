@@ -24,7 +24,7 @@ Gerekli düzeltme: teardown isteğini component seviyesinde tek işlem olarak y�
 
 ## 3. P2 — Dönen gövdesiz kutunun spatial hücreleri eski kalıyor
 
-[World bounds](../LightYearsEngine/src/framework/World.cpp), `GetManualSpatialBounds` artık kutuları actor/local rotation ile hesaplıyor. Ancak [Actor::SetActorRotation](../LightYearsEngine/src/framework/Actor.cpp) yalnız sprite ve Box2D transform güncelliyor. `UpdatePhysicsTransform` gövdesiz aktörde hiçbir şey yapmıyor; manual index refresh yok. World sorgusu sadece sorgu hücrelerindeki adayları dolaştığından yeni dönen bölgeye hiç aday gelmeyebiliyor.
+[World bounds](../VegaEngine/src/framework/World.cpp), `GetManualSpatialBounds` artık kutuları actor/local rotation ile hesaplıyor. Ancak [Actor::SetActorRotation](../VegaEngine/src/framework/Actor.cpp) yalnız sprite ve Box2D transform güncelliyor. `UpdatePhysicsTransform` gövdesiz aktörde hiçbir şey yapmıyor; manual index refresh yok. World sorgusu sadece sorgu hücrelerindeki adayları dolaştığından yeni dönen bölgeye hiç aday gelmeyebiliyor.
 
 Somut koşul: gövdesiz, radius=0, merkezi (128,128), yarı boyutu (400,10) olan kutu indekslendikten sonra yer değiştirmeden 90 derece döndürülür. Eski kayıt y=0 hücresindedir; yeni kutunun y≈450 bölgesindeki dar sorgu y=1 hücresine gider ve aktörü bulamaz. Başka bir spatial-refresh tetiklenene kadar beam/movement duvarı atlayabilir. Sabit rotasyonla ilk kayıt bu hatanın koşulu değildir.
 

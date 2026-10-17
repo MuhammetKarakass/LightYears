@@ -6,7 +6,7 @@
 #include <optional>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	class WeaponContentCatalog
 	{

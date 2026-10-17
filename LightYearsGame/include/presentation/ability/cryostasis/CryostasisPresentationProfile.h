@@ -4,7 +4,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Cryostasis owns its presentation values. The gameplay definition contains
 	// only balance and mechanics, never render-specific knobs.

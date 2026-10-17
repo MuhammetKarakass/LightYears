@@ -13,7 +13,7 @@
 #include <cmath>
 #include <string_view>
 
-namespace ly::PrimaryWeaponDefinitionValidator
+namespace vega::PrimaryWeaponDefinitionValidator
 {
 	namespace
 	{

@@ -7,7 +7,7 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	ModuleAnnularBurstActor::ModuleAnnularBurstActor(World* world, const weak_ptr<Actor>& source, const ModuleAnnularBurstPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, float innerRadius, float outerRadius) : Actor{ world }, mSource{ source }, mProfile{ profile }, mLease{ lease }, mInnerRadius{ innerRadius }, mOuterRadius{ outerRadius }, mRemaining{ profile.duration }
 	{

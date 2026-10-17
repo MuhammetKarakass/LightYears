@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace ly
+namespace vega
 {
 	struct GlacialPressurePresentationProfile
 	{

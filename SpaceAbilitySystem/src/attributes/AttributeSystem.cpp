@@ -9,7 +9,7 @@ namespace sas
 	float ApplyAttributeScalings(
 		float baseValue,
 		const AttributeId& targetAttributeId,
-		const ly::List<AttributeScalingRule>& scalingRules,
+		const vega::List<AttributeScalingRule>& scalingRules,
 		const AttributeSystem& sourceAttributes
 	)
 	{
@@ -82,12 +82,12 @@ namespace sas
 		return found != mAttributes.end() ? found->second.attribute.currentValue : fallback;
 	}
 
-	float AttributeSystem::GetCurrentValueExcludingModifiers(const AttributeId& id, const ly::List<AttributeModifierHandle>& excludedHandles, float fallback) const
+	float AttributeSystem::GetCurrentValueExcludingModifiers(const AttributeId& id, const vega::List<AttributeModifierHandle>& excludedHandles, float fallback) const
 	{
 		const auto found = mAttributes.find(id);
 		if (found == mAttributes.end()) return fallback;
 		if (excludedHandles.empty()) return found->second.attribute.currentValue;
-		ly::List<AttributeModifier> modifiers;
+		vega::List<AttributeModifier> modifiers;
 		modifiers.reserve(found->second.modifiers.size());
 		for (const auto& [handleId, modifier] : found->second.modifiers)
 		{

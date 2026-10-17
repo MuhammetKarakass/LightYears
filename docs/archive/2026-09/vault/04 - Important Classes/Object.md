@@ -3,14 +3,14 @@ type: class
 status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 source_files:
-  - LightYearsEngine/include/framework/Object.h
-  - LightYearsEngine/src/framework/Object.cpp
-  - LightYearsEngine/include/framework/Delegate.h
+  - VegaEngine/include/framework/Object.h
+  - VegaEngine/src/framework/Object.cpp
+  - VegaEngine/include/framework/Delegate.h
 symbols:
-  - ly::Object
-  - ly::Object::Destroy
-  - ly::Object::GetWeakPtr
-  - ly::Delegate::Broadcast
+  - vega::Object
+  - vega::Object::Destroy
+  - vega::Object::GetWeakPtr
+  - vega::Delegate::Broadcast
 related:
   - "[[Object Lifecycle]]"
   - "[[Ownership and Lifetime]]"
@@ -19,12 +19,12 @@ related:
 
 # Object
 
-`ly::Object`, runtime nesneleri için pending-destroy state’i, unique ID, weak self-reference ve destroy delegate’i sağlayan tabandır. `std::enable_shared_from_this<Object>` kullanır; `GetWeakPtr`, nesne gerçekten `shared_ptr` tarafından yönetiliyorsa anlamlı weak reference üretir.
+`vega::Object`, runtime nesneleri için pending-destroy state’i, unique ID, weak self-reference ve destroy delegate’i sağlayan tabandır. `std::enable_shared_from_this<Object>` kullanır; `GetWeakPtr`, nesne gerçekten `shared_ptr` tarafından yönetiliyorsa anlamlı weak reference üretir.
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/Object.h`  
-Sınıf veya namespace: `ly::Object`  
+Dosya: `VegaEngine/include/framework/Object.h`  
+Sınıf veya namespace: `vega::Object`  
 Fonksiyon: sınıf tanımı  
 Görevi: Shared-from-this tabanı ve lifecycle API’si.
 
@@ -44,8 +44,8 @@ public:
 	unsigned int GetUniqueID() { return mUniqueID; };
 ```
 
-Dosya: `LightYearsEngine/src/framework/Object.cpp`  
-Sınıf veya namespace: `ly::Object`  
+Dosya: `VegaEngine/src/framework/Object.cpp`  
+Sınıf veya namespace: `vega::Object`  
 Fonksiyon: `Destroy`  
 Görevi: Idempotent pending-destroy geçişi ve listener bildirimi.
 
@@ -59,8 +59,8 @@ mPendingDestroy = true;
 onDestory.Broadcast(this);
 ```
 
-Dosya: `LightYearsEngine/src/framework/Object.cpp`  
-Sınıf veya namespace: `ly::Object`  
+Dosya: `VegaEngine/src/framework/Object.cpp`  
+Sınıf veya namespace: `vega::Object`  
 Fonksiyon: `GetWeakPtr`  
 Görevi: Object yaşamını uzatmayan self-reference üretmek.
 
@@ -97,8 +97,8 @@ Stack üzerinde oluşturulmuş Object türevlerinde weak-bound callback’lerin 
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/include/framework/Object.h`
-2. `LightYearsEngine/src/framework/Object.cpp`
-3. `LightYearsEngine/include/framework/Delegate.h`
-4. `LightYearsEngine/include/framework/Actor.h`
+1. `VegaEngine/include/framework/Object.h`
+2. `VegaEngine/src/framework/Object.cpp`
+3. `VegaEngine/include/framework/Delegate.h`
+4. `VegaEngine/include/framework/Actor.h`
 

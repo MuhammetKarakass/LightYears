@@ -326,7 +326,7 @@ namespace rare_ladder_e2e
 		// Ember Accumulation: the burst is identical at both sizes; Opening Hit (O5) acts only on the large size.
 		void EmberChecks(Report& report, Application& application)
 		{
-			const auto& balance = ly::content::DamageStatusBalanceCatalog::Get();
+			const auto& balance = vega::content::DamageStatusBalanceCatalog::Get();
 			const float totalDoT = balance.ThermalDamagePerSecond(balance.thermal.maxStacks) * balance.thermal.duration;
 			for (int level = 1; level <= 3; ++level)
 			{
@@ -617,7 +617,7 @@ namespace rare_ladder_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_ladder_e2e;
 	if (argc != 2) return 2;
 	Report report;

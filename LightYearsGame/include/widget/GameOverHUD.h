@@ -3,7 +3,7 @@
 #include "widget/HUD.h"
 #include "widget/Button.h"
 
-namespace ly
+namespace vega
 {
 	class TextWidget;
 

@@ -1,6 +1,6 @@
 #include "gameplay/targeting/TargetAllocation.h"
 
-namespace ly::targeting
+namespace vega::targeting
 {
 	List<weak_ptr<Actor>> TargetAllocation::DistributeEvenly(
 		const List<TargetingCandidate>& candidates,

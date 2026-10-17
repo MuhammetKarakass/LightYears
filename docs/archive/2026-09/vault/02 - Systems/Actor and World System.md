@@ -7,21 +7,21 @@ uncommitted_areas:
   - gameplay-effect presentation actor and area integration
   - ability actors, movement and GasLiteCoreTests
 source_files:
-  - LightYearsEngine/include/framework/World.h
-  - LightYearsEngine/src/framework/World.cpp
-  - LightYearsEngine/include/framework/Actor.h
-  - LightYearsEngine/src/framework/Actor.cpp
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
-  - LightYearsEngine/include/gameplay/GameStage.h
+  - VegaEngine/include/framework/World.h
+  - VegaEngine/src/framework/World.cpp
+  - VegaEngine/include/framework/Actor.h
+  - VegaEngine/src/framework/Actor.cpp
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/include/gameplay/GameStage.h
 symbols:
-  - ly::World
-  - ly::Actor
-  - ly::Object
-  - ly::World::SpawnActor
-  - ly::World::TickInternal
-  - ly::World::Render
-  - ly::PhysicsSystem
+  - vega::World
+  - vega::Actor
+  - vega::Object
+  - vega::World::SpawnActor
+  - vega::World::TickInternal
+  - vega::World::Render
+  - vega::PhysicsSystem
 related:
   - "[[Game Loop]]"
   - "[[Object Lifecycle]]"
@@ -36,7 +36,7 @@ related:
 
 ## 7 Eylül 2026 kaynak kontrolü
 
-World::TickInternal artık actor dt için SimulationTimeDomain ölçeğini kullanır; pending promotion pause sırasında da olur. Body-less actor spatial grid ve fizik broadphase birlikte sorgulanır. World::SpawnActor hâlâ make_shared yapar; actor pooling yok. Actor::Destroy callback öncesi pending işaretlememesi yeniden giriş riskidir. Kaynak: LightYearsEngine/src/framework/{World,Actor}.cpp. [[Temporal Runtime]] ve [[2026-09-07 Project Status Review]].
+World::TickInternal artık actor dt için SimulationTimeDomain ölçeğini kullanır; pending promotion pause sırasında da olur. Body-less actor spatial grid ve fizik broadphase birlikte sorgulanır. World::SpawnActor hâlâ make_shared yapar; actor pooling yok. Actor::Destroy callback öncesi pending işaretlememesi yeniden giriş riskidir. Kaynak: VegaEngine/src/framework/{World,Actor}.cpp. [[Temporal Runtime]] ve [[2026-09-07 Project Status Review]].
 
 Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski örnekler tarihsel inceleme kapsamını taşır; bu güncelleme ile çelişen ayrıntılar güncel davranış kabul edilmemeli.
 
@@ -49,12 +49,12 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 
 | Sınıf | Dosya | Sorumluluk | Sahibi | Yaşam süresi |
 |---|---|---|---|---|
-| `Application` | `LightYearsEngine/include/framework/Application.h` | Window, frame loop, current/pending world | `main` içindeki `unique_ptr` | Process uygulama ömrü |
-| `World` | `LightYearsEngine/include/framework/World.h` | Actor/HUD/stage koleksiyonları, spawn, tick, render, cleanup | Application `shared_ptr`ları | Level/scene ömrü |
-| `Actor` | `LightYearsEngine/include/framework/Actor.h` | Transform, sprite/light, physics body bağlantısı, lifecycle hook’ları | World `shared_ptr` koleksiyonları | Spawn promotion’dan destroy cleanup’a; dış güçlü referans uzatabilir |
-| `Object` | `LightYearsEngine/include/framework/Object.h` | Unique ID, weak self-reference, pending-destroy state | Türetilmiş nesnenin sahibi | Türetilmiş nesne ömrü |
-| `GameStage` | `LightYearsEngine/include/gameplay/GameStage.h` | World içi aşama akışı | World `shared_ptr` listesi | World veya stage tamamlanmasına kadar |
-| `PhysicsSystem` | `LightYearsEngine/include/framework/PhysicsSystem.h` | Box2D world, body ve contact event’leri | Static singleton `unique_ptr` | Application runtime; world geçişinde iç Box2D world yenilenir |
+| `Application` | `VegaEngine/include/framework/Application.h` | Window, frame loop, current/pending world | `main` içindeki `unique_ptr` | Process uygulama ömrü |
+| `World` | `VegaEngine/include/framework/World.h` | Actor/HUD/stage koleksiyonları, spawn, tick, render, cleanup | Application `shared_ptr`ları | Level/scene ömrü |
+| `Actor` | `VegaEngine/include/framework/Actor.h` | Transform, sprite/light, physics body bağlantısı, lifecycle hook’ları | World `shared_ptr` koleksiyonları | Spawn promotion’dan destroy cleanup’a; dış güçlü referans uzatabilir |
+| `Object` | `VegaEngine/include/framework/Object.h` | Unique ID, weak self-reference, pending-destroy state | Türetilmiş nesnenin sahibi | Türetilmiş nesne ömrü |
+| `GameStage` | `VegaEngine/include/gameplay/GameStage.h` | World içi aşama akışı | World `shared_ptr` listesi | World veya stage tamamlanmasına kadar |
+| `PhysicsSystem` | `VegaEngine/include/framework/PhysicsSystem.h` | Box2D world, body ve contact event’leri | Static singleton `unique_ptr` | Application runtime; world geçişinde iç Box2D world yenilenir |
 
 ## World’ün sorumlulukları
 
@@ -78,8 +78,8 @@ Actor aktif koleksiyona kendini eklemez veya çıkarmaz; frame loop’unu, world
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/World.h`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/include/framework/World.h`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: sınıf alanları  
 Görevi: Aktif/pending actor koleksiyonları ile stage/HUD sahipliğini göstermek.
 
@@ -92,8 +92,8 @@ shared_ptr<HUD> mHUD;
 shared_ptr<HUD> mOverlayHUD;
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `TickInternal`  
 Görevi: Normal frame’de spawn, actor, stage ve world tick sırasını yürütmek.
 
@@ -119,8 +119,8 @@ if (!mIsPaused) {
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `TickInternal`  
 Görevi: HUD, cleanup, perf ve camera’nın actor/world update sonrasındaki yerini göstermek.
 
@@ -142,14 +142,14 @@ if(mOverlayHUD)
 CleanCycle();
 
 // Perf monitoring
-ly::perf::TickAndReport(deltaTime);
+vega::perf::TickAndReport(deltaTime);
 
 // Camera updates last so render uses the latest actor/stage/world state without a frame-order snap.
 UpdateCamera(deltaTime);
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `Render`  
 Görevi: Actor’ları pending state ve render layer ile filtreleyip HUD’dan önce çizmek.
 
@@ -172,8 +172,8 @@ window.setView(window.getDefaultView());
 RenderHUD(window);
 ```
 
-Dosya: `LightYearsEngine/src/framework/Actor.cpp`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/src/framework/Actor.cpp`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: `InitializePhysics`, `UnInitializePhysics`  
 Görevi: Actor’ın Box2D body lifecycle bağlantısını göstermek.
 
@@ -199,8 +199,8 @@ if(mPhysicsBodyId)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `TickInternal`  
 Görevi: World değişiminde timer, physics ve BeginPlay sırasını göstermek.
 
@@ -257,9 +257,9 @@ Gerçek SFML render view değişimleri, Box2D contact event sırası ve level de
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/include/framework/World.h` — container ve public API.
-2. `LightYearsEngine/src/framework/World.cpp` — spawn promotion, tick, cleanup ve render.
-3. `LightYearsEngine/include/framework/Actor.h` — actor yetenekleri ve sınırları.
-4. `LightYearsEngine/src/framework/Actor.cpp` — lifecycle ve physics bağlantısı.
-5. `LightYearsEngine/src/framework/Application.cpp` — world’ün frame ve scene geçişine bağlandığı yer.
-6. `LightYearsEngine/src/framework/PhysicsSystem.cpp` — collision callback’leri.
+1. `VegaEngine/include/framework/World.h` — container ve public API.
+2. `VegaEngine/src/framework/World.cpp` — spawn promotion, tick, cleanup ve render.
+3. `VegaEngine/include/framework/Actor.h` — actor yetenekleri ve sınırları.
+4. `VegaEngine/src/framework/Actor.cpp` — lifecycle ve physics bağlantısı.
+5. `VegaEngine/src/framework/Application.cpp` — world’ün frame ve scene geçişine bağlandığı yer.
+6. `VegaEngine/src/framework/PhysicsSystem.cpp` — collision callback’leri.

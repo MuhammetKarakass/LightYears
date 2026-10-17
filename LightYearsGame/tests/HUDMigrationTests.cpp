@@ -36,7 +36,7 @@
 #include <string>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	struct HUDMigrationWarningTestAccess
 	{
@@ -60,10 +60,10 @@ namespace
 {
 	using Json = nlohmann::json;
 
-	class HeadlessAbilityLevel final : public ly::GameLevel
+	class HeadlessAbilityLevel final : public vega::GameLevel
 	{
 	public:
-		explicit HeadlessAbilityLevel(ly::Application* application) : GameLevel{ application } {}
+		explicit HeadlessAbilityLevel(vega::Application* application) : GameLevel{ application } {}
 
 	protected:
 		void InitializeLevelSystems() override {}
@@ -74,7 +74,7 @@ namespace
 
 	struct PlayerManagerResetGuard
 	{
-		ly::PlayerManager& manager;
+		vega::PlayerManager& manager;
 		~PlayerManagerResetGuard() { manager.Reset(); }
 	};
 
@@ -98,7 +98,7 @@ namespace
 
 	void RunWarningTest(Report& report)
 	{
-		using namespace ly;
+		using namespace vega;
 		GameplayWarning warning;
 		warning.title = "UNAUTHORIZED REGION";
 		warning.message = "RETURN IN";
@@ -169,7 +169,7 @@ namespace
 
 	void RunNotificationTest(Report& report)
 	{
-		using namespace ly;
+		using namespace vega;
 		std::string title = "HUD migration notification";
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
@@ -238,7 +238,7 @@ namespace
 
 	void RunEncounterTest(Report& report)
 	{
-		using namespace ly;
+		using namespace vega;
 		std::string title = "HUD migration encounter";
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
@@ -339,7 +339,7 @@ namespace
 
 	void RunAbilityTest(Report& report)
 	{
-		using namespace ly;
+		using namespace vega;
 		std::string title = "HUD migration ability";
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
@@ -611,7 +611,7 @@ namespace
 	}
 
 	template<typename T>
-	void CollectWidgets(const std::shared_ptr<ly::Widget>& parent, std::vector<std::shared_ptr<T>>& result)
+	void CollectWidgets(const std::shared_ptr<vega::Widget>& parent, std::vector<std::shared_ptr<T>>& result)
 	{
 		for (const auto& child : parent->GetChildren())
 		{
@@ -636,7 +636,7 @@ namespace
 		void GameMainMenu() { ++gameMainMenu; }
 	};
 
-	void SortButtonsByTop(std::vector<std::shared_ptr<ly::Button>>& buttons)
+	void SortButtonsByTop(std::vector<std::shared_ptr<vega::Button>>& buttons)
 	{
 		std::sort(buttons.begin(), buttons.end(), [](const auto& left, const auto& right)
 		{
@@ -644,14 +644,14 @@ namespace
 		});
 	}
 
-	bool ButtonCenterNear(const ly::Button& button, float x, float y)
+	bool ButtonCenterNear(const vega::Button& button, float x, float y)
 	{
 		const sf::FloatRect bounds = button.GetBound();
 		return std::abs(bounds.position.x + bounds.size.x * .5f - x) <= 2.f &&
 			std::abs(bounds.position.y + bounds.size.y * .5f - y) <= 2.f;
 	}
 
-	bool ClickButton(ly::HUD& hud, ly::Button& button)
+	bool ClickButton(vega::HUD& hud, vega::Button& button)
 	{
 		const sf::FloatRect bounds = button.GetBound();
 		const sf::Vector2i position{
@@ -662,9 +662,9 @@ namespace
 		return pressed && released;
 	}
 
-	bool LegacyTextCenterNear(ly::TextWidget& actual, const std::string& text, unsigned int size, float authoredCenterY, float viewportWidth)
+	bool LegacyTextCenterNear(vega::TextWidget& actual, const std::string& text, unsigned int size, float authoredCenterY, float viewportWidth)
 	{
-		ly::TextWidget legacy{ text };
+		vega::TextWidget legacy{ text };
 		legacy.SetTextSize(size);
 		const sf::FloatRect legacyGlyphBounds = legacy.GetBound();
 		const sf::FloatRect actualBounds = actual.GetBound();
@@ -674,7 +674,7 @@ namespace
 
 	void RunMenusTest(Report& report)
 	{
-		using namespace ly;
+		using namespace vega;
 		std::string title = "HUD migration menus";
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
@@ -811,7 +811,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 3 || (std::string{ argv[1] } != "--warning" && std::string{ argv[1] } != "--notification" &&
 		std::string{ argv[1] } != "--encounter" && std::string{ argv[1] } != "--ability" && std::string{ argv[1] } != "--menus"))
 	{
@@ -826,10 +826,10 @@ int main(int argc, char** argv)
 		mode == "--menus" ? "HUDMigrationMenus" : "HUDMigrationWarning";
 	try
 	{
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
-		if (mode == "--ability" && !ly::GameContentBootstrap::Register())
+		if (mode == "--ability" && !vega::GameContentBootstrap::Register())
 			throw std::runtime_error{ "GameContentBootstrap::Register failed" };
 		if (std::string{ argv[1] } == "--warning") RunWarningTest(report);
 		else if (std::string{ argv[1] } == "--notification") RunNotificationTest(report);

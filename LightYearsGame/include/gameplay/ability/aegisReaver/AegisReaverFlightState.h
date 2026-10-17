@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_set>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class SpaceShip;

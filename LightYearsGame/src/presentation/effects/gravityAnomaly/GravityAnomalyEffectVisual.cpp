@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	GravityAnomalyEffectVisual::GravityAnomalyEffectVisual(
 		World* world,

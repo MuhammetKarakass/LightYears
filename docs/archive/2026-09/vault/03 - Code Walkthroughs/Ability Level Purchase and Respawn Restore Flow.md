@@ -10,11 +10,11 @@ source_files:
   - SpaceAbilitySystem/include/abilities/GameplayAbilityInstance.h
   - LightYearsGame/include/gameConfigs/ability/AbilityCatalog.h
 symbols:
-  - ly::Player::TryPurchaseAbilityLevel
+  - vega::Player::TryPurchaseAbilityLevel
   - sas::AbilitySystemComponent::LevelUpAbility
   - sas::GameplayAbilityInstance::SetLevel
-  - ly::GameAbility::RebuildDefinitionForLevel
-  - ly::Player::RestorePurchasedAbilityLevels
+  - vega::GameAbility::RebuildDefinitionForLevel
+  - vega::Player::RestorePurchasedAbilityLevels
 related:
   - "[[Ability Skill Progression System]]"
   - "[[AbilityInstance]]"

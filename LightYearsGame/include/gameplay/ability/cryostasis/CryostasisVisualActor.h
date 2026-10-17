@@ -6,7 +6,7 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 
-namespace ly
+namespace vega
 {
 	class CryostasisVisualActor final : public Actor
 	{

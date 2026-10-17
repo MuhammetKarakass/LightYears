@@ -3,9 +3,9 @@
 
 namespace common_module_e2e
 {
-	void RunFullMagazineChecks(Report& report, ly::Application& application)
+	void RunFullMagazineChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		const ShipDefinition& shipDefinition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
 		const ModuleRulesContext rules{
 			*shipDefinition.schematic,
@@ -22,8 +22,8 @@ namespace common_module_e2e
 		target->SetActorLocation({ -40000.f, -50000.f });
 		source->SetInvulnerability(false);
 		target->SetInvulnerability(false);
-		target->SetCollisionLayer(ly::GameCollision::Enemy);
-		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		target->SetCollisionLayer(vega::GameCollision::Enemy);
+		target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 		target->GetHealthComponent().SetMaxHealth(5000.f, true);
 
 		ModuleLoadout loadout;

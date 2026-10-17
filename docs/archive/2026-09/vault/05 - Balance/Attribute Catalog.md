@@ -20,9 +20,9 @@ source_files:
   - LightYearsGame/src/gameplay/combat/CombatRuntime.cpp
   - LightYearsGame/src/gameplay/ship/ShipRuntime.cpp
 symbols:
-  - ly::OwnerAttributeIds
-  - ly::ShipAttributeIds
-  - ly::CommonAttributeIds
+  - vega::OwnerAttributeIds
+  - vega::ShipAttributeIds
+  - vega::CommonAttributeIds
   - BarrierEffectSchema
   - DamageTypeSchema::Attribute
 related:
@@ -135,7 +135,7 @@ Kaynak: `ShipAttributeIds`; storage sahibi `ShipRuntime::mAttributeSystem`.
 ## Kritik gerçek kod
 
 Dosya: `LightYearsGame/include/gameplay/attributes/AttributeIds.h`  
-Sınıf veya namespace: `ly::OwnerAttributeIds`  
+Sınıf veya namespace: `vega::OwnerAttributeIds`  
 Fonksiyon: owner kimlik kataloğu  
 Görevi: Çekirdek combat owner stat'lerini adlandırır.
 
@@ -146,7 +146,7 @@ Görevi: Çekirdek combat owner stat'lerini adlandırır.
 ```
 
 Dosya: `LightYearsGame/include/gameplay/attributes/AttributeIds.h`  
-Sınıf veya namespace: `ly::CommonAttributeIds`  
+Sınıf veya namespace: `vega::CommonAttributeIds`  
 Fonksiyon: ortak kimlik kataloğu  
 Görevi: Definition-local ortak değer anahtarlarını adlandırır.
 
@@ -158,7 +158,7 @@ Görevi: Definition-local ortak değer anahtarlarını adlandırır.
 ```
 
 Dosya: `LightYearsGame/src/gameplay/combat/CombatRuntime.cpp`  
-Sınıf veya namespace: `ly::CombatRuntime`  
+Sınıf veya namespace: `vega::CombatRuntime`  
 Fonksiyon: `InitializeOwnerAttributes`  
 Görevi: Owner stat storage'ının başlangıç kayıtlarını oluşturur.
 

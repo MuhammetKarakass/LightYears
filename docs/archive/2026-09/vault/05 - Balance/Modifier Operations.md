@@ -85,7 +85,7 @@ result = max(minimumMultiplier, baseMultiplier × eachModifierMultiplier)
 ## Kritik gerçek kod
 
 Dosya: `SpaceAbilitySystem/include/attributes/AttributeSystem.h`  
-Sınıf veya namespace: `ly`  
+Sınıf veya namespace: `vega`  
 Fonksiyon: `AttributeModifierOperation`  
 Görevi: Üç ortak operation kimliğini tanımlar.
 
@@ -99,7 +99,7 @@ Görevi: Üç ortak operation kimliğini tanımlar.
 ```
 
 Dosya: `SpaceAbilitySystem/include/attributes/AttributeSystem.h`  
-Sınıf veya namespace: `ly`  
+Sınıf veya namespace: `vega`  
 Fonksiyon: `CalculateModifiedAttributeValue`  
 Görevi: Normal modifier sonucunu hesaplar.
 

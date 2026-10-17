@@ -4,7 +4,7 @@
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "presentation/ability/infernoSpray/InfernoSprayPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class InfernoSprayActor final : public AbilityWorldActor
 	{

@@ -3,7 +3,7 @@
 #include "gameplay/module/generated/ModuleGeneratedLease.h"
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	struct ModuleRicochetProjectileSnapshot
 	{

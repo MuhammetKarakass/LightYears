@@ -4,15 +4,15 @@ status: implemented-in-dirty-worktree
 verified_date: 2026-07-27
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/CMakeLists.txt
-  - LightYearsEngine/include/framework/AudioManager.h
-  - LightYearsEngine/src/framework/AudioManager.cpp
-  - LightYearsEngine/include/framework/SoundComponent.h
-  - LightYearsEngine/src/framework/SoundComponent.cpp
-  - LightYearsEngine/src/framework/Application.cpp
+  - VegaEngine/CMakeLists.txt
+  - VegaEngine/include/framework/AudioManager.h
+  - VegaEngine/src/framework/AudioManager.cpp
+  - VegaEngine/include/framework/SoundComponent.h
+  - VegaEngine/src/framework/SoundComponent.cpp
+  - VegaEngine/src/framework/Application.cpp
 symbols:
-  - ly::AudioManager
-  - ly::SoundComponent
+  - vega::AudioManager
+  - vega::SoundComponent
   - sf::PlaybackDevice
 related:
   - "[[Engine Performance and Memory]]"
@@ -50,7 +50,7 @@ Projede kullanılan SFML 3.0.1, varsayılan cihazı bile miniaudio’ya explicit
 
 ## Uygulanan çözüm
 
-`LightYearsEngine/CMakeLists.txt` içindeki SFML bağımlılığı `3.0.1` → `3.1.0` yükseltildi. SFML 3.1.0 varsayılan seçimde device ID geçmeyerek miniaudio’nun otomatik stream routing yolunu etkinleştirir ve sleep/resume ile default playback device değişimlerini yönetir.
+`VegaEngine/CMakeLists.txt` içindeki SFML bağımlılığı `3.0.1` → `3.1.0` yükseltildi. SFML 3.1.0 varsayılan seçimde device ID geçmeyerek miniaudio’nun otomatik stream routing yolunu etkinleştirir ve sleep/resume ile default playback device değişimlerini yönetir.
 
 Projede `sf::PlaybackDevice::setDevice()` ile özel/sabit cihaz seçimi yoktur; bu yüzden varsayılan yeni davranış doğrudan geçerlidir. İleride UI üzerinden belirli bir cihaz seçilirse, o cihaz kaybolduğunda uygulama-level state notification ve fallback politikası ayrıca tasarlanmalıdır.
 

@@ -15,24 +15,24 @@ namespace AbilityData
 	namespace Definitions
 	{
 		// Numeric balance, progression and costs are authored in abilities.json.
-		inline const ly::GameAbilityDefinition Shield_Basic = []
+		inline const vega::GameAbilityDefinition Shield_Basic = []
 		{
-			ly::GameAbilityDefinition definition;
+			vega::GameAbilityDefinition definition;
 			definition.abilityId = Shield::AbilityId::Basic;
 			definition.slot = sas::AbilitySlot::Ability1;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 			definition.abilityTags = {
-				ly::GameplayTags::Ability::Defense,
-				ly::GameplayTags::Ability::Family::Shield
+				vega::GameplayTags::Ability::Defense,
+				vega::GameplayTags::Ability::Family::Shield
 			};
 			definition.displayName = "Shield";
 			definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 			definition.accentColor = sf::Color{ 80, 200, 255, 255 };
 			definition.actions = {
-				ly::AbilityActionSpec{
+				vega::AbilityActionSpec{
 					sas::AbilityActionPhase::OnActivate,
-					ly::ApplyEffectAction{
+					vega::ApplyEffectAction{
 						BarrierEffectSchema::BasicEffectId,
 						sas::AbilityTargetPolicy::Self
 					},
@@ -40,7 +40,7 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorType = ly::AbilityBehaviorType::Shield;
+			definition.behaviorType = vega::AbilityBehaviorType::Shield;
 			return definition;
 		}();
 	}

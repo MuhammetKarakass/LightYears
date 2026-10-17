@@ -33,7 +33,7 @@ namespace vega
 		void CacheRows();
 		void DrawFields(const std::string& block);
 		void BlockTools(const std::string& path);
-		bool RenderSky(sf::RenderTexture& target, std::size_t index, const ly::World& world, sf::Vector2u size);
+		bool RenderSky(sf::RenderTexture& target, std::size_t index, const vega::World& world, sf::Vector2u size);
 		void Thumbnails(EditorContext& scene);
 		std::shared_ptr<sky::SkyEditorHost> mPipeline;
 		std::unique_ptr<SkyDocument> mDocument;

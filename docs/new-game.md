@@ -42,7 +42,7 @@ The template also ships sample scenes, Lua scripts, a prefab and a sound; see
    public:
    	const char* Name() const override { return "MyGame"; }
    	void RegisterTypes() override;
-   	std::shared_ptr<ly::World> CreateLevel(ly::Application& application,
+   	std::shared_ptr<vega::World> CreateLevel(vega::Application& application,
    		const nlohmann::json& scene, bool edit) override;
    };
    ```
@@ -135,19 +135,19 @@ GAS and Sky are optional runtime/editor modules; Blank links neither. Lua is
 optional at the engine level. To
 remove it from this template, remove the scene's `scripts` entries, script
 registration/root/player setup, and replace `BlankMovement`'s key reader with
-SFML input; link the runtime module to `LightYearsEngine`. The shared editor
+SFML input; link the runtime module to `VegaEngine`. The shared editor
 currently includes VegaScript services. See [game modules](game-module.md).
 
 Runtime widgets and point lights accept project-owned defaults through
 `application.GetEngineContext().Defaults()` (`framework/EngineContext.h`). Install font, button
 texture/sound and shader paths before creating those widgets. Empty defaults
 load no external font or shader; absent button textures use the engine's white
-pixel. LightYears calls `InstallLightYearsEngineAssets` during module startup;
+pixel. LightYears calls `InstallVegaEngineAssets` during module startup;
 direct gameplay test hosts call the same function explicitly.
 
 Applications create their own context by default. Headless tests create
-`ly::EngineContext context;` and `ly::World world{ context };`; use a temporary
-`ly::EngineContext::Scope` only when exercising legacy module/setup APIs.
+`vega::EngineContext context;` and `vega::World world{ context };`; use a temporary
+`vega::EngineContext::Scope` only when exercising legacy module/setup APIs.
 New actors and components access services through their owner; avoid static
 accessors and process-wide registration guards. See [engine contexts](engine-context.md)
 for explicit reflection, widget and optional scripting setup, lifetime rules,

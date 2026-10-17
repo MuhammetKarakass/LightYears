@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	ModuleGuidedProjectileActor::ModuleGuidedProjectileActor(World* world, Actor* source, const ModuleGuidedPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, const weak_ptr<Actor>& target, float speed, float lifetime, float damage, const GameplayTag& damageType) : AbilityWorldActor{ world, source }, mProfile{ profile }, mLease{ lease }, mTarget{ target }, mSpeed{ speed }
 	{

@@ -11,7 +11,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 	using common_module_e2e::Report;
 	using common_module_e2e::Json;
 	struct ResetGuard { ~ResetGuard() { PlayerManager::GetPlayerManager().Reset(); } };
@@ -223,7 +223,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2) return 2;
 	Report report; const std::filesystem::path artifact{ argv[1] }; std::filesystem::create_directories(artifact.parent_path());
 	try

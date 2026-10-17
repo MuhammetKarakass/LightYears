@@ -4,7 +4,7 @@
 #include "presentation/hud/vitals/VitalsViewModel.h"
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	class Player;
 

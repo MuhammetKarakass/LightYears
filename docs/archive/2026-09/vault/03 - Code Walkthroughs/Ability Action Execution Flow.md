@@ -11,13 +11,13 @@ source_files:
   - LightYearsGame/src/gameplay/ability/GameAbilityActionExecutor.cpp
   - LightYearsGame/include/gameplay/ability/GameAbilityActionExecutor.h
 symbols:
-  - ly::GameAbility::BeginExecution
-  - ly::GameAbility::TickExecution
-  - ly::GameAbility::EndExecution
-  - ly::GameAbilityActionExecutor::BeginExecution
-  - ly::GameAbilityActionExecutor::TickExecution
-  - ly::GameAbilityActionExecutor::ExecuteAction
-  - ly::GameAbilityActionExecutor::EndExecution
+  - vega::GameAbility::BeginExecution
+  - vega::GameAbility::TickExecution
+  - vega::GameAbility::EndExecution
+  - vega::GameAbilityActionExecutor::BeginExecution
+  - vega::GameAbilityActionExecutor::TickExecution
+  - vega::GameAbilityActionExecutor::ExecuteAction
+  - vega::GameAbilityActionExecutor::EndExecution
 related:
   - "[[Ability Execution System]]"
   - "[[AbilityExecutor]]"

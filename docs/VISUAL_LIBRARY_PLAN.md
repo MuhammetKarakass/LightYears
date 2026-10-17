@@ -36,7 +36,7 @@ This is an art decision informed by a small qualitative sample, not a population
 
 ## V1 (done): foundation
 
-Where: `LightYearsVisual/` (static library `LightYearsVisual`, namespace `ly::visual`) and the viewer `LightYearsVisualGallery` (CMake option `LIGHTYEARS_BUILD_VISUAL_GALLERY`). Depends on SFML and nlohmann_json only. See `LightYearsVisual/README.md` for usage.
+Where: `LightYearsVisual/` (static library `LightYearsVisual`, namespace `vega::visual`) and the viewer `LightYearsVisualGallery` (CMake option `LIGHTYEARS_BUILD_VISUAL_GALLERY`). Depends on SFML and nlohmann_json only. See `LightYearsVisual/README.md` for usage.
 
 - Color script: `ColorRamp`, `ColorScript`, `ColorScriptLibrary`, JSON palettes, runtime switch.
 - Pipeline: `VisualPipeline` with background, world (virtual resolution, nearest upscale, optional palette-snapping Bayer dither), sprites (same virtual resolution, undithered, keeps original colors), energy (additive), bloom (bright pass plus downsampled separable blur levels), flash, vignette; `PipelineSettings` loadable from JSON and editable at runtime.

@@ -31,7 +31,7 @@ namespace vega
 
 	void EditorScript::Report(const std::string& line, bool success, const std::string& detail, bool handled)
 	{
-		LY_GAME_INFO("Editor script: %s %s -- %s", success ? "OK" : "FAIL", line.c_str(), detail.c_str());
+		VEGA_GAME_INFO("Editor script: %s %s -- %s", success ? "OK" : "FAIL", line.c_str(), detail.c_str());
 		mReport << (success ? "OK " : "FAIL ") << line << " -- " << detail << '\n';
 		mReport.flush();
 		if ((!success && !handled) || !mReport) mFailed = true;

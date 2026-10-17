@@ -5,7 +5,7 @@
 #include <memory>
 #include <unordered_map>
 
-namespace ly
+namespace vega
 {
 	class ModuleFirstHitHistory final
 	{

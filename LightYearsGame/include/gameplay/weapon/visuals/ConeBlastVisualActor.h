@@ -2,7 +2,7 @@
 
 #include "framework/Actor.h"
 
-namespace ly
+namespace vega
 {
 	// Presentation-only flash for an instant cone blast.
 	class ConeBlastVisualActor final : public Actor

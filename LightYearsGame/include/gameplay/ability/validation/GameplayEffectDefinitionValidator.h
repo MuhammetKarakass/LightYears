@@ -5,7 +5,7 @@
 #include <functional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// LightYears-specific semantic validation for effect content. The generic
 	// sas validation remains in SpaceAbilitySystem; this layer owns project tags,

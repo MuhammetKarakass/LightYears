@@ -5,7 +5,7 @@
 
 #include <SFML/Window/Keyboard.hpp>
 
-namespace ly
+namespace vega
 {
 	struct AbilityInputBinding
 	{

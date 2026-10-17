@@ -39,7 +39,7 @@ namespace
 }
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	try

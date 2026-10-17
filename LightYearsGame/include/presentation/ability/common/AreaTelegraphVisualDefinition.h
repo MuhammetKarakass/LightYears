@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	enum class AreaTelegraphFillMode : std::uint8_t
 	{

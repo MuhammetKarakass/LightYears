@@ -3,15 +3,15 @@ type: class
 status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 source_files:
-  - LightYearsEngine/include/framework/World.h
-  - LightYearsEngine/src/framework/World.cpp
+  - VegaEngine/include/framework/World.h
+  - VegaEngine/src/framework/World.cpp
 symbols:
-  - ly::World
-  - ly::World::SpawnActor
-  - ly::World::BeginPlayInternal
-  - ly::World::TickInternal
-  - ly::World::CleanCycle
-  - ly::World::Render
+  - vega::World
+  - vega::World::SpawnActor
+  - vega::World::BeginPlayInternal
+  - vega::World::TickInternal
+  - vega::World::CleanCycle
+  - vega::World::Render
 related:
   - "[[Actor and World System]]"
   - "[[Object Lifecycle]]"
@@ -28,7 +28,7 @@ World actor time domain, body-less spatial grid ve render-bounds culling sahibi 
 Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski örnekler tarihsel inceleme kapsamını taşır; bu güncelleme ile çelişen ayrıntılar güncel davranış kabul edilmemeli.
 
 
-`ly::World`, actor’ların gerçek runtime container’ı ve güçlü sahibidir. Ayrıca stage, HUD, camera, pause, event dispatch, render traversal ve actor cleanup sorumluluklarını taşır.
+`vega::World`, actor’ların gerçek runtime container’ı ve güçlü sahibidir. Ayrıca stage, HUD, camera, pause, event dispatch, render traversal ve actor cleanup sorumluluklarını taşır.
 
 ## Sahiplik ve durum
 
@@ -36,8 +36,8 @@ Application’a raw pointer tutar; actor, stage ve HUD’ları `shared_ptr` ile 
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/World.h`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/include/framework/World.h`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: sınıf alanları  
 Görevi: Runtime koleksiyonlarını tanımlamak.
 
@@ -54,8 +54,8 @@ shared_ptr<HUD> mHUD;
 shared_ptr<HUD> mOverlayHUD;
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `BeginPlayInternal`  
 Görevi: World initialization hook ve stage başlangıcını bir kez çalıştırmak.
 
@@ -69,8 +69,8 @@ if (!mBeganPlay)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `TickInternal`  
 Görevi: Pending actor promotion ve BeginPlay.
 
@@ -86,8 +86,8 @@ for (const shared_ptr<Actor>& actor : actorsToSpawn)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `Render`  
 Görevi: Actor render’ını layer ve pending-destroy state ile filtrelemek.
 
@@ -123,7 +123,7 @@ Camera/HUD çizimi ve gerçek level switch.
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/include/framework/World.h`
-2. `LightYearsEngine/src/framework/World.cpp`
-3. `LightYearsEngine/include/gameplay/GameStage.h`
-4. `LightYearsEngine/src/gameplay/GameStage.cpp`
+1. `VegaEngine/include/framework/World.h`
+2. `VegaEngine/src/framework/World.cpp`
+3. `VegaEngine/include/gameplay/GameStage.h`
+4. `VegaEngine/src/gameplay/GameStage.cpp`

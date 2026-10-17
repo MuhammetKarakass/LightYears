@@ -3,7 +3,7 @@
 #include "gameplay/GameplayWarning.h"
 #include <SFML/Window/Event.hpp>
 
-namespace ly
+namespace vega
 {
 	class HUDController
 	{

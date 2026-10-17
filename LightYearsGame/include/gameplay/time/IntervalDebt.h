@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace ly::time
+namespace vega::time
 {
 	constexpr int DefaultMaximumIntervalCatchUp = 4;
 	constexpr float MinimumIntervalSeconds = 0.001f;

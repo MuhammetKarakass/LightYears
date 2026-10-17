@@ -2,7 +2,7 @@
 
 #include "content/ContentId.h"
 
-namespace ly::SolarBombardmentPresentationIds
+namespace vega::SolarBombardmentPresentationIds
 {
 	inline const sas::ContentId ProjectileBasic{
 		"Presentation.Ability.SolarBombardment.Projectile.Basic"

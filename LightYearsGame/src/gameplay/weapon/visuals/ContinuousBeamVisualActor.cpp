@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	ContinuousBeamVisualActor::ContinuousBeamVisualActor(World* world, Actor* owner)
 		: Actor(world)

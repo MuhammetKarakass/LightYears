@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

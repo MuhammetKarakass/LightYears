@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	struct GravityAnomalyEffectVisualDefinition
 	{

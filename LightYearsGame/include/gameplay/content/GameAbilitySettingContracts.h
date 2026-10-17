@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	// Registers shipped family contracts before ability JSON is parsed. New
 	// families extend their own contract and this composition list, never loader

@@ -11,7 +11,7 @@
 #include <cmath>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

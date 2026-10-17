@@ -24,10 +24,10 @@ namespace vega
 		return std::filesystem::is_regular_file(candidate, error);
 	}
 
-	std::vector<std::string> ListAssetChoices(const std::filesystem::path& root, ly::reflect::AssetKind kind)
+	std::vector<std::string> ListAssetChoices(const std::filesystem::path& root, vega::reflect::AssetKind kind)
 	{
 		std::vector<std::string> choices;
-		if (root.empty() || kind == ly::reflect::AssetKind::None) return choices;
+		if (root.empty() || kind == vega::reflect::AssetKind::None) return choices;
 		std::error_code error;
 		for (std::filesystem::recursive_directory_iterator it{ root, error }, end; it != end && !error; it.increment(error))
 		{
@@ -38,21 +38,21 @@ namespace vega
 				if (it->is_directory(error)) it.disable_recursion_pending();
 				continue;
 			}
-			if (it->is_regular_file(error) && ly::reflect::AcceptsAsset(kind, it->path()))
+			if (it->is_regular_file(error) && vega::reflect::AcceptsAsset(kind, it->path()))
 				choices.push_back(it->path().lexically_relative(root).generic_u8string());
 		}
 		std::sort(choices.begin(), choices.end());
 		return choices;
 	}
 
-	bool CheckAssetAssignment(const std::filesystem::path& root, const ly::reflect::PropertyInfo& property,
+	bool CheckAssetAssignment(const std::filesystem::path& root, const vega::reflect::PropertyInfo& property,
 		const std::filesystem::path& relative, std::string& error)
 	{
-		if (property.assetKind == ly::reflect::AssetKind::None) { error = property.name + " is not an asset property"; return false; }
-		if (!ly::reflect::AcceptsAsset(property.assetKind, relative))
+		if (property.assetKind == vega::reflect::AssetKind::None) { error = property.name + " is not an asset property"; return false; }
+		if (!vega::reflect::AcceptsAsset(property.assetKind, relative))
 		{
-			error = relative.filename().u8string() + " is not a " + ly::reflect::AssetKindName(property.assetKind) +
-				" asset (" + ly::reflect::AssetKindFilter(property.assetKind) + ")";
+			error = relative.filename().u8string() + " is not a " + vega::reflect::AssetKindName(property.assetKind) +
+				" asset (" + vega::reflect::AssetKindFilter(property.assetKind) + ")";
 			return false;
 		}
 		std::filesystem::path file;
@@ -64,13 +64,13 @@ namespace vega
 		return true;
 	}
 
-	bool AssignAssetProperty(EditorContext& context, CommandHistory& history, ly::Actor& actor, const ReflectedTarget& target,
-		const ly::reflect::PropertyInfo& property, const std::filesystem::path& root, const std::filesystem::path& relative, std::string& error)
+	bool AssignAssetProperty(EditorContext& context, CommandHistory& history, vega::Actor& actor, const ReflectedTarget& target,
+		const vega::reflect::PropertyInfo& property, const std::filesystem::path& root, const std::filesystem::path& relative, std::string& error)
 	{
 		if (!property.setter) { error = property.name + " is read-only"; return false; }
 		if (!CheckAssetAssignment(root, property, relative, error)) return false;
 		if (!history.Execute(std::make_unique<SetPropertyCommand>(actor.GetUniqueID(), target.componentIdentity, property.name,
-			ly::reflect::PropertyValue{ relative.generic_u8string() })))
+			vega::reflect::PropertyValue{ relative.generic_u8string() })))
 		{
 			error = context.propertyError;
 			return false;
@@ -97,7 +97,7 @@ namespace vega
 		}
 	}
 
-	bool DrawAssetField(const ly::reflect::PropertyInfo& property, std::string& value, bool mixed, const std::filesystem::path& root)
+	bool DrawAssetField(const vega::reflect::PropertyInfo& property, std::string& value, bool mixed, const std::filesystem::path& root)
 	{
 		static ImGuiTextFilter filter;
 		static std::vector<std::string> choices;
@@ -164,14 +164,14 @@ namespace vega
 						changed = true;
 						ImGui::CloseCurrentPopup();
 					}
-				if (choices.empty()) ImGui::TextDisabled("No %s files under the asset root", ly::reflect::AssetKindFilter(property.assetKind));
+				if (choices.empty()) ImGui::TextDisabled("No %s files under the asset root", vega::reflect::AssetKindFilter(property.assetKind));
 				ImGui::EndPopup();
 			}
 		}
 		if (missing) ImGui::TextColored(ImVec4{ 1.f, 0.7f, 0.2f, 1.f }, "Missing asset");
 		if (const auto refusal = refusals.find(id); editable && refusal != refusals.end())
 			ImGui::TextColored(ImVec4{ 1.f, 0.3f, 0.3f, 1.f }, "Refused: %s", refusal->second.c_str());
-		if (resolved && property.assetKind == ly::reflect::AssetKind::Texture)
+		if (resolved && property.assetKind == vega::reflect::AssetKind::Texture)
 		{
 			if (const auto* texture = AssetThumbnail(file))
 			{

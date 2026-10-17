@@ -8,7 +8,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace common_module_e2e;
 
 	constexpr float kHuntClockLevelOneReduction = .05f;
@@ -57,7 +57,7 @@ namespace
 			const auto enemy = level->SpawnActor<SpaceShip>(definition).lock();
 			report.Check(enemy != nullptr, "charge test creates a real enemy combatant");
 			level->TickInternal(0.f);
-			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
+			enemy->SetCollisionLayer(vega::GameCollision::Enemy);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
 			DamagePayload payload;
 			payload.criticalPolicy = DamageCriticalPolicy::Disabled;
@@ -158,7 +158,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	report.artifact["test"] = "AbilityChargeRestoreE2E";

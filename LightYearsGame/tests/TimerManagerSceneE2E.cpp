@@ -17,7 +17,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

@@ -4,7 +4,7 @@
 #include <widget/TextWidget.h>
 #include <unordered_set>
 
-namespace ly
+namespace vega
 {
 	class SpaceShip;
 	struct DamageContext;

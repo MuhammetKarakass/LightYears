@@ -189,7 +189,7 @@ handles, presets, comparison, saving and scripted validation.
 
 Open **View > World Settings** or the Hierarchy header button to edit game-owned
 scene settings. Categories, labels, tooltips, typed widgets and validation come
-from the engine's game-agnostic `ly::SceneSettingsSchema` API
+from the engine's game-agnostic `vega::SceneSettingsSchema` API
 (`framework/scene/SceneSettings.h`). Games register `SceneSettingField` descriptors
 with a key, label, category, type, default, optional bounds and options callback.
 Supported types are bool, int, float, string, enum, catalog ID, vec2, color
@@ -197,15 +197,15 @@ Supported types are bool, int, float, string, enum, catalog ID, vec2, color
 invalid edits. `Value` reads an effective default without modifying authored JSON.
 
 ```cpp
-ly::SceneSettingField exposure;
+vega::SceneSettingField exposure;
 exposure.key = "exposure";
 exposure.label = "Exposure";
 exposure.category = "Lighting";
-exposure.type = ly::SceneSettingType::Float;
+exposure.type = vega::SceneSettingType::Float;
 exposure.defaultValue = 1.0;
 exposure.min = 0.0;
 exposure.max = 4.0;
-ly::SceneSettingsSchema::Get().Register(std::move(exposure));
+vega::SceneSettingsSchema::Get().Register(std::move(exposure));
 ```
 
 LightYears registers `routeStop` from the complete galaxy route (including generated
@@ -305,7 +305,7 @@ constructor Sprite removal/undo, and loading the saved scene.
   `src/framework/reflection/EngineReflection.cpp`,
   `include/framework/Application.h`, `include/framework/SpriteComponent.h`,
   `src/framework/SpriteComponent.cpp`, `tests/SceneSerializerTests.cpp`, and
-  `LightYearsEngine/CMakeLists.txt`.
+  `VegaEngine/CMakeLists.txt`.
 * Game: `include/level/SceneLevel.h`, `src/level/SceneLevel.cpp`,
   `include/level/ArenaSandboxSetup.h`, `src/level/ArenaSandboxSetup.cpp`,
   `include/level/PlayerStart.h`, `src/level/PlayerStart.cpp`,

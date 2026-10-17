@@ -1,11 +1,11 @@
 #pragma once
 #include <framework/EngineAssets.h>
 
-namespace ly
+namespace vega
 {
 	// Called by the game module and by standalone test hosts before creating UI
 	// or lights. Linking reflection must never change another project's defaults.
-	inline void InstallLightYearsEngineAssets()
+	inline void InstallVegaEngineAssets()
 	{
 		EngineAssets::Get() = {
 			"SpaceShooterRedux/Bonus/kenvector_future.ttf",

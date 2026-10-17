@@ -7,7 +7,7 @@
 #include <framework/debug/Log.h>
 #include <framework/scene/SceneSettings.h>
 
-namespace ly
+namespace vega
 {
 	SceneLevel::SceneLevel(Application* app, nlohmann::json scene, SettingsApplier applySettings, bool editMode)
 		: ArenaLevel{ app }, mScene(std::move(scene)), mApplySettings{ std::move(applySettings) }, mEditMode{ editMode }
@@ -52,11 +52,11 @@ namespace ly
 				break;
 			}
 		}
-		for (const auto& warning : mLoadResult.warnings) LY_GAME_WARN("Scene: %s", warning.c_str());
+		for (const auto& warning : mLoadResult.warnings) VEGA_GAME_WARN("Scene: %s", warning.c_str());
 		// ArenaLevel owns the exact same player, respawn, HUD and follow-camera
 		// path as ArenaTestLevel. Entities must exist before its system setup.
 		if (!mEditMode) ArenaLevel::BeginPlay();
-		LY_GAME_INFO("SceneLevel: scene-loaded %d entities (%s)", mLoadResult.spawned, mEditMode ? "edit mode" : "play mode");
+		VEGA_GAME_INFO("SceneLevel: scene-loaded %d entities (%s)", mLoadResult.spawned, mEditMode ? "edit mode" : "play mode");
 	}
 
 	ArenaDefinition SceneLevel::CreateArenaDefinition() const

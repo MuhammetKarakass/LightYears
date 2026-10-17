@@ -19,8 +19,8 @@
 namespace
 {
 	using Json = nlohmann::json;
-	using namespace ly;
-	using namespace ly::reflect;
+	using namespace vega;
+	using namespace vega::reflect;
 	int failures = 0;
 	void Check(bool condition, const char* message)
 	{
@@ -217,8 +217,8 @@ end
 
 int main(int argc, char** argv)
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 #ifdef _MSC_VER
 	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
@@ -226,7 +226,7 @@ int main(int argc, char** argv)
 	const auto root = std::filesystem::path{ VEGA_SCRIPT_TEST_ROOT } / (argc > 1 ? argv[1] : "reflection");
 	std::filesystem::create_directories(root);
 	vega::script::SetScriptRoot(root);
-	ly::PrefabLibrary::Get().SetRoot(root);
+	vega::PrefabLibrary::Get().SetRoot(root);
 	vega::script::RegisterScriptTypes();
 	VEGA_REGISTER(RichWave);
 	VEGA_REGISTER(RichActor);

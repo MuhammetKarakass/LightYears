@@ -1,0 +1,121 @@
+#pragma once
+
+#include <chrono>
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <filesystem>
+
+#ifndef VEGA_ENABLE_PROFILING
+	#if defined(NDEBUG)
+		#define VEGA_ENABLE_PROFILING 0
+	#else
+		#define VEGA_ENABLE_PROFILING 1
+	#endif
+#endif
+
+namespace vega::debug
+{
+	struct ProfileAggregate
+	{
+		std::string name;
+		std::uint64_t callCount = 0;
+		double totalMicroseconds = 0.0;
+		double minimumMicroseconds = 0.0;
+		double maximumMicroseconds = 0.0;
+		double selfMicroseconds = 0.0;
+	};
+
+	struct ProfileFrame
+	{
+		std::uint64_t id = 0;
+		double milliseconds = 0.0;
+		std::vector<ProfileAggregate> scopes;
+		std::unordered_map<std::string, double> counters;
+	};
+
+	// A scope or event that took at least FrameEventThresholdMicroseconds in the current frame.
+	struct FrameEvent
+	{
+		const char* name = nullptr;
+		double microseconds = 0.0;
+	};
+
+	class Profiler
+	{
+	public:
+		static constexpr double FrameEventThresholdMicroseconds = 1000.0;
+		static void Initialize();
+		static void Shutdown();
+		static void Reset();
+
+		static bool IsCompiledIn();
+		static bool IsEnabled();
+		static void SetEnabled(bool enabled);
+		static void BeginFrame();
+		static void EndFrame();
+		static std::vector<ProfileFrame> CaptureFrames();
+		static std::vector<std::pair<std::uint64_t, float>> FrameTimes();
+		static ProfileFrame GetFrame(std::uint64_t id = 0);
+		static bool CaptureToFile(const std::filesystem::path& path, std::string& error);
+		static void RecordCompletedScope(const char* name, double elapsed, double self);
+
+		static void RecordScope(const char* name, double elapsedMicroseconds);
+		static void SetCounter(const char* name, double value);
+		static std::vector<ProfileAggregate> BuildSnapshot();
+		static std::unordered_map<std::string, double> BuildCounterSnapshot();
+		static void LogSummary(std::size_t maximumEntries = 20u);
+
+		// Hitch tracing: slow scopes of the running frame are kept so a slow frame can be explained afterwards.
+		// name must outlive the frame (string literal or typeid name).
+		static void RecordFrameEvent(const char* name, double elapsedMicroseconds);
+		// Moves the frame's slow events into out and starts a new frame.
+		static void TakeFrameEvents(std::vector<FrameEvent>& out);
+	};
+
+	class ProfileScope
+	{
+	public:
+		explicit ProfileScope(const char* name);
+		~ProfileScope();
+
+		ProfileScope(const ProfileScope&) = delete;
+		ProfileScope& operator=(const ProfileScope&) = delete;
+
+	private:
+		const char* mName;
+		bool mEnabled;
+		std::chrono::steady_clock::time_point mStart;
+		ProfileScope* mParent = nullptr;
+		double mChildren = 0.0;
+	};
+
+	class ProfileFrameScope
+	{
+	public:
+		ProfileFrameScope() : mEnabled{ Profiler::IsEnabled() } { if (mEnabled) Profiler::BeginFrame(); }
+		~ProfileFrameScope() { if (mEnabled) Profiler::EndFrame(); }
+	private:
+		bool mEnabled;
+	};
+}
+
+#define VEGA_DIAGNOSTICS_CONCAT_INNER(left, right) left##right
+#define VEGA_DIAGNOSTICS_CONCAT(left, right) \
+	VEGA_DIAGNOSTICS_CONCAT_INNER(left, right)
+
+#if VEGA_ENABLE_PROFILING
+	#define VEGA_PROFILE_SCOPE(name) \
+		::vega::debug::ProfileScope \
+			VEGA_DIAGNOSTICS_CONCAT(lyProfileScope_, __LINE__){ name }
+	#define VEGA_PROFILE_FUNCTION() VEGA_PROFILE_SCOPE(__func__)
+	#define VEGA_PROFILE_FRAME() VEGA_PROFILE_SCOPE("Application.Frame")
+	#define VEGA_PROFILE_COUNTER(name, value) \
+		::vega::debug::Profiler::SetCounter(name, static_cast<double>(value))
+#else
+	#define VEGA_PROFILE_SCOPE(name) ((void)0)
+	#define VEGA_PROFILE_FUNCTION() ((void)0)
+	#define VEGA_PROFILE_FRAME() ((void)0)
+	#define VEGA_PROFILE_COUNTER(name, value) ((void)0)
+#endif

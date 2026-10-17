@@ -21,8 +21,8 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
-	using namespace ly;
+	vega::InstallVegaEngineAssets();
+	using namespace vega;
 	using Json = nlohmann::json;
 	const auto root = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets";
 	AssetManager::GetAssetManager().SetAssetRootDirectory(root.generic_string() + "/");

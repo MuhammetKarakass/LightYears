@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly
+namespace vega
 {
 	// Read-only view of which module systems a ship currently has enabled. The
 	// ability system asks it instead of depending on the player ship class; a

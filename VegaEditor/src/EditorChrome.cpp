@@ -14,7 +14,7 @@ namespace vega
 		if (ImGui::BeginViewportSideBar("##VegaToolbar", viewport, ImGuiDir_Up, 48.f, flags))
 		{
 			auto& settings = mContext.viewSettings;
-			ly::World* world = GetCurrentWorld();
+			vega::World* world = GetCurrentWorld();
 			const bool paused = world && world->IsPaused();
 			if (!ImGui::GetIO().WantTextInput && !ImGui::GetIO().KeyCtrl && !mMoveDragActor)
 			{

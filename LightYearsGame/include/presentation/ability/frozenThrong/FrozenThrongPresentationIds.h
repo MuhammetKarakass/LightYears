@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::FrozenThrongPresentationIds
+namespace vega::FrozenThrongPresentationIds
 {
 	inline constexpr char HuskBasic[] =
 		"Presentation.Ability.FrozenThrong.Husk.Basic";

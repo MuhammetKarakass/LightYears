@@ -4,7 +4,7 @@
 
 #include <cmath>
 
-namespace ly::ability_checks
+namespace vega::ability_checks
 {
 	// Shared helpers for per-ability definition validation. Abilities with a
 	// different epsilon or different semantics keep their own local copy.

@@ -4,7 +4,7 @@ if(graph MATCHES "LightYears(Game|Visual|Gameplay)|SpaceAbilitySystem|VegaSky|Ve
 endif()
 file(GLOB_RECURSE sources "${TEMPLATE_ROOT}/Source/*" "${TEMPLATE_ROOT}/Assets/*")
 get_filename_component(repository "${TEMPLATE_ROOT}/../.." ABSOLUTE)
-file(GLOB_RECURSE engine "${repository}/LightYearsEngine/src/*" "${repository}/LightYearsEngine/include/*")
+file(GLOB_RECURSE engine "${repository}/VegaEngine/src/*" "${repository}/VegaEngine/include/*")
 list(APPEND sources ${engine})
 foreach(file IN LISTS sources)
 	if(file MATCHES "\\.(png|wav)$")

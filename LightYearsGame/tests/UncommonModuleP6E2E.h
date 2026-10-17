@@ -49,8 +49,8 @@ namespace uncommon_p6_e2e
 		projectile->SetDamageTags({});
 		projectile->SetDamagePayload(Plain());
 		projectile->SetShotMetadata(metadata);
-		target.SetCollisionMask(ly::GameCollision::PlayerBullet);
-		for (const auto& enemy : Actors<SpaceShip>(f)) if (enemy->GetCollisionLayer() == ly::GameCollision::Enemy) enemy->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		target.SetCollisionMask(vega::GameCollision::PlayerBullet);
+		for (const auto& enemy : Actors<SpaceShip>(f)) if (enemy->GetCollisionLayer() == vega::GameCollision::Enemy) enemy->SetCollisionMask(vega::GameCollision::PlayerBullet);
 		projectile->OnActorBeginOverlap(&target);
 		if (finishRicochets)
 			for (int step = 0; step < 200; ++step)

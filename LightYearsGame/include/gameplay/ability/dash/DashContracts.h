@@ -16,7 +16,7 @@ namespace AbilityData::Dash
 		inline static constexpr char BaseDistance[] = "baseDistance";
 		inline static constexpr char CameraZoomOutRatio[] = "cameraZoomOutRatio";
 
-		inline static const ly::content::NumericSettingContract Contract{
+		inline static const vega::content::NumericSettingContract Contract{
 			{ BaseDistance, CameraZoomOutRatio },
 			{ BaseDistance, CameraZoomOutRatio }
 		};

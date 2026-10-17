@@ -7,7 +7,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 

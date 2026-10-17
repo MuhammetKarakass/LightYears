@@ -5,7 +5,7 @@
 #include "gameplay/ability/sunBeam/SunBeamActorBase.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class AreaTelegraphActor;
 

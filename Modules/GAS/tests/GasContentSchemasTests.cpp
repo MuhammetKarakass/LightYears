@@ -4,10 +4,10 @@
 
 int main()
 {
-	using namespace ly::content;
-	ly::EngineContext context;
-	ly::EngineContext unrelated;
-	ly::EngineContext::Scope unrelatedScope{ unrelated };
+	using namespace vega::content;
+	vega::EngineContext context;
+	vega::EngineContext unrelated;
+	vega::EngineContext::Scope unrelatedScope{ unrelated };
 	sas::RegisterContentSchemas(context);
 	auto& registry = context.ContentSchemas();
 	if (!unrelated.ContentSchemas().Types().empty()) return 5;

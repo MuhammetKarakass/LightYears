@@ -7,7 +7,7 @@
 #include <functional>
 #include <string>
 
-namespace ly { class Actor; class World; class EngineContext; }
+namespace vega { class Actor; class World; class EngineContext; }
 
 namespace vega::script
 {
@@ -18,7 +18,7 @@ namespace vega::script
 	public:
 		// Deprecated no-argument shim; new hosts supply their context.
 		static ScriptRuntime& Get();
-		static ScriptRuntime& Get(ly::EngineContext& context);
+		static ScriptRuntime& Get(vega::EngineContext& context);
 		~ScriptRuntime();
 		void SetRoot(const std::filesystem::path& root);
 		void SetHotReload(bool enabled);
@@ -26,9 +26,9 @@ namespace vega::script
 		void SetInstructionBudget(std::uint64_t instructions);
 		void SetMemoryLimit(std::size_t bytes);
 		const std::filesystem::path& Root() const;
-		using PlayerResolver = std::function<std::weak_ptr<ly::Actor>(ly::World&)>;
+		using PlayerResolver = std::function<std::weak_ptr<vega::Actor>(vega::World&)>;
 		void SetPlayerResolver(PlayerResolver resolver);
-		std::shared_ptr<ly::Actor> Player(ly::World& world) const;
+		std::shared_ptr<vega::Actor> Player(vega::World& world) const;
 		// Optional device adapter, also permits deterministic headless input tests.
 		using KeyReader = std::function<bool(const std::string&)>;
 		void SetKeyReader(KeyReader reader);
@@ -42,7 +42,7 @@ namespace vega::script
 	};
 	void SetScriptRoot(const std::filesystem::path& root);
 	void RegisterScriptTypes();
-	void RegisterScriptTypes(ly::EngineContext& context);
+	void RegisterScriptTypes(vega::EngineContext& context);
 	bool GenerateLuaTypes(const std::filesystem::path& output, std::string& error) noexcept;
-	bool GenerateLuaTypes(ly::EngineContext& context, const std::filesystem::path& output, std::string& error) noexcept;
+	bool GenerateLuaTypes(vega::EngineContext& context, const std::filesystem::path& output, std::string& error) noexcept;
 }

@@ -12,7 +12,7 @@
 #include <chrono>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(PlayerMovementComponent, ActorComponent)
 	{

@@ -37,7 +37,7 @@
 #include <fstream>
 #include <limits>
 
-namespace ly
+namespace vega
 {
 	LightYearsGameModule::LightYearsGameModule() = default;
 	namespace
@@ -65,7 +65,7 @@ namespace ly
 
 	void LightYearsGameModule::Initialize(Application& application, bool editor)
 	{
-		InstallLightYearsEngineAssets();
+		InstallVegaEngineAssets();
 		mApplication = &application;
 		if (mProjectFile.empty()) mProjectFile = ResourceRoot(!editor) / "vega.project.json";
 		if (!editor && std::filesystem::exists(mProjectFile))
@@ -132,7 +132,7 @@ namespace ly
 		});
 		if (!GameContentBootstrap::Register())
 		{
-			LY_GAME_ERROR("Failed to register shipped game content; application will not start the game world");
+			VEGA_GAME_ERROR("Failed to register shipped game content; application will not start the game world");
 			mExitCode = 1;
 			mApplication->QuitApplication();
 			return;
@@ -140,7 +140,7 @@ namespace ly
 
 		RegisterGameSceneSettings();
 
-		ly::perf::g_disableLights.store(false);
+		vega::perf::g_disableLights.store(false);
 
 		mDevOptions = ParseDevOptions();
 		try
@@ -154,7 +154,7 @@ namespace ly
 		}
 		catch (const std::exception& error)
 		{
-			LY_GAME_ERROR("Project: %s", error.what());
+			VEGA_GAME_ERROR("Project: %s", error.what());
 			mExitCode = 1;
 			mApplication->QuitApplication();
 			return;
@@ -184,11 +184,11 @@ namespace ly
 				nlohmann::json scene;
 				input >> scene;
 				mApplication->LoadWorld(CreateLevel(*mApplication, scene, false));
-				LY_GAME_INFO("SceneLevel: scene-loaded %s (play mode)", mDevOptions.scenePath.c_str());
+				VEGA_GAME_INFO("SceneLevel: scene-loaded %s (play mode)", mDevOptions.scenePath.c_str());
 			}
 			catch (const std::exception& error)
 			{
-				LY_GAME_ERROR("Scene: %s", error.what());
+				VEGA_GAME_ERROR("Scene: %s", error.what());
 				mExitCode = 1;
 				mApplication->QuitApplication();
 			}
@@ -260,7 +260,7 @@ namespace ly
 			origin = "packaged copy";
 			if (!std::filesystem::is_directory(assetsDir, error))
 			{
-				assetsDir = LY_VISUAL_ASSETS_DIR;
+				assetsDir = VEGA_VISUAL_ASSETS_DIR;
 				origin = "source tree";
 				if (std::filesystem::exists(mProjectFile))
 				{
@@ -270,7 +270,7 @@ namespace ly
 				}
 			}
 		}
-		LY_GAME_INFO("Visual pipeline assets (%s): %s", origin, assetsDir.string().c_str());
+		VEGA_GAME_INFO("Visual pipeline assets (%s): %s", origin, assetsDir.string().c_str());
 		mVisualPipeline = std::make_unique<GameVisualPipeline>();
 		mVisualPipeline->Initialize(mApplication->GetRenderWindow(), assetsDir, mDevOptions.colorScript);
 		mVisualPipeline->SetEnabled(!mDevOptions.visualOff);
@@ -397,11 +397,11 @@ namespace ly
 		}
 		if (texture.copyToImage().saveToFile(out))
 		{
-			LY_GAME_INFO("Captured %s after %d frames (visual pipeline %s)", out.string().c_str(), mRenderedFrames, mVisualPipeline && mVisualPipeline->IsActive() ? "ON" : "OFF");
+			VEGA_GAME_INFO("Captured %s after %d frames (visual pipeline %s)", out.string().c_str(), mRenderedFrames, mVisualPipeline && mVisualPipeline->IsActive() ? "ON" : "OFF");
 		}
 		else
 		{
-			LY_GAME_ERROR("Cannot write capture %s", out.string().c_str());
+			VEGA_GAME_ERROR("Cannot write capture %s", out.string().c_str());
 		}
 		mDevOptions.capturePath.clear();
 		mApplication->QuitApplication();

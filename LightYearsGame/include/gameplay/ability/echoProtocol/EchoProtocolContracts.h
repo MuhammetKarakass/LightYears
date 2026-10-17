@@ -13,11 +13,11 @@ namespace AbilityData::EchoProtocol
 			"Ability.Utility.EchoProtocol.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTags::Ability::Utility
+	inline const vega::GameplayTag CategoryTag{
+		vega::GameplayTags::Ability::Utility
 	};
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::EchoProtocol
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::EchoProtocol
 	};
 
 	struct Attribute

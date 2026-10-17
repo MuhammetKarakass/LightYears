@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	enum class ModuleTriggerKind
 	{

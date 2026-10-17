@@ -9,7 +9,7 @@ prefab, project or reflection golden format/file was changed.
 
 ### Wave 9 GAS schema registration
 
-GAS now requires `sas::RegisterContentSchemas(ly::EngineContext&)`, with no
+GAS now requires `sas::RegisterContentSchemas(vega::EngineContext&)`, with no
 ownerless overload. Only the destination context's missing ability/effect
 descriptors are installed; game overrides and schema contents are preserved.
 The editor constructs `EditorExtensions{ GetEngineContext() }` and GAS uses its
@@ -59,7 +59,7 @@ global catalogs and other previously documented migration work remain unchanged.
 
 Wave 9 file inventory (16):
 
-- LightYearsEngine/include/framework/GameModule.h
+- VegaEngine/include/framework/GameModule.h
 - Modules/GAS/include/gas/GasContentSchemas.h
 - Modules/GAS/src/GasContentSchemas.cpp
 - Modules/GAS/tests/GasContentSchemasTests.cpp
@@ -80,7 +80,7 @@ Wave 9 file inventory (16):
 
 See [EngineContext](engine-context.md) for ownership, injection, compatibility
 bindings and lifetime rules. The core API is in
-[EngineContext.h](../LightYearsEngine/include/framework/EngineContext.h).
+[EngineContext.h](../VegaEngine/include/framework/EngineContext.h).
 Application adopts the current context by default and accepts an explicit
 host-owned context for isolation; it never owns either context. World, Actor,
 Widget and EditorContext retain access to their host's services. The optional
@@ -152,7 +152,7 @@ Modules, LightYearsGame or LightYearsVisual; the Wave 9 GAS changes are below.
 
 Follow-up file inventory (14):
 
-- LightYearsEngine/CMakeLists.txt
+- VegaEngine/CMakeLists.txt
 - tools/CheckContextAccessors.cmake
 - VegaEditor/include/editor/ContentWorkspace.h
 - VegaEditor/include/editor/EditorContentAuthoring.h
@@ -300,7 +300,7 @@ Used the existing LightYearsHierarchyCostTests benchmark in Debug, with 500 flat
 actors and 500 actors attached to one moving root. Each executable reports the
 median of ten batches of 2,000 frames after one warm-up batch. The pre-change
 executable was preserved before any affected executable was rebuilt as
-build/LightYearsEngine/context-baseline-benchmark.exe. Both executables were run
+build/VegaEngine/context-baseline-benchmark.exe. Both executables were run
 twice, sequentially, with compilation and CTest idle. Times below are microseconds
 per headless frame; they exclude context/scene construction and rendering.
 
@@ -317,7 +317,7 @@ idempotence uses a registry-local bool, avoiding a lookup on repeated scene save
 No slowdown was observed in these samples; the small differences do not establish
 a speedup. Raw measurements: build/context-perf-{before,after}-{1,2}.log.
 The earlier interrupted-run measurement in
-build/LightYearsEngine/context-baseline-perf.txt overlapped CTest and is excluded.
+build/VegaEngine/context-baseline-perf.txt overlapped CTest and is excluded.
 The resumed measurements use before/after/after/before ordering. Executable
 hashes, exit statuses and elapsed times are in build/context-perf-metadata.json.
 
@@ -338,66 +338,66 @@ hashes, exit statuses and elapsed times are in build/context-perf-metadata.json.
 
 ## File inventory (88)
 
-- [LightYearsEngine/CMakeLists.txt](../LightYearsEngine/CMakeLists.txt)
-- [LightYearsEngine/include/engineConfigs/EngineStructs.h](../LightYearsEngine/include/engineConfigs/EngineStructs.h)
-- [LightYearsEngine/include/framework/Actor.h](../LightYearsEngine/include/framework/Actor.h)
-- [LightYearsEngine/include/framework/Application.h](../LightYearsEngine/include/framework/Application.h)
-- [LightYearsEngine/include/framework/AssetManager.h](../LightYearsEngine/include/framework/AssetManager.h)
-- [LightYearsEngine/include/framework/AudioManager.h](../LightYearsEngine/include/framework/AudioManager.h)
-- [LightYearsEngine/include/framework/EngineAssets.h](../LightYearsEngine/include/framework/EngineAssets.h)
-- [LightYearsEngine/include/framework/EngineContext.h](../LightYearsEngine/include/framework/EngineContext.h)
-- [LightYearsEngine/include/framework/ShaderManager.h](../LightYearsEngine/include/framework/ShaderManager.h)
-- [LightYearsEngine/include/framework/SoundComponent.h](../LightYearsEngine/include/framework/SoundComponent.h)
-- [LightYearsEngine/include/framework/World.h](../LightYearsEngine/include/framework/World.h)
-- [LightYearsEngine/include/framework/content/ContentSchema.h](../LightYearsEngine/include/framework/content/ContentSchema.h)
-- [LightYearsEngine/include/framework/reflection/Reflection.h](../LightYearsEngine/include/framework/reflection/Reflection.h)
-- [LightYearsEngine/include/framework/reflection/ReflectionDeclare.h](../LightYearsEngine/include/framework/reflection/ReflectionDeclare.h)
-- [LightYearsEngine/include/framework/reflection/ReflectionMacros.h](../LightYearsEngine/include/framework/reflection/ReflectionMacros.h)
-- [LightYearsEngine/include/framework/scene/PrefabLibrary.h](../LightYearsEngine/include/framework/scene/PrefabLibrary.h)
-- [LightYearsEngine/include/framework/scene/Scene.h](../LightYearsEngine/include/framework/scene/Scene.h)
-- [LightYearsEngine/include/framework/scene/SceneSettings.h](../LightYearsEngine/include/framework/scene/SceneSettings.h)
-- [LightYearsEngine/include/widget/Button.h](../LightYearsEngine/include/widget/Button.h)
-- [LightYearsEngine/include/widget/ImageWidget.h](../LightYearsEngine/include/widget/ImageWidget.h)
-- [LightYearsEngine/include/widget/TextWidget.h](../LightYearsEngine/include/widget/TextWidget.h)
-- [LightYearsEngine/include/widget/UIStyle.h](../LightYearsEngine/include/widget/UIStyle.h)
-- [LightYearsEngine/include/widget/ValueGauge.h](../LightYearsEngine/include/widget/ValueGauge.h)
-- [LightYearsEngine/include/widget/Widget.h](../LightYearsEngine/include/widget/Widget.h)
-- [LightYearsEngine/src/framework/Actor.cpp](../LightYearsEngine/src/framework/Actor.cpp)
-- [LightYearsEngine/src/framework/Application.cpp](../LightYearsEngine/src/framework/Application.cpp)
-- [LightYearsEngine/src/framework/AssetManager.cpp](../LightYearsEngine/src/framework/AssetManager.cpp)
-- [LightYearsEngine/src/framework/AudioManager.cpp](../LightYearsEngine/src/framework/AudioManager.cpp)
-- [LightYearsEngine/src/framework/BackgroundLayer.cpp](../LightYearsEngine/src/framework/BackgroundLayer.cpp)
-- [LightYearsEngine/src/framework/ComponentIdentity.cpp](../LightYearsEngine/src/framework/ComponentIdentity.cpp)
-- [LightYearsEngine/src/framework/EngineContext.cpp](../LightYearsEngine/src/framework/EngineContext.cpp)
-- [LightYearsEngine/src/framework/LightComponent.cpp](../LightYearsEngine/src/framework/LightComponent.cpp)
-- [LightYearsEngine/src/framework/ShaderManager.cpp](../LightYearsEngine/src/framework/ShaderManager.cpp)
-- [LightYearsEngine/src/framework/SoundComponent.cpp](../LightYearsEngine/src/framework/SoundComponent.cpp)
-- [LightYearsEngine/src/framework/SpriteComponent.cpp](../LightYearsEngine/src/framework/SpriteComponent.cpp)
-- [LightYearsEngine/src/framework/World.cpp](../LightYearsEngine/src/framework/World.cpp)
-- [LightYearsEngine/src/framework/reflection/EngineReflection.cpp](../LightYearsEngine/src/framework/reflection/EngineReflection.cpp)
-- [LightYearsEngine/src/framework/reflection/Reflection.cpp](../LightYearsEngine/src/framework/reflection/Reflection.cpp)
-- [LightYearsEngine/src/framework/scene/PrefabLibrary.cpp](../LightYearsEngine/src/framework/scene/PrefabLibrary.cpp)
-- [LightYearsEngine/src/framework/scene/Scene.cpp](../LightYearsEngine/src/framework/scene/Scene.cpp)
-- [LightYearsEngine/src/framework/scene/SceneSettings.cpp](../LightYearsEngine/src/framework/scene/SceneSettings.cpp)
-- [LightYearsEngine/src/widget/Button.cpp](../LightYearsEngine/src/widget/Button.cpp)
-- [LightYearsEngine/src/widget/ImageWidget.cpp](../LightYearsEngine/src/widget/ImageWidget.cpp)
-- [LightYearsEngine/src/widget/TextWidget.cpp](../LightYearsEngine/src/widget/TextWidget.cpp)
-- [LightYearsEngine/src/widget/UIStyle.cpp](../LightYearsEngine/src/widget/UIStyle.cpp)
-- [LightYearsEngine/src/widget/ValueGauge.cpp](../LightYearsEngine/src/widget/ValueGauge.cpp)
-- [LightYearsEngine/src/widget/Widget.cpp](../LightYearsEngine/src/widget/Widget.cpp)
-- [LightYearsEngine/tests/EngineContextTests.cpp](../LightYearsEngine/tests/EngineContextTests.cpp)
-- [LightYearsEngine/tests/EngineLifetimeTests.cpp](../LightYearsEngine/tests/EngineLifetimeTests.cpp)
-- [LightYearsEngine/tests/HierarchyCostTests.cpp](../LightYearsEngine/tests/HierarchyCostTests.cpp)
-- [LightYearsEngine/tests/HierarchyTests.cpp](../LightYearsEngine/tests/HierarchyTests.cpp)
-- [LightYearsEngine/tests/PrefabLibraryTests.cpp](../LightYearsEngine/tests/PrefabLibraryTests.cpp)
-- [LightYearsEngine/tests/ReflectionMacroTests.cpp](../LightYearsEngine/tests/ReflectionMacroTests.cpp)
-- [LightYearsEngine/tests/ReflectionRegistryGoldenTests.cpp](../LightYearsEngine/tests/ReflectionRegistryGoldenTests.cpp)
-- [LightYearsEngine/tests/ReflectionTests.cpp](../LightYearsEngine/tests/ReflectionTests.cpp)
-- [LightYearsEngine/tests/RenderViewportTests.cpp](../LightYearsEngine/tests/RenderViewportTests.cpp)
-- [LightYearsEngine/tests/SceneBoundsTests.cpp](../LightYearsEngine/tests/SceneBoundsTests.cpp)
-- [LightYearsEngine/tests/SceneSerializerTests.cpp](../LightYearsEngine/tests/SceneSerializerTests.cpp)
-- [LightYearsEngine/tests/UIFoundationTests.cpp](../LightYearsEngine/tests/UIFoundationTests.cpp)
-- [LightYearsEngine/tests/WorldSpatialQueryTests.cpp](../LightYearsEngine/tests/WorldSpatialQueryTests.cpp)
+- [VegaEngine/CMakeLists.txt](../VegaEngine/CMakeLists.txt)
+- [VegaEngine/include/engineConfigs/EngineStructs.h](../VegaEngine/include/engineConfigs/EngineStructs.h)
+- [VegaEngine/include/framework/Actor.h](../VegaEngine/include/framework/Actor.h)
+- [VegaEngine/include/framework/Application.h](../VegaEngine/include/framework/Application.h)
+- [VegaEngine/include/framework/AssetManager.h](../VegaEngine/include/framework/AssetManager.h)
+- [VegaEngine/include/framework/AudioManager.h](../VegaEngine/include/framework/AudioManager.h)
+- [VegaEngine/include/framework/EngineAssets.h](../VegaEngine/include/framework/EngineAssets.h)
+- [VegaEngine/include/framework/EngineContext.h](../VegaEngine/include/framework/EngineContext.h)
+- [VegaEngine/include/framework/ShaderManager.h](../VegaEngine/include/framework/ShaderManager.h)
+- [VegaEngine/include/framework/SoundComponent.h](../VegaEngine/include/framework/SoundComponent.h)
+- [VegaEngine/include/framework/World.h](../VegaEngine/include/framework/World.h)
+- [VegaEngine/include/framework/content/ContentSchema.h](../VegaEngine/include/framework/content/ContentSchema.h)
+- [VegaEngine/include/framework/reflection/Reflection.h](../VegaEngine/include/framework/reflection/Reflection.h)
+- [VegaEngine/include/framework/reflection/ReflectionDeclare.h](../VegaEngine/include/framework/reflection/ReflectionDeclare.h)
+- [VegaEngine/include/framework/reflection/ReflectionMacros.h](../VegaEngine/include/framework/reflection/ReflectionMacros.h)
+- [VegaEngine/include/framework/scene/PrefabLibrary.h](../VegaEngine/include/framework/scene/PrefabLibrary.h)
+- [VegaEngine/include/framework/scene/Scene.h](../VegaEngine/include/framework/scene/Scene.h)
+- [VegaEngine/include/framework/scene/SceneSettings.h](../VegaEngine/include/framework/scene/SceneSettings.h)
+- [VegaEngine/include/widget/Button.h](../VegaEngine/include/widget/Button.h)
+- [VegaEngine/include/widget/ImageWidget.h](../VegaEngine/include/widget/ImageWidget.h)
+- [VegaEngine/include/widget/TextWidget.h](../VegaEngine/include/widget/TextWidget.h)
+- [VegaEngine/include/widget/UIStyle.h](../VegaEngine/include/widget/UIStyle.h)
+- [VegaEngine/include/widget/ValueGauge.h](../VegaEngine/include/widget/ValueGauge.h)
+- [VegaEngine/include/widget/Widget.h](../VegaEngine/include/widget/Widget.h)
+- [VegaEngine/src/framework/Actor.cpp](../VegaEngine/src/framework/Actor.cpp)
+- [VegaEngine/src/framework/Application.cpp](../VegaEngine/src/framework/Application.cpp)
+- [VegaEngine/src/framework/AssetManager.cpp](../VegaEngine/src/framework/AssetManager.cpp)
+- [VegaEngine/src/framework/AudioManager.cpp](../VegaEngine/src/framework/AudioManager.cpp)
+- [VegaEngine/src/framework/BackgroundLayer.cpp](../VegaEngine/src/framework/BackgroundLayer.cpp)
+- [VegaEngine/src/framework/ComponentIdentity.cpp](../VegaEngine/src/framework/ComponentIdentity.cpp)
+- [VegaEngine/src/framework/EngineContext.cpp](../VegaEngine/src/framework/EngineContext.cpp)
+- [VegaEngine/src/framework/LightComponent.cpp](../VegaEngine/src/framework/LightComponent.cpp)
+- [VegaEngine/src/framework/ShaderManager.cpp](../VegaEngine/src/framework/ShaderManager.cpp)
+- [VegaEngine/src/framework/SoundComponent.cpp](../VegaEngine/src/framework/SoundComponent.cpp)
+- [VegaEngine/src/framework/SpriteComponent.cpp](../VegaEngine/src/framework/SpriteComponent.cpp)
+- [VegaEngine/src/framework/World.cpp](../VegaEngine/src/framework/World.cpp)
+- [VegaEngine/src/framework/reflection/EngineReflection.cpp](../VegaEngine/src/framework/reflection/EngineReflection.cpp)
+- [VegaEngine/src/framework/reflection/Reflection.cpp](../VegaEngine/src/framework/reflection/Reflection.cpp)
+- [VegaEngine/src/framework/scene/PrefabLibrary.cpp](../VegaEngine/src/framework/scene/PrefabLibrary.cpp)
+- [VegaEngine/src/framework/scene/Scene.cpp](../VegaEngine/src/framework/scene/Scene.cpp)
+- [VegaEngine/src/framework/scene/SceneSettings.cpp](../VegaEngine/src/framework/scene/SceneSettings.cpp)
+- [VegaEngine/src/widget/Button.cpp](../VegaEngine/src/widget/Button.cpp)
+- [VegaEngine/src/widget/ImageWidget.cpp](../VegaEngine/src/widget/ImageWidget.cpp)
+- [VegaEngine/src/widget/TextWidget.cpp](../VegaEngine/src/widget/TextWidget.cpp)
+- [VegaEngine/src/widget/UIStyle.cpp](../VegaEngine/src/widget/UIStyle.cpp)
+- [VegaEngine/src/widget/ValueGauge.cpp](../VegaEngine/src/widget/ValueGauge.cpp)
+- [VegaEngine/src/widget/Widget.cpp](../VegaEngine/src/widget/Widget.cpp)
+- [VegaEngine/tests/EngineContextTests.cpp](../VegaEngine/tests/EngineContextTests.cpp)
+- [VegaEngine/tests/EngineLifetimeTests.cpp](../VegaEngine/tests/EngineLifetimeTests.cpp)
+- [VegaEngine/tests/HierarchyCostTests.cpp](../VegaEngine/tests/HierarchyCostTests.cpp)
+- [VegaEngine/tests/HierarchyTests.cpp](../VegaEngine/tests/HierarchyTests.cpp)
+- [VegaEngine/tests/PrefabLibraryTests.cpp](../VegaEngine/tests/PrefabLibraryTests.cpp)
+- [VegaEngine/tests/ReflectionMacroTests.cpp](../VegaEngine/tests/ReflectionMacroTests.cpp)
+- [VegaEngine/tests/ReflectionRegistryGoldenTests.cpp](../VegaEngine/tests/ReflectionRegistryGoldenTests.cpp)
+- [VegaEngine/tests/ReflectionTests.cpp](../VegaEngine/tests/ReflectionTests.cpp)
+- [VegaEngine/tests/RenderViewportTests.cpp](../VegaEngine/tests/RenderViewportTests.cpp)
+- [VegaEngine/tests/SceneBoundsTests.cpp](../VegaEngine/tests/SceneBoundsTests.cpp)
+- [VegaEngine/tests/SceneSerializerTests.cpp](../VegaEngine/tests/SceneSerializerTests.cpp)
+- [VegaEngine/tests/UIFoundationTests.cpp](../VegaEngine/tests/UIFoundationTests.cpp)
+- [VegaEngine/tests/WorldSpatialQueryTests.cpp](../VegaEngine/tests/WorldSpatialQueryTests.cpp)
 - [VegaEditor/include/editor/EditorCommands.h](../VegaEditor/include/editor/EditorCommands.h)
 - [VegaEditor/src/EditorApplication.cpp](../VegaEditor/src/EditorApplication.cpp)
 - [VegaEditor/src/EditorAssetOperations.cpp](../VegaEditor/src/EditorAssetOperations.cpp)

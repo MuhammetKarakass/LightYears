@@ -9,8 +9,8 @@ source_files:
   - SpaceAbilitySystem/include/abilities/GameplayAbilityInstance.h
   - LightYearsGame/src/gameplay/ability/GameAbility.cpp
 symbols:
-  - ly::RegisterGameAbilityContent
-  - ly::RegisterGameAbilityBehaviors
+  - vega::RegisterGameAbilityContent
+  - vega::RegisterGameAbilityBehaviors
   - sas::AbilityBehaviorRegistry
   - sas::GameplayAbilityInstance
 related:

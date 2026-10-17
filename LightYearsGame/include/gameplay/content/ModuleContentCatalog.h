@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	class ModuleContentCatalog
 	{

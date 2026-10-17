@@ -7,7 +7,7 @@
 #include <exception>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	GameplayEffectPresentationBinding::GameplayEffectPresentationBinding(
 		Actor& owner

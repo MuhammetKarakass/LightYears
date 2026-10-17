@@ -3,7 +3,7 @@
 #include "framework/JsonDocumentLoader.h"
 #include "gameplay/content/AbilityLoader.h"
 
-namespace ly::content::ability_loader_detail
+namespace vega::content::ability_loader_detail
 {
 	using Json = JsonDocumentLoader::Json;
 

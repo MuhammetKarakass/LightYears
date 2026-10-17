@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <string_view>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

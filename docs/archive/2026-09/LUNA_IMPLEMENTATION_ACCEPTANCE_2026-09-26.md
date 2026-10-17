@@ -19,7 +19,7 @@ The current user request authorizes Luna max agents and commits, replacing the o
 | R5 / P2/P3 cleanup ownership | Closed within retry contract | Effect ledgers, [AbilityExecution](../SpaceAbilitySystem/include/abilities/AbilityExecution.h), [invocations](../LightYearsGame/src/gameplay/ability/runtime/AbilityInvocationRuntime.cpp), Return Protocol and beam resource owners retain failed cleanup. [Component](../SpaceAbilitySystem/src/AbilitySystemComponent.cpp) releases backing dependencies after debt drains; E05/E11/E18 and unchanged historical faulted-Clear assertion |
 | R6 / P4 purchase commit | Closed | [Player](../LightYearsGame/src/player/Player.cpp): staged definition/configuration, typed noexcept commit sink, preallocated persistence record, payment before observers, nested purchase guard; E12/E13 |
 | R7 / P5 damage context | Closed | [CombatRuntime](../LightYearsGame/src/gameplay/combat/CombatRuntime.cpp): nested synchronous frames and Clear generation; E14/E15 |
-| R8 / P6 one-shot timer | Closed | [TimerManager](../LightYearsEngine/src/framework/TimerManager.cpp): consume before callback, nested Update no-op, strong listener only through callback; E16/E17 |
+| R8 / P6 one-shot timer | Closed | [TimerManager](../VegaEngine/src/framework/TimerManager.cpp): consume before callback, nested Update no-op, strong listener only through callback; E16/E17 |
 
 P0 baseline and ownership gate are complete. P7 includes final E19 regression acceptance, documentation and commits; see the current status above.
 
@@ -132,7 +132,7 @@ P1/P2 source changes and E01–E07 are implemented, with the latest `LightYearsA
 
 ### Source finding
 
-The current `RemoveModifier` erased the attribute-side modifier, recalculated (which broadcasts), then erased the reverse map entry; reentrant removal therefore saw stale ownership. `AddModifier` appended the effect ledger only after `AddModifier` returned, while both implicit attribute registration and recalculation can broadcast first. `Recalculate` performs no member access after `onAttributeChanged.Broadcast`, but its callback argument is a borrowed reference; the implementation will pass a local value. The reverse map is `ly::Map` (`std::map`); its container type stays unchanged.
+The current `RemoveModifier` erased the attribute-side modifier, recalculated (which broadcasts), then erased the reverse map entry; reentrant removal therefore saw stale ownership. `AddModifier` appended the effect ledger only after `AddModifier` returned, while both implicit attribute registration and recalculation can broadcast first. `Recalculate` performs no member access after `onAttributeChanged.Broadcast`, but its callback argument is a borrowed reference; the implementation will pass a local value. The reverse map is `vega::Map` (`std::map`); its container type stays unchanged.
 
 ## P2 — Effect operation lifetime and source-by-source cleanup
 

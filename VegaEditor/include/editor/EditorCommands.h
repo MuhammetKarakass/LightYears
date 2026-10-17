@@ -22,7 +22,7 @@ namespace vega
 	class JsonDocument;
 	struct EditorContext
 	{
-		ly::World* world = nullptr;
+		vega::World* world = nullptr;
 		EditorSelection& selection;
 		EditorCamera* camera = nullptr;
 		std::optional<bool> cameraPaused;
@@ -41,7 +41,7 @@ namespace vega
 		std::function<void(const nlohmann::json&)> applySettings;
 		std::function<std::string()> backdropState;
 		std::string settingErrorKey, settingError;
-		ly::debug::LogBuffer* console = nullptr;
+		vega::debug::LogBuffer* console = nullptr;
 		std::function<void()> clearConsole;
 		std::function<bool(const std::string&, bool)> audioPreference;
 		std::function<void(bool)> diagnosticsVisible;
@@ -51,33 +51,33 @@ namespace vega
 		EditorExtensions* extensions = nullptr;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
-		std::optional<ly::ComponentIdentity> propertyErrorComponent;
+		std::optional<vega::ComponentIdentity> propertyErrorComponent;
 		std::string propertyErrorName;
 		// Monotonic edit revisions deliberately keep undo-to-save dirty until Save/Reload.
 		std::uint64_t sceneRevision = 0;
 		std::optional<unsigned int> prefabOverrideActor;
 		std::uint64_t prefabOverrideRevision = 0;
 		std::unordered_map<const void*, std::unordered_set<std::string>> prefabOverrides;
-		ly::EngineContext& Engine() const { return world ? world->GetEngineContext() : *services; }
+		vega::EngineContext& Engine() const { return world ? world->GetEngineContext() : *services; }
 		// Set by the host, also used while scene transitions have no world.
-		ly::EngineContext* services = &ly::EngineContext::Current();
+		vega::EngineContext* services = &vega::EngineContext::Current();
 		void SceneChanged() { ++sceneRevision; selection.Rebind([this](const std::string& guid) { return ResolveGuid(guid); }); }
 		void ResetActorCache() const { cachedWorldID.reset(); }
 		void RefreshActorCache() const;
 		mutable std::optional<unsigned int> cachedWorldID;
 		mutable std::size_t cachedActorCount = 0;
-		mutable std::unordered_map<unsigned int, std::weak_ptr<ly::Actor>> actorsByID;
-		mutable std::unordered_map<std::string, std::weak_ptr<ly::Actor>> actorsByGuid;
+		mutable std::unordered_map<unsigned int, std::weak_ptr<vega::Actor>> actorsByID;
+		mutable std::unordered_map<std::string, std::weak_ptr<vega::Actor>> actorsByGuid;
 		void SyncCamera();
 		bool SetEditorCamera(bool enabled);
 		bool FocusSelection();
 		void ApplyCamera();
-		std::shared_ptr<ly::Actor> Resolve(unsigned int id) const;
-		std::shared_ptr<ly::Actor> Resolve(unsigned int id, std::string& guid) const;
-		std::shared_ptr<ly::Actor> ResolveGuid(const std::string& guid) const;
+		std::shared_ptr<vega::Actor> Resolve(unsigned int id) const;
+		std::shared_ptr<vega::Actor> Resolve(unsigned int id, std::string& guid) const;
+		std::shared_ptr<vega::Actor> ResolveGuid(const std::string& guid) const;
 	};
 
-	std::string ActorTypeName(const ly::Actor& actor);
+	std::string ActorTypeName(const vega::Actor& actor);
 
 	class EditorCommand
 	{
@@ -145,24 +145,24 @@ namespace vega
 	struct ReflectedTarget
 	{
 		void* object = nullptr;
-		const ly::reflect::TypeInfo* type = nullptr;
-		std::optional<ly::ComponentIdentity> componentIdentity;
+		const vega::reflect::TypeInfo* type = nullptr;
+		std::optional<vega::ComponentIdentity> componentIdentity;
 	};
-	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<ly::ComponentIdentity> componentIdentity);
-	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName);
+	ReflectedTarget ResolvePropertyTarget(vega::Actor& actor, std::optional<vega::ComponentIdentity> componentIdentity);
+	ReflectedTarget FindPropertyTarget(vega::Actor& actor, const std::string& targetName);
 
 	// A leaf inside a reflected struct: "Name.Field" for a struct property, "Name[i].Field" for an element of a struct list.
 	// Edits still write the whole top-level property through SetPropertyCommand, so validation and undo see one value.
 	struct StructLeafPath
 	{
-		const ly::reflect::PropertyInfo* property = nullptr;
+		const vega::reflect::PropertyInfo* property = nullptr;
 		std::optional<std::size_t> index;
-		const ly::reflect::PropertyInfo* leaf = nullptr;
+		const vega::reflect::PropertyInfo* leaf = nullptr;
 		std::string field;
 	};
 	bool ResolveStructLeafPath(const ReflectedTarget& target, const std::string& path, StructLeafPath& resolved, std::string& error);
 	// Points at the stored value of the addressed field inside a copy of the top-level value; nullptr with error on failure.
-	ly::reflect::LeafValue* FindStructLeaf(const StructLeafPath& path, ly::reflect::PropertyValue& value, std::string& error);
+	vega::reflect::LeafValue* FindStructLeaf(const StructLeafPath& path, vega::reflect::PropertyValue& value, std::string& error);
 
 	class SetSceneSettingCommand final : public EditorCommand
 	{
@@ -183,8 +183,8 @@ namespace vega
 	class SetScriptPropertyCommand final : public EditorCommand
 	{
 	public:
-		SetScriptPropertyCommand(unsigned int id, ly::ComponentIdentity componentIdentity, std::string property,
-			ly::reflect::PropertyValue value, std::uint64_t group = 0);
+		SetScriptPropertyCommand(unsigned int id, vega::ComponentIdentity componentIdentity, std::string property,
+			vega::reflect::PropertyValue value, std::uint64_t group = 0);
 		bool Execute(EditorContext&) override;
 		void Undo(EditorContext&) override;
 		std::string Name() const override { return "Set script " + mProperty; }
@@ -192,10 +192,10 @@ namespace vega
 	private:
 		unsigned int mID;
 		std::string mGuid;
-		ly::ComponentIdentity mComponentIdentity;
+		vega::ComponentIdentity mComponentIdentity;
 		std::string mProperty;
-		ly::reflect::PropertyValue mAfter;
-		std::optional<ly::reflect::PropertyValue> mBeforeOverride;
+		vega::reflect::PropertyValue mAfter;
+		std::optional<vega::reflect::PropertyValue> mBeforeOverride;
 		std::uint64_t mMergeGroup;
 		bool mExecuted = false;
 	};
@@ -203,8 +203,8 @@ namespace vega
 	class SetPropertyCommand final : public EditorCommand
 	{
 	public:
-		SetPropertyCommand(unsigned int id, std::optional<ly::ComponentIdentity> componentIdentity,
-			std::string property, ly::reflect::PropertyValue after, std::uint64_t group = 0, bool relative = false);
+		SetPropertyCommand(unsigned int id, std::optional<vega::ComponentIdentity> componentIdentity,
+			std::string property, vega::reflect::PropertyValue after, std::uint64_t group = 0, bool relative = false);
 		bool Execute(EditorContext&) override;
 		void Undo(EditorContext&) override;
 		std::string Name() const override;
@@ -212,12 +212,12 @@ namespace vega
 	private:
 		unsigned int mID;
 		std::string mGuid;
-		std::optional<ly::ComponentIdentity> mComponentIdentity;
+		std::optional<vega::ComponentIdentity> mComponentIdentity;
 		std::string mProperty;
 		std::string mActorName;
 		bool mRelative = false;
-		ly::reflect::PropertyValue mBefore;
-		ly::reflect::PropertyValue mAfter;
+		vega::reflect::PropertyValue mBefore;
+		vega::reflect::PropertyValue mAfter;
 		std::uint64_t mMergeGroup;
 		bool mExecuted = false;
 	};
@@ -279,13 +279,13 @@ namespace vega
 		void Undo(EditorContext&) override;
 		std::string Name() const override { return std::string{ mAdding ? "Add " : "Remove " } + mComponent.typeName; }
 	protected:
-		ComponentCommand(unsigned int id, ly::ComponentIdentity component, bool adding)
+		ComponentCommand(unsigned int id, vega::ComponentIdentity component, bool adding)
 			: mID{ id }, mComponent{ std::move(component) }, mAdding{ adding } {}
 	private:
 		bool Restore(EditorContext&, const nlohmann::json&);
 		unsigned int mID;
 		std::string mGuid;
-		ly::ComponentIdentity mComponent;
+		vega::ComponentIdentity mComponent;
 		bool mAdding;
 		nlohmann::json mBefore;
 		nlohmann::json mAfter;
@@ -299,7 +299,7 @@ namespace vega
 	class RemoveComponentCommand final : public ComponentCommand
 	{
 	public:
-		RemoveComponentCommand(unsigned int id, ly::ComponentIdentity component) : ComponentCommand{ id, std::move(component), false } {}
+		RemoveComponentCommand(unsigned int id, vega::ComponentIdentity component) : ComponentCommand{ id, std::move(component), false } {}
 	};
 
 	class CreateEntity final : public EditorCommand
@@ -348,9 +348,9 @@ namespace vega
 	struct CommonProperty
 	{
 		std::string section;
-		const ly::reflect::PropertyInfo* property;
-		std::vector<std::optional<ly::ComponentIdentity>> targets;
-		ly::reflect::PropertyValue value;
+		const vega::reflect::PropertyInfo* property;
+		std::vector<std::optional<vega::ComponentIdentity>> targets;
+		vega::reflect::PropertyValue value;
 		bool mixed = false;
 	};
 	// Values/descriptors only; never JSON or object pointers. Rebuilt after a scene/selection edit.
@@ -364,6 +364,6 @@ namespace vega
 		std::vector<CommonProperty> mProperties;
 	};
 	bool SetCommonProperty(EditorContext&, CommandHistory&, const CommonProperty&,
-		const ly::reflect::PropertyValue&, std::uint64_t group = 0);
+		const vega::reflect::PropertyValue&, std::uint64_t group = 0);
 
 }

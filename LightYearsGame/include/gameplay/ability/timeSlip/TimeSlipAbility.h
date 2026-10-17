@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/temporal/TemporalRateModifierLedger.h"
 
-namespace ly
+namespace vega
 {
 	class TimeSlipAbility final : public GameAbilityBehavior
 	{

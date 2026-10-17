@@ -7,7 +7,7 @@
 #include "gameplay/ability/closedCircuit/ClosedCircuitContracts.h"
 #include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolContracts.h"
 
-namespace ly::content
+namespace vega::content
 {
 	bool RegisterGameAbilitySettingContracts(std::string* failureReason)
 	{

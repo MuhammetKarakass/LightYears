@@ -2,12 +2,12 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag OverdriveCore{ "Ability.Offense.OverdriveCore" };
 }
 
-namespace ly::GameplayTags::State::Ability::OverdriveCore
+namespace vega::GameplayTags::State::Ability::OverdriveCore
 {
 	namespace RocketLaunch
 	{
@@ -24,7 +24,7 @@ namespace ly::GameplayTags::State::Ability::OverdriveCore
 	}
 }
 
-namespace ly::GameplayTags::Event::Ability::OverdriveCore
+namespace vega::GameplayTags::Event::Ability::OverdriveCore
 {
 	inline const GameplayTag RocketLaunchStarted{
 		"Event.Ability.OverdriveCore.RocketLaunch.Start"
@@ -40,7 +40,7 @@ namespace ly::GameplayTags::Event::Ability::OverdriveCore
 	};
 }
 
-namespace ly::GameplayTags::State::Effect::OverdriveCore
+namespace vega::GameplayTags::State::Effect::OverdriveCore
 {
 	// Effects may grant only State.Effect.* or Status.* tags. This is therefore
 	// separate from the ability-owned State.Ability.* lifecycle tags above.

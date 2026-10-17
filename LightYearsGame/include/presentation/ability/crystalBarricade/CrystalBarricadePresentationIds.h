@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::CrystalBarricadePresentationIds
+namespace vega::CrystalBarricadePresentationIds
 {
 	inline constexpr char WallBasic[] = "Presentation.Ability.CrystalBarricade.Wall.Basic";
 }

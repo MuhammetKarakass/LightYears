@@ -6,7 +6,7 @@
 #include <cctype>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// This schema owns only project-wide tag domains and shared semantic tags.
 	// Ability/weapon/effect families keep their own leaf tags beside their feature.

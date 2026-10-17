@@ -4,7 +4,7 @@
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/combat/ContactDamageGuardRegistry.h"
 
-namespace ly
+namespace vega
 {
 	class LanceDriveActor;
 

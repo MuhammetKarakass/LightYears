@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class AreaTelegraphActor;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::CryostasisPresentationIds
+namespace vega::CryostasisPresentationIds
 {
 	inline constexpr char Basic[] = "Presentation.Ability.Cryostasis.Shell.Basic";
 }

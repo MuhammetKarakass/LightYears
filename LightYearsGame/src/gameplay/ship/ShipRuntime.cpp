@@ -6,7 +6,7 @@
 #include <cmath>
 #include <limits>
 
-namespace ly
+namespace vega
 {
 	ShipRuntime::ShipRuntime(sas::AttributeSystem& ownerAttributes)
 		: mOwnerAttributes{ &ownerAttributes }

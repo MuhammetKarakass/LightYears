@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/arcScythes/ArcScythesPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterArcScythesPresentationProfiles()
 	{

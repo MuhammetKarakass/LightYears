@@ -17,15 +17,15 @@ namespace vega
 		void Clear();
 		bool Execute(EditorContext&, const EditorScriptCommand&, std::string& detail);
 	private:
-		std::shared_ptr<ly::Actor> Target(EditorContext&) const;
+		std::shared_ptr<vega::Actor> Target(EditorContext&) const;
 		bool Section(int index, const char* name);
 		void Refresh(sas::AbilitySystemComponent&);
 		bool mOpen[5]{ true, true, true, true, true };
 		ImGuiTextFilter mFilters[5];
 		ImGuiTextFilter mEffectFilter;
 		sas::AbilitySystemDebugSnapshot mSnapshot;
-		ly::List<sas::GameplayEffectSpec> mDefinitions;
-		std::weak_ptr<ly::Actor> mTarget;
+		vega::List<sas::GameplayEffectSpec> mDefinitions;
+		std::weak_ptr<vega::Actor> mTarget;
 		std::map<std::string, std::vector<std::pair<double, float>>> mHistory;
 		struct TagNode
 		{

@@ -7,7 +7,7 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	struct EnergySpearTraversalRequest
 	{

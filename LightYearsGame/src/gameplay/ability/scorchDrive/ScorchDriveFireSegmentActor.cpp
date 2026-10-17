@@ -12,7 +12,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

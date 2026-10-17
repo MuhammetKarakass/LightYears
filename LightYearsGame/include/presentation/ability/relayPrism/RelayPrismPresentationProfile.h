@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Relay Prism owns its projectile presentation separately from the capture
 	// telegraph because the projectile is visible during the delivery phase,

@@ -3,7 +3,7 @@
 #include "gameplay/module/generated/ModuleGeneratedLease.h"
 #include "presentation/ability/moduleGenerated/ModuleGeneratedPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class ModuleMineActor final : public Actor
 	{

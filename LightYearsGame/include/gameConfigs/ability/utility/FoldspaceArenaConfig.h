@@ -8,22 +8,22 @@
 
 namespace AbilityData::FoldspaceArena
 {
-	inline const ly::AbilityActorDefinition ActorArenaBasic = []
+	inline const vega::AbilityActorDefinition ActorArenaBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Arena::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::FoldspaceArena;
+		definition.actorType = vega::AbilityActorType::FoldspaceArena;
 		// Runtime duration is resolved from EnergyPower and extended through travel.
-		definition.presentationProfileId = ly::FoldspaceArenaPresentationIds::ArenaBasic;
+		definition.presentationProfileId = vega::FoldspaceArenaPresentationIds::ArenaBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition FoldspaceArena_Basic = []
+	inline const vega::GameAbilityDefinition FoldspaceArena_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::FoldspaceArena::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability1;
@@ -32,13 +32,13 @@ namespace AbilityData::Definitions
 		// The behavior extends this lifecycle through the resolved arena duration
 		// and projectile travel time.
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Utility,
-			ly::GameplayTags::Ability::Family::FoldspaceArena
+			vega::GameplayTags::Ability::Utility,
+			vega::GameplayTags::Ability::Family::FoldspaceArena
 		};
 		definition.displayName = "Foldspace Arena";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 145, 215, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::FoldspaceArena;
+		definition.behaviorType = vega::AbilityBehaviorType::FoldspaceArena;
 		return definition;
 	}();
 }

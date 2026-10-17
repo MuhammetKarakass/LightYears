@@ -10,8 +10,8 @@ source_files:
 symbols:
   - sas::AbilityBehavior
   - sas::AbilityBehaviorRegistry
-  - ly::GameAbilityBehavior
-  - ly::RegisterGameAbilityBehaviors
+  - vega::GameAbilityBehavior
+  - vega::RegisterGameAbilityBehaviors
 related:
   - "[[Ability System]]"
   - "[[Ability Behavior Registration and Dispatch Flow]]"

@@ -1,0 +1,24 @@
+#pragma once
+
+#include "framework/Actor.h"
+
+namespace vega
+{
+	class BackGroundActor : public Actor
+	{
+	public:
+		BackGroundActor(World* owningWorld, const std::string& texturePath, const sf::Vector2f& velocity = sf::Vector2f(0.f, -50.f));
+		virtual void Tick(float deltaTime) override;
+
+
+		void SetPaused(bool paused);
+		bool IsPaused() const { return mPaused; };
+
+	private:
+		sf::Vector2f mOriginalVelocity;
+		float mLeftShift;
+		float mTopShift;
+		float mSlowMotionScale;
+		bool mPaused;
+	};
+}

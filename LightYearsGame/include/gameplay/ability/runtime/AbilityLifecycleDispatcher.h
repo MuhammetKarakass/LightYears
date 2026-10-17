@@ -8,7 +8,7 @@
 #include <optional>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	// Filters keep observers reusable: a future system can listen to one
 	// ability, one lifecycle event, one activation origin, or any combination

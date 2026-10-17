@@ -2,7 +2,7 @@
 
 #include "content/ContentId.h"
 
-namespace ly::SeismicChargePresentationIds
+namespace vega::SeismicChargePresentationIds
 {
 	inline const sas::ContentId BombBasic{
 		"Presentation.Ability.SeismicCharge.Bomb.Basic"

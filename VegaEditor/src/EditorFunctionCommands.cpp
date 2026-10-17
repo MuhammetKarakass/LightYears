@@ -27,7 +27,7 @@ namespace vega
 		context.propertyErrorActor = actorId;
 		context.propertyErrorComponent = target.componentIdentity;
 		context.propertyErrorName = function->name;
-		ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
+		vega::debug::Log::Write(vega::debug::LogLevel::Error, vega::debug::LogChannel::Editor, VEGA_SOURCE_LOCATION,
 			"CallInEditor " + function->name + " failed: " + error);
 		return false;
 	}
@@ -43,12 +43,12 @@ namespace vega
 		{
 			std::map<std::string, ReflectedTarget> map;
 			if (const auto root = ResolvePropertyTarget(*actor, {}); root.type) map["Actor:" + root.type->name] = root;
-			actor->ForEachComponent([&](ly::ActorComponent& component)
+			actor->ForEachComponent([&](vega::ActorComponent& component)
 			{
-				if (dynamic_cast<ly::SceneEntityComponent*>(&component)) return;
+				if (dynamic_cast<vega::SceneEntityComponent*>(&component)) return;
 				const auto* type = context.Engine().Types().FindMostDerived(component);
 				if (!type) return;
-				if (const auto identity = ly::IdentifyComponent(*actor, component))
+				if (const auto identity = vega::IdentifyComponent(*actor, component))
 					map["Component:" + identity->typeName + "#" + std::to_string(identity->occurrence)] = { &component, type, identity };
 			});
 			maps.push_back(std::move(map));

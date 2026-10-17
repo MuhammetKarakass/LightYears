@@ -3,7 +3,7 @@
 #include "presentation/hud/notification/NotificationPresenter.h"
 #include "presentation/hud/HUDController.h"
 
-namespace ly
+namespace vega
 {
 	class GameHUD;
 	class NotificationView;

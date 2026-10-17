@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/foldspaceArena/FoldspaceArenaPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterFoldspaceArenaPresentationProfiles()
 	{

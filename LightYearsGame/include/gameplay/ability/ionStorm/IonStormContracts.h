@@ -13,20 +13,20 @@ namespace AbilityData::IonStorm
 			"Ability.Offense.IonStorm.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTagSchema::AbilityOffense
+	inline const vega::GameplayTag CategoryTag{
+		vega::GameplayTagSchema::AbilityOffense
 	};
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::IonStorm
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::IonStorm
 	};
 
 	struct Attribute
 	{
 		// Shared channels are deliberately reused by the generic resolver.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId Duration = ly::CommonAttributeIds::Duration;
-		inline static const sas::AttributeId Radius = ly::CommonAttributeIds::Radius;
-		inline static const sas::AttributeId CastRange = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId Duration = vega::CommonAttributeIds::Duration;
+		inline static const sas::AttributeId Radius = vega::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId CastRange = vega::CommonAttributeIds::Range;
 
 		// These values describe Ion Storm's delivery and irregular boundary.
 		inline static const sas::AttributeId ProjectileSpeed{

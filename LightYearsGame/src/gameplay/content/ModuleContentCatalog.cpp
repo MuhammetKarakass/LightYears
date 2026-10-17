@@ -11,7 +11,7 @@
 #include <utility>
 #include <unordered_map>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

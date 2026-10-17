@@ -3,7 +3,7 @@
 #include "widget/StackPanel.h"
 #include "widget/TextWidget.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

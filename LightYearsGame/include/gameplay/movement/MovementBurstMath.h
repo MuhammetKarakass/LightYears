@@ -4,7 +4,7 @@
 #include <cmath>
 #include <SFML/System/Vector2.hpp>
 
-namespace ly::movement::MovementBurstMath
+namespace vega::movement::MovementBurstMath
 {
 	inline constexpr float RatingDiminishingScale = 20.f;
 	inline constexpr float MaximumDistanceBonus = 0.50f;

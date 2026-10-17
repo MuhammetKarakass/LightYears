@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/nullPulse/NullPulsePresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterNullPulsePresentationProfiles()
 	{

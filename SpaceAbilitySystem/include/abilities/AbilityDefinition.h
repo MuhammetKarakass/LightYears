@@ -22,11 +22,11 @@ namespace sas
 		int maxCharges = 1;
 		// Minimum gap between two charge uses. Applies only while the effective capacity exceeds one.
 		float chargeUseInterval = 0.5f;
-		ly::List<ly::GameplayTag> abilityTags;
-		ly::List<ly::GameplayTag> requiredOwnerTags;
-		ly::List<ly::GameplayTag> blockedOwnerTags;
-		ly::List<AttributeModifier> attributeModifiers;
-		ly::List<AttributeScalingRule> scalingRules;
-		ly::List<std::string> unlockedUpgradeIds;
+		vega::List<vega::GameplayTag> abilityTags;
+		vega::List<vega::GameplayTag> requiredOwnerTags;
+		vega::List<vega::GameplayTag> blockedOwnerTags;
+		vega::List<AttributeModifier> attributeModifiers;
+		vega::List<AttributeScalingRule> scalingRules;
+		vega::List<std::string> unlockedUpgradeIds;
 	};
 }

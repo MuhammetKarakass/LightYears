@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/VertexArray.hpp>
 
-namespace ly
+namespace vega
 {
 	// Feature-local telegraph for the five radial cone bands. It follows the
 	// owner during focus and uses the owner's current forward direction, so the

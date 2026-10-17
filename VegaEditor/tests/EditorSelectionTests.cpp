@@ -23,10 +23,10 @@ namespace
 	{
 		vega::EditorSelection selection;
 		Check(!selection.Get(), "Selection must start empty");
-		ly::World world{ nullptr };
-		auto actor = world.SpawnActor<ly::Actor>().lock();
+		vega::World world{ nullptr };
+		auto actor = world.SpawnActor<vega::Actor>().lock();
 		world.TickInternal(0.f);
-		Check(world.GetActorsByType<ly::Actor>().size() == 1, "Tick must promote the test actor to the live list");
+		Check(world.GetActorsByType<vega::Actor>().size() == 1, "Tick must promote the test actor to the live list");
 		const long owners = actor.use_count();
 		selection.Select(actor);
 		Check(actor.use_count() == owners, "Selection must not own the actor");
@@ -35,7 +35,7 @@ namespace
 		Check(!selection.Get(), "Clear did not empty selection");
 		selection.Clear();
 		selection.Select(actor);
-		auto other = world.SpawnActor<ly::Actor>().lock();
+		auto other = world.SpawnActor<vega::Actor>().lock();
 		world.TickInternal(0.f);
 		selection.Select(other);
 		Check(selection.Get() == other, "Selecting another actor did not replace selection");
@@ -45,16 +45,16 @@ namespace
 		Check(!selection.Get(), "A retained pending destroy actor must not be returned");
 		selection.Select(actor);
 		Check(!selection.Get(), "Selecting a pending destroy actor must not make it accessible");
-		selection.Select(std::weak_ptr<ly::Actor>{});
+		selection.Select(std::weak_ptr<vega::Actor>{});
 		Check(!selection.Get(), "An empty weak pointer must clear the accessible selection");
 	}
 
 	void TestMultiple()
 	{
-		ly::World world{ nullptr };
-		const auto a = world.SpawnActor<ly::Actor>().lock();
-		const auto b = world.SpawnActor<ly::Actor>().lock();
-		const auto c = world.SpawnActor<ly::Actor>().lock();
+		vega::World world{ nullptr };
+		const auto a = world.SpawnActor<vega::Actor>().lock();
+		const auto b = world.SpawnActor<vega::Actor>().lock();
+		const auto c = world.SpawnActor<vega::Actor>().lock();
 		vega::EditorSelection selection;
 		const auto owners = a.use_count();
 		selection.Add(a);
@@ -79,10 +79,10 @@ namespace
 	void TestExpiry()
 	{
 		vega::EditorSelection selection;
-		std::weak_ptr<ly::Actor> expired;
+		std::weak_ptr<vega::Actor> expired;
 		{
-			ly::World world{ nullptr };
-			expired = world.SpawnActor<ly::Actor>();
+			vega::World world{ nullptr };
+			expired = world.SpawnActor<vega::Actor>();
 			world.TickInternal(0.f);
 			selection.Select(expired);
 			Check(selection.Get() != nullptr, "Live actor was not selected before expiry");
@@ -118,8 +118,8 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	TestSelection();
 	TestExpiry();
 	TestMultiple();

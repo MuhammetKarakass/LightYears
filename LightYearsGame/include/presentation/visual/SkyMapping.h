@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Preserve the shipped collection's identifiers. This is a game convention,
 	// independent of the Sky module's opaque asset IDs and collection format.

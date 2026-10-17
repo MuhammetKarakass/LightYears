@@ -12,7 +12,7 @@
 #include <cstddef>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Turns run counter stacks into live multipliers. Each (placement, rule) pair owns one source id that is written to
 	// both the outgoing damage modifiers (all of the owner's outgoing damage) and the ship's movement speed modifiers

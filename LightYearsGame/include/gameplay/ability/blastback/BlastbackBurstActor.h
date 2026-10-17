@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/VertexArray.hpp>
 
-namespace ly
+namespace vega
 {
 	// The recoil is separate from the ability lifetime so cooldown begins at the
 	// blast frame. This actor owns only the remaining movement/action locks.

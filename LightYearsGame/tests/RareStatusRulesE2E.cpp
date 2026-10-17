@@ -29,7 +29,7 @@ namespace rare_status_e2e
 		constexpr const char* kRejectId = "Module.Offense.RareStatusRejectFixture.Rare";
 
 		// Test-only definitions parsed from fixture JSON. They never enter shipped content.
-		ly::List<ly::ModuleDefinition> gFixtureDefinitions;
+		vega::List<vega::ModuleDefinition> gFixtureDefinitions;
 
 		const ModuleDefinition* FixtureLookup(const sas::ContentId& id)
 		{
@@ -201,7 +201,7 @@ namespace rare_status_e2e
 
 		void EmberChecks(Report& report, Application& application)
 		{
-			const auto& balance = ly::content::DamageStatusBalanceCatalog::Get();
+			const auto& balance = vega::content::DamageStatusBalanceCatalog::Get();
 			// Four Thermal stacks tick ThermalDamagePerSecond(4) for the Ignite duration: 5 DPS x 5 s.
 			const float totalDoT = balance.ThermalDamagePerSecond(balance.thermal.maxStacks) * balance.thermal.duration;
 			report.Check(std::abs(totalDoT - 25.f) < 1e-3f, "precondition: four-stack Thermal DoT is 5 DPS x 5 s from damage_status_balance.json",
@@ -444,7 +444,7 @@ namespace rare_status_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_status_e2e;
 	if (argc != 2) return 2;
 	Report report;

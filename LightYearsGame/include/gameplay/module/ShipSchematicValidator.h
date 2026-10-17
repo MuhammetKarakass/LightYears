@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Cross-catalog rules for a ship schematic: they need the module catalog, so
 	// this runs in the content bootstrap after modules and ships are both loaded.

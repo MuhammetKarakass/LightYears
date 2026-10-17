@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Storm Mark uses the shared ElectricArcVisualActor for its lightning. The
 	// family-local profile owns only presentation tuning and remains type-safe.

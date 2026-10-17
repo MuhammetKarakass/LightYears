@@ -2,7 +2,7 @@
 #include "abilities/AbilityTypes.h"
 #include "gameplay/tags/GameplayTags.h"
 
-namespace ly
+namespace vega
 {
 	inline sas::AbilitySlot AbilitySlotForModuleSystem(const GameplayTag& system)
 	{

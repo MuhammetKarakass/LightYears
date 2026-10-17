@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags
+namespace vega::GameplayTags
 {
 	namespace Ability::Family
 	{

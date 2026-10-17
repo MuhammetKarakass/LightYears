@@ -13,7 +13,7 @@
 #include <limits>
 #include <iterator>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -239,7 +239,7 @@ namespace ly
 		std::string clearError;
 		if (!Clear(&clearError))
 		{
-			LY_GAME_FATAL("EnemyRuntime destructor failed to safely clear handles: %s", clearError.c_str());
+			VEGA_GAME_FATAL("EnemyRuntime destructor failed to safely clear handles: %s", clearError.c_str());
 		}
 	}
 

@@ -5,7 +5,7 @@
 #include "framework/Actor.h"
 #include "gameplay/damage/DamageContext.h"
 
-namespace ly
+namespace vega
 {
 	// Damage processing has two stable phases. It belongs to the game combat
 	// pipeline, rather than to the ability-system component that hosts abilities.

@@ -3,7 +3,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 
-namespace ly
+namespace vega
 {
 	struct PrimaryWeaponValidationResult
 	{

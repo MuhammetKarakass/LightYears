@@ -17,7 +17,7 @@ source_files:
   - SpaceAbilitySystem/include/effects/GameplayEffectRuntimeSystem.h
   - LightYearsGame/tests/GasLiteCoreTests.cpp
 symbols:
-  - ly::MakeGameplayEffectSpec
+  - vega::MakeGameplayEffectSpec
   - sas::AbilitySystemComponent::CanApplyGameplayEffect
   - sas::AbilitySystemComponent::ApplyGameplayEffect
   - sas::GameplayEffectRuntimeSystem::Initialize

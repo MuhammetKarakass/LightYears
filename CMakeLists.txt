@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.31.6)
 
-project(LightYears
+project(Vega
     VERSION 1.0.0
     LANGUAGES CXX
 )
@@ -48,16 +48,16 @@ endif()
 # per-frame number crunching and GL glue: at /Od /Ob0 /RTC1 they cost several milliseconds per frame and the game
 # runs at 10-20 FPS. Compiling only those with /O2 keeps the Debug CRT, iterator checks and ABI of the rest unchanged
 # (/RTC1 is incompatible with /O2, so it is dropped for them). Turn it off to step through SFML or the visual library.
-option(LY_OPTIMIZE_RENDER_IN_DEBUG "Compile SFML and LightYearsVisual with /O2 in Debug builds (MSVC)" ON)
-set(LY_DEBUG_FLAGS_ORIGINAL "${CMAKE_CXX_FLAGS_DEBUG}")
-set(LY_DEBUG_FLAGS_RENDER "${CMAKE_CXX_FLAGS_DEBUG}")
-if(MSVC AND LY_OPTIMIZE_RENDER_IN_DEBUG)
-    string(REGEX REPLACE "/Od|/Ob[0-9]|/RTC[1csu]+" "" LY_DEBUG_FLAGS_RENDER "${CMAKE_CXX_FLAGS_DEBUG}")
-    set(LY_DEBUG_FLAGS_RENDER "${LY_DEBUG_FLAGS_RENDER} /O2 /Ob2")
+option(VEGA_OPTIMIZE_RENDER_IN_DEBUG "Compile SFML and LightYearsVisual with /O2 in Debug builds (MSVC)" ON)
+set(VEGA_DEBUG_FLAGS_ORIGINAL "${CMAKE_CXX_FLAGS_DEBUG}")
+set(VEGA_DEBUG_FLAGS_RENDER "${CMAKE_CXX_FLAGS_DEBUG}")
+if(MSVC AND VEGA_OPTIMIZE_RENDER_IN_DEBUG)
+    string(REGEX REPLACE "/Od|/Ob[0-9]|/RTC[1csu]+" "" VEGA_DEBUG_FLAGS_RENDER "${CMAKE_CXX_FLAGS_DEBUG}")
+    set(VEGA_DEBUG_FLAGS_RENDER "${VEGA_DEBUG_FLAGS_RENDER} /O2 /Ob2")
 endif()
 
 #creates a variable
-set(LIGHT_YEARS_ENGINE_TARGET_NAME LightYearsEngine)
+set(VEGA_ENGINE_TARGET_NAME VegaEngine)
 set(SPACE_ABILITY_SYSTEM_TARGET_NAME SpaceAbilitySystem)
 set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
@@ -65,7 +65,7 @@ set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 # third-party targets (SFML, box2d, nlohmann_json); /WX is deliberately not set.
 # CMP0092 (NEW since 3.15) keeps CMake from injecting /W3, so /W4 does not
 # trigger D9025 override warnings.
-function(ly_enable_warnings target)
+function(vega_enable_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
     else()
@@ -73,12 +73,12 @@ function(ly_enable_warnings target)
     endif()
 endfunction()
 
-function(ly_enable_warnings_for_directory dir)
-    get_property(ly_dir_targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
-    foreach(ly_target IN LISTS ly_dir_targets)
-        get_target_property(ly_target_type ${ly_target} TYPE)
-        if(ly_target_type MATCHES "^(STATIC_LIBRARY|OBJECT_LIBRARY|EXECUTABLE)$")
-            ly_enable_warnings(${ly_target})
+function(vega_enable_warnings_for_directory dir)
+    get_property(vega_dir_targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(vega_target IN LISTS vega_dir_targets)
+        get_target_property(vega_target_type ${vega_target} TYPE)
+        if(vega_target_type MATCHES "^(STATIC_LIBRARY|OBJECT_LIBRARY|EXECUTABLE)$")
+            vega_enable_warnings(${vega_target})
         endif()
     endforeach()
 endfunction()
@@ -92,7 +92,7 @@ endif()
 if(VEGA_BUILD_LIGHTYEARS AND NOT VEGA_BUILD_SKY)
 	message(FATAL_ERROR "LightYears requires VEGA_BUILD_SKY")
 endif()
-add_subdirectory(LightYearsEngine)
+add_subdirectory(VegaEngine)
 if(VEGA_BUILD_SKY)
 	add_subdirectory(Modules/Sky)
 endif()
@@ -120,18 +120,18 @@ if(VEGA_BUILD_TEMPLATES)
 	add_subdirectory(Templates/Blank)
 endif()
 
-# First-party targets (LightYearsEngine, LightYearsVisual, SpaceAbilitySystem,
+# First-party targets (VegaEngine, LightYearsVisual, SpaceAbilitySystem,
 # LightYearsGameplayCore, LightYearsGame and their test executables). Each of
 # these directories lists only its own targets, not the fetched dependencies.
-set(ly_warning_dirs LightYearsEngine)
+set(vega_warning_dirs VegaEngine)
 if(VEGA_BUILD_GAS)
-	list(APPEND ly_warning_dirs SpaceAbilitySystem)
+	list(APPEND vega_warning_dirs SpaceAbilitySystem)
 endif()
 if(VEGA_BUILD_LIGHTYEARS)
-	list(APPEND ly_warning_dirs LightYearsVisual LightYearsGame)
+	list(APPEND vega_warning_dirs LightYearsVisual LightYearsGame)
 endif()
-foreach(ly_warning_dir IN LISTS ly_warning_dirs)
-    ly_enable_warnings_for_directory("${CMAKE_CURRENT_SOURCE_DIR}/${ly_warning_dir}")
+foreach(vega_warning_dir IN LISTS vega_warning_dirs)
+    vega_enable_warnings_for_directory("${CMAKE_CURRENT_SOURCE_DIR}/${vega_warning_dir}")
 endforeach()
 
 if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)

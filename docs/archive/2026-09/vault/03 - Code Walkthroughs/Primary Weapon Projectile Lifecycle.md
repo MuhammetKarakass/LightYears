@@ -9,10 +9,10 @@ source_files:
   - LightYearsGame/src/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.cpp
   - LightYearsGame/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
 symbols:
-  - ly::PrimaryWeaponProjectileSpawner::FireSet
-  - ly::PrimaryWeaponProjectileActor::Tick
-  - ly::PrimaryWeaponProjectileActor::OnActorBeginOverlap
-  - ly::PrimaryWeaponProjectileActor::Destroy
+  - vega::PrimaryWeaponProjectileSpawner::FireSet
+  - vega::PrimaryWeaponProjectileActor::Tick
+  - vega::PrimaryWeaponProjectileActor::OnActorBeginOverlap
+  - vega::PrimaryWeaponProjectileActor::Destroy
 related:
   - "[[Projectile System]]"
   - "[[PrimaryWeaponProjectileActor]]"

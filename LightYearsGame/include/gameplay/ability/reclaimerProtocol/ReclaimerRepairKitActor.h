@@ -3,7 +3,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class ReclaimerRepairKitActor final : public AbilityWorldActor
 	{

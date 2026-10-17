@@ -44,7 +44,7 @@ namespace vega
 					row.value = schema.Value(mSceneSettings, field.key);
 					row.authored = mSceneSettings.contains(field.key);
 					row.warning = field.Validate(row.value);
-					row.options = field.options ? field.options() : std::vector<ly::SceneSettingOption>{};
+					row.options = field.options ? field.options() : std::vector<vega::SceneSettingOption>{};
 					row.preview = row.value.dump();
 					for (const auto& option : row.options) if (option.value == row.value) row.preview = option.label;
 					mSettingsRows[field.category.empty() ? "General" : field.category].push_back(std::move(row));
@@ -66,7 +66,7 @@ namespace vega
 					auto value = row.warning.empty() ? row.value : field.defaultValue;
 					const auto* label = field.label.empty() ? field.key.c_str() : field.label.c_str();
 					bool changed = false;
-					using Type = ly::SceneSettingType;
+					using Type = vega::SceneSettingType;
 					const float min = static_cast<float>(field.min.value_or(0));
 					const float max = static_cast<float>(field.max.value_or(0));
 					switch (field.type)

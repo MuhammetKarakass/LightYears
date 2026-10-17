@@ -7,9 +7,9 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition StormMark_Basic = []
+	inline const vega::GameAbilityDefinition StormMark_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::StormMark::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Ability1 is only the standalone fallback slot. The runtime loadout
@@ -18,15 +18,15 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::StormMark
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::StormMark
 		};
 		definition.displayName = "Storm Mark";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 		definition.accentColor = sf::Color{ 65, 190, 255, 255 };
 		// Behavior owns focus, target snapshot and delayed strikes. No generic
 		// action is declared because it would execute before the focus completes.
-		definition.behaviorType = ly::AbilityBehaviorType::StormMark;
+		definition.behaviorType = vega::AbilityBehaviorType::StormMark;
 		return definition;
 	}();
 }

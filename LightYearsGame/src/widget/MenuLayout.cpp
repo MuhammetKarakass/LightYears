@@ -1,6 +1,6 @@
 #include "widget/MenuLayout.h"
 
-namespace ly
+namespace vega
 {
 	weak_ptr<StackPanel> BuildMenuColumn(Panel& parent, const UILayout& layout, float spacing)
 	{

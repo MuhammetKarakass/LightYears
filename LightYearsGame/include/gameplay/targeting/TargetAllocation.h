@@ -5,7 +5,7 @@
 
 #include <cstddef>
 
-namespace ly::targeting
+namespace vega::targeting
 {
 	class TargetAllocation
 	{

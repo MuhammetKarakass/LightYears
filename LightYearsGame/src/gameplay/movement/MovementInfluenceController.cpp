@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly::movement
+namespace vega::movement
 {
 	namespace
 	{

@@ -242,7 +242,7 @@ namespace rare_wave3_e2e
 		{
 			const auto dummy = level.SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			level.TickInternal(0.f);
-			dummy->SetCollisionLayer(ly::GameCollision::Enemy);
+			dummy->SetCollisionLayer(vega::GameCollision::Enemy);
 			dummy->SetCollisionMask(CollisionLayer::None);
 			dummy->SetEnablePhysics(false);
 			dummy->SetActorLocation(ship.GetActorLocation() + sf::Vector2f{ 0.f, 2000.f });
@@ -598,7 +598,7 @@ namespace rare_wave3_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_wave3_e2e;
 	if (argc != 2) return 2;
 	Report report;

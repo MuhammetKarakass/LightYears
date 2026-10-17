@@ -6,7 +6,7 @@
 
 #include <unordered_map>
 
-namespace ly
+namespace vega
 {
 	class CrystalBarricadeActor final
 		: public AbilityWorldActor,

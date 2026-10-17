@@ -7,7 +7,7 @@
 #include <string>
 #include <unordered_set>
 
-namespace ly
+namespace vega
 {
 	enum class ShieldImpactSide { Shared, Front, Rear };
 	// Shield shaping set by equipped modules. The defaults are the unmodified rules.

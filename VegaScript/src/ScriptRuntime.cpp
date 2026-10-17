@@ -99,8 +99,8 @@ namespace vega::script
 	}
 	ScriptRuntime::ScriptRuntime() : mImpl{ std::make_unique<Impl>() } {}
 	ScriptRuntime::~ScriptRuntime() = default;
-	ScriptRuntime& ScriptRuntime::Get() { return Get(ly::EngineContext::Current()); }
-	ScriptRuntime& ScriptRuntime::Get(ly::EngineContext& context)
+	ScriptRuntime& ScriptRuntime::Get() { return Get(vega::EngineContext::Current()); }
+	ScriptRuntime& ScriptRuntime::Get(vega::EngineContext& context)
 	{
 		auto& slot = context.Scripts();
 		if (!slot) slot.reset(new ScriptRuntime);
@@ -113,7 +113,7 @@ namespace vega::script
 	void ScriptRuntime::SetMemoryLimit(std::size_t bytes) { mImpl->limits.memoryLimit = bytes; }
 	const std::filesystem::path& ScriptRuntime::Root() const { return mImpl->root; }
 	void ScriptRuntime::SetPlayerResolver(PlayerResolver resolver) { mImpl->player = std::move(resolver); }
-	std::shared_ptr<ly::Actor> ScriptRuntime::Player(ly::World& world) const
+	std::shared_ptr<vega::Actor> ScriptRuntime::Player(vega::World& world) const
 	{
 		const auto actor = mImpl->player ? mImpl->player(world).lock() : nullptr;
 		return actor && actor->GetWorld() == &world && !actor->GetIsPendingDestroy() ? actor : nullptr;
@@ -121,5 +121,5 @@ namespace vega::script
 	void ScriptRuntime::SetKeyReader(KeyReader reader) { mImpl->keyReader = std::move(reader); }
 	bool ScriptRuntime::ReadKey(const std::string& key) const { return mImpl->keyReader ? mImpl->keyReader(key) : DeviceKey(key); }
 	// Ownerless game setup remains a compatibility entry boundary.
-	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get(ly::EngineContext::Current()).SetRoot(root); }
+	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get(vega::EngineContext::Current()).SetRoot(root); }
 }

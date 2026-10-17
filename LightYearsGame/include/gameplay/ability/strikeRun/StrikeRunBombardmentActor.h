@@ -10,7 +10,7 @@
 
 #include <array>
 
-namespace ly
+namespace vega
 {
 	class StrikeRunBombardmentActor final : public AbilityWorldActor
 	{

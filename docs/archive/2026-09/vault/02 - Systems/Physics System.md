@@ -4,17 +4,17 @@ status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/include/framework/PhysicsSystem.h
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
-  - LightYearsEngine/src/framework/Actor.cpp
-  - LightYearsEngine/src/framework/Application.cpp
+  - VegaEngine/include/framework/PhysicsSystem.h
+  - VegaEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/src/framework/Actor.cpp
+  - VegaEngine/src/framework/Application.cpp
 symbols:
-  - ly::PhysicsSystem
-  - ly::PhysicsSystem::Step
-  - ly::PhysicsSystem::ProcessContactEvents
-  - ly::PhysicsSystem::QueryActorsInBounds
-  - ly::Actor::InitializePhysics
-  - ly::Actor::UnInitializePhysics
+  - vega::PhysicsSystem
+  - vega::PhysicsSystem::Step
+  - vega::PhysicsSystem::ProcessContactEvents
+  - vega::PhysicsSystem::QueryActorsInBounds
+  - vega::Actor::InitializePhysics
+  - vega::Actor::UnInitializePhysics
 related:
   - "[[Actor and World System]]"
   - "[[PhysicsSystem]]"
@@ -31,7 +31,7 @@ PhysicsSystem::Step, b2World_Step(dt, 4) çağırır; sabit accumulator değildi
 Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski örnekler tarihsel inceleme kapsamını taşır; bu güncelleme ile çelişen ayrıntılar güncel davranış kabul edilmemeli.
 
 
-`ly::PhysicsSystem`, Box2D 3.x world'ünü yöneten lazy singleton'dır. `Application::TickInternal`, World pause değilken `PhysicsSystem::Step(dt)` çağırır; World değişiminde eski physics world cleanup edilir ve sıfır gravity ile yenisi oluşturulur.
+`vega::PhysicsSystem`, Box2D 3.x world'ünü yöneten lazy singleton'dır. `Application::TickInternal`, World pause değilken `PhysicsSystem::Step(dt)` çağırır; World değişiminde eski physics world cleanup edilir ve sıfır gravity ile yenisi oluşturulur.
 
 ## Actor body lifecycle
 

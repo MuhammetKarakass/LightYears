@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Project-level ability contract validation. It complements the structural
 	// validation supplied by SpaceAbilitySystem with LightYears content rules.

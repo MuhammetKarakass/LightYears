@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sky/LuminanceTier.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::LuminanceTier;
 	using vega::sky::LuminanceTierCount;

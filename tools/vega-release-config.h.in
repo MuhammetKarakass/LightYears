@@ -12,7 +12,7 @@ inline std::string getResourceDir()
 	{
 		const auto path = (std::filesystem::current_path() / "@RESOURCE_FOLDER_NAME@").lexically_normal();
 		const std::string directory = path.generic_u8string() + "/";
-		ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Core, {},
+		vega::debug::Log::Write(vega::debug::LogLevel::Info, vega::debug::LogChannel::Core, {},
 			"Packaged game and script asset root: " + directory);
 		return directory;
 	}();

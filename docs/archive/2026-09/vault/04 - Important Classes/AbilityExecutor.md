@@ -10,11 +10,11 @@ source_files:
   - LightYearsGame/src/gameplay/ability/GameAbilityActionExecutor.cpp
   - SpaceAbilitySystem/include/abilities/AbilityExecution.h
 symbols:
-  - ly::GameAbilityActionExecutor
-  - ly::GameAbilityActionExecutor::BeginExecution
-  - ly::GameAbilityActionExecutor::TickExecution
-  - ly::GameAbilityActionExecutor::EndExecution
-  - ly::GameAbilityActionExecutor::ExecuteAction
+  - vega::GameAbilityActionExecutor
+  - vega::GameAbilityActionExecutor::BeginExecution
+  - vega::GameAbilityActionExecutor::TickExecution
+  - vega::GameAbilityActionExecutor::EndExecution
+  - vega::GameAbilityActionExecutor::ExecuteAction
 related:
   - "[[Ability Execution System]]"
   - "[[Ability Action Execution Flow]]"
@@ -25,7 +25,7 @@ related:
 
 ## Sorumluluk
 
-`ly::GameAbilityActionExecutor`, stateless static execution dispatcher'ıdır. Caller-owned `GameAbilityExecution` içindeki action'ları phase'e göre başlatır, aktif frame'lerde tick eder ve end cleanup'ını yürütür.
+`vega::GameAbilityActionExecutor`, stateless static execution dispatcher'ıdır. Caller-owned `GameAbilityExecution` içindeki action'ları phase'e göre başlatır, aktif frame'lerde tick eder ve end cleanup'ını yürütür.
 
 ## Sorumlu olmadığı işler
 

@@ -5,7 +5,7 @@
 #include <framework/scene/SceneSettings.h>
 #include <framework/debug/Log.h>
 
-namespace ly
+namespace vega
 {
 	void RegisterGameSceneSettings()
 	{
@@ -17,13 +17,13 @@ namespace ly
 		{
 			route.AppendProceduralStops(RouteProceduralStopCount, RouteProceduralSeed);
 			if (!route.AppendStopsFromFile(root / "content/data/galaxy_centre_tour.json", error))
-				LY_GAME_WARN("Scene settings route tour: %s", error.c_str());
+				VEGA_GAME_WARN("Scene settings route tour: %s", error.c_str());
 			for (std::size_t i = 0; i < route.Stops().size(); ++i)
 				stops.push_back({ static_cast<int>(i), std::to_string(i) + " - " + route.Stops()[i].name });
 		}
 		else
 		{
-			LY_GAME_WARN("Scene settings route: %s", error.c_str());
+			VEGA_GAME_WARN("Scene settings route: %s", error.c_str());
 			stops.push_back({ 0, "0 - Sol (route unavailable)" });
 		}
 		SceneSettingField stop;

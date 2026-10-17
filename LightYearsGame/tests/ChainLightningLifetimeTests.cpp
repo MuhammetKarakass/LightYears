@@ -18,28 +18,28 @@
 
 namespace
 {
-	class ChainLightningTestCombatant final : public ly::Actor, public ly::Combatant
+	class ChainLightningTestCombatant final : public vega::Actor, public vega::Combatant
 	{
 	public:
-		explicit ChainLightningTestCombatant(ly::World* world)
-			: ly::Actor(world), mCombatRuntime(*this)
+		explicit ChainLightningTestCombatant(vega::World* world)
+			: vega::Actor(world), mCombatRuntime(*this)
 		{
 		}
 
-		ly::CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
-		const ly::CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
-		ly::LightYearsAbilitySystemComponent& GetAbilitySystemComponent() override
+		vega::CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
+		const vega::CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
+		vega::LightYearsAbilitySystemComponent& GetAbilitySystemComponent() override
 		{
 			return mCombatRuntime.GetAbilitySystemComponent();
 		}
-		const ly::LightYearsAbilitySystemComponent& GetAbilitySystemComponent() const override
+		const vega::LightYearsAbilitySystemComponent& GetAbilitySystemComponent() const override
 		{
 			return mCombatRuntime.GetAbilitySystemComponent();
 		}
 		float GetPhysicsCollisionRadius() const override { return 20.f; }
 		sf::Vector2f GetPhysicsCollisionBoxHalfExtents() const override { return { 20.f, 20.f }; }
 
-		void ReceiveDamage(ly::DamageContext context) override
+		void ReceiveDamage(vega::DamageContext context) override
 		{
 			++receivedDamageCount;
 			lastReceivedContext = context;
@@ -49,35 +49,35 @@ namespace
 			health = std::max(0.f, health - lastProcessedContext.remainingDamage);
 		}
 
-		ly::CombatRuntime mCombatRuntime;
-		ly::DamageContext lastReceivedContext{};
-		ly::DamageContext lastProcessedContext{};
+		vega::CombatRuntime mCombatRuntime;
+		vega::DamageContext lastReceivedContext{};
+		vega::DamageContext lastProcessedContext{};
 		float health{ 100.f };
 		int receivedDamageCount{ 0 };
 	};
 
 	struct WorldFixture
 	{
-		std::shared_ptr<ly::World> world;
+		std::shared_ptr<vega::World> world;
 		std::shared_ptr<ChainLightningTestCombatant> owner;
 		std::shared_ptr<ChainLightningTestCombatant> target;
 
-		void Create(ly::Application& application, int ownerCount = 1)
+		void Create(vega::Application& application, int ownerCount = 1)
 		{
-			world = std::make_shared<ly::World>(&application);
+			world = std::make_shared<vega::World>(&application);
 			for (int index = 0; index < ownerCount; ++index)
 			{
 				auto ownerActor = world->SpawnActor<ChainLightningTestCombatant>().lock();
-				ownerActor->SetCollisionLayer(ly::GameCollision::Player);
-				ownerActor->SetCollisionMask(ly::GameCollision::Enemy);
+				ownerActor->SetCollisionLayer(vega::GameCollision::Player);
+				ownerActor->SetCollisionMask(vega::GameCollision::Enemy);
 				ownerActor->SetActorLocation(sf::Vector2f{ 100.f + 32.f * index, 128.f });
 				ownerActor->mCombatRuntime.InitializeOwnerAttributes(100.f);
 				if (index == 0) owner = std::move(ownerActor);
 			}
 
 			target = world->SpawnActor<ChainLightningTestCombatant>().lock();
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::Player);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::Player);
 			target->SetActorLocation(sf::Vector2f{ 160.f, 128.f });
 			target->mCombatRuntime.InitializeOwnerAttributes(100.f);
 			world->TickInternal(0.f);
@@ -87,30 +87,30 @@ namespace
 	bool ActivateChainLightning(
 		ChainLightningTestCombatant& owner,
 		unsigned int handleId,
-		ly::ChainLightningAbility& behavior
+		vega::ChainLightningAbility& behavior
 	)
 	{
-		const ly::GameAbilityDefinition* definition = AbilityData::FindShippedAbilityDefinition(
+		const vega::GameAbilityDefinition* definition = AbilityData::FindShippedAbilityDefinition(
 			AbilityData::ChainLightning::AbilityId::Basic
 		);
 		if (!definition) return false;
 
-		ly::GameAbility instance{
+		vega::GameAbility instance{
 			owner.GetAbilitySystemComponent(),
 			sas::AbilityHandle{ handleId },
 			*definition,
-			std::make_unique<ly::ChainLightningAbility>(),
+			std::make_unique<vega::ChainLightningAbility>(),
 			false
 		};
-		ly::GameAbilityBehaviorContext context{
+		vega::GameAbilityBehaviorContext context{
 			owner.GetAbilitySystemComponent(), instance, owner, *definition
 		};
 		return behavior.Activate(context);
 	}
 
-	std::size_t CountArcs(const ly::World& world)
+	std::size_t CountArcs(const vega::World& world)
 	{
-		return world.GetActorsByType<ly::ElectricArcVisualActor>().size();
+		return world.GetActorsByType<vega::ElectricArcVisualActor>().size();
 	}
 
 	int Fail(const char* message)
@@ -121,13 +121,13 @@ namespace
 
 	void ClearGameTimers()
 	{
-		ly::TimerManager::GetGameTimerManager().ClearAllTimers();
+		vega::TimerManager::GetGameTimerManager().ClearAllTimers();
 	}
 }
 
 int RunChainLightningLifetimeTests()
 {
-	using namespace ly;
+	using namespace vega;
 	AssetManager::GetAssetManager().SetAssetRootDirectory("LightYearsGame/assets/");
 	if (!GameContentBootstrap::Register()) return Fail("Game content bootstrap failed");
 	ClearGameTimers();
@@ -158,8 +158,8 @@ int RunChainLightningLifetimeTests()
 		WorldFixture fixture;
 		fixture.Create(application);
 		auto secondOwner = fixture.world->SpawnActor<ChainLightningTestCombatant>().lock();
-		secondOwner->SetCollisionLayer(ly::GameCollision::Player);
-		secondOwner->SetCollisionMask(ly::GameCollision::Enemy);
+		secondOwner->SetCollisionLayer(vega::GameCollision::Player);
+		secondOwner->SetCollisionMask(vega::GameCollision::Enemy);
 		secondOwner->SetActorLocation(sf::Vector2f{ 196.f, 128.f });
 		secondOwner->mCombatRuntime.InitializeOwnerAttributes(100.f);
 		fixture.world->TickInternal(0.f);
@@ -190,8 +190,8 @@ int RunChainLightningLifetimeTests()
 		fixture.owner->SetActorLocation(initialTargetPosition - sf::Vector2f{ 60.f, 0.f });
 		fixture.target->SetActorLocation(initialTargetPosition);
 		auto secondTarget = fixture.world->SpawnActor<ChainLightningTestCombatant>().lock();
-		secondTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-		secondTarget->SetCollisionMask(ly::GameCollision::Player);
+		secondTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+		secondTarget->SetCollisionMask(vega::GameCollision::Player);
 		secondTarget->SetActorLocation(initialTargetPosition + sf::Vector2f{ 60.f, 0.f });
 		secondTarget->mCombatRuntime.InitializeOwnerAttributes(100.f);
 		fixture.world->TickInternal(0.f);

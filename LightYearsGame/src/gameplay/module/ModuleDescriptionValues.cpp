@@ -2,7 +2,7 @@
 #include <set>
 #include <stdexcept>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

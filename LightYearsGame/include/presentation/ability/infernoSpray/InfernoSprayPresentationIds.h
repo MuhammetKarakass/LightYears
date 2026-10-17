@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::InfernoSprayPresentationIds
+namespace vega::InfernoSprayPresentationIds
 {
 	inline constexpr char FlameConeBasic[] =
 		"Presentation.Ability.InfernoSpray.FlameCone.Basic";

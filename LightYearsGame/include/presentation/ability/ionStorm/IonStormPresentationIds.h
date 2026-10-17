@@ -2,7 +2,7 @@
 
 #include "content/ContentId.h"
 
-namespace ly::IonStormPresentationIds
+namespace vega::IonStormPresentationIds
 {
 	inline const sas::ContentId ProjectileBasic{
 		"Presentation.Ability.IonStorm.Projectile.Basic"

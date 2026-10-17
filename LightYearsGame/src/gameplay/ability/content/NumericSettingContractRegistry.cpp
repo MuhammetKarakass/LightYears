@@ -1,7 +1,7 @@
 #include "gameplay/ability/content/NumericSettingContractRegistry.h"
 #include <map>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

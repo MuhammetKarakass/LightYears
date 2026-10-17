@@ -108,8 +108,8 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	const fs::path temp{ VEGA_EXPORT_TEST_TEMP_DIR };
 	fs::remove_all(temp);
 	{
@@ -120,7 +120,7 @@ int main()
 		f.layout.gameLogName = "Another.log";
 		fs::rename(f.layout.gameBuildDir / "Game.exe", f.layout.gameBuildDir / f.layout.runtimeExecutable);
 		WriteFile(f.layout.gameBuildDir / "data/level.json", "another game");
-		ly::ProjectSettings project;
+		vega::ProjectSettings project;
 		project.name = "Another Game";
 		project.runtimeExecutable = f.layout.runtimeExecutable;
 		project.runtimeAssetDirectory = f.layout.assetDirectory;
@@ -144,7 +144,7 @@ int main()
 		const auto f = MakeFixture(temp / "project");
 		auto layout = f.layout;
 		layout.assetRoot = f.root / "authoring-assets";
-		ly::ProjectSettings project;
+		vega::ProjectSettings project;
 		project.name = "My/Game";
 		project.collisionLayers = { { 0, "Solid", { "OldSolid" } }, { 7, "Sensor", {} } };
 		project.startupScene = "scenes/custom.scene.json";
@@ -155,8 +155,8 @@ int main()
 		Check(ReadFile(out / "My_Game.exe") == kExe && !Exists(out / "Game.exe"), "Project executable was not sanitized and renamed");
 		Check(ReadFile(out / "assets/vega.project.json") == project.ToJson().dump() && Exists(out / "assets/scenes/custom.scene.json"),
 			"Export did not copy the authoring project's assets");
-		ly::EngineContext exportedContext;
-		ly::ProjectSettings::Load(out / "assets/vega.project.json").ApplyCollisionLayers(exportedContext);
+		vega::EngineContext exportedContext;
+		vega::ProjectSettings::Load(out / "assets/vega.project.json").ApplyCollisionLayers(exportedContext);
 		Check(exportedContext.Types().Find("CollisionComponent")->FindProperty("Collision Mask")->enumLabels[7].second == "Sensor",
 			"Exported project lost collision labels");
 		Check(!Exists(f.layout.gameBuildDir / "assets/vega.project.json"), "Override export changed the built project");

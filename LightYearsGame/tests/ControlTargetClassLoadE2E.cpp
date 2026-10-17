@@ -8,7 +8,7 @@
 
 namespace control_target_class_load_e2e
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace common_module_e2e;
 	namespace
 	{
@@ -130,7 +130,7 @@ namespace control_target_class_load_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace control_target_class_load_e2e;
 	if (argc != 2) return 2;
 	Report report;

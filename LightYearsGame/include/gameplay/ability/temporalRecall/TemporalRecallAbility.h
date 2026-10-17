@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/temporal/TemporalStateHistory.h"
 
-namespace ly
+namespace vega
 {
 	class TemporalRecallAbility final : public GameAbilityBehavior
 	{

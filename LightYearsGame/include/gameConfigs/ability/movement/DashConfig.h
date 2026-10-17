@@ -13,21 +13,21 @@ namespace AbilityData
 	namespace Definitions
 	{
 		// Numeric balance, progression and costs are authored in abilities.json.
-		inline const ly::GameAbilityDefinition Dash_Basic = []
+		inline const vega::GameAbilityDefinition Dash_Basic = []
 		{
-			ly::GameAbilityDefinition definition;
+			vega::GameAbilityDefinition definition;
 			definition.abilityId = Dash::AbilityId::Basic;
 			definition.slot = sas::AbilitySlot::Ability3;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 			definition.abilityTags = {
-				ly::GameplayTags::Ability::Movement,
-				ly::GameplayTags::Ability::Family::Dash
+				vega::GameplayTags::Ability::Movement,
+				vega::GameplayTags::Ability::Family::Dash
 			};
 			definition.displayName = "Dash";
 			definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/star_gold.png";
 			definition.accentColor = sf::Color{ 120, 220, 255, 255 };
-			definition.behaviorType = ly::AbilityBehaviorType::Dash;
+			definition.behaviorType = vega::AbilityBehaviorType::Dash;
 			return definition;
 		}();
 	}

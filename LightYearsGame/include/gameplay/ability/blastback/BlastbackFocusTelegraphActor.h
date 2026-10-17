@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/VertexArray.hpp>
 
-namespace ly
+namespace vega
 {
 	// Visual-only preview. It follows the owner while focusing, but it has no
 	// collision or gameplay authority; the ability snapshots targets on release.

@@ -4,7 +4,7 @@
 #include "presentation/ability/moduleGenerated/ModuleGeneratedPresentationProfile.h"
 #include <unordered_set>
 
-namespace ly
+namespace vega
 {
 	class ModuleSpeedLanceActor final : public AbilityWorldActor
 	{

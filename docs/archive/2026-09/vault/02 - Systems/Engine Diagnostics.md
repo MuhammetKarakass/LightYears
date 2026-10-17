@@ -5,23 +5,23 @@ last_verified_commit: f83fe57b44777de4c31799b4e8bafac04a18700d
 last_verified_date: 2026-09-20
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/include/framework/debug/Assert.h
-  - LightYearsEngine/include/framework/debug/Log.h
-  - LightYearsEngine/include/framework/debug/Profiler.h
-  - LightYearsEngine/src/framework/debug/Assert.cpp
-  - LightYearsEngine/src/framework/debug/Log.cpp
-  - LightYearsEngine/src/framework/debug/Profiler.cpp
-  - LightYearsEngine/src/EntryPoint.cpp
-  - LightYearsEngine/tests/EngineLifetimeTests.cpp
+  - VegaEngine/include/framework/debug/Assert.h
+  - VegaEngine/include/framework/debug/Log.h
+  - VegaEngine/include/framework/debug/Profiler.h
+  - VegaEngine/src/framework/debug/Assert.cpp
+  - VegaEngine/src/framework/debug/Log.cpp
+  - VegaEngine/src/framework/debug/Profiler.cpp
+  - VegaEngine/src/EntryPoint.cpp
+  - VegaEngine/tests/EngineLifetimeTests.cpp
 symbols:
-  - ly::debug::Log
-  - ly::debug::Profiler
-  - ly::debug::ProfileScope
-  - LY_ASSERT
-  - LY_VERIFY
-  - LY_CORE_INFO
-  - LY_GAME_INFO
-  - LY_PROFILE_SCOPE
+  - vega::debug::Log
+  - vega::debug::Profiler
+  - vega::debug::ProfileScope
+  - VEGA_ASSERT
+  - VEGA_VERIFY
+  - VEGA_CORE_INFO
+  - VEGA_GAME_INFO
+  - VEGA_PROFILE_SCOPE
 related:
   - "[[Application Startup Flow]]"
   - "[[Performance Monitoring]]"
@@ -44,8 +44,8 @@ dosya/satırını taşır. Console çıktısına ek olarak oyun başlangıcında
 dizinindeki `LightYears.log` dosyası açılır.
 
 ```cpp
-LY_CORE_INFO("Loaded %d assets", assetCount);
-LY_GAME_WARN("Ability grant rejected: %s", reason.c_str());
+VEGA_CORE_INFO("Loaded %d assets", assetCount);
+VEGA_GAME_WARN("Ability grant rejected: %s", reason.c_str());
 ```
 
 Debug varsayılan eşiği `TRACE`, Release varsayılan eşiği `WARN`dır. Error ve
@@ -55,15 +55,15 @@ uygulamayı durdurmaz.
 ## Assert ve verify
 
 ```cpp
-LY_ASSERT(index < effects.size(), "Invalid effect index: %zu", index);
-LY_VERIFY(TryRegisterContent(), "Content registration failed");
+VEGA_ASSERT(index < effects.size(), "Invalid effect index: %zu", index);
+VEGA_VERIFY(TryRegisterContent(), "Content registration failed");
 ```
 
-- `LY_ASSERT` Debug invariant'ları içindir. Başarısızlık `FATAL` kaydı üretir;
+- `VEGA_ASSERT` Debug invariant'ları içindir. Başarısızlık `FATAL` kaydı üretir;
   debugger bağlıysa break, değilse abort eder.
-- `LY_ASSERT` Release'te compile-out edilir ve koşulu değerlendirmez. Bu yüzden
+- `VEGA_ASSERT` Release'te compile-out edilir ve koşulu değerlendirmez. Bu yüzden
   assert ifadesinde side effect bulunmaz.
-- `LY_VERIFY` her build'de koşulu değerlendirir. Debug'ta assert gibi durur;
+- `VEGA_VERIFY` her build'de koşulu değerlendirir. Debug'ta assert gibi durur;
   Release'te `ERROR` loglayıp devam eder.
 - Kullanıcı girdisi, dosya/network hatası veya beklenen content rejection
   normal kontrol akışı ve logging ile ele alınır; assert programcı
@@ -72,9 +72,9 @@ LY_VERIFY(TryRegisterContent(), "Content registration failed");
 ## Profiling
 
 ```cpp
-LY_PROFILE_FUNCTION();
-LY_PROFILE_SCOPE("GravityAnomaly.TargetDiscovery");
-LY_PROFILE_COUNTER("Actors", activeActorCount);
+VEGA_PROFILE_FUNCTION();
+VEGA_PROFILE_SCOPE("GravityAnomaly.TargetDiscovery");
+VEGA_PROFILE_COUNTER("Actors", activeActorCount);
 ```
 
 Debug'ta RAII scope süreleri çağrı sayısı, toplam, minimum ve maksimum
@@ -106,5 +106,5 @@ kapatılır.
 | Verify | Değerlendirir, başarısızsa durur | Değerlendirir, ERROR loglar |
 | Profiling | Açık | Compile-out |
 
-`LightYearsEngineLifetimeTests`, structured log alanlarını, seviye filtresini,
+`VegaEngineLifetimeTests`, structured log alanlarını, seviye filtresini,
 verify değerlendirmesini ve profiler scope/counter kontratını doğrular.

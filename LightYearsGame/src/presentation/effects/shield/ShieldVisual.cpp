@@ -8,7 +8,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	ShieldVisual::ShieldVisual(
 		World* world,

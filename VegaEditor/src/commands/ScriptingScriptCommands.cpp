@@ -62,7 +62,7 @@ namespace vega
 			auto actor = execution.context.selection.Get();
 			if (actor && actor->GetWorld() != execution.context.world) actor.reset();
 			const auto target = actor ? FindPropertyTarget(*actor, "ScriptComponent") : ReflectedTarget{};
-			auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object));
+			auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<vega::ActorComponent*>(target.object));
 			if (!script)
 			{
 				detail = "No ScriptComponent";
@@ -74,9 +74,9 @@ namespace vega
 				detail = "Unknown script property";
 				return;
 			}
-			ly::reflect::PropertyInfo property;
-			property.kind = ly::reflect::KindOf(entry->second);
-			ly::reflect::PropertyValue value;
+			vega::reflect::PropertyInfo property;
+			property.kind = vega::reflect::KindOf(entry->second);
+			vega::reflect::PropertyValue value;
 			float tolerance = command.tolerance;
 			const bool expect = command.operation == "expect-script-prop";
 			if (!ParsePropertyValue(property, command.values, expect, value, tolerance)) detail = "Invalid script property value or tolerance";

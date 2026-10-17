@@ -311,7 +311,7 @@ int main(int argc, char** argv)
 	bool duplicateRejected = false;
 	try { registry.Add(*registry.Find("move")); } catch (const std::invalid_argument&) { duplicateRejected = true; }
 	Check(duplicateRejected, "Duplicate commands must be rejected");
-	registry.Add(ly::PlayerShipScriptCommand(
+	registry.Add(vega::PlayerShipScriptCommand(
 		[](vega::EditorContext&, vega::CommandHistory&, const std::vector<std::string>&, std::string&) { return true; }));
 	if (argc == 2 && std::string{argv[1]} == "--write-doc")
 	{

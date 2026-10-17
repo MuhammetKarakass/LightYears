@@ -3,7 +3,7 @@
 #include "widget/Panel.h"
 #include <SFML/Graphics.hpp>
 
-namespace ly
+namespace vega
 {
 	// Retained vertex canvas for the module screen chrome: gradients, hairlines and glows in local (parent-relative) coordinates.
 	class HoloCanvas : public Panel

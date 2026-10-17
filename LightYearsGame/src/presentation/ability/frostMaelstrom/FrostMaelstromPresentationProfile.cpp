@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/frostMaelstrom/FrostMaelstromPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterFrostMaelstromPresentationProfiles()
 	{

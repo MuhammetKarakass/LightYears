@@ -2,7 +2,7 @@
 #include "UncommonModuleCompletionE2E.h"
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace uncommon_completion_e2e;
 	if (argc != 2) return 2;
 	Report report;

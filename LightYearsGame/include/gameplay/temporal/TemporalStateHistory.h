@@ -4,7 +4,7 @@
 
 #include <deque>
 
-namespace ly
+namespace vega
 {
 	class SpaceShip;
 

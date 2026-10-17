@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly::temporal
+namespace vega::temporal
 {
 	void TemporalRateModifierLedger::SetModifier(
 		RateModifierSourceId sourceId,

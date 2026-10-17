@@ -12,28 +12,28 @@ namespace AbilityData::FrostMaelstrom
 			"Ability.Utility.FrostMaelstrom.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Utility;
-	inline const ly::GameplayTag FamilyTag =
-		ly::GameplayTags::Ability::Family::FrostMaelstrom;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Utility;
+	inline const vega::GameplayTag FamilyTag =
+		vega::GameplayTags::Ability::Family::FrostMaelstrom;
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active =
-			ly::GameplayTags::State::Ability::FrostMaelstrom::Active;
-		inline static const ly::GameplayTag Controlling =
-			ly::GameplayTags::State::Ability::FrostMaelstrom::Controlling;
+		inline static const vega::GameplayTag Active =
+			vega::GameplayTags::State::Ability::FrostMaelstrom::Active;
+		inline static const vega::GameplayTag Controlling =
+			vega::GameplayTags::State::Ability::FrostMaelstrom::Controlling;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started =
-			ly::GameplayTags::Event::Ability::FrostMaelstrom::Started;
-		inline static const ly::GameplayTag Tick =
-			ly::GameplayTags::Event::Ability::FrostMaelstrom::Tick;
-		inline static const ly::GameplayTag Released =
-			ly::GameplayTags::Event::Ability::FrostMaelstrom::Released;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::FrostMaelstrom::Ended;
+		inline static const vega::GameplayTag Started =
+			vega::GameplayTags::Event::Ability::FrostMaelstrom::Started;
+		inline static const vega::GameplayTag Tick =
+			vega::GameplayTags::Event::Ability::FrostMaelstrom::Tick;
+		inline static const vega::GameplayTag Released =
+			vega::GameplayTags::Event::Ability::FrostMaelstrom::Released;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::FrostMaelstrom::Ended;
 	};
 
 	struct Attribute
@@ -69,7 +69,7 @@ namespace AbilityData::FrostMaelstrom
 		// Tick damage uses the project-wide Common.Damage identity so normal
 		// AttackPower scaling remains reusable.
 		inline static const sas::AttributeId TickDamage =
-			ly::CommonAttributeIds::Damage;
+			vega::CommonAttributeIds::Damage;
 	};
 
 	struct Actor

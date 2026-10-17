@@ -2,7 +2,7 @@
 rem Builds <repo>\build as Debug, or build-release with --release, using Ninja and MSVC 2022.
 rem Extra arguments go to "cmake --build", for example: tools\vega-build.cmd --target LightYearsGame
 rem
-rem First configure: when LY_DEPS_SEED (default D:\LightYears\build\_deps) holds already fetched dependency sources,
+rem First configure: when VEGA_DEPS_SEED (default D:\LightYears\build\_deps) holds already fetched dependency sources,
 rem they are copied into build\_deps and FetchContent runs disconnected, so nothing is downloaded. The copy keeps
 rem SFML's ${FETCHCONTENT_BASE_DIR}-relative unity build exclusions matching; FETCHCONTENT_SOURCE_DIR_* overrides break
 rem them (vorbis/freetype unity sources then fail to compile). Without a seed, FetchContent downloads as usual.
@@ -10,7 +10,7 @@ setlocal EnableDelayedExpansion
 set VSLANG=1033
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul
 for %%I in ("%~dp0..") do set "REPO=%%~fI"
-if "%LY_DEPS_SEED%"=="" set "LY_DEPS_SEED=D:\LightYears\build\_deps"
+if "%VEGA_DEPS_SEED%"=="" set "VEGA_DEPS_SEED=D:\LightYears\build\_deps"
 set "BUILD_DIR=%REPO%\build"
 set "BUILD_CONFIG=Debug"
 set "BUILD_ARGS=%*"
@@ -19,13 +19,13 @@ if "%~1"=="--release" (
   set "BUILD_CONFIG=Release"
   set "BUILD_ARGS=!BUILD_ARGS:~9!"
   rem Prefer this worktree's fetched sources for a separate Release build.
-  if exist "%REPO%\build\_deps\sfml-src" set "LY_DEPS_SEED=%REPO%\build\_deps"
+  if exist "%REPO%\build\_deps\sfml-src" set "VEGA_DEPS_SEED=%REPO%\build\_deps"
 )
 if not exist "!BUILD_DIR!\build.ninja" (
   set "DISCONNECTED=OFF"
-  if exist "%LY_DEPS_SEED%\sfml-src" (
+  if exist "%VEGA_DEPS_SEED%\sfml-src" (
     for %%N in (box2d flac freetype harfbuzz json libssh2 mbedtls ogg sfml sheenbidi vorbis imgui imgui-sfml lua sol2) do (
-      if exist "%LY_DEPS_SEED%\%%N-src" if not exist "!BUILD_DIR!\_deps\%%N-src" robocopy "%LY_DEPS_SEED%\%%N-src" "!BUILD_DIR!\_deps\%%N-src" /E /NFL /NDL /NJH /NJS /NP >nul
+      if exist "%VEGA_DEPS_SEED%\%%N-src" if not exist "!BUILD_DIR!\_deps\%%N-src" robocopy "%VEGA_DEPS_SEED%\%%N-src" "!BUILD_DIR!\_deps\%%N-src" /E /NFL /NDL /NJH /NJS /NP >nul
     )
     rem The editor's dependencies are not in the game's seed; fetch the same pinned archives VegaEditor/CMakeLists.txt names.
     call :fetch_zip imgui https://github.com/ocornut/imgui/archive/refs/tags/v1.91.6-docking.zip imgui-1.91.6-docking

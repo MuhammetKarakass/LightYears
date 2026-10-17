@@ -54,8 +54,8 @@ namespace vega
 		return true;
 	}
 
-	SetScriptPropertyCommand::SetScriptPropertyCommand(unsigned int id, ly::ComponentIdentity index, std::string property,
-		ly::reflect::PropertyValue value, std::uint64_t group)
+	SetScriptPropertyCommand::SetScriptPropertyCommand(unsigned int id, vega::ComponentIdentity index, std::string property,
+		vega::reflect::PropertyValue value, std::uint64_t group)
 		: mID{ id }, mComponentIdentity{ index }, mProperty{ std::move(property) }, mAfter{ std::move(value) }, mMergeGroup{ group } {}
 
 	bool SetScriptPropertyCommand::Execute(EditorContext& context)
@@ -63,9 +63,9 @@ namespace vega
 		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor) return false;
 		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
-		auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object));
+		auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<vega::ActorComponent*>(target.object));
 		if (!script) return false;
-		std::optional<ly::reflect::PropertyValue> before;
+		std::optional<vega::reflect::PropertyValue> before;
 		const auto entry = script->Overrides().find(mProperty);
 		if (entry != script->Overrides().end()) before = entry->second;
 		if (!script->SetProperty(mProperty, mAfter)) return false;
@@ -77,7 +77,7 @@ namespace vega
 		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor || !mExecuted) return;
 		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
-		if (auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)))
+		if (auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<vega::ActorComponent*>(target.object)))
 		{
 			if (mBeforeOverride) script->SetProperty(mProperty, *mBeforeOverride);
 			else script->ClearOverride(mProperty);
@@ -92,26 +92,26 @@ namespace vega
 		return true;
 	}
 
-	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<ly::ComponentIdentity> componentIdentity)
+	ReflectedTarget ResolvePropertyTarget(vega::Actor& actor, std::optional<vega::ComponentIdentity> componentIdentity)
 	{
 		auto& registry = actor.GetEngineContext().Types();
 		if (!componentIdentity) return { &actor, registry.FindMostDerived(actor), {} };
-		auto* component = ly::FindComponentByTypeOccurrence(actor, *componentIdentity);
+		auto* component = vega::FindComponentByTypeOccurrence(actor, *componentIdentity);
 		return component ? ReflectedTarget{ component, registry.FindMostDerived(*component), componentIdentity } : ReflectedTarget{};
 	}
 
-	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName)
+	ReflectedTarget FindPropertyTarget(vega::Actor& actor, const std::string& targetName)
 	{
 		auto result = ResolvePropertyTarget(actor, {});
 		if (targetName == "Actor") return result;
 		result = {};
 		
-		actor.ForEachComponent([&](ly::ActorComponent& component)
+		actor.ForEachComponent([&](vega::ActorComponent& component)
 		{
 			const auto* type = component.GetOwner().GetEngineContext().Types().FindMostDerived(component);
 			for (const auto* base = type; base; base = base->base)
 			{
-				if (!result.object && base->name == targetName) result = { &component, type, ly::IdentifyComponent(actor, component) };
+				if (!result.object && base->name == targetName) result = { &component, type, vega::IdentifyComponent(actor, component) };
 			}
 
 		});
@@ -167,8 +167,8 @@ namespace vega
 			error = "Unknown struct property: " + name;
 			return false;
 		}
-		if (index ? property->kind != ly::reflect::PropertyKind::List || property->elementKind != ly::reflect::PropertyKind::Struct
-			: property->kind != ly::reflect::PropertyKind::Struct)
+		if (index ? property->kind != vega::reflect::PropertyKind::List || property->elementKind != vega::reflect::PropertyKind::Struct
+			: property->kind != vega::reflect::PropertyKind::Struct)
 		{
 			error = index ? name + " is not a list of structs" : name + " is a list of structs; address an element as " + name + "[i].Field";
 			return false;
@@ -183,29 +183,29 @@ namespace vega
 		return true;
 	}
 
-	ly::reflect::LeafValue* FindStructLeaf(const StructLeafPath& path, ly::reflect::PropertyValue& value, std::string& error)
+	vega::reflect::LeafValue* FindStructLeaf(const StructLeafPath& path, vega::reflect::PropertyValue& value, std::string& error)
 	{
 		if (!path.property) return nullptr;
-		ly::reflect::StructValue* fields = nullptr;
+		vega::reflect::StructValue* fields = nullptr;
 		if (path.index)
 		{
-			auto& list = std::get<ly::reflect::PropertyList>(value);
+			auto& list = std::get<vega::reflect::PropertyList>(value);
 			if (*path.index >= list.size())
 			{
 				error = "List index out of range (zero-based)";
 				return nullptr;
 			}
-			fields = &std::get<ly::reflect::StructValue>(list[*path.index]);
+			fields = &std::get<vega::reflect::StructValue>(list[*path.index]);
 		}
-		else fields = &std::get<ly::reflect::StructValue>(value);
+		else fields = &std::get<vega::reflect::StructValue>(value);
 		for (auto& entry : *fields)
 			if (entry.first == path.field) return &entry.second;
 		error = "Struct field is missing: " + path.field;
 		return nullptr;
 	}
 
-	SetPropertyCommand::SetPropertyCommand(unsigned int id, std::optional<ly::ComponentIdentity> componentIdentity,
-		std::string property, ly::reflect::PropertyValue after, std::uint64_t group, bool relative)
+	SetPropertyCommand::SetPropertyCommand(unsigned int id, std::optional<vega::ComponentIdentity> componentIdentity,
+		std::string property, vega::reflect::PropertyValue after, std::uint64_t group, bool relative)
 		: mID{ id }, mComponentIdentity{ componentIdentity }, mProperty{ std::move(property) },
 		mAfter{ std::move(after) }, mMergeGroup{ group }, mRelative{ relative }
 	{
@@ -222,8 +222,8 @@ namespace vega
 		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
 		const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr;
 		if (!property) { context.propertyError = "Unknown property"; return false; }
-		const auto before = mRelative && !mComponentIdentity && mProperty == "Location" ? ly::reflect::PropertyValue{ actor->GetRelativeLocation() } :
-			mRelative && !mComponentIdentity && mProperty == "Rotation" ? ly::reflect::PropertyValue{ actor->GetRelativeRotation() } : property->getter(target.object);
+		const auto before = mRelative && !mComponentIdentity && mProperty == "Location" ? vega::reflect::PropertyValue{ actor->GetRelativeLocation() } :
+			mRelative && !mComponentIdentity && mProperty == "Rotation" ? vega::reflect::PropertyValue{ actor->GetRelativeRotation() } : property->getter(target.object);
 		if (mRelative && !mComponentIdentity && mProperty == "Location")
 		{
 			const auto* value = std::get_if<sf::Vector2f>(&mAfter);
@@ -336,7 +336,7 @@ namespace vega
 		for (const auto& actor : actors) roots.push_back(ResolvePropertyTarget(*actor, {}));
 		collect(std::move(roots));
 		std::unordered_set<std::string> componentSets;
-		actors.front()->ForEachComponent([&](ly::ActorComponent& component)
+		actors.front()->ForEachComponent([&](vega::ActorComponent& component)
 		{
 			const auto* type = component.GetOwner().GetEngineContext().Types().FindMostDerived(component);
 			// Match occurrences within a reflected component chain. Unrelated sibling
@@ -345,7 +345,7 @@ namespace vega
 			{
 				std::size_t occurrence = 0;
 				bool reached = false;
-				actors.front()->ForEachComponent([&](ly::ActorComponent& entry)
+				actors.front()->ForEachComponent([&](vega::ActorComponent& entry)
 				{
 					if (&entry == &component) reached = true;
 					if (!reached && base->isInstance(&entry)) ++occurrence;
@@ -356,10 +356,10 @@ namespace vega
 				{
 					std::size_t index = 0;
 					ReflectedTarget target;
-					actor->ForEachComponent([&](ly::ActorComponent& entry)
+					actor->ForEachComponent([&](vega::ActorComponent& entry)
 					{
 						if (base->isInstance(&entry) && index++ == occurrence)
-							target = { &entry, base, ly::IdentifyComponent(*actor, entry) };
+							target = { &entry, base, vega::IdentifyComponent(*actor, entry) };
 					});
 					if (!target.object || !target.componentIdentity) break;
 					key += target.componentIdentity->typeName + ":" + std::to_string(target.componentIdentity->occurrence) + ";";
@@ -376,7 +376,7 @@ namespace vega
 	}
 
 	bool SetCommonProperty(EditorContext& context, CommandHistory& history, const CommonProperty& row,
-		const ly::reflect::PropertyValue& value, std::uint64_t group)
+		const vega::reflect::PropertyValue& value, std::uint64_t group)
 	{
 		const auto actors = context.selection.GetAll();
 		if (!row.property || !row.property->setter || actors.size() != row.targets.size()) return false;

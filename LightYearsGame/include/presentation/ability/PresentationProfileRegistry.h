@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	template <typename Profile>
 	class PresentationProfileRegistry

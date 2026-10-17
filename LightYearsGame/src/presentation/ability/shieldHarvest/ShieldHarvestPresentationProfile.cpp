@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/shieldHarvest/ShieldHarvestPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterShieldHarvestPresentationProfiles()
 	{

@@ -25,7 +25,7 @@
 #include <framework/EngineContext.h>
 #include <framework/content/ContentSchema.h>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -96,7 +96,7 @@ namespace ly
 			const std::string& failureReason
 		)
 		{
-			LY_GAME_ERROR("Failed to load %s content: %s", contentName, failureReason.c_str());
+			VEGA_GAME_ERROR("Failed to load %s content: %s", contentName, failureReason.c_str());
 		}
 	}
 
@@ -163,7 +163,7 @@ namespace ly
 				ValidateShipSchematics(&schematicFailureReason);
 			if (modulesLoaded && shipsLoaded && !schematicsValidated)
 			{
-				LY_GAME_ERROR("Ship schematic validation failed: %s", schematicFailureReason.c_str());
+				VEGA_GAME_ERROR("Ship schematic validation failed: %s", schematicFailureReason.c_str());
 			}
 
 			std::string abilityLoadFailureReason;
@@ -198,7 +198,7 @@ namespace ly
 				ValidateShippedAbilities(&abilityValidationFailureReason);
 			if (!abilitiesValidated && !abilityValidationFailureReason.empty())
 			{
-				LY_GAME_ERROR(
+				VEGA_GAME_ERROR(
 					"Shipped ability validation failed: %s",
 					abilityValidationFailureReason.c_str()
 				);
@@ -209,7 +209,7 @@ namespace ly
 				ValidateShippedEffects(&effectValidationFailureReason);
 			if (!effectsValidated && !effectValidationFailureReason.empty())
 			{
-				LY_GAME_ERROR(
+				VEGA_GAME_ERROR(
 					"Shipped gameplay effect validation failed: %s",
 					effectValidationFailureReason.c_str()
 				);
@@ -234,7 +234,7 @@ namespace ly
 				);
 			if (!enemyContentLoaded && !enemyContentLoadFailureReason.empty())
 			{
-				LY_GAME_ERROR(
+				VEGA_GAME_ERROR(
 					"Enemy content validation failed: %s",
 					enemyContentLoadFailureReason.c_str()
 				);
@@ -280,21 +280,21 @@ namespace ly
 				if (schema.validate)
 				{
 					const auto error = schema.validate(documents, "");
-					if (!error.empty()) { LY_GAME_ERROR("Content reload rejected (%s): %s", type.c_str(), error.c_str()); return; }
+					if (!error.empty()) { VEGA_GAME_ERROR("Content reload rejected (%s): %s", type.c_str(), error.c_str()); return; }
 				}
 			}
 			if (requested.count("modules.json") || requested.count("module_side_features.json"))
 			{
 				std::string error;
 				if (!ModuleContentCatalog::LoadFromFiles(resolve("content/data/modules.json"), resolve("content/data/module_side_features.json"), &error, true))
-				{ LY_GAME_ERROR("Content reload rejected (modules): %s", error.c_str()); return; }
+				{ VEGA_GAME_ERROR("Content reload rejected (modules): %s", error.c_str()); return; }
 			}
 			const auto reload = [&](const char* file, const auto& load)
 			{
 				if (!requested.count(file)) return;
 				std::string error;
-				if (load(error)) LY_GAME_INFO("Reloaded content: %s (future spawns/grants)", requested.at(file).generic_u8string().c_str());
-				else LY_GAME_ERROR("Content reload rejected (%s): %s", file, error.c_str());
+				if (load(error)) VEGA_GAME_INFO("Reloaded content: %s (future spawns/grants)", requested.at(file).generic_u8string().c_str());
+				else VEGA_GAME_ERROR("Content reload rejected (%s): %s", file, error.c_str());
 			};
 			reload("weapons.json", [&](auto& error) { return WeaponContentCatalog::LoadFromFile(resolve("content/data/weapons.json"), &error, true); });
 			if (requested.count("module_side_features.json")) requested["modules.json"] = resolve("content/data/modules.json");
@@ -303,6 +303,6 @@ namespace ly
 			reload("effects.json", [&](auto& error) { return EffectContentCatalog::LoadFromFile(resolve("content/data/effects.json"), EffectData::GetBuiltinGameplayEffectDefinitions(), &error, true); });
 			reload("abilities.json", [&](auto& error) { return AbilityContentCatalog::LoadFromFile(resolve("content/data/abilities.json"), AbilityData::GetBuiltinShippedAbilityDefinitions(), AbilityData::GetBuiltinAbilityActorDefinitions(), &error, true); });
 		}
-		catch (const std::exception& error) { LY_GAME_ERROR("Content reload rejected: %s", error.what()); }
+		catch (const std::exception& error) { VEGA_GAME_ERROR("Content reload rejected: %s", error.what()); }
 	}
 }

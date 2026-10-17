@@ -12,9 +12,9 @@ namespace AbilityData::DirectionalBarrier
 			"Ability.Defense.DirectionalBarrier.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::DirectionalBarrier
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::DirectionalBarrier
 	};
 
 	// Gameplay interception and the typed presentation profile share one
@@ -24,18 +24,18 @@ namespace AbilityData::DirectionalBarrier
 	struct State
 	{
 		// The effect is the canonical active-state owner for this ability.
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Effect::Defense::DirectionalBarrier::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Effect::Defense::DirectionalBarrier::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::DirectionalBarrier::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::DirectionalBarrier::Started
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::DirectionalBarrier::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::DirectionalBarrier::Ended
 		};
 	};
 

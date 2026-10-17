@@ -2,7 +2,7 @@
 
 #include <framework/GameModule.h>
 
-namespace ly
+namespace vega
 {
 	std::unique_ptr<vega::GameModule> CreateLightYearsEditorModule();
 }

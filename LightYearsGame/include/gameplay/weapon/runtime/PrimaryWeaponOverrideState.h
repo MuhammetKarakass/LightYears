@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	using PrimaryWeaponOverrideHandle = std::size_t;
 

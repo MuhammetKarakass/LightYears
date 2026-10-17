@@ -1,7 +1,7 @@
 #include "presentation/hud/warning/GameplayWarningView.h"
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	GameplayWarningView::GameplayWarningView(shared_ptr<const GameplayWarningViewModel> viewModel)
 		: Panel{ { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }

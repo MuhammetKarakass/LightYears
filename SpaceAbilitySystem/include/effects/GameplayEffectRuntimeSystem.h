@@ -53,7 +53,7 @@ namespace sas
 		using Callbacks = GameplayEffectRuntimeCallbacks<ActiveEffect, Spec>;
 		using Collection = GameplayEffectCollection<ActiveEffect>;
 
-		GameplayEffectRuntimeSystem(AttributeSystem& attributes, ly::GameplayTagContainer& ownedTags, Callbacks callbacks = {})
+		GameplayEffectRuntimeSystem(AttributeSystem& attributes, vega::GameplayTagContainer& ownedTags, Callbacks callbacks = {})
 			: mAttributes{ attributes },
 			mOwnedTags{ ownedTags },
 			mCallbacks{ std::move(callbacks) }
@@ -623,7 +623,7 @@ namespace sas
 		bool AddStack(ActiveEffect& effect) { return mCallbacks.addStack && mCallbacks.addStack(effect); }
 
 		AttributeSystem& mAttributes;
-		ly::GameplayTagContainer& mOwnedTags;
+		vega::GameplayTagContainer& mOwnedTags;
 		Callbacks mCallbacks;
 		Collection mActiveEffects;
 		std::size_t mScopeDepth = 0;

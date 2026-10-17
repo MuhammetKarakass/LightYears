@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace ly
+namespace vega
 {
 	ModuleShieldReflectionRuntime::ModuleShieldReflectionRuntime(CombatRuntime& combat) : mCombat{ combat }, mShip{ dynamic_cast<SpaceShip*>(&combat.GetAbilitySystemComponent().GetOwner()) }
 	{

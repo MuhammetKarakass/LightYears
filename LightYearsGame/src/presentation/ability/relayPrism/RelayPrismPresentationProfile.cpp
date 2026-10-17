@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/relayPrism/RelayPrismPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterRelayPrismPresentationProfiles()
 	{

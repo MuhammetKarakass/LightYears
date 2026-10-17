@@ -10,7 +10,7 @@
 #include "framework/Actor.h"
 #include "framework/World.h"
 
-namespace ly
+namespace vega
 {
 	bool CrystalBarricadeAbility::Validate(
 		const GameAbilityDefinition& definition,

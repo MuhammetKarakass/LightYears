@@ -3,7 +3,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/combatSentry/CombatSentryPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class CombatSentryProjectileActor final : public AbilityWorldActor
 	{

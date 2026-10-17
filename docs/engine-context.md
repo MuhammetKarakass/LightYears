@@ -1,6 +1,6 @@
 # Engine contexts
 
-`ly::EngineContext` (`framework/EngineContext.h`) owns a host's services.
+`vega::EngineContext` (`framework/EngineContext.h`) owns a host's services.
 `Application` adopts `EngineContext::Current()` by default: the innermost bound
 Scope, or the function-local static legacy context when no scope exists. This
 preserves assets, defaults and registrations configured before construction.
@@ -32,7 +32,7 @@ before audio and cached assets during context destruction.
 Existing application constructors continue to work and adopt the current context:
 
 ```cpp
-class MyApplication : public ly::Application
+class MyApplication : public vega::Application
 {
 public:
 	MyApplication()
@@ -77,9 +77,9 @@ context once at construction; their subsequent resource accesses use that pointe
 New registration code can supply its registry explicitly:
 
 ```cpp
-ly::reflect::RegisterEngineTypes(context.Types());
+vega::reflect::RegisterEngineTypes(context.Types());
 VEGA_REGISTER_IN(MyActor, context.Types());
-ly::reflect::Class<MyComponent, ly::ActorComponent>{ "MyComponent", context.Types() }
+vega::reflect::Class<MyComponent, vega::ActorComponent>{ "MyComponent", context.Types() }
 	.Addable();
 vega::script::RegisterScriptTypes(context);
 vega::script::ScriptRuntime::Get(context).SetRoot("assets");
@@ -115,9 +115,9 @@ tooling for a specific registry.
 Headless fixtures need no Application or window:
 
 ```cpp
-ly::EngineContext context;
-ly::EngineContext::Scope legacyCalls{ context };
-ly::World world{ context };
+vega::EngineContext context;
+vega::EngineContext::Scope legacyCalls{ context };
+vega::World world{ context };
 context.Assets().SetAssetRootDirectory(buildTreeAssets + "/");
 // Register this fixture's types and create actors here.
 ```
@@ -162,7 +162,7 @@ their own context where they use these services. Test assets stay in the build t
 ## Remaining migration
 
 All eight migrated services have no production legacy static-accessor calls left
-in LightYearsEngine, VegaEditor or VegaScript. The CTest guard
+in VegaEngine, VegaEditor or VegaScript. The CTest guard
 `VegaNoLegacyContextAccessors` enforces this with an explicit shim-definition
 allow-list. Compatibility constructors and
 registration wrappers still use `Current()` at entry boundaries.

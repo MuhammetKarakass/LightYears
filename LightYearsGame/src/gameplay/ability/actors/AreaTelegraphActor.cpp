@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	AreaTelegraphActor::AreaTelegraphActor(
 		World* world,

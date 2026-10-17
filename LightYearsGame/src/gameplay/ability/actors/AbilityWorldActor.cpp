@@ -20,7 +20,7 @@
 namespace
 {
 	float DistanceSquaredToActorBounds(
-		const ly::Actor& actor,
+		const vega::Actor& actor,
 		const sf::Vector2f& point
 	)
 	{
@@ -54,12 +54,12 @@ namespace
 		const sf::Vector2f& fallback
 	)
 	{
-		const float length = ly::GetVectorLength(value);
+		const float length = vega::GetVectorLength(value);
 		return length > 0.001f ? value / length : fallback;
 	}
 }
 
-namespace ly
+namespace vega
 {
 	AbilityWorldActor::AbilityWorldActor(World* world, Actor* owner, const std::string& texturePath)
 		: Actor(world, texturePath),
@@ -487,7 +487,7 @@ namespace ly
 		float damageMultiplier
 	)
 	{
-		LY_PROFILE_SCOPE("Ability.DamageInRadius");
+		VEGA_PROFILE_SCOPE("Ability.DamageInRadius");
 		World* world = GetWorld();
 		const float effectiveRadius = std::max(0.f, radius);
 		const float damage = std::max(0.f, mDamage * std::max(0.f, damageMultiplier));

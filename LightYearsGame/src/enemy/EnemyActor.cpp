@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(EnemyActor, SpaceShip)
 	{
@@ -78,21 +78,21 @@ namespace ly
 	{
 		if (mHasChassisPrimaryWeapon)
 		{
-			LY_GAME_ERROR("EnemyActor '%s' chassis must not own a primary weapon.", mEnemyId.c_str());
+			VEGA_GAME_ERROR("EnemyActor '%s' chassis must not own a primary weapon.", mEnemyId.c_str());
 			Destroy();
 			return;
 		}
 		std::string combatFailureReason;
 		if (!mEnemyRuntime.Initialize(mCombatProfile, mSpawnContext, mEncounterDamageMultiplier, &combatFailureReason))
 		{
-			LY_GAME_ERROR("EnemyActor '%s' failed to initialize combat profile: %s", mEnemyId.c_str(), combatFailureReason.c_str());
+			VEGA_GAME_ERROR("EnemyActor '%s' failed to initialize combat profile: %s", mEnemyId.c_str(), combatFailureReason.c_str());
 			Destroy();
 			return;
 		}
 		const EnemyCombatProfile* profile = mEnemyRuntime.GetCurrentProfile();
 		if (profile->allowContactDamageOnly && mCollisionDamage <= 0.f)
 		{
-			LY_GAME_ERROR("EnemyActor '%s' allows contact-only combat but has no collision damage.", mEnemyId.c_str());
+			VEGA_GAME_ERROR("EnemyActor '%s' allows contact-only combat but has no collision damage.", mEnemyId.c_str());
 			mEnemyRuntime.Clear();
 			Destroy();
 			return;
@@ -100,7 +100,7 @@ namespace ly
 		std::string behaviorFailureReason;
 		if (!mBehaviorRuntime.Initialize(mBehaviorProfile, &behaviorFailureReason))
 		{
-			LY_GAME_ERROR("EnemyActor '%s' failed to initialize behavior: %s", mEnemyId.c_str(), behaviorFailureReason.c_str());
+			VEGA_GAME_ERROR("EnemyActor '%s' failed to initialize behavior: %s", mEnemyId.c_str(), behaviorFailureReason.c_str());
 			mEnemyRuntime.Clear();
 			Destroy();
 			return;
@@ -208,7 +208,7 @@ namespace ly
 
 	void EnemyActor::Blew()
 	{
-		LY_PROFILE_SCOPE("Enemy.Blew");
+		VEGA_PROFILE_SCOPE("Enemy.Blew");
 		const bool wasReady = mEnemyRuntime.IsReady();
 		mEnemyRuntime.Clear();
 		if (!wasReady) return;

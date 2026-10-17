@@ -5,7 +5,7 @@
 
 #include <map>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

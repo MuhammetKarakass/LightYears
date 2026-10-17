@@ -15,7 +15,7 @@
 #include <optional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct AbilityEffectSpecDefinition
 	{

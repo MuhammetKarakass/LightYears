@@ -10,11 +10,11 @@ source_files:
   - LightYearsGame/src/gameplay/ship/ShipRuntime.cpp
   - LightYearsGame/src/spaceShip/SpaceShip.cpp
 symbols:
-  - ly::Player::AwardShipXP
-  - ly::ShipProgression::AddXP
-  - ly::ShipProgression::RebuildLevelModifiers
-  - ly::ShipProgression::BindAttributes
-  - ly::ShipProgression::UnbindAttributes
+  - vega::Player::AwardShipXP
+  - vega::ShipProgression::AddXP
+  - vega::ShipProgression::RebuildLevelModifiers
+  - vega::ShipProgression::BindAttributes
+  - vega::ShipProgression::UnbindAttributes
 related:
   - "[[Ship Progression System]]"
   - "[[ShipProgression]]"

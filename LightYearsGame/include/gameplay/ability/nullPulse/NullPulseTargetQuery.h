@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly
+namespace vega
 {
 	class AbilityWorldActor;
 	class Actor;

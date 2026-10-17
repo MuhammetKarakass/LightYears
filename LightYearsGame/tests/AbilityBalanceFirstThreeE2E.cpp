@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -247,10 +247,10 @@ namespace ly
 				const shared_ptr<BalanceE2EShip> hullOwner = hullWorld.SpawnActor<BalanceE2EShip>(100.f).lock();
 				const shared_ptr<BalanceE2EShip> hullTarget = hullWorld.SpawnActor<BalanceE2EShip>().lock();
 				if (!hullOwner || !hullTarget) throw std::runtime_error("Hull Shock E2E actor spawn failed");
-			hullOwner->SetCollisionLayer(ly::GameCollision::Player);
-			hullOwner->SetCollisionMask(ly::GameCollision::Enemy);
-			hullTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			hullTarget->SetCollisionMask(ly::GameCollision::Player);
+			hullOwner->SetCollisionLayer(vega::GameCollision::Player);
+			hullOwner->SetCollisionMask(vega::GameCollision::Enemy);
+			hullTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			hullTarget->SetCollisionMask(vega::GameCollision::Player);
 			hullTarget->SetActorLocation({ 0.f, -100.f });
 			hullWorld.TickInternal(0.f);
 			SetOwnerAttribute(*hullOwner, OwnerAttributeIds::MaxHealth, 100.f);
@@ -287,13 +287,13 @@ namespace ly
 			const shared_ptr<BalanceE2EShip> collisionTarget = glacialWorld.SpawnActor<BalanceE2EShip>().lock();
 			if (!glacialOwner || !movingTarget || !collisionTarget)
 				throw std::runtime_error("Glacial Pressure E2E actor spawn failed");
-			glacialOwner->SetCollisionLayer(ly::GameCollision::Player);
-			glacialOwner->SetCollisionMask(ly::GameCollision::Enemy);
-			movingTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			movingTarget->SetCollisionMask(ly::GameCollision::Player);
+			glacialOwner->SetCollisionLayer(vega::GameCollision::Player);
+			glacialOwner->SetCollisionMask(vega::GameCollision::Enemy);
+			movingTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			movingTarget->SetCollisionMask(vega::GameCollision::Player);
 			movingTarget->SetActorLocation({ 0.f, -100.f });
-			collisionTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			collisionTarget->SetCollisionMask(ly::GameCollision::Player);
+			collisionTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			collisionTarget->SetCollisionMask(vega::GameCollision::Player);
 			collisionTarget->SetActorLocation({ 0.f, -2000.f });
 			glacialWorld.TickInternal(0.f);
 			SetOwnerAttribute(*glacialOwner, OwnerAttributeIds::MaxHealth, 100.f);
@@ -358,12 +358,12 @@ namespace ly
 			const shared_ptr<BalanceE2EShip> reentryTarget = orbitalWorld.SpawnActor<BalanceE2EShip>().lock();
 			if (!orbitalOwner || !continuousTarget || !reentryTarget)
 				throw std::runtime_error("Orbital Drones E2E actor spawn failed");
-			orbitalOwner->SetCollisionLayer(ly::GameCollision::Player);
-			orbitalOwner->SetCollisionMask(ly::GameCollision::Enemy);
-			continuousTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			continuousTarget->SetCollisionMask(ly::GameCollision::Player | ly::GameCollision::PlayerBullet);
-			reentryTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			reentryTarget->SetCollisionMask(ly::GameCollision::Player | ly::GameCollision::PlayerBullet);
+			orbitalOwner->SetCollisionLayer(vega::GameCollision::Player);
+			orbitalOwner->SetCollisionMask(vega::GameCollision::Enemy);
+			continuousTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			continuousTarget->SetCollisionMask(vega::GameCollision::Player | vega::GameCollision::PlayerBullet);
+			reentryTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			reentryTarget->SetCollisionMask(vega::GameCollision::Player | vega::GameCollision::PlayerBullet);
 			orbitalWorld.TickInternal(0.f);
 			SetOwnerAttribute(*orbitalOwner, OwnerAttributeIds::AttackPower, 0.f);
 			SetOwnerAttribute(*orbitalOwner, OwnerAttributeIds::AttackSpeed, 100.f);

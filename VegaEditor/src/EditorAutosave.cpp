@@ -16,11 +16,11 @@ namespace vega
 		try { if (auto* reload = QueryCapability<IContentReload>(mModule.get())) reload->ReloadContent(paths); }
 		catch (const std::exception& error)
 		{
-			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
+			vega::debug::Log::Write(vega::debug::LogLevel::Error, vega::debug::LogChannel::Editor, VEGA_SOURCE_LOCATION,
 				std::string{ "Content reload failed: " } + error.what());
 		}
 		for (const auto& path : paths)
-			ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
+			vega::debug::Log::Write(vega::debug::LogLevel::Info, vega::debug::LogChannel::Editor, VEGA_SOURCE_LOCATION,
 				"Content change dispatched: " + path.lexically_relative(mDocument.Root()).generic_u8string());
 	}
 
@@ -53,8 +53,8 @@ namespace vega
 			for (const auto& [path, text] : mContentAuthoring.DirtyDocuments()) save(path, "content", text);
 		}
 		catch (const std::exception& error) { success = false; mAutosaveError += error.what(); }
-		ly::debug::Log::Write(success ? ly::debug::LogLevel::Info : ly::debug::LogLevel::Error,
-			ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION, success ? "Autosave completed" : mAutosaveError);
+		vega::debug::Log::Write(success ? vega::debug::LogLevel::Info : vega::debug::LogLevel::Error,
+			vega::debug::LogChannel::Editor, VEGA_SOURCE_LOCATION, success ? "Autosave completed" : mAutosaveError);
 		return success;
 	}
 
@@ -133,7 +133,7 @@ namespace vega
 				// second crash before the next periodic deadline.
 				if (!mAutosaves.Write(entry.source, entry.kind, entry.text)) mAutosaveError = mAutosaves.Error();
 				else if (entry.snapshot.parent_path() != mAutosaves.Session() && !mAutosaves.Acknowledge(entry)) mAutosaveError = mAutosaves.Error();
-				ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
+				vega::debug::Log::Write(vega::debug::LogLevel::Info, vega::debug::LogChannel::Editor, VEGA_SOURCE_LOCATION,
 					"Recovered into an unsaved editor buffer: " + entry.source.generic_u8string());
 			}
 			return success;

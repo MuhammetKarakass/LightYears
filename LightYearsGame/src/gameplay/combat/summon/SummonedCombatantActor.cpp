@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	SummonedCombatantActor::SummonedCombatantActor(World* world, Actor* owner)
 		: AbilityWorldActor(world, owner)

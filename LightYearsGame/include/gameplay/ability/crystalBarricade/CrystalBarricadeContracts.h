@@ -11,13 +11,13 @@ namespace AbilityData::CrystalBarricade
 		inline static constexpr char Basic[] = "Ability.Defense.CrystalBarricade.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::CrystalBarricade };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::CrystalBarricade };
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Placed{ ly::GameplayTags::Event::Ability::CrystalBarricade::Placed };
-		inline static const ly::GameplayTag Ended{ ly::GameplayTags::Event::Ability::CrystalBarricade::Ended };
+		inline static const vega::GameplayTag Placed{ vega::GameplayTags::Event::Ability::CrystalBarricade::Placed };
+		inline static const vega::GameplayTag Ended{ vega::GameplayTags::Event::Ability::CrystalBarricade::Ended };
 	};
 
 	struct Actor

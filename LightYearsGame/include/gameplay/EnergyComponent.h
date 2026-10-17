@@ -3,7 +3,7 @@
 #include <framework/ActorComponent.h>
 #include <framework/Delegate.h>
 
-namespace ly
+namespace vega
 {
 	// Not ticked automatically (mCanEverTick stays false): see ShieldComponent.
 	class EnergyComponent : public ActorComponent

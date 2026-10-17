@@ -20,7 +20,7 @@ namespace vega
 {
 	void EditorApplication::BuildHierarchyPanel()
 	{
-		LY_PROFILE_SCOPE("Editor Hierarchy");
+		VEGA_PROFILE_SCOPE("Editor Hierarchy");
 		auto& context = mPrefabWorld ? mPrefabContext : mContext;
 		auto& selection = mPrefabWorld ? mPrefabSelection : mSelection;
 		auto& history = mPrefabWorld ? mPrefabHistory : mHistory;
@@ -44,8 +44,8 @@ namespace vega
 			{
 				struct Row
 				{
-					std::shared_ptr<ly::Actor> actor;
-					const ly::SceneEntityComponent* identity;
+					std::shared_ptr<vega::Actor> actor;
+					const vega::SceneEntityComponent* identity;
 					const std::string* type;
 					int depth = 0;
 				};
@@ -68,11 +68,11 @@ namespace vega
 					}
 					return false;
 				};
-				if (context.world) for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+				if (context.world) for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 				{
 					const auto actor = weak.lock();
 					if (!actor || actor->GetIsPendingDestroy()) continue;
-					const auto* identity = actor->FindComponent<ly::SceneEntityComponent>();
+					const auto* identity = actor->FindComponent<vega::SceneEntityComponent>();
 					auto entry = typeNames.find(typeid(*actor));
 					if (entry == typeNames.end()) entry = typeNames.emplace(typeid(*actor), ActorTypeName(*actor)).first;
 					const auto& type = entry->second;
@@ -84,14 +84,14 @@ namespace vega
 					rows.push_back({ actor, identity, &type });
 				}
 				static std::unordered_set<unsigned int> collapsed;
-				std::unordered_map<ly::Actor*, std::vector<std::size_t>> descendants;
-				std::unordered_set<ly::Actor*> visible;
+				std::unordered_map<vega::Actor*, std::vector<std::size_t>> descendants;
+				std::unordered_set<vega::Actor*> visible;
 				for (const auto& row : rows) visible.insert(row.actor.get());
 				for (std::size_t i = 0; i < rows.size(); ++i)
 					descendants[visible.count(rows[i].actor->GetParent()) ? rows[i].actor->GetParent() : nullptr].push_back(i);
 				std::vector<Row> ordered;
 				ordered.reserve(rows.size());
-				const auto append = [&](auto&& self, ly::Actor* parent, int depth) -> void
+				const auto append = [&](auto&& self, vega::Actor* parent, int depth) -> void
 				{
 					const auto found = descendants.find(parent);
 					if (found == descendants.end()) return;
@@ -183,7 +183,7 @@ namespace vega
 							if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_ACTOR"))
 							{
 								if (const auto child = context.Resolve(*static_cast<const unsigned int*>(payload->Data)))
-									if (const auto* childIdentity = child->FindComponent<ly::SceneEntityComponent>(); childIdentity && identity)
+									if (const auto* childIdentity = child->FindComponent<vega::SceneEntityComponent>(); childIdentity && identity)
 										history.Execute(std::make_unique<ReparentActor>(childIdentity->guid, ImGui::GetIO().KeyAlt ? std::string{} : identity->guid));
 							}
 							ImGui::EndDragDropTarget();

@@ -3,7 +3,7 @@
 #include <framework/TimerManager.h>
 #include <gameplay/GameStage.h>
 
-namespace ly
+namespace vega
 {
 	class TwinBladeStage : public GameStage
 	{

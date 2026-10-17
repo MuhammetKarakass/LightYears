@@ -3,7 +3,7 @@
 #include "presentation/hud/HUDController.h"
 #include "presentation/hud/vitals/VitalsPresenter.h"
 
-namespace ly
+namespace vega
 {
 	class GameHUD;
 	class VitalsView;

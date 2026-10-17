@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	bool RegisterEnergySpearAbilityBehavior()
 	{

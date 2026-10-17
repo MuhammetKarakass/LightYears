@@ -140,12 +140,12 @@ namespace vega
 			auto& mPendingPropertyError = execution.state.mPendingPropertyError;
 			auto actor = execution.context.selection.Get();
 			if (actor && actor->GetWorld() != execution.context.world) actor.reset();
-			const auto find = [&](const std::string& name) -> std::shared_ptr<ly::Actor>
+			const auto find = [&](const std::string& name) -> std::shared_ptr<vega::Actor>
 			{
 				if (const auto found = context.ResolveGuid(name)) return found;
-				for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+				for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 					if (const auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy())
-						if (const auto* identity = candidate->FindComponent<ly::SceneEntityComponent>(); identity && identity->name == name) return candidate;
+						if (const auto* identity = candidate->FindComponent<vega::SceneEntityComponent>(); identity && identity->name == name) return candidate;
 				return {};
 			};
 			auto owner = actor;
@@ -162,14 +162,14 @@ namespace vega
 				return;
 			}
 			auto value = property->getter(target.object);
-			const auto parse = [&](const ly::reflect::PropertyInfo& descriptor, ly::reflect::PropertyValue& parsed)
+			const auto parse = [&](const vega::reflect::PropertyInfo& descriptor, vega::reflect::PropertyValue& parsed)
 			{
-				if (descriptor.kind == ly::reflect::PropertyKind::ActorRef)
+				if (descriptor.kind == vega::reflect::PropertyKind::ActorRef)
 				{
 					if (command.values.size() != 1) return false;
 					const auto other = find(command.values[0]);
 					if (!other && command.values[0] != "none") return false;
-					parsed = other ? ly::ActorRef{*other} : ly::ActorRef{};
+					parsed = other ? vega::ActorRef{*other} : vega::ActorRef{};
 					return true;
 				}
 				float tolerance = 0.f;
@@ -177,7 +177,7 @@ namespace vega
 			};
 			if (command.operation == "set-ref" || command.operation == "expect-ref")
 			{
-				if (property->kind != ly::reflect::PropertyKind::ActorRef || !parse(*property, value))
+				if (property->kind != vega::reflect::PropertyKind::ActorRef || !parse(*property, value))
 				{
 					detail = "Expected actor reference and live target or none";
 					return;
@@ -190,12 +190,12 @@ namespace vega
 			}
 			else
 			{
-				if (property->kind != ly::reflect::PropertyKind::List)
+				if (property->kind != vega::reflect::PropertyKind::List)
 				{
 					detail = "Expected list property";
 					return;
 				}
-				auto& list = std::get<ly::reflect::PropertyList>(value);
+				auto& list = std::get<vega::reflect::PropertyList>(value);
 				if (command.operation == "expect-list-size")
 				{
 					success = list.size() == command.number;
@@ -219,8 +219,8 @@ namespace vega
 				}
 				else
 				{
-					ly::reflect::PropertyValue item;
-					const bool structElement = property->elementKind == ly::reflect::PropertyKind::Struct;
+					vega::reflect::PropertyValue item;
+					const bool structElement = property->elementKind == vega::reflect::PropertyKind::Struct;
 					if (command.operation == "list-add-default")
 					{
 						// A new struct element starts from the field defaults, so no value is parsed.
@@ -237,8 +237,8 @@ namespace vega
 						detail = "Invalid list element";
 						return;
 					}
-					if (command.operation == "list-add" || command.operation == "list-add-default") list.push_back(ly::reflect::ToScalar(item));
-					else list[command.number] = ly::reflect::ToScalar(item);
+					if (command.operation == "list-add" || command.operation == "list-add-default") list.push_back(vega::reflect::ToScalar(item));
+					else list[command.number] = vega::reflect::ToScalar(item);
 				}
 			}
 			success = history.Execute(std::make_unique<SetPropertyCommand>(owner->GetUniqueID(), target.componentIdentity, property->name, value));
@@ -261,7 +261,7 @@ namespace vega
 					if (match) ambiguous = true;
 					match = &row;
 				}
-			ly::reflect::PropertyValue value;
+			vega::reflect::PropertyValue value;
 			float tolerance = command.tolerance;
 			if (!match || ambiguous) detail = "Unknown or ambiguous common property";
 			else if (!ParsePropertyValue(*match->property, command.values, false, value, tolerance)) detail = "Invalid common property value";
@@ -282,14 +282,14 @@ namespace vega
 			auto actor = execution.context.selection.Get();
 			if (actor && actor->GetWorld() != execution.context.world) actor.reset();
 			if (actor)
-				success = history.Execute(std::make_unique<RemoveComponentCommand>(actor->GetUniqueID(), ly::ComponentIdentity{command.text, command.number}));
+				success = history.Execute(std::make_unique<RemoveComponentCommand>(actor->GetUniqueID(), vega::ComponentIdentity{command.text, command.number}));
 		}
 		void ExecuteExpectComponent(ScriptExecution& execution, const EditorScriptCommand& command)
 		{
 			auto& success = execution.success;
 			auto actor = execution.context.selection.Get();
 			if (actor && actor->GetWorld() != execution.context.world) actor.reset();
-			if (actor) success = (ly::FindComponentByTypeOccurrence(*actor, {command.text, 0}) != nullptr) == (command.property == "present");
+			if (actor) success = (vega::FindComponentByTypeOccurrence(*actor, {command.text, 0}) != nullptr) == (command.property == "present");
 		}
 		void ExecuteExpectPropError(ScriptExecution& execution, const EditorScriptCommand& command)
 		{
@@ -311,7 +311,7 @@ namespace vega
 			if (actor && actor->GetWorld() != execution.context.world) actor.reset();
 			const auto target = actor ? FindPropertyTarget(*actor, command.text) : ReflectedTarget{};
 			const auto* property = target.type ? target.type->FindProperty(command.property) : nullptr;
-			ly::reflect::PropertyValue value;
+			vega::reflect::PropertyValue value;
 			float tolerance = command.tolerance;
 			const bool expect = command.operation == "expect-prop";
 			if (!property && actor && target.object && command.property.find_first_of(".[") != std::string::npos)
@@ -320,17 +320,17 @@ namespace vega
 				StructLeafPath path;
 				if (!ResolveStructLeafPath(target, command.property, path, detail)) return;
 				auto whole = path.property->getter(target.object);
-				ly::reflect::PropertyValue parsed;
+				vega::reflect::PropertyValue parsed;
 				if (!ParsePropertyValue(*path.leaf, command.values, expect, parsed, tolerance)) { detail = "Invalid property value or tolerance"; return; }
 				auto* stored = FindStructLeaf(path, whole, detail);
 				if (!stored) return;
 				if (expect)
 				{
-					success = PropertyEquals(ly::reflect::ToPropertyValue(*stored), parsed, tolerance);
+					success = PropertyEquals(vega::reflect::ToPropertyValue(*stored), parsed, tolerance);
 					detail = success ? "Property matched" : "Property value differs";
 					return;
 				}
-				*stored = ly::reflect::ToLeaf(parsed);
+				*stored = vega::reflect::ToLeaf(parsed);
 				success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity, path.property->name, whole));
 				detail = success ? "Property set" : context.propertyError;
 				if (!success) mPendingPropertyError = detail;

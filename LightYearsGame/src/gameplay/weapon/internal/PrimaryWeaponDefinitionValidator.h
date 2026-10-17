@@ -2,7 +2,7 @@
 
 #include "gameplay/weapon/PrimaryWeaponValidationContract.h"
 
-namespace ly::PrimaryWeaponDefinitionValidator
+namespace vega::PrimaryWeaponDefinitionValidator
 {
 	PrimaryWeaponValidationResult Validate(
 		const PrimaryWeaponDefinition& definition

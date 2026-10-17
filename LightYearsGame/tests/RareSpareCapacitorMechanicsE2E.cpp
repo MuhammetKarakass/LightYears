@@ -19,7 +19,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace common_module_e2e;
 
 	// Breacher has five bay cells, so a three-cell module can sit beside three ability shells (the Fighter tops out at two).
@@ -35,7 +35,7 @@ namespace
 	constexpr float kTrickleSeconds = 20.f;
 
 	// Test-only definitions parsed from fixture JSON. They never enter shipped content.
-	ly::List<ly::ModuleDefinition> gFixtureDefinitions;
+	vega::List<vega::ModuleDefinition> gFixtureDefinitions;
 
 	const ModuleDefinition* FixtureLookup(const sas::ContentId& id)
 	{
@@ -709,7 +709,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	report.artifact["test"] = "RareSpareCapacitorMechanicsE2E";

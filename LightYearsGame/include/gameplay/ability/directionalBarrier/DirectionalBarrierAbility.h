@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "effects/GameplayEffectRuntimeEntry.h"
 
-namespace ly
+namespace vega
 {
 	class DirectionalBarrierVisualActor;
 

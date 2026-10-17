@@ -14,7 +14,7 @@ Ana değişiklikler uygulanmış; tamamının doğru olduğu söylenemez. Bu de�
 
 Bu, kapasite büyümesine bağlı tanımsız davranıştır; yanlış görsel konumu veya çökme üretebilir. Registry taşımasının yapıldığını inkâr etmez; controller içinde kalan ayrı bir kusurdur. Çözüm sınırı: yayılma konumunu/değerlerini liste mutasyonundan önce bağımsız değer olarak almak; liste elemanı referansını mutasyon boyunca taşımamak.
 
-Kaynak: [controller](../LightYearsGame/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp), satır 132–141, 165–169, 292–324; [List alias](../LightYearsEngine/include/framework/Core.h), satır 286.
+Kaynak: [controller](../LightYearsGame/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp), satır 132–141, 165–169, 292–324; [List alias](../VegaEngine/include/framework/Core.h), satır 286.
 
 ### 2. P1 — C2 mutlak geçici excess kararı uygulanmamış
 
@@ -36,7 +36,7 @@ Kaynak: [AbilityRuntimeSystem](../SpaceAbilitySystem/include/abilities/AbilityRu
 
 Yeni enfeksiyon her seferinde hedefin `onDamageResolved` olayına bağlanıyor; dönen handle saklanmıyor. `RemoveInfection` yalnız tag'i ve liste elemanını kaldırıyor. Aynı controller başka enfeksiyonlar nedeniyle yaşamaya devam ederken aynı hedef expire→reinfect döngüsüne girerse aynı receiver için birden çok callback kalıyor. Delegate `AddCallback` tekilleştirmiyor. Weak receiver use-after-free'yi önler, yaşayan receiver'ın yinelenen aboneliklerini önlemez. Hasar başına yinelenen enfeksiyon taramaları ve controller ömrü boyunca artan maliyet oluşur; katlanmış hasar iddiası değildir.
 
-Kaynak: [controller](../LightYearsGame/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp), satır 136–139 ve 362–378; [Delegate](../LightYearsEngine/include/framework/Delegate.h), satır 444–459. Çözüm: enfeksiyonun sahip olduğu abonelik handle'ını kaldırmada/destruction'da çözmek veya hedef başına tek sahipli abonelik.
+Kaynak: [controller](../LightYearsGame/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp), satır 136–139 ve 362–378; [Delegate](../VegaEngine/include/framework/Delegate.h), satır 444–459. Çözüm: enfeksiyonun sahip olduğu abonelik handle'ını kaldırmada/destruction'da çözmek veya hedef başına tek sahipli abonelik.
 
 ### 5. P2 — L5d direct reflection world izolasyonunu zorlamıyor
 
@@ -48,7 +48,7 @@ Kaynak: [service](../LightYearsGame/src/gameplay/projectile/ProjectileReflection
 
 Her `FindRegistryActor` çağrısı `GetActorsByTypeIncludingPending` ile aktif/pending actor'ları RTTI üzerinden tarayıp sonuç vektörü oluşturur. Gravity Anomaly hareket adımında swept reflection çağırır. P projectile ve N actor için sadece registry bulma O(P×N) olabilir; registry olmayan sahnede de tarama vardır. Bu ölçülmüş FPS düşüşü değil, kaynakta görünen ölçeklenme gerilemesidir. Güvenli world-owned doğrudan erişim gerekir; process-global raw World map'e dönülmemeli.
 
-Kaynak: [service](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionService.cpp), satır 271; [World](../LightYearsEngine/include/framework/World.h), satır 141; [projectile](../LightYearsGame/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp), satır 340.
+Kaynak: [service](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionService.cpp), satır 271; [World](../VegaEngine/include/framework/World.h), satır 141; [projectile](../LightYearsGame/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp), satır 340.
 
 ### 7. P2 — D1 beam menzilinin tam ucunda duvar eşitlik kuralı eksik
 

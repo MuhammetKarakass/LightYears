@@ -5,7 +5,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class AbilityWorldActor;

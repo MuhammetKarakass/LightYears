@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	bool AbilityLifecycleObserverFilter::Matches(
 		const sas::AbilityLifecycleEvent& event

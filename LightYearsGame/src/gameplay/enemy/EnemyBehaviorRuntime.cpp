@@ -12,7 +12,7 @@
 #include <limits>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

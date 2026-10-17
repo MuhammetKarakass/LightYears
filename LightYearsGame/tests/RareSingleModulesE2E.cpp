@@ -435,14 +435,14 @@ namespace rare_single_e2e
 	}
 }
 
-class AfterburningRegenProbe final : public ly::PlayerSpaceShip
+class AfterburningRegenProbe final : public vega::PlayerSpaceShip
 {
 public:
-	AfterburningRegenProbe(ly::World* world, const ShipDefinition& definition) : PlayerSpaceShip{ world, definition } {}
+	AfterburningRegenProbe(vega::World* world, const ShipDefinition& definition) : PlayerSpaceShip{ world, definition } {}
 	bool IsAfterburnerRechargeBlocked() const override { return true; }
 };
 
-void AfterburnerMomentumChecks(uncommon_p4_e2e::Report& report, ly::Application& application)
+void AfterburnerMomentumChecks(uncommon_p4_e2e::Report& report, vega::Application& application)
 {
 	using namespace uncommon_p4_e2e;
 	Fixture f{ report, application };
@@ -464,7 +464,7 @@ void AfterburnerMomentumChecks(uncommon_p4_e2e::Report& report, ly::Application&
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_single_e2e;
 	if (argc != 2) return 2;
 	Report report;

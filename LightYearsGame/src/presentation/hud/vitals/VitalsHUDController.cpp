@@ -2,7 +2,7 @@
 #include "presentation/hud/vitals/VitalsView.h"
 #include "widget/GameHUD.h"
 
-namespace ly
+namespace vega
 {
 	VitalsHUDController::VitalsHUDController(weak_ptr<GameHUD> gameHUD) : mGameHUD{ gameHUD }
 	{

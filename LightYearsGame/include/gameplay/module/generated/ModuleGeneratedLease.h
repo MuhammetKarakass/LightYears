@@ -2,7 +2,7 @@
 #include "framework/Core.h"
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	// Runtime-owned generation; actors only retain a weak lease. Removal cancels

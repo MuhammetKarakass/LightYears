@@ -3,15 +3,15 @@ type: class
 status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 source_files:
-  - LightYearsEngine/include/framework/Actor.h
-  - LightYearsEngine/src/framework/Actor.cpp
+  - VegaEngine/include/framework/Actor.h
+  - VegaEngine/src/framework/Actor.cpp
 symbols:
-  - ly::Actor
-  - ly::Actor::BeginPlayInternal
-  - ly::Actor::TickInternal
-  - ly::Actor::Destroy
-  - ly::Actor::InitializePhysics
-  - ly::Actor::Render
+  - vega::Actor
+  - vega::Actor::BeginPlayInternal
+  - vega::Actor::TickInternal
+  - vega::Actor::Destroy
+  - vega::Actor::InitializePhysics
+  - vega::Actor::Render
 related:
   - "[[Actor and World System]]"
   - "[[Object Lifecycle]]"
@@ -23,19 +23,19 @@ related:
 
 ## 7 Eylül 2026 kaynak kontrolü
 
-Actor::Destroy spatial kaydı ve fiziği kaldırır, onActorDestroyed yayar, sonra Object::Destroy ile pending olur. Callback içinde yeniden Destroy guard'ı aşabilir; bu risk test edilmedi. Sıralama kaynakta doğrulandı: LightYearsEngine/src/framework/Actor.cpp.
+Actor::Destroy spatial kaydı ve fiziği kaldırır, onActorDestroyed yayar, sonra Object::Destroy ile pending olur. Callback içinde yeniden Destroy guard'ı aşabilir; bu risk test edilmedi. Sıralama kaynakta doğrulandı: VegaEngine/src/framework/Actor.cpp.
 
 Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski örnekler tarihsel inceleme kapsamını taşır; bu güncelleme ile çelişen ayrıntılar güncel davranış kabul edilmemeli.
 
 
-`ly::Actor`, `Object` tabanlı world entity’sidir. Transform, sprite/light, render layer, collision layer/mask, isteğe bağlı Box2D body ve lifecycle hook’ları sağlar.
+`vega::Actor`, `Object` tabanlı world entity’sidir. Transform, sprite/light, render layer, collision layer/mask, isteğe bağlı Box2D body ve lifecycle hook’ları sağlar.
 
 Generic Actor, kendi belleğinin sahibi değildir; World onu `shared_ptr` ile tutar. Actor’ın `World*` alanı non-owning’dir. Generic owner/parent/component container içermez.
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/src/framework/Actor.cpp`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/src/framework/Actor.cpp`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: constructor / destructor  
 Görevi: World bağlantısını ve başlangıç runtime state’ini kurmak.
 
@@ -64,8 +64,8 @@ Actor::~Actor()
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/Actor.cpp`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/src/framework/Actor.cpp`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: `BeginPlayInternal`, `TickInternal`  
 Görevi: Sanal hook’ları lifecycle state ile korumak.
 
@@ -84,8 +84,8 @@ if (mBeganPlay && !GetIsPendingDestroy())
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/Actor.cpp`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/src/framework/Actor.cpp`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: `Destroy`  
 Görevi: Physics bağlantısını kesmek ve deferred object destruction’ı başlatmak.
 
@@ -100,8 +100,8 @@ onActorDestroyed.Broadcast(this);
 Object::Destroy();
 ```
 
-Dosya: `LightYearsEngine/src/framework/Actor.cpp`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/src/framework/Actor.cpp`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: `UnInitializePhysics`  
 Görevi: Body removal’ı PhysicsSystem kuyruğuna vermek.
 
@@ -135,8 +135,8 @@ Texture/sprite bounds yokken physics davranışı, light render ve collision cal
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/include/framework/Actor.h`
-2. `LightYearsEngine/src/framework/Actor.cpp`
-3. `LightYearsEngine/include/framework/Object.h`
-4. `LightYearsEngine/src/framework/World.cpp`
-5. `LightYearsEngine/src/framework/PhysicsSystem.cpp`
+1. `VegaEngine/include/framework/Actor.h`
+2. `VegaEngine/src/framework/Actor.cpp`
+3. `VegaEngine/include/framework/Object.h`
+4. `VegaEngine/src/framework/World.cpp`
+5. `VegaEngine/src/framework/PhysicsSystem.cpp`

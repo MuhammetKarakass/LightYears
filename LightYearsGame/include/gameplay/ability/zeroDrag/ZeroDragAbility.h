@@ -2,7 +2,7 @@
 
 #include "gameplay/ability/GameAbility.h"
 
-namespace ly
+namespace vega
 {
 	class ZeroDragAbility final : public GameAbilityBehavior
 	{

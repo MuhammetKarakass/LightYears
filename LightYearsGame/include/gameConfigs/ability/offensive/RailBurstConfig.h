@@ -8,12 +8,12 @@
 
 namespace AbilityData::RailBurst
 {
-	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+	inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::RailBurstProjectile;
-		definition.presentationProfileId = ly::RailBurstPresentationIds::ProjectileBasic;
+		definition.actorType = vega::AbilityActorType::RailBurstProjectile;
+		definition.presentationProfileId = vega::RailBurstPresentationIds::ProjectileBasic;
 		return definition;
 	}();
 }
@@ -22,25 +22,25 @@ namespace AbilityData::Definitions
 {
 	// C++ owns the executable behavior and spawn policy. Balance values remain
 	// in abilities.json so shipped content and progression stay data-driven.
-	inline const ly::GameAbilityDefinition RailBurst_Basic = []
+	inline const vega::GameAbilityDefinition RailBurst_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::RailBurst::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability4;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::RailBurst
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::RailBurst
 		};
 		definition.displayName = "Rail Burst";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
 		definition.accentColor = sf::Color{ 120, 235, 255, 255 };
 		definition.actions = {
-			ly::AbilityActionSpec{
+			vega::AbilityActionSpec{
 				sas::AbilityActionPhase::OnActivate,
-				ly::SpawnActorAction{
+				vega::SpawnActorAction{
 					AbilityData::RailBurst::Actor::Projectile::BasicDefinitionId,
 					sas::AbilitySpawnPolicy::OwnerForward,
 					sas::AbilityDirectionPolicy::OwnerForward
@@ -49,7 +49,7 @@ namespace AbilityData::Definitions
 				1
 			}
 		};
-		definition.behaviorType = ly::AbilityBehaviorType::RailBurst;
+		definition.behaviorType = vega::AbilityBehaviorType::RailBurst;
 		return definition;
 	}();
 }

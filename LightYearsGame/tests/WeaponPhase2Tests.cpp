@@ -30,7 +30,7 @@
 
 // Phase-2 primary weapon behavior (docs/WEAPON_PHASE2_PLAN.md). Each step adds
 // its scenarios here; values come from the design document's level-one tables.
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -408,12 +408,12 @@ namespace ly
 			bool Setup(float attackPower, float energyPower)
 			{
 				if (!rig.Setup(CopyWeapon("Weapon.Arc.ElectricLauncher.Basic"), attackPower, energyPower)) return false;
-				rig.ship->SetCollisionLayer(ly::GameCollision::Player);
+				rig.ship->SetCollisionLayer(vega::GameCollision::Player);
 				target = rig.world.SpawnActor<WeaponTestShip>().lock();
 				if (!target) return false;
 				target->SetActorLocation({ 0.f, -300.f });
-				target->SetCollisionLayer(ly::GameCollision::Enemy);
-				target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+				target->SetCollisionLayer(vega::GameCollision::Enemy);
+				target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 				rig.world.TickInternal(0.f);
 				return true;
 			}
@@ -483,13 +483,13 @@ namespace ly
 				"cone: rig with the shipped Rapid Shotgun");
 			if (!rig.ship) return;
 			rig.Abilities().GetAttributes().SetBaseValue(OwnerAttributeIds::MaxHealth, 290.f);
-			rig.ship->SetCollisionLayer(ly::GameCollision::Player);
+			rig.ship->SetCollisionLayer(vega::GameCollision::Player);
 			const auto spawnTarget = [&](sf::Vector2f location)
 			{
 				const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
 				target->SetActorLocation(location);
-				target->SetCollisionLayer(ly::GameCollision::Enemy);
-				target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+				target->SetCollisionLayer(vega::GameCollision::Enemy);
+				target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 				return target;
 			};
 			// The ship faces up; the muzzle sits 50 units ahead.
@@ -530,11 +530,11 @@ namespace ly
 			{
 				WeaponRig rig;
 				if (!rig.Setup(CopyWeapon("Weapon.Beam.ContinuousHeatLaser.Basic"), 0.f, 43.f)) return -1.f;
-				rig.ship->SetCollisionLayer(ly::GameCollision::Player);
+				rig.ship->SetCollisionLayer(vega::GameCollision::Player);
 				const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
 				target->SetActorLocation({ 0.f, -300.f });
-				target->SetCollisionLayer(ly::GameCollision::Enemy);
-				target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+				target->SetCollisionLayer(vega::GameCollision::Enemy);
+				target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 				rig.world.TickInternal(0.f);
 				rig.Hold(true);
 				rig.world.TickInternal(0.f);
@@ -575,13 +575,13 @@ namespace ly
 			bool Setup()
 			{
 				if (!rig.Setup(CopyWeapon("Weapon.Wave.CryoProjector.Basic"), 27.f, 40.f)) return false;
-				rig.ship->SetCollisionLayer(ly::GameCollision::Player);
+				rig.ship->SetCollisionLayer(vega::GameCollision::Player);
 				const auto spawn = [&](sf::Vector2f location)
 				{
 					const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
 					target->SetActorLocation(location);
-					target->SetCollisionLayer(ly::GameCollision::Enemy);
-					target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+					target->SetCollisionLayer(vega::GameCollision::Enemy);
+					target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 					return target;
 				};
 				left = spawn({ -30.f, -300.f });
@@ -751,8 +751,8 @@ namespace ly
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
-	using namespace ly;
+	vega::InstallVegaEngineAssets();
+	using namespace vega;
 #ifdef _WIN32
 	// Report debug-CRT assertions on stderr instead of a dialog that would hang
 	// a headless test run until its timeout.

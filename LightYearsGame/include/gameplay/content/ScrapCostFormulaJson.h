@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Reads progression.scrapCost = { "base": n, "step": n }. An absent key
 	// leaves the progression unpurchasable; the retired per-level

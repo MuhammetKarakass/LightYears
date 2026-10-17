@@ -5,7 +5,7 @@
 
 #include <cstddef>
 
-namespace ly
+namespace vega
 {
 	class AstralSurgeProjectileActor final : public AbilityWorldActor
 	{

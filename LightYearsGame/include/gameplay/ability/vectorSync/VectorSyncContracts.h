@@ -10,13 +10,13 @@ namespace AbilityData::VectorSync
 		inline static constexpr char Basic[] = "Ability.Movement.VectorSync.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Movement };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::VectorSync };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Movement };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::VectorSync };
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::VectorSync::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::VectorSync::Active
 		};
 	};
 }

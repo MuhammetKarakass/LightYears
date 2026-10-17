@@ -2,7 +2,7 @@
 
 #include <editor/ScriptCommandRegistry.h>
 
-namespace ly
+namespace vega
 {
 	// Share the declaration with the documentation check without starting game services.
 	inline vega::ScriptCommandDefinition PlayerShipScriptCommand(vega::TokenScriptHandler handler)
@@ -10,4 +10,4 @@ namespace ly
 		return vega::TokenScriptCommand("expect-player-ship", vega::Schema("ship:text"), "Assert the player ship in the live Play world.",
 										vega::ScriptMode::Play, std::move(handler));
 	}
-} // namespace ly
+} // namespace vega

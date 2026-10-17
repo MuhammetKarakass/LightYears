@@ -4,7 +4,7 @@
 
 namespace sas::AbilityCooldownTags
 {
-	inline const ly::GameplayTag Root{ "Cooldown" };
-	inline const ly::GameplayTag Ability{ "Cooldown.Ability" };
-	inline const ly::GameplayTag PrimaryWeapon{ "Cooldown.PrimaryWeapon" };
+	inline const vega::GameplayTag Root{ "Cooldown" };
+	inline const vega::GameplayTag Ability{ "Cooldown.Ability" };
+	inline const vega::GameplayTag PrimaryWeapon{ "Cooldown.PrimaryWeapon" };
 }

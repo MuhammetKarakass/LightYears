@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace ly
+namespace vega
 {
 	struct ModulePlacement;
 	class ModuleLoadout;

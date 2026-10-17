@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	// Stable family identity shared by JSON content, the behavior registry and
 	// runtime validation. Cryo Bola has no lifecycle state tags because its

@@ -89,7 +89,7 @@ struct ShipProgressionDefinition
 	float xpExponent = 1.25f;
 	// Missing entries have zero natural growth. Values are flat bonuses per
 	// completed level; this is not the retired base-growth multiplier model.
-	ly::List<AttributeGrowthEntry> naturalGrowth;
+	vega::List<AttributeGrowthEntry> naturalGrowth;
 	float xpPerLevel = 0.f;
 };
 
@@ -137,17 +137,17 @@ struct ShipDefinition
 	float shipXPReward;
 	int explosionType;
 
-	ly::List<EngineMount> engineMounts;
+	vega::List<EngineMount> engineMounts;
 
-	ly::List<ly::WeightedReward> rewards;
+	vega::List<vega::WeightedReward> rewards;
 	std::string primaryWeaponId;
 	ShipMovementAttributes movementAttributes;
 	ShipEnergyAttributes energyAttributes;
 	ShipProgressionDefinition progressionDefinition;
-	ly::ControlTargetClass controlTargetClass = ly::ControlTargetClass::Normal;
-	ly::List<OwnerAttributeBaseEntry> baseOwnerAttributes;
+	vega::ControlTargetClass controlTargetClass = vega::ControlTargetClass::Normal;
+	vega::List<OwnerAttributeBaseEntry> baseOwnerAttributes;
 	// Player ships carry a module schematic; enemies have none.
-	std::optional<ly::ShipSchematic> schematic;
+	std::optional<vega::ShipSchematic> schematic;
 
 	ShipDefinition
 	(
@@ -157,15 +157,15 @@ struct ShipDefinition
 		float inCollisionDamage,
 		float inScoreAmt,
 		int inExplosionType,
-		const ly::List<EngineMount>& inEngineMounts,
-		const ly::List<ly::WeightedReward>& inRewards,
+		const vega::List<EngineMount>& inEngineMounts,
+		const vega::List<vega::WeightedReward>& inRewards,
 		const std::string& inPrimaryWeaponId = {},
 		const ShipMovementAttributes& inMovementAttributes = ShipMovementAttributes{},
 		const ShipEnergyAttributes& inEnergyAttributes = ShipEnergyAttributes{},
 		const ShipProgressionDefinition& inProgressionDefinition = ShipProgressionDefinition{},
 		float inShipXPReward = -1.f,
-		ly::ControlTargetClass inControlTargetClass = ly::ControlTargetClass::Normal,
-		const ly::List<OwnerAttributeBaseEntry>& inBaseOwnerAttributes = {}
+		vega::ControlTargetClass inControlTargetClass = vega::ControlTargetClass::Normal,
+		const vega::List<OwnerAttributeBaseEntry>& inBaseOwnerAttributes = {}
 	)
 		: texturePath(inTexturePath)
 		, health(inHealth)

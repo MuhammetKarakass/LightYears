@@ -2,7 +2,7 @@
 #include "gameplay/module/ModuleDefinition.h"
 #include <functional>
 
-namespace ly
+namespace vega
 {
 	using ModuleDescriptionValueVisitor = std::function<void(const std::string&, float)>;
 	void VisitModuleDescriptionValues(const ModuleRulePackage& rules, int level, const ModuleDescriptionValueVisitor& visitor);

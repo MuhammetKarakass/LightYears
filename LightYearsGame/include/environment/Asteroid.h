@@ -5,7 +5,7 @@
 #include "VFX/Explosion.h"
 #include "gameplay/HealthComponent.h"
 
-namespace ly
+namespace vega
 {
 	class Asteroid : public Actor
 	{

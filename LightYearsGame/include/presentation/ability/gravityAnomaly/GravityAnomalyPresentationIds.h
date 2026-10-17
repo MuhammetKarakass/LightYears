@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::GravityAnomalyPresentationIds
+namespace vega::GravityAnomalyPresentationIds
 {
 	inline constexpr char ProjectileBasic[] =
 		"Presentation.Ability.GravityAnomaly.Projectile.Basic";

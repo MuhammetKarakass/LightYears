@@ -24,7 +24,7 @@ No font file is required: the editor uses ImGui's default font.
   configure and build Blank with those directories excluded. Template targets
   are gated by `VEGA_BUILD_TEMPLATES`, default ON.
 - Removed engine-owned SpaceShooterRedux widget font, button image/sound,
-  point-light shader and default shader paths. `ly::EngineAssets` contains
+  point-light shader and default shader paths. `vega::EngineAssets` contains
   optional project-installed defaults. LightYears installs the previous values
   in its own reflection module, including direct gameplay test hosts.
   Missing optional engine fonts/textures use empty SFML fonts/the white pixel;
@@ -67,9 +67,9 @@ renaming, registering types, project paths, builds, scripts and export.
 | Template assets | `Templates/Blank/Assets/vega.project.json`, `scenes/main.scene.json`, `scripts/spin.lua`, `textures/tile.png`, `textures/README.md` |
 | Original art generator | `Templates/Blank/Tools/GenerateTexture.ps1` |
 | Acceptance fixtures | `Templates/Blank/Tests/Dependencies.cmake`, `NoGameDeps.cmake`, `RunGame.cmake`, `RunEditor.cmake`, `blank.vegascript.in` |
-| Build integration | `CMakeLists.txt`, `LightYearsEngine/CMakeLists.txt`, `LightYearsGame/CMakeLists.txt`, `LightYearsGame/editor.cmake`, `VegaEditor/CMakeLists.txt`, `VegaEditor/cmake/VegaGameEditor.cmake` |
-| Engine asset defaults | `LightYearsEngine/include/framework/EngineAssets.h`, `include/engineConfigs/EngineStructs.h`, `include/widget/Button.h`, `include/widget/TextWidget.h`, `src/framework/AssetManager.cpp`, `src/framework/LightComponent.cpp`, `src/framework/ShaderManager.cpp`, `src/widget/Button.cpp`, `src/widget/UIStyle.cpp`, `src/widget/ValueGauge.cpp`, `tests/EngineLifetimeTests.cpp`, `tests/UIFoundationTests.cpp` |
-| Logging | `LightYearsEngine/src/EntryPoint.cpp` |
+| Build integration | `CMakeLists.txt`, `VegaEngine/CMakeLists.txt`, `LightYearsGame/CMakeLists.txt`, `LightYearsGame/editor.cmake`, `VegaEditor/CMakeLists.txt`, `VegaEditor/cmake/VegaGameEditor.cmake` |
+| Engine asset defaults | `VegaEngine/include/framework/EngineAssets.h`, `include/engineConfigs/EngineStructs.h`, `include/widget/Button.h`, `include/widget/TextWidget.h`, `src/framework/AssetManager.cpp`, `src/framework/LightComponent.cpp`, `src/framework/ShaderManager.cpp`, `src/widget/Button.cpp`, `src/widget/UIStyle.cpp`, `src/widget/ValueGauge.cpp`, `tests/EngineLifetimeTests.cpp`, `tests/UIFoundationTests.cpp` |
+| Logging | `VegaEngine/src/EntryPoint.cpp` |
 | LightYears defaults/adapter | `LightYearsGame/src/reflection/GameReflection.cpp`, `LightYearsGame/src/editor/LightYearsEditorModule.cpp` (renamed) |
 | Editor boundary/options | `VegaEditor/include/editor/EditorHost.h`, `EditorSkyEditor.h`, `EditorGasDebugger.h`, `VegaEditor/app/LightYearsEditorMain.cpp`, `VegaEditor/src/EditorApplication.cpp`, `EditorScenes.cpp` |
 | Export checks | `VegaEditor/src/GameExporter.cpp`, `VegaEditor/tests/GameExporterTests.cpp` |
@@ -123,8 +123,8 @@ Sky's implementation still depends on LightYears presentation types and remains
 in the optional LightYears editor assembly pending B4. Default repo builds keep
 the current game's integration fixtures; they are excluded by
 `VEGA_BUILD_LIGHTYEARS=OFF`. The shared editor currently includes VegaScript
-services. The runtime engine does not require Lua, GAS or Sky. Existing engine
-directory/target names and the `ly` namespace remain unchanged, as do shared
+services. The runtime engine does not require Lua, GAS or Sky. At that stage, existing engine
+directory/target names and the engine namespace remained unchanged, as did shared
 collision labels. None of these require game libraries or assets in Blank's
 transitive target graph or exported package.
 

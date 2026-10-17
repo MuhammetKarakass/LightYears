@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	NotificationPresenter::NotificationPresenter() : mViewModel{ std::make_shared<NotificationViewModel>() }
 	{

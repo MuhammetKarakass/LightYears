@@ -7,22 +7,22 @@
 
 namespace AbilityData::ScorchDrive
 {
-	inline const ly::AbilityActorDefinition ActorFireSegmentBasic = []
+	inline const vega::AbilityActorDefinition ActorFireSegmentBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::FireSegment::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::ScorchDriveFireSegment;
+		definition.actorType = vega::AbilityActorType::ScorchDriveFireSegment;
 		definition.presentationProfileId =
-			ly::ScorchDrivePresentationIds::FireSegmentBasic;
+			vega::ScorchDrivePresentationIds::FireSegmentBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition ScorchDrive_Basic = []
+	inline const vega::GameAbilityDefinition ScorchDrive_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::ScorchDrive::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// The runtime loadout decides the actual input slot. This transitional
@@ -31,13 +31,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Movement,
-			ly::GameplayTags::Ability::Family::ScorchDrive
+			vega::GameplayTags::Ability::Movement,
+			vega::GameplayTags::Ability::Family::ScorchDrive
 		};
 		definition.displayName = "Scorch Drive";
 		definition.iconPath = "SpaceShooterRedux/PNG/Effects/fire01.png";
 		definition.accentColor = sf::Color{ 255, 95, 25, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::ScorchDrive;
+		definition.behaviorType = vega::AbilityBehaviorType::ScorchDrive;
 		return definition;
 	}();
 }

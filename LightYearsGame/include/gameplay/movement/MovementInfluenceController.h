@@ -5,7 +5,7 @@
 
 #include <map>
 
-namespace ly::movement
+namespace vega::movement
 {
 	// Per-ship state and deterministic resolution for gameplay-authored movement.
 	// Abilities calculate their own spatial math; this controller owns stacking,

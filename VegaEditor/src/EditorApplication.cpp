@@ -42,7 +42,7 @@ namespace vega
 	}
 
 	EditorApplication::EditorApplication(std::unique_ptr<GameModule> module, EditorProject project)
-		: ly::Application{ { project.settings.windowWidth, project.settings.windowHeight }, 64, "Vega Editor", sf::Style::Close | sf::Style::Titlebar },
+		: vega::Application{ { project.settings.windowWidth, project.settings.windowHeight }, 64, "Vega Editor", sf::Style::Close | sf::Style::Titlebar },
 		mProject{ std::move(project) },
 		mModule{ std::move(module) }, mExtensions{ GetEngineContext() },
 		mViewport{ GetRenderWindow() }, mContentAuthoring{ GetEngineContext() }
@@ -53,7 +53,7 @@ namespace vega
 		{
 			if (operation == "expect-mute-audio") return mMuteAudio == muted;
 			mMuteAudio = muted;
-			ly::AudioOutput::SetMuted(mMuteAudio);
+			vega::AudioOutput::SetMuted(mMuteAudio);
 			return SaveAudioSettings();
 		};
 		bool unattended = false;
@@ -62,7 +62,7 @@ namespace vega
 #endif
 		const bool sourceReadOnly = unattended && Within(mDocument.Root(), VEGA_SOURCE_ROOT) && !Within(mDocument.Root(), VEGA_BUILD_ROOT);
 		if (!sourceReadOnly && AssetMovePlan::RecoverPending(mDocument.Root(), mProject.file, mAssetRecoveryError) && std::filesystem::exists(mProject.file))
-			mProject.settings = ly::ProjectSettings::Load(mProject.file);
+			mProject.settings = vega::ProjectSettings::Load(mProject.file);
 		mProject.settings.ApplyCollisionLayers(GetEngineContext());
 		if (auto* setup = QueryCapability<IModuleSetup>(mModule.get())) setup->ConfigureProject(mProject.file);
 		RegisterGameModule(*mModule, true);
@@ -78,9 +78,9 @@ namespace vega
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		mDiagnostics.InstallSettings();
 		InstallWorldSettingsLayout();
-		if (ly::debug::Log::GetMinimumLevel() > ly::debug::LogLevel::Info)
-			ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Info);
-		ly::debug::Profiler::SetEnabled(false);
+		if (vega::debug::Log::GetMinimumLevel() > vega::debug::LogLevel::Info)
+			vega::debug::Log::SetMinimumLevel(vega::debug::LogLevel::Info);
+		vega::debug::Profiler::SetEnabled(false);
 		ApplyEditorTheme(mProject.font);
 		// The default dock layout is built only when the saved layout is missing, so panels added later would open
 		// floating over an older layout. Versioning the file name rebuilds the default once; bump it whenever the
@@ -177,7 +177,7 @@ namespace vega
 			}
 			if (mContext.world)
 			{
-				mContext.world->SetSceneBounds(ly::ReadSceneBounds(effective, GetEngineContext().SceneSettings()));
+				mContext.world->SetSceneBounds(vega::ReadSceneBounds(effective, GetEngineContext().SceneSettings()));
 				ApplySceneSettings(effective);
 			}
 		};
@@ -224,7 +224,7 @@ namespace vega
 	{
 		// Automation can opt into a disposable file; ordinary script runs never touch user preferences.
 		if (const char* overridePath = std::getenv("VEGA_EDITOR_SETTINGS")) mAudioSettingsPath = overridePath;
-		else if (!ly::AudioOutput::IsForcedMuted())
+		else if (!vega::AudioOutput::IsForcedMuted())
 		{
 			if (const char* local = std::getenv("LOCALAPPDATA")) mAudioSettingsPath = std::filesystem::path{ local } / "Vega/editor-settings.json";
 			else if (const char* home = std::getenv("HOME")) mAudioSettingsPath = std::filesystem::path{ home } / ".config/Vega/editor-settings.json";
@@ -236,7 +236,7 @@ namespace vega
 			if (settings.is_object() && settings.contains("muteAudio") && settings["muteAudio"].is_boolean())
 				mMuteAudio = settings["muteAudio"].get<bool>();
 		}
-		ly::AudioOutput::SetMuted(mMuteAudio);
+		vega::AudioOutput::SetMuted(mMuteAudio);
 	}
 
 	bool EditorApplication::SaveAudioSettings() const
@@ -255,7 +255,7 @@ namespace vega
 		UnregisterGameModule();
 		for (const auto& tool : mExtensions.tools) tool->Shutdown();
 		// The base application can still own a world when editor members are destroyed.
-		if (ly::World* world = GetCurrentWorld())
+		if (vega::World* world = GetCurrentWorld())
 		{
 			world->SetRenderViewport(nullptr);
 			world->SetViewOverride(std::nullopt);
@@ -267,13 +267,13 @@ namespace vega
 	{
 		std::string error;
 		if (!script::GenerateLuaTypes(GetEngineContext(), mLuaTypesPath, error))
-			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION, error);
+			vega::debug::Log::Write(vega::debug::LogLevel::Error, vega::debug::LogChannel::Editor, VEGA_SOURCE_LOCATION, error);
 	}
 
 	void EditorApplication::Render()
 	{
 		mContext.ResetActorCache();
-		ly::World* current = GetCurrentWorld();
+		vega::World* current = GetCurrentWorld();
 		if (mPauseAfterTick)
 		{
 			if (current) current->SetPaused(true);
@@ -309,7 +309,7 @@ namespace vega
 		for (const auto& tool : mExtensions.tools) tool->Update(mContext, mViewport.GetSize(), mContext.playMode || mPrefabWorld != nullptr);
 		sf::RenderTexture& texture = mViewport.GetTexture();
 		texture.clear(sf::Color::Black);
-		if (ly::World* world = GetCurrentWorld())
+		if (vega::World* world = GetCurrentWorld())
 		{
 			// LoadWorld swaps the active world, so rebind the non-owning viewport every frame.
 			world->SetRenderViewport(&mViewport);
@@ -368,7 +368,7 @@ namespace vega
 
 	void EditorApplication::BuildUI()
 	{
-		LY_PROFILE_SCOPE("ImGui Build");
+		VEGA_PROFILE_SCOPE("ImGui Build");
 		auto& activeHistory = mExtensions.History() ? *mExtensions.History() : mPrefabWorld ? mPrefabHistory : mHistory;
 		mHistory.PruneInvalidCommands();
 		if (!mShowContent) mContentFocused = false;
@@ -455,7 +455,7 @@ namespace vega
 			{
 				if (ImGui::MenuItem("Mute audio", nullptr, &mMuteAudio))
 				{
-					ly::AudioOutput::SetMuted(mMuteAudio);
+					vega::AudioOutput::SetMuted(mMuteAudio);
 					if (!SaveAudioSettings()) mContext.sceneError = "Cannot save audio preference";
 				}
 				ImGui::MenuItem("Viewport", nullptr, &mShowViewport);
@@ -700,7 +700,7 @@ namespace vega
 		// Remember the press so its release is consumed even if the cursor leaves the image.
 		if (const auto* pressed = event.getIf<sf::Event::MouseButtonPressed>())
 		{
-			const ly::World* world = GetCurrentWorld();
+			const vega::World* world = GetCurrentWorld();
 			if (pressed->button == sf::Mouse::Button::Left && world && (world->IsPaused() || editorCamera) &&
 				overImage)
 			{
@@ -747,7 +747,7 @@ namespace vega
 			auto* hooks = QueryCapability<IAppLoopHooks>(mModule.get());
 			if (!hooks || !hooks->HandleEvent(remapped))
 			{
-				if (ly::World* world = GetCurrentWorld())
+				if (vega::World* world = GetCurrentWorld())
 				{
 					world->DispatchEvent(remapped);
 				}

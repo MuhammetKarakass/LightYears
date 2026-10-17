@@ -60,9 +60,9 @@ namespace sas
 		virtual const void* FindAbilityById(
 			const std::string& abilityId
 		) const = 0;
-		virtual ly::List<AbilityRuntimeSnapshot> BuildSnapshots() const = 0;
+		virtual vega::List<AbilityRuntimeSnapshot> BuildSnapshots() const = 0;
 		virtual void GetCooldownActivity(bool& abilityCooldownActive, bool& primaryWeaponCooldownActive) const = 0;
-		virtual const ly::List<AbilityHandle>& GetPassiveAbilities() const = 0;
+		virtual const vega::List<AbilityHandle>& GetPassiveAbilities() const = 0;
 		virtual void Tick(float deltaTime) = 0;
 		virtual ClearResult Clear() = 0;
 		virtual bool HasAbilityInstances() const = 0;
@@ -267,7 +267,7 @@ namespace sas
 			return mRuntime.FindById(abilityId);
 		}
 
-		ly::List<AbilityRuntimeSnapshot> BuildSnapshots() const override
+		vega::List<AbilityRuntimeSnapshot> BuildSnapshots() const override
 		{
 			return mRuntime.BuildSnapshots();
 		}
@@ -277,7 +277,7 @@ namespace sas
 			mRuntime.GetCooldownActivity(abilityCooldownActive, primaryWeaponCooldownActive);
 		}
 
-		const ly::List<AbilityHandle>& GetPassiveAbilities() const override
+		const vega::List<AbilityHandle>& GetPassiveAbilities() const override
 		{
 			return mRuntime.GetPassiveAbilities();
 		}
@@ -289,7 +289,7 @@ namespace sas
 		>
 		void HandleGameplayEvent(
 			const Event& event,
-			const ly::GameplayTagContainer& ownedTags,
+			const vega::GameplayTagContainer& ownedTags,
 			InstanceEventHandler&& handleInstanceEvent,
 			TriggerExecutor&& executeTrigger
 		)

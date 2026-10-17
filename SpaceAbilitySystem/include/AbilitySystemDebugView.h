@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 
-namespace ly { class Actor; class World; }
+namespace vega { class Actor; class World; }
 
 namespace sas
 {
@@ -33,17 +33,17 @@ namespace sas
 	struct AbilitySystemDebugSnapshot
 	{
 		std::vector<AbilityDebugEntry> abilities;
-		ly::List<GameplayEffectRuntimeSnapshot> effects;
+		vega::List<GameplayEffectRuntimeSnapshot> effects;
 		GameplayAttributeList attributes;
-		std::vector<std::pair<ly::GameplayTag, int>> tags;
+		std::vector<std::pair<vega::GameplayTag, int>> tags;
 		std::vector<AbilityDebugEvent> events;
 	};
 	// The game installs these adapters. Neither the editor nor SAS knows a game actor type.
 	struct AbilitySystemDebugView
 	{
-		inline static std::function<AbilitySystemComponent*(ly::Actor&)> resolve;
-		inline static std::function<std::shared_ptr<ly::Actor>(ly::World&)> player;
-		inline static std::function<ly::List<GameplayEffectSpec>()> effectDefinitions;
+		inline static std::function<AbilitySystemComponent*(vega::Actor&)> resolve;
+		inline static std::function<std::shared_ptr<vega::Actor>(vega::World&)> player;
+		inline static std::function<vega::List<GameplayEffectSpec>()> effectDefinitions;
 		// Zero means no periodic execution. Games resolve behavior-owned clocks here.
 		inline static std::function<float(const GameplayEffectRuntimeSnapshot&)> effectPeriod;
 		inline static bool recording = false;

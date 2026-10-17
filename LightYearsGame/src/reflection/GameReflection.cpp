@@ -15,7 +15,7 @@
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/scene/Scene.h>
 
-namespace ly
+namespace vega
 {
 	void RegisterGameTypes()
 	{

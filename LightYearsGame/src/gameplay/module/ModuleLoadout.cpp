@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

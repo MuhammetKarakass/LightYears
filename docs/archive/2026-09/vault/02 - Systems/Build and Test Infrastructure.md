@@ -9,11 +9,11 @@ verified_worktree_state: dirty
 
 ## Kaynakta tanımlı altyapı
 
-Kök `CMakeLists.txt`: C++17, minimum CMake 3.31.6, CTest/BUILD_TESTING. Engine CMake SFML 3.1.0 ve Box2D 3.1.1; kök JSON 3.12.0 indirir. Bunlar depodaki sabitlemelerdir, en yeni sürüm iddiası değildir. LightYearsEngine, SpaceAbilitySystem, LightYearsGameplayCore statik hedefleri ve LightYearsGame executable mevcut.
+Kök `CMakeLists.txt`: C++17, minimum CMake 3.31.6, CTest/BUILD_TESTING. Engine CMake SFML 3.1.0 ve Box2D 3.1.1; kök JSON 3.12.0 indirir. Bunlar depodaki sabitlemelerdir, en yeni sürüm iddiası değildir. VegaEngine, SpaceAbilitySystem, LightYearsGameplayCore statik hedefleri ve LightYearsGame executable mevcut.
 
 | CTest kaydı | Test kaynağı |
 |---|---|
-| LightYearsEngineLifetime | LightYearsEngine/tests/EngineLifetimeTests.cpp |
+| LightYearsEngineLifetime | VegaEngine/tests/EngineLifetimeTests.cpp |
 | LightYearsGasLiteCore | LightYearsGame/tests/GasLiteCoreTests.cpp |
 | LightYearsContent | LightYearsGame/tests/ContentLoaderTests.cpp |
 | LightYearsAutoTargeting | LightYearsGame/tests/AutoTargetingTests.cpp |

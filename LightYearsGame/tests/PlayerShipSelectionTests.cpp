@@ -40,10 +40,10 @@ namespace
 {
 	using Json = nlohmann::json;
 
-	class HeadlessShipLevel final : public ly::GameLevel
+	class HeadlessShipLevel final : public vega::GameLevel
 	{
 	public:
-		explicit HeadlessShipLevel(ly::Application* application) : GameLevel{ application } {}
+		explicit HeadlessShipLevel(vega::Application* application) : GameLevel{ application } {}
 
 	protected:
 		void InitializeLevelSystems() override {}
@@ -52,10 +52,10 @@ namespace
 		void OnGameStart() override {}
 	};
 
-	class ShipSelectionArena final : public ly::ArenaTestLevel
+	class ShipSelectionArena final : public vega::ArenaTestLevel
 	{
 	public:
-		explicit ShipSelectionArena(ly::Application* application) : ArenaTestLevel{ application } {}
+		explicit ShipSelectionArena(vega::Application* application) : ArenaTestLevel{ application } {}
 
 		// A full tap: press then release, as a real key press arrives.
 		bool DispatchKey(sf::Keyboard::Key key)
@@ -83,7 +83,7 @@ namespace
 
 	struct PlayerManagerResetGuard
 	{
-		ly::PlayerManager& manager;
+		vega::PlayerManager& manager;
 		~PlayerManagerResetGuard() { manager.Reset(); }
 	};
 
@@ -125,8 +125,8 @@ namespace
 
 	float ReadOwnerBaseValue(const ShipDefinition& definition, const sas::AttributeId& id)
 	{
-		if (id == ly::OwnerAttributeIds::MaxHealth) return definition.health;
-		if (id == ly::OwnerAttributeIds::EnergyPower) return definition.energyAttributes.baseEnergyPower;
+		if (id == vega::OwnerAttributeIds::MaxHealth) return definition.health;
+		if (id == vega::OwnerAttributeIds::EnergyPower) return definition.energyAttributes.baseEnergyPower;
 		for (const OwnerAttributeBaseEntry& entry : definition.baseOwnerAttributes)
 		{
 			if (entry.attributeId == id) return entry.baseValue;
@@ -134,7 +134,7 @@ namespace
 		return 0.f;
 	}
 
-	void CheckShipLevel(Report& report, ly::PlayerSpaceShip& ship, const ShipDefinition& definition, int level)
+	void CheckShipLevel(Report& report, vega::PlayerSpaceShip& ship, const ShipDefinition& definition, int level)
 	{
 		sas::AttributeSystem& ownerAttributes = ship.GetCombatRuntime().GetAbilitySystemComponent().GetAttributes();
 		const sas::AttributeSystem& shipAttributes = ship.GetShipRuntime().GetAttributes();
@@ -142,11 +142,11 @@ namespace
 			definition.energyAttributes.maxShieldPerLevel * static_cast<float>(level - 1);
 		const float expectedAfterburner = definition.energyAttributes.baseAfterburnerCapacity +
 			definition.energyAttributes.afterburnerCapacityPerLevel * static_cast<float>(level - 1);
-		const float expectedEnergyPower = ReadAttribute(ownerAttributes, ly::OwnerAttributeIds::EnergyPower);
-		const float actualShield = ReadAttribute(shipAttributes, ly::ShipAttributeIds::MaxShield);
-		const float actualAfterburner = ReadAttribute(shipAttributes, ly::ShipAttributeIds::AfterburnerCapacity);
+		const float expectedEnergyPower = ReadAttribute(ownerAttributes, vega::OwnerAttributeIds::EnergyPower);
+		const float actualShield = ReadAttribute(shipAttributes, vega::ShipAttributeIds::MaxShield);
+		const float actualAfterburner = ReadAttribute(shipAttributes, vega::ShipAttributeIds::AfterburnerCapacity);
 		const float expectedLevelOneEnergy = definition.energyAttributes.baseEnergyPower +
-			ReadGrowth(definition, ly::OwnerAttributeIds::EnergyPower) * static_cast<float>(level - 1);
+			ReadGrowth(definition, vega::OwnerAttributeIds::EnergyPower) * static_cast<float>(level - 1);
 		report.Check(NearlyEqual(actualShield, expectedShield), definition.primaryWeaponId + " shield capacity at level " + std::to_string(level),
 			{ { "actual", actualShield }, { "expected", expectedShield }, { "energyPower", expectedEnergyPower } });
 		report.Check(NearlyEqual(actualAfterburner, expectedAfterburner), definition.primaryWeaponId + " afterburner capacity at level " + std::to_string(level),
@@ -155,11 +155,11 @@ namespace
 			{ { "actual", expectedEnergyPower }, { "expected", expectedLevelOneEnergy } });
 
 		const std::array<std::pair<const sas::AttributeId*, const char*>, 5> ownerStats{{
-			{ &ly::OwnerAttributeIds::MaxHealth, "max health" },
-			{ &ly::OwnerAttributeIds::AttackPower, "attack power" },
-			{ &ly::OwnerAttributeIds::Armor, "armor" },
-			{ &ly::OwnerAttributeIds::Luck, "luck" },
-			{ &ly::OwnerAttributeIds::AttackSpeed, "attack speed" }
+			{ &vega::OwnerAttributeIds::MaxHealth, "max health" },
+			{ &vega::OwnerAttributeIds::AttackPower, "attack power" },
+			{ &vega::OwnerAttributeIds::Armor, "armor" },
+			{ &vega::OwnerAttributeIds::Luck, "luck" },
+			{ &vega::OwnerAttributeIds::AttackSpeed, "attack speed" }
 		}};
 		for (const auto& [attributeId, label] : ownerStats)
 		{
@@ -171,11 +171,11 @@ namespace
 		}
 
 		const sas::AttributeModifierHandle energyProbe = ownerAttributes.AddModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::EnergyPower, 50.f }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::EnergyPower, 50.f }
 		);
-		const float probedEnergyPower = ReadAttribute(ownerAttributes, ly::OwnerAttributeIds::EnergyPower);
-		const float probedShield = ReadAttribute(shipAttributes, ly::ShipAttributeIds::MaxShield);
-		const float probedAfterburner = ReadAttribute(shipAttributes, ly::ShipAttributeIds::AfterburnerCapacity);
+		const float probedEnergyPower = ReadAttribute(ownerAttributes, vega::OwnerAttributeIds::EnergyPower);
+		const float probedShield = ReadAttribute(shipAttributes, vega::ShipAttributeIds::MaxShield);
+		const float probedAfterburner = ReadAttribute(shipAttributes, vega::ShipAttributeIds::AfterburnerCapacity);
 		ownerAttributes.RemoveModifier(energyProbe);
 		report.Check(NearlyEqual(probedEnergyPower, expectedEnergyPower + 50.f) &&
 			NearlyEqual(probedShield, actualShield) && NearlyEqual(probedAfterburner, actualAfterburner),
@@ -187,14 +187,14 @@ namespace
 
 	void CheckPrimaryWeapon(
 		Report& report,
-		ly::PlayerSpaceShip& ship,
+		vega::PlayerSpaceShip& ship,
 		const std::string& shipId,
 		const ShipDefinition& definition
 	)
 	{
-		const PrimaryWeaponDefinition* weapon = ly::content::WeaponContentCatalog::FindById(definition.primaryWeaponId);
+		const PrimaryWeaponDefinition* weapon = vega::content::WeaponContentCatalog::FindById(definition.primaryWeaponId);
 		auto& abilities = ship.GetCombatRuntime().GetAbilitySystemComponent();
-		ly::GameAbility* primary = abilities.GetAbility(sas::AbilitySlot::PrimaryFire);
+		vega::GameAbility* primary = abilities.GetAbility(sas::AbilitySlot::PrimaryFire);
 		const std::string expectedAbilityId = weapon
 			? AbilityData::MakePrimaryFireAbilityDefinition(*weapon).abilityId
 			: std::string{};
@@ -205,9 +205,9 @@ namespace
 				{ "actualAbilityId", primary ? primary->GetDefinition().abilityId : std::string{} } });
 	}
 
-	void RunPlayerRuntimeChecks(Report& report, ly::Application& application)
+	void RunPlayerRuntimeChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		const std::array<const char*, 6> shipIds{
 			"Ship.Player.Fighter.Basic",
 			"Ship.Player.Breacher.Basic",
@@ -274,9 +274,9 @@ namespace
 		level->TickInternal(0.f);
 	}
 
-	const ly::ModulePlacement* FindInstalled(const ly::Player& player, const char* moduleId)
+	const vega::ModulePlacement* FindInstalled(const vega::Player& player, const char* moduleId)
 	{
-		for (const ly::ModulePlacement& placement : player.GetModuleLoadout().GetPlacements())
+		for (const vega::ModulePlacement& placement : player.GetModuleLoadout().GetPlacements())
 		{
 			if (placement.moduleId == moduleId) return &placement;
 		}
@@ -285,7 +285,7 @@ namespace
 
 	void CheckEnergySystems(
 		Report& report,
-		ly::PlayerSpaceShip& ship,
+		vega::PlayerSpaceShip& ship,
 		const ShipDefinition& definition,
 		int level,
 		bool shieldOn,
@@ -301,14 +301,14 @@ namespace
 		const float afterburnerRegen = capacity / std::max(0.001f, energy.afterburnerFullRechargeDuration);
 		const sas::AttributeSystem& attributes = ship.GetShipRuntime().GetAttributes();
 		auto read = [&attributes](const sas::AttributeId& id) { return ReadAttribute(attributes, id); };
-		report.Check(NearlyEqual(read(ly::ShipAttributeIds::MaxShield), maxShield), label + " MaxShield",
-			{ { "actual", read(ly::ShipAttributeIds::MaxShield) }, { "expected", maxShield } });
-		report.Check(NearlyEqual(read(ly::ShipAttributeIds::ShieldRegen), shieldRegen), label + " ShieldRegen",
-			{ { "actual", read(ly::ShipAttributeIds::ShieldRegen) }, { "expected", shieldRegen } });
-		report.Check(NearlyEqual(read(ly::ShipAttributeIds::AfterburnerCapacity), capacity), label + " AfterburnerCapacity",
-			{ { "actual", read(ly::ShipAttributeIds::AfterburnerCapacity) }, { "expected", capacity } });
-		report.Check(NearlyEqual(read(ly::ShipAttributeIds::AfterburnerRegen), afterburnerRegen), label + " AfterburnerRegen",
-			{ { "actual", read(ly::ShipAttributeIds::AfterburnerRegen) }, { "expected", afterburnerRegen } });
+		report.Check(NearlyEqual(read(vega::ShipAttributeIds::MaxShield), maxShield), label + " MaxShield",
+			{ { "actual", read(vega::ShipAttributeIds::MaxShield) }, { "expected", maxShield } });
+		report.Check(NearlyEqual(read(vega::ShipAttributeIds::ShieldRegen), shieldRegen), label + " ShieldRegen",
+			{ { "actual", read(vega::ShipAttributeIds::ShieldRegen) }, { "expected", shieldRegen } });
+		report.Check(NearlyEqual(read(vega::ShipAttributeIds::AfterburnerCapacity), capacity), label + " AfterburnerCapacity",
+			{ { "actual", read(vega::ShipAttributeIds::AfterburnerCapacity) }, { "expected", capacity } });
+		report.Check(NearlyEqual(read(vega::ShipAttributeIds::AfterburnerRegen), afterburnerRegen), label + " AfterburnerRegen",
+			{ { "actual", read(vega::ShipAttributeIds::AfterburnerRegen) }, { "expected", afterburnerRegen } });
 		report.Check(NearlyEqual(ship.GetShieldComponent().GetMaxShield(), maxShield), label + " live shield max follows");
 		report.Check(NearlyEqual(ship.GetEnergyComponent().GetMaxEnergy(), capacity), label + " live afterburner energy max follows");
 		if (!shieldOn) report.Check(NearlyEqual(ship.GetShieldComponent().GetShield(), 0.f), label + " live shield clamps to 0");
@@ -318,9 +318,9 @@ namespace
 		}
 	}
 
-	void RunModuleApplierPlayerChecks(Report& report, ly::Application& application)
+	void RunModuleApplierPlayerChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		const std::array<const char*, 6> shipIds{
 			"Ship.Player.Fighter.Basic", "Ship.Player.Breacher.Basic", "Ship.Player.Interceptor.Basic",
 			"Ship.Player.Conductor.Basic", "Ship.Player.Aegis.Basic", "Ship.Player.CryoController.Basic"
@@ -383,27 +383,27 @@ namespace
 		}
 	}
 
-	const ly::ModulePlacement* FindInInventory(const ly::Player& player, const char* moduleId)
+	const vega::ModulePlacement* FindInInventory(const vega::Player& player, const char* moduleId)
 	{
-		for (const ly::ModulePlacement& item : player.GetModuleLoadout().GetInventory())
+		for (const vega::ModulePlacement& item : player.GetModuleLoadout().GetInventory())
 		{
 			if (item.moduleId == moduleId) return &item;
 		}
 		return nullptr;
 	}
 
-	std::set<std::uint32_t> InventoryInstanceIds(const ly::Player& player)
+	std::set<std::uint32_t> InventoryInstanceIds(const vega::Player& player)
 	{
 		std::set<std::uint32_t> ids;
-		for (const ly::ModulePlacement& item : player.GetModuleLoadout().GetInventory()) ids.insert(item.instanceId);
+		for (const vega::ModulePlacement& item : player.GetModuleLoadout().GetInventory()) ids.insert(item.instanceId);
 		return ids;
 	}
 
 	// kGrantAllModulesForTesting in Player.cpp: one instance of every size variant of every non-default module,
 	// granted once per run, never installed automatically, kept across respawns.
-	void RunModuleTestGrantChecks(Report& report, ly::Application& application)
+	void RunModuleTestGrantChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		PlayerManager& manager = PlayerManager::GetPlayerManager();
 		manager.Reset();
 		PlayerManagerResetGuard resetGuard{ manager };
@@ -531,9 +531,9 @@ namespace
 		level->TickInternal(0.f);
 	}
 
-	void RunModuleApplierHandleChecks(Report& report, ly::Application& application)
+	void RunModuleApplierHandleChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		namespace Tags = GameplayTags;
 		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
 		auto level = std::make_shared<HeadlessShipLevel>(&application);
@@ -627,9 +627,9 @@ namespace
 		level->TickInternal(0.f);
 	}
 
-	void RunModuleAbilityAndPrimaryRuleChecks(Report& report, ly::Application& application)
+	void RunModuleAbilityAndPrimaryRuleChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		namespace Tags = GameplayTags;
 		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
 		auto level = std::make_shared<HeadlessShipLevel>(&application);
@@ -795,9 +795,9 @@ namespace
 		level->TickInternal(0.f);
 	}
 
-	void RunModuleRebootAndClampChecks(Report& report, ly::Application& application)
+	void RunModuleRebootAndClampChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		namespace Tags = GameplayTags;
 		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
 		auto level = std::make_shared<HeadlessShipLevel>(&application);
@@ -1043,9 +1043,9 @@ namespace
 		level->TickInternal(0.f);
 	}
 
-	void RunSelectionKeyChecks(Report& report, ly::Application& application)
+	void RunSelectionKeyChecks(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		const std::array<sf::Keyboard::Key, 6> keys{
 			sf::Keyboard::Key::F1,
 			sf::Keyboard::Key::F2,
@@ -1134,9 +1134,9 @@ namespace
 			"ship keys are ignored after game over");
 	}
 
-	void RunEnemyShieldRegression(Report& report, ly::Application& application)
+	void RunEnemyShieldRegression(Report& report, vega::Application& application)
 	{
-		using namespace ly;
+		using namespace vega;
 		World world{ &application };
 		const ShipDefinition* enemyShip = content::ShipContentCatalog::FindById("Ship.Enemy.ApproachGunner.Basic");
 		report.Check(enemyShip != nullptr, "enemy shield regression uses the shipped Approach Gunner ship");
@@ -1192,7 +1192,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: PlayerShipSelectionTests <artifact-path>\n";
@@ -1203,12 +1203,12 @@ int main(int argc, char** argv)
 	const std::filesystem::path artifactPath{ argv[1] };
 	try
 	{
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
-		if (!ly::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
+		if (!vega::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
 		std::string windowTitle = "Player ship selection E2E";
-		ly::Application application{ sf::Vector2u{ 64u, 64u }, 32u, windowTitle, sf::Style::None };
+		vega::Application application{ sf::Vector2u{ 64u, 64u }, 32u, windowTitle, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
 		RunSelectionKeyChecks(report, application);
 		RunPlayerRuntimeChecks(report, application);

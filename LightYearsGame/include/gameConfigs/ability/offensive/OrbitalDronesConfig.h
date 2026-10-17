@@ -6,9 +6,9 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition OrbitalDrones_Basic = []
+	inline const vega::GameAbilityDefinition OrbitalDrones_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::OrbitalDrones::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// The content default remains Ability4/R. The runtime loadout may later
@@ -17,14 +17,14 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::OrbitalDrones
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::OrbitalDrones
 		};
 		definition.displayName = "Orbital Drones";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupRed_bolt.png";
 		definition.accentColor = sf::Color{ 255, 145, 45, 255 };
 		// Physical drone contact uses the established Kinetic damage domain.
-		definition.behaviorType = ly::AbilityBehaviorType::OrbitalDrones;
+		definition.behaviorType = vega::AbilityBehaviorType::OrbitalDrones;
 		return definition;
 	}();
 }

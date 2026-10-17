@@ -2,7 +2,7 @@
 
 #include "framework/Actor.h"
 
-namespace ly
+namespace vega
 {
 	// Presentation-only actor for an active continuous beam.
 	class ContinuousBeamVisualActor final : public Actor

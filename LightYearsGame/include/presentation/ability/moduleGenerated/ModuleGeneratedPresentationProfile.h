@@ -2,7 +2,7 @@
 #include "content/ContentId.h"
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	namespace ModuleGeneratedPresentationIds
 	{

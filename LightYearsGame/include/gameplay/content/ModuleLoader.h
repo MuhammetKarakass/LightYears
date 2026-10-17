@@ -7,7 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	class ModuleLoader
 	{

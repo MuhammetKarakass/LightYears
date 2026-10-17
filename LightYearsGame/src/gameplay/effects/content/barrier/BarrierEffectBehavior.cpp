@@ -5,7 +5,7 @@
 #include "gameplay/effects/content/barrier/BarrierEffectBehavior.h"
 #include <algorithm>
 
-namespace ly::BarrierEffectBehavior
+namespace vega::BarrierEffectBehavior
 {
 	void AddStack(sas::ActiveGameplayEffect& effect)
 	{

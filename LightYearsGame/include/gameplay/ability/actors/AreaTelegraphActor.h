@@ -6,7 +6,7 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	// Reusable circular warning. It may remain at a fixed world location or
 	// follow an actor for effects that are centered on a moving target.

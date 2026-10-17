@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	std::shared_ptr<Actor> CombatRuntime::LockActor(Actor* actor)
 	{

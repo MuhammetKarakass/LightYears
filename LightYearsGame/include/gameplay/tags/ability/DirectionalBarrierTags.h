@@ -2,14 +2,14 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag DirectionalBarrier{
 		"Ability.Defense.DirectionalBarrier"
 	};
 }
 
-namespace ly::GameplayTags::State::Effect::Defense::DirectionalBarrier
+namespace vega::GameplayTags::State::Effect::Defense::DirectionalBarrier
 {
 	// The effect owns the single persistent marker for the active barrier.
 	// Directional protection and UI/VFX consumers can observe this tag without
@@ -19,7 +19,7 @@ namespace ly::GameplayTags::State::Effect::Defense::DirectionalBarrier
 	};
 }
 
-namespace ly::GameplayTags::Event::Ability::DirectionalBarrier
+namespace vega::GameplayTags::Event::Ability::DirectionalBarrier
 {
 	inline const GameplayTag Started{
 		"Event.Ability.DirectionalBarrier.Start"

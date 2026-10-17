@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 
-namespace ly::AbilityActionAttributeResolver
+namespace vega::AbilityActionAttributeResolver
 {
 	// Shared value resolution for actions. Weapon execution and the generic
 	// scheduler use the same ability scaling rules.

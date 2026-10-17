@@ -3,18 +3,18 @@ type: walkthrough
 status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 source_files:
-  - LightYearsEngine/src/EntryPoint.cpp
+  - VegaEngine/src/EntryPoint.cpp
   - LightYearsGame/src/gameFramework/GameApplication.cpp
-  - LightYearsEngine/include/framework/Application.h
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/src/framework/World.cpp
+  - VegaEngine/include/framework/Application.h
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/src/framework/World.cpp
 symbols:
   - main
   - GetApplication
-  - ly::GameApplication::GameApplication
-  - ly::Application::LoadWorld
-  - ly::Application::Run
-  - ly::World::BeginPlayInternal
+  - vega::GameApplication::GameApplication
+  - vega::Application::LoadWorld
+  - vega::Application::Run
+  - vega::World::BeginPlayInternal
 related:
   - "[[Game Loop]]"
   - "[[Engine Diagnostics]]"
@@ -58,7 +58,7 @@ sequenceDiagram
 
 ## Adım 1 — Executable giriş noktası
 
-- Dosya: `LightYearsEngine/src/EntryPoint.cpp`
+- Dosya: `VegaEngine/src/EntryPoint.cpp`
 - Sembol: `main`
 - Çağıran: İşletim sistemi/runtime
 - Çağrılan: `GetApplication`
@@ -67,21 +67,21 @@ sequenceDiagram
   sahipliği başlar.
 - Sonraki adım: Somut `GameApplication` oluşturulur.
 
-Dosya: `LightYearsEngine/src/EntryPoint.cpp`  
+Dosya: `VegaEngine/src/EntryPoint.cpp`  
 Sınıf veya namespace: global  
 Fonksiyon: `main`  
 Görevi: Diagnostics yaşam döngüsünü başlatmak, factory’den Application almak
 ve null/exception durumlarını structured fatal log ile raporlamak.
 
 ```cpp
-ly::debug::Log::Initialize("LightYears.log");
-ly::debug::Profiler::Initialize();
-std::unique_ptr<ly::Application> app{ GetApplication() };
+vega::debug::Log::Initialize("LightYears.log");
+vega::debug::Profiler::Initialize();
+std::unique_ptr<vega::Application> app{ GetApplication() };
 if (!app)
 {
-	LY_CORE_FATAL("Failed to create application");
-	ly::debug::Profiler::Shutdown();
-	ly::debug::Log::Shutdown();
+	VEGA_CORE_FATAL("Failed to create application");
+	vega::debug::Profiler::Shutdown();
+	vega::debug::Log::Shutdown();
 	return 1;
 }
 ```
@@ -91,7 +91,7 @@ if (!app)
 - Dosya: `LightYearsGame/src/gameFramework/GameApplication.cpp`
 - Sembol: `GetApplication`
 - Çağıran: `main`
-- Çağrılan: `ly::GameApplication::GameApplication`
+- Çağrılan: `vega::GameApplication::GameApplication`
 - State değişikliği: Heap üzerinde somut uygulama oluşur.
 - Sonraki adım: Base Application window’u ve runtime alanlarını kurar.
 
@@ -101,23 +101,23 @@ Fonksiyon: `GetApplication`
 Görevi: Engine entry point’ini game executable’daki somut uygulamaya bağlamak.
 
 ```cpp
-ly::Application* GetApplication()
+vega::Application* GetApplication()
 {
-	return new ly::GameApplication();
+	return new vega::GameApplication();
 }
 ```
 
 ## Adım 3 — Window ve ilk content/world talebi
 
 - Dosya: `LightYearsGame/src/gameFramework/GameApplication.cpp`
-- Sembol: `ly::GameApplication::GameApplication`
+- Sembol: `vega::GameApplication::GameApplication`
 - Çağıran: `GetApplication`
-- Çağrılan: `ly::Application::Application`, content registration, `LoadWorld<ArenaTestLevel>`
+- Çağrılan: `vega::Application::Application`, content registration, `LoadWorld<ArenaTestLevel>`
 - State değişikliği: Window kurulumu, asset root/content kayıtları ve `mPendingWorld`.
 - Sonraki adım: `main`, `Application::Run` çağırır.
 
 Dosya: `LightYearsGame/src/gameFramework/GameApplication.cpp`  
-Sınıf veya namespace: `ly`  
+Sınıf veya namespace: `vega`  
 Fonksiyon: `GameApplication::GameApplication`  
 Görevi: Somut window ayarlarını, content registration’ı ve başlangıç world talebini kurmak. Registration ayrıntıları core runtime kapsamı için çıkarılmadı.
 
@@ -128,14 +128,14 @@ GameApplication::GameApplication()
 	AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
 	if (!LightYearsAbilitySystemComponent::RegisterGameContent())
 	{
-		LY_GAME_ERROR("Failed to register game gameplay-effect content");
+		VEGA_GAME_ERROR("Failed to register game gameplay-effect content");
 	}
 	if (!RegisterGameAbilityContent())
 	{
-		LY_GAME_ERROR("Failed to register game ability content");
+		VEGA_GAME_ERROR("Failed to register game ability content");
 	}
 
-	ly::perf::g_disableLights.store(false);
+	vega::perf::g_disableLights.store(false);
 
 	LoadWorld<ArenaTestLevel>();
 }
@@ -143,15 +143,15 @@ GameApplication::GameApplication()
 
 ## Adım 4 — Pending world tahsisi
 
-- Dosya: `LightYearsEngine/include/framework/Application.h`
-- Sembol: `ly::Application::LoadWorld`
+- Dosya: `VegaEngine/include/framework/Application.h`
+- Sembol: `vega::Application::LoadWorld`
 - Çağıran: `GameApplication::GameApplication`
 - Çağrılan: `WorldType` constructor
 - State değişikliği: `mPendingWorld` yeni world’ü güçlü referansla tutar.
 - Sonraki adım: İlk frame tick sonunda pending world current olur.
 
-Dosya: `LightYearsEngine/include/framework/Application.h`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/include/framework/Application.h`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `LoadWorld`  
 Görevi: World’ü Application raw pointer’ıyla kurup geçiş kuyruğuna almak.
 
@@ -163,14 +163,14 @@ return newWorld;
 
 ## Adım 5 — Loop’un başlaması
 
-- Dosya: `LightYearsEngine/src/EntryPoint.cpp`
+- Dosya: `VegaEngine/src/EntryPoint.cpp`
 - Sembol: `main`
 - Çağıran: `main`
 - Çağrılan: `Application::Run`
 - State değişikliği: Tick clock restart edilir; window açık olduğu sürece frame loop çalışır.
 - Sonraki adım: İlk `TickInternal`.
 
-Dosya: `LightYearsEngine/src/EntryPoint.cpp`  
+Dosya: `VegaEngine/src/EntryPoint.cpp`  
 Sınıf veya namespace: global  
 Fonksiyon: `main`  
 Görevi: Loop tamamlandıktan sonra Application’ı normal yoldan bırakmak,
@@ -179,22 +179,22 @@ profiler özetini yazmak ve logger'ı flush ederek kapatmak.
 ```cpp
 app->Run();
 app.reset();
-ly::debug::Profiler::Shutdown();
-ly::debug::Log::Shutdown();
+vega::debug::Profiler::Shutdown();
+vega::debug::Log::Shutdown();
 std::quick_exit(0);
 ```
 
 ## Adım 6 — İlk world aktivasyonu
 
-- Dosya: `LightYearsEngine/src/framework/Application.cpp`
-- Sembol: `ly::Application::TickInternal`
+- Dosya: `VegaEngine/src/framework/Application.cpp`
+- Sembol: `vega::Application::TickInternal`
 - Çağıran: `Application::Run`
 - Çağrılan: timer clear, physics reset, `World::BeginPlayInternal`
 - State değişikliği: Pending world current olur ve began-play state’i açılır.
 - Sonraki adım: Sonraki frame’lerde normal World tick.
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `TickInternal`  
 Görevi: İlk pending world’ü frame sonunda aktive etmek.
 
@@ -233,9 +233,9 @@ Pencere yaratma, resource directory, ilk ArenaTestLevel görünümü ve platform
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/src/EntryPoint.cpp`
-2. `LightYearsEngine/include/EntryPoint.h`
+1. `VegaEngine/src/EntryPoint.cpp`
+2. `VegaEngine/include/EntryPoint.h`
 3. `LightYearsGame/src/gameFramework/GameApplication.cpp`
-4. `LightYearsEngine/include/framework/Application.h`
-5. `LightYearsEngine/src/framework/Application.cpp`
-6. `LightYearsEngine/src/framework/World.cpp`
+4. `VegaEngine/include/framework/Application.h`
+5. `VegaEngine/src/framework/Application.cpp`
+6. `VegaEngine/src/framework/World.cpp`

@@ -5,7 +5,7 @@
 #include <cmath>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

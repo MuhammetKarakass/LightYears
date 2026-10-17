@@ -4,7 +4,7 @@
 #include <framework/TimerManager.h>
 #include <SFML/Graphics.hpp>
 
-namespace ly
+namespace vega
 {
 	class HexagonStage: public GameStage
 	{

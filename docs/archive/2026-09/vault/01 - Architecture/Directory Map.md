@@ -13,8 +13,8 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 
 | Yol | Amaç | Önemli içerik | Durum |
 |---|---|---|---|
-| `LightYearsEngine/include` | Engine genel arayüzleri | framework, gameplay stage, widget, VFX | Implemented |
-| `LightYearsEngine/src` | Engine uygulaması | Application, World, Actor, physics, asset/audio/timer | Implemented |
+| `VegaEngine/include` | Engine genel arayüzleri | framework, gameplay stage, widget, VFX | Implemented |
+| `VegaEngine/src` | Engine uygulaması | Application, World, Actor, physics, asset/audio/timer | Implemented |
 | `SpaceAbilitySystem/include` | SAS public arayüzleri | Attribute, Ability ve Effect contract/runtime/collection/registry/binding/lifecycle arayüzleri; `AbilitySystemComponent` ve `GameplayAbilityInstance` | Implemented; son ability sahiplik düzeltmesi için toplu doğrulama bekliyor |
 | `SpaceAbilitySystem/src` | SAS uygulaması | AttributeSystem; Ability ve Effect validation/state/scheduler/binding/lifecycle implementasyonları | Implemented; güncel CMake'de 8 CTest kaydı var; bu docs-only denetiminde build/test çalıştırılmadı |
 | `LightYearsGame/include` | Oyun arayüzleri ve veri tanımları | gameplay, gameConfigs, player, level, presentation; ability content ve concrete `bindings/` | Implemented; generic ability instance/event/registry dosyaları kaldırıldı |

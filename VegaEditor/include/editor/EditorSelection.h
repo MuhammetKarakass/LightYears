@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 }
@@ -19,26 +19,26 @@ namespace vega
 	class EditorSelection
 	{
 	public:
-		void Select(std::weak_ptr<ly::Actor> actor);
+		void Select(std::weak_ptr<vega::Actor> actor);
 		void Clear();
 		void Restore(const EditorSelection& saved) { mActors = saved.mActors; ++mRevision; }
-		void Add(std::weak_ptr<ly::Actor> actor);
-		void Remove(const std::shared_ptr<ly::Actor>& actor);
-		void Toggle(const std::shared_ptr<ly::Actor>& actor);
-		bool Contains(const std::shared_ptr<ly::Actor>& actor) const;
-		std::vector<std::shared_ptr<ly::Actor>> GetAll() const;
+		void Add(std::weak_ptr<vega::Actor> actor);
+		void Remove(const std::shared_ptr<vega::Actor>& actor);
+		void Toggle(const std::shared_ptr<vega::Actor>& actor);
+		bool Contains(const std::shared_ptr<vega::Actor>& actor) const;
+		std::vector<std::shared_ptr<vega::Actor>> GetAll() const;
 		std::size_t Count() const;
 		std::uint64_t Revision() const { RefreshValidity(); return mRevision; }
 		std::optional<sf::FloatRect> Bounds() const;
 		sf::Vector2f Centre() const;
-		void Rebind(const std::function<std::shared_ptr<ly::Actor>(const std::string&)>& resolve);
-		void Replace(const std::shared_ptr<ly::Actor>& before, const std::shared_ptr<ly::Actor>& after);
-		std::shared_ptr<ly::Actor> Get() const;
+		void Rebind(const std::function<std::shared_ptr<vega::Actor>(const std::string&)>& resolve);
+		void Replace(const std::shared_ptr<vega::Actor>& before, const std::shared_ptr<vega::Actor>& after);
+		std::shared_ptr<vega::Actor> Get() const;
 
 	private:
 		struct Entry
 		{
-			std::weak_ptr<ly::Actor> actor;
+			std::weak_ptr<vega::Actor> actor;
 			std::string guid;
 			mutable bool live = true;
 		};

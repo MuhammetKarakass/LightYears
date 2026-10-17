@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

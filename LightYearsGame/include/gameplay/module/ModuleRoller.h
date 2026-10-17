@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	namespace ModuleRoller
 	{

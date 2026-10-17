@@ -11,8 +11,8 @@ namespace AbilityData::AegisReaver
 		inline static constexpr char Basic[] = "Ability.Offense.AegisReaver.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag FamilyTag = ly::GameplayTags::Ability::Family::AegisReaver;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Offense;
+	inline const vega::GameplayTag FamilyTag = vega::GameplayTags::Ability::Family::AegisReaver;
 
 	struct Actor
 	{

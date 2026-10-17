@@ -1,5 +1,5 @@
 #include "visual/VisualAssets.h"
-namespace ly::visual
+namespace vega::visual
 {
 	bool VisualAssets::Load(const std::filesystem::path& root, std::string& error)
 	{

@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 
-namespace ly
+namespace vega
 {
 	struct AbilityLevelStep
 	{

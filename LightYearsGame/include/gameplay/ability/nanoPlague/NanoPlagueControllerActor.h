@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <map>
 
-namespace ly
+namespace vega
 {
 	// A persistent controller keeps infection alive after the instant ability has
 	// ended. One controller is shared per owner, which is what makes refresh

@@ -30,26 +30,26 @@
 namespace
 {
 	using Json = nlohmann::json;
-	using namespace ly;
+	using namespace vega;
 
 	// Two probe modules are copies of the shipped piercing tip. Probe X lists Probe Y; Probe Y lists nothing.
 	const char* kProbeX = "Module.Primary.ConflictProbeX.Test";
 	const char* kProbeY = "Module.Primary.ConflictProbeY.Test";
 	const char* kTip = "Module.Primary.PiercingTip.Basic";
 
-	class HeadlessModuleLevel final : public ly::GameLevel
+	class HeadlessModuleLevel final : public vega::GameLevel
 	{
 	public:
-		explicit HeadlessModuleLevel(ly::Application* application) : GameLevel{ application } {}
+		explicit HeadlessModuleLevel(vega::Application* application) : GameLevel{ application } {}
 		bool Dispatch(const sf::Event& event) { return DispatchEvent(event); }
-		std::shared_ptr<ly::ModuleScreenHUDController> controller;
+		std::shared_ptr<vega::ModuleScreenHUDController> controller;
 
 	protected:
 		void InitializeLevelSystems() override {}
 		void CreateGameHUD() override {}
 		void CreateHUDControllers() override
 		{
-			controller = std::make_shared<ly::ModuleScreenHUDController>(std::weak_ptr<ly::GameHUD>{});
+			controller = std::make_shared<vega::ModuleScreenHUDController>(std::weak_ptr<vega::GameHUD>{});
 			AddHUDController(controller);
 		}
 		void OnGameStart() override {}
@@ -57,7 +57,7 @@ namespace
 
 	struct PlayerManagerResetGuard
 	{
-		ly::PlayerManager& manager;
+		vega::PlayerManager& manager;
 		~PlayerManagerResetGuard() { manager.Reset(); }
 	};
 
@@ -335,7 +335,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: LightYearsModuleConflictE2ETests <artifact-path>\n";
@@ -346,10 +346,10 @@ int main(int argc, char** argv)
 	const std::filesystem::path artifactPath{ argv[1] };
 	try
 	{
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
-		if (!ly::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
+		if (!vega::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
 
 		const std::filesystem::path fixtureDirectory = std::filesystem::absolute(artifactPath).parent_path() / "module-conflict-fixtures";
 		LoaderChecks(report, fixtureDirectory);

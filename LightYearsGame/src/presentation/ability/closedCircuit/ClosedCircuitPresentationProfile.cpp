@@ -1,7 +1,7 @@
 #include "presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.h"
 #include "presentation/ability/closedCircuit/ClosedCircuitPresentationIds.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
-namespace ly
+namespace vega
 {
 	bool RegisterClosedCircuitPresentationProfiles()
 	{

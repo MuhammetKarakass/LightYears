@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	sf::Color ComputeHealthBarColor(const VitalsViewModel& vm)
 	{

@@ -4,7 +4,7 @@
 #include <visual/VisualAssets.h>
 #include <visual/VisualPipeline.h>
 
-namespace ly
+namespace vega
 {
 	class World;
 

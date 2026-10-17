@@ -7,7 +7,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -91,7 +91,7 @@ namespace ly
 			mProfile.startRadius + (mProfile.endRadius - mProfile.startRadius) * t
 		);
 
-		const sf::Color currentColor = ly::LerpColor(
+		const sf::Color currentColor = vega::LerpColor(
 			mProfile.outerRingColor,
 			mProfile.innerFlashColor,
 			t

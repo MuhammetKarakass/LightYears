@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::GlacialPressurePresentationIds
+namespace vega::GlacialPressurePresentationIds
 {
 	inline constexpr char FocusBasic[] =
 		"Presentation.Ability.GlacialPressure.Focus.Basic";

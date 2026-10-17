@@ -9,7 +9,7 @@
 #include "effects/GameplayEffectSpec.h"
 
 
-namespace ly
+namespace vega
 {
 	Reward::Reward(World* owningWorld, const std::string& texturePath, RewardFunc rewardFunc, float speed) :
 		Actor{ owningWorld, texturePath },

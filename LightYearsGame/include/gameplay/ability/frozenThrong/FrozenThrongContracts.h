@@ -12,30 +12,30 @@ namespace AbilityData::FrozenThrong
 			"Ability.Offense.FrozenThrong.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag FamilyTag =
-		ly::GameplayTags::Ability::Family::FrozenThrong;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Offense;
+	inline const vega::GameplayTag FamilyTag =
+		vega::GameplayTags::Ability::Family::FrozenThrong;
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active =
-			ly::GameplayTags::State::Ability::FrozenThrong::Active;
+		inline static const vega::GameplayTag Active =
+			vega::GameplayTags::State::Ability::FrozenThrong::Active;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started =
-			ly::GameplayTags::Event::Ability::FrozenThrong::Started;
-		inline static const ly::GameplayTag HuskSpawned =
-			ly::GameplayTags::Event::Ability::FrozenThrong::HuskSpawned;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::FrozenThrong::Ended;
+		inline static const vega::GameplayTag Started =
+			vega::GameplayTags::Event::Ability::FrozenThrong::Started;
+		inline static const vega::GameplayTag HuskSpawned =
+			vega::GameplayTags::Event::Ability::FrozenThrong::HuskSpawned;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::FrozenThrong::Ended;
 	};
 
 	struct Attribute
 	{
 		inline static const sas::AttributeId HuskDamage =
-			ly::CommonAttributeIds::Damage;
+			vega::CommonAttributeIds::Damage;
 		inline static const sas::AttributeId LuckToHuskScale{
 			"Ability.Offense.FrozenThrong.LuckToHuskScale"
 		};
@@ -49,7 +49,7 @@ namespace AbilityData::FrozenThrong
 			"Ability.Offense.FrozenThrong.DensityRadius"
 		};
 		inline static const sas::AttributeId ExplosionRadius =
-			ly::CommonAttributeIds::Radius;
+			vega::CommonAttributeIds::Radius;
 	};
 
 	struct Actor

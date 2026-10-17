@@ -21,8 +21,8 @@ namespace vega
 		void ExecuteProfiler(ScriptExecution& execution, const EditorScriptCommand& command)
 		{
 			auto& success = execution.success;
-			ly::debug::Profiler::SetEnabled(command.text == "on");
-			success = ly::debug::Profiler::IsEnabled() == (command.text == "on");
+			vega::debug::Profiler::SetEnabled(command.text == "on");
+			success = vega::debug::Profiler::IsEnabled() == (command.text == "on");
 		}
 		void ExecuteDiagnostics(ScriptExecution& execution, const EditorScriptCommand& command)
 		{
@@ -37,7 +37,7 @@ namespace vega
 		void ExecuteExpectProfileScope(ScriptExecution& execution, const EditorScriptCommand& command)
 		{
 			auto& success = execution.success;
-			for (const auto& frame : ly::debug::Profiler::CaptureFrames())
+			for (const auto& frame : vega::debug::Profiler::CaptureFrames())
 				for (const auto& scope : frame.scopes)
 					if (scope.name == command.text) success = true;
 		}
@@ -58,7 +58,7 @@ namespace vega
 				};
 				if (inside(path, mExportLayout.assetRoot) || inside(path, mExportLayout.sourceAssetRoot) || inside(path, mExportLayout.visualAssetsDir))
 					detail = "Profile captures cannot be written into assets";
-				else success = ly::debug::Profiler::CaptureToFile(path, detail);
+				else success = vega::debug::Profiler::CaptureToFile(path, detail);
 			}
 			catch (const std::exception& error)
 			{

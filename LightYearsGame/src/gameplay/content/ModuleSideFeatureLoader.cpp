@@ -11,7 +11,7 @@
 #include <set>
 #include <stdexcept>
 
-namespace ly::content
+namespace vega::content
 {
 	ModuleSideFeatureLoader::Result ModuleSideFeatureLoader::LoadFromFile(const std::filesystem::path& filePath)
 	{

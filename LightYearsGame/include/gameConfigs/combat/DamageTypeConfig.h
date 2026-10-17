@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Damage type is identity, not a numeric stat. Numeric behavior is expressed
 	// by DamagePayload and ordinary source attributes below.

@@ -44,29 +44,29 @@ namespace vega
 		const auto stage = [&](auto&& self, nlohmann::json& node) -> void
 		{
 			const auto old = node.value("guid", std::string{});
-			const auto temporary = ly::SceneEntityComponent::GenerateGuid();
+			const auto temporary = vega::SceneEntityComponent::GenerateGuid();
 			if (!old.empty()) { publish[temporary] = old; staging[old] = temporary; }
 			node["guid"] = temporary;
 			if (node.contains("children")) for (auto& child : node["children"]) self(self, child);
 		};
 		stage(stage, staged);
-		ly::SceneSerializer::RemapReferences(staged, staging);
+		vega::SceneSerializer::RemapReferences(staged, staging);
 		const auto temporary = staged.at("guid").get<std::string>();
-		const auto loaded = ly::SceneSerializer::Load(*context.world, EntityScene(staged));
+		const auto loaded = vega::SceneSerializer::Load(*context.world, EntityScene(staged));
 		context.ResetActorCache();
 		const auto replacement = context.ResolveGuid(temporary);
 		if (loaded.spawned < 1 || !replacement) return false;
 		const bool selected = actor && context.selection.Contains(actor);
-		const auto oldIdentity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+		const auto oldIdentity = actor ? actor->FindComponent<vega::SceneEntityComponent>() : nullptr;
 		if (oldIdentity && !oldIdentity->prefabRootGuid.empty())
 		{
-			auto* identity = replacement->FindComponent<ly::SceneEntityComponent>();
+			auto* identity = replacement->FindComponent<vega::SceneEntityComponent>();
 			identity->prefab = oldIdentity->prefab;
 			identity->prefabRootGuid = oldIdentity->prefabRootGuid;
 			identity->childId = oldIdentity->childId;
 			identity->prefabBaseline = oldIdentity->prefabBaseline;
 		}
-		struct Survivor { ly::Actor* actor; sf::Vector2f location; float rotation; };
+		struct Survivor { vega::Actor* actor; sf::Vector2f location; float rotation; };
 		std::vector<Survivor> survivors;
 		if (actor && !staged.contains("children") && !entity.contains("prefab"))
 			while (!actor->GetChildren().empty())
@@ -77,9 +77,9 @@ namespace vega
 			}
 		if (actor) actor->Destroy();
 		eraseMissing();
-		const auto publishTree = [&](auto&& self, ly::Actor& current, const nlohmann::json& baseline) -> void
+		const auto publishTree = [&](auto&& self, vega::Actor& current, const nlohmann::json& baseline) -> void
 		{
-			auto* identity = current.FindComponent<ly::SceneEntityComponent>();
+			auto* identity = current.FindComponent<vega::SceneEntityComponent>();
 			const auto found = publish.find(identity->guid);
 			if (found != publish.end()) identity->guid = found->second;
 			else if (identity->guid.compare(0, temporary.size(), temporary) == 0)
@@ -99,7 +99,7 @@ namespace vega
 			{
 				nlohmann::json childBaseline = nlohmann::json::object();
 				if (baseline.contains("children")) for (const auto& candidate : baseline["children"])
-					if (candidate.at("id") == child->FindComponent<ly::SceneEntityComponent>()->childId) childBaseline = candidate;
+					if (candidate.at("id") == child->FindComponent<vega::SceneEntityComponent>()->childId) childBaseline = candidate;
 				self(self, *child, childBaseline);
 			}
 		};
@@ -108,17 +108,17 @@ namespace vega
 		publishTree(publishTree, *replacement, baseline);
 		// Staging changes identities twice. Publish property GUIDs and prefab baselines
 		// together so undo/refresh never retain references to throwaway identities.
-		const auto addresses = [&](auto&& self, ly::Actor& current, const std::string& address) -> void
+		const auto addresses = [&](auto&& self, vega::Actor& current, const std::string& address) -> void
 		{
-			publish["$prefab:" + address] = current.FindComponent<ly::SceneEntityComponent>()->guid;
-			for (auto* child : current.GetChildren()) self(self, *child, address + "/" + child->FindComponent<ly::SceneEntityComponent>()->childId);
+			publish["$prefab:" + address] = current.FindComponent<vega::SceneEntityComponent>()->guid;
+			for (auto* child : current.GetChildren()) self(self, *child, address + "/" + child->FindComponent<vega::SceneEntityComponent>()->childId);
 		};
 		addresses(addresses, *replacement, {});
 		context.world->InvalidateActorReferences();
-		const auto references = [&](auto&& self, ly::Actor& current) -> void
+		const auto references = [&](auto&& self, vega::Actor& current) -> void
 		{
-			auto* identity = current.FindComponent<ly::SceneEntityComponent>();
-			ly::SceneSerializer::RemapReferences(identity->prefabBaseline, publish);
+			auto* identity = current.FindComponent<vega::SceneEntityComponent>();
+			vega::SceneSerializer::RemapReferences(identity->prefabBaseline, publish);
 			const auto remap = [&](const ReflectedTarget& target)
 			{
 				if (!target.type) return;
@@ -128,18 +128,18 @@ namespace vega
 					auto value = property->getter(target.object);
 					bool referenced = false;
 					// Struct fields hold references too, so the visitor covers them as well as list elements.
-					ly::reflect::ForEachActorRef(*property, value, [&](ly::ActorRef& ref, const std::string&)
+					vega::reflect::ForEachActorRef(*property, value, [&](vega::ActorRef& ref, const std::string&)
 					{
 						referenced = true;
 						const auto found = publish.find(ref.Guid());
-						if (found != publish.end()) ref = ly::ActorRef{found->second};
+						if (found != publish.end()) ref = vega::ActorRef{found->second};
 					});
 					if (!referenced) continue;
 					property->SetValue(target.object, value);
 				}
 			};
 			remap(ResolvePropertyTarget(current, {}));
-			current.ForEachComponent([&](ly::ActorComponent& component) { remap(ResolvePropertyTarget(current, ly::IdentifyComponent(current, component))); });
+			current.ForEachComponent([&](vega::ActorComponent& component) { remap(ResolvePropertyTarget(current, vega::IdentifyComponent(current, component))); });
 			for (auto* child : current.GetChildren()) self(self, *child);
 		};
 		references(references, *replacement);

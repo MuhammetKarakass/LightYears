@@ -3,7 +3,7 @@
 #include <optional>
 #include <string>
 
-namespace ly::movement
+namespace vega::movement
 {
 	// Policy sources are opaque to the movement layer. The caller may use an
 	// ability ID, an effect ID, or any other stable gameplay-system identifier;

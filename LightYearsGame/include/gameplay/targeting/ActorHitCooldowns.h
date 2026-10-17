@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <unordered_map>
 
-namespace ly::targeting
+namespace vega::targeting
 {
 	class ActorHitCooldowns
 	{

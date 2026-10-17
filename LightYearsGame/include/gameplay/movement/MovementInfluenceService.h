@@ -2,12 +2,12 @@
 
 #include "gameplay/movement/MovementInfluenceTypes.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 }
 
-namespace ly::movement
+namespace vega::movement
 {
 	// The only gameplay-facing entrance for external movement. It routes ship
 	// targets into MovementComponent and preserves a velocity fallback for older

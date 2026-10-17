@@ -8,19 +8,19 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::AbilityActorDefinition VoidGatePortalBasic = []
+	inline const vega::AbilityActorDefinition VoidGatePortalBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId =
 			AbilityData::VoidGate::Actor::Portal::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::VoidGatePortal;
-		definition.presentationProfileId = ly::VoidGatePresentationIds::PortalBasic;
+		definition.actorType = vega::AbilityActorType::VoidGatePortal;
+		definition.presentationProfileId = vega::VoidGatePresentationIds::PortalBasic;
 		return definition;
 	}();
 
-	inline const ly::GameAbilityDefinition VoidGate_Basic = []
+	inline const vega::GameAbilityDefinition VoidGate_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::VoidGate::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Ability1 is the default Q slot. Runtime loadout binding may still move
@@ -32,13 +32,13 @@ namespace AbilityData::Definitions
 		// activation context, so this staged ability explicitly opts out of history.
 		definition.recordInAbilityHistory = false;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Utility,
-			ly::GameplayTags::Ability::Family::VoidGate
+			vega::GameplayTags::Ability::Utility,
+			vega::GameplayTags::Ability::Family::VoidGate
 		};
 		definition.displayName = "Void Gate";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 145, 80, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::VoidGate;
+		definition.behaviorType = vega::AbilityBehaviorType::VoidGate;
 		return definition;
 	}();
 }

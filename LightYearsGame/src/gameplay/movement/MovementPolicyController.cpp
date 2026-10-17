@@ -4,7 +4,7 @@
 #include <cmath>
 #include <limits>
 
-namespace ly::movement
+namespace vega::movement
 {
 	namespace
 	{

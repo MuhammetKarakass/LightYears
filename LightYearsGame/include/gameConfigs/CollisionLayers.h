@@ -2,7 +2,7 @@
 
 #include <framework/Core.h>
 
-namespace ly::GameCollision
+namespace vega::GameCollision
 {
 	inline constexpr CollisionLayer Player = CollisionLayer::Layer0;
 	inline constexpr CollisionLayer PlayerBullet = CollisionLayer::Layer1;

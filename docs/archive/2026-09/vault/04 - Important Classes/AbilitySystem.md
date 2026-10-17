@@ -15,7 +15,7 @@ symbols:
   - sas::AbilitySystemComponent::GrantAbility
   - sas::AbilitySystemComponent::SetAbilitySlotInput
   - sas::AbilitySystemComponent::Tick
-  - ly::LightYearsAbilitySystemComponent::GetAbility
+  - vega::LightYearsAbilitySystemComponent::GetAbility
 related:
   - "[[Ability System]]"
   - "[[Ability Grant and Activation Flow]]"
@@ -28,12 +28,12 @@ related:
 > Grant/remove, handle and slot/passive registration, instance ticking,
 > clearing and snapshot construction are owned by
 > `sas::AbilityRuntimeSystem<GameAbilityDefinition, GameAbility>`.
-> `ly::LightYearsAbilitySystemComponent` is the Actor, trigger, attachment
+> `vega::LightYearsAbilitySystemComponent` is the Actor, trigger, attachment
 > and delegate adapter over `sas::AbilitySystemComponent`.
 
 ## Sorumluluk
 
-`ly::LightYearsAbilitySystemComponent`, `CombatRuntime` içinde value olarak yaşayan oyun component'ıdır. SAS component üzerinden definition grant, slot/ID/handle lookup, input yönlendirme, instance tick'i, ability event delegate'leri ve attachment endpoint'lerini bağlar.
+`vega::LightYearsAbilitySystemComponent`, `CombatRuntime` içinde value olarak yaşayan oyun component'ıdır. SAS component üzerinden definition grant, slot/ID/handle lookup, input yönlendirme, instance tick'i, ability event delegate'leri ve attachment endpoint'lerini bağlar.
 
 ## Sahibi ve runtime state
 

@@ -8,9 +8,9 @@ namespace uncommon_module_e2e
 {
 	namespace
 	{
-		std::optional<ly::ModulePlacement> FindCandidate(const ly::ModuleRulesContext& rules, const ly::ModuleLoadout& loadout, const ly::ModuleDefinition& module, std::uint32_t instanceId, int variantIndex, const sas::ContentId& sideFeatureId = {})
+		std::optional<vega::ModulePlacement> FindCandidate(const vega::ModuleRulesContext& rules, const vega::ModuleLoadout& loadout, const vega::ModuleDefinition& module, std::uint32_t instanceId, int variantIndex, const sas::ContentId& sideFeatureId = {})
 		{
-			ly::ModulePlacement candidate;
+			vega::ModulePlacement candidate;
 			candidate.instanceId = instanceId;
 			candidate.moduleId = module.moduleId;
 			candidate.variantIndex = variantIndex;
@@ -21,13 +21,13 @@ namespace uncommon_module_e2e
 					{
 						candidate.origin = { x, y };
 						candidate.rotationQuarterTurns = rotation;
-						if (ly::ModulePlacementRules::CanPlace(rules, loadout, candidate) == ly::ModulePlacementFailure::None)
+						if (vega::ModulePlacementRules::CanPlace(rules, loadout, candidate) == vega::ModulePlacementFailure::None)
 							return candidate;
 					}
 			return std::nullopt;
 		}
 
-		std::uint32_t AddInstall(Report& report, ly::Player& player, const ly::ModuleRulesContext& rules, const ly::ModuleDefinition& module, int variantIndex, int level, const sas::ContentId& sideFeatureId = {})
+		std::uint32_t AddInstall(Report& report, vega::Player& player, const vega::ModuleRulesContext& rules, const vega::ModuleDefinition& module, int variantIndex, int level, const sas::ContentId& sideFeatureId = {})
 		{
 			const std::uint32_t id = player.AddModuleToInventory(module.moduleId, variantIndex, module.rarity, level, sideFeatureId);
 			report.Check(id != 0, "Player inventory accepts a validated Uncommon placement", Json{
@@ -36,21 +36,21 @@ namespace uncommon_module_e2e
 			const auto candidate = FindCandidate(rules, player.GetModuleLoadout(), module, id, variantIndex, sideFeatureId);
 			report.Check(candidate.has_value(), "real ship schematic has a legal cell for the Uncommon module");
 			report.Check(player.TryInstallModule(id, candidate->origin, candidate->rotationQuarterTurns) ==
-				ly::ModulePlacementFailure::None, "Player installs Uncommon module through canonical placement rules");
+				vega::ModulePlacementFailure::None, "Player installs Uncommon module through canonical placement rules");
 			return id;
 		}
 
-		void RemoveInstalled(Report& report, ly::Player& player, std::uint32_t instanceId)
+		void RemoveInstalled(Report& report, vega::Player& player, std::uint32_t instanceId)
 		{
 			report.Check(player.TryUninstallModule(instanceId), "Player uninstalls the tested module");
 		}
 
-		float CurrentOwner(const ly::PlayerSpaceShip& ship, const sas::AttributeId& id)
+		float CurrentOwner(const vega::PlayerSpaceShip& ship, const sas::AttributeId& id)
 		{
 			return ship.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(id);
 		}
 
-		float CurrentShip(const ly::PlayerSpaceShip& ship, const sas::AttributeId& id)
+		float CurrentShip(const vega::PlayerSpaceShip& ship, const sas::AttributeId& id)
 		{
 			return ship.GetShipRuntime().GetAttributes().GetCurrentValue(id);
 		}
@@ -61,9 +61,9 @@ namespace uncommon_module_e2e
 		}
 	}
 
-	void RunUncommonRuntimeChecks(Report& report, ly::Application& application, const std::filesystem::path& fixtureRoot)
+	void RunUncommonRuntimeChecks(Report& report, vega::Application& application, const std::filesystem::path& fixtureRoot)
 	{
-		using namespace ly;
+		using namespace vega;
 		auto level = std::make_shared<common_module_e2e::HeadlessModuleLevel>(&application);
 		level->BeginPlayInternal();
 		Player player;

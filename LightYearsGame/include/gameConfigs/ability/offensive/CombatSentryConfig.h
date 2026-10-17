@@ -11,30 +11,30 @@ namespace AbilityData::CombatSentry
 	// These fallback definitions deliberately carry identity only. Shipped JSON
 	// owns balance numbers; keeping them there makes live content and tests use
 	// the same data shape without duplicating tuning values in C++.
-	inline const ly::AbilityActorDefinition ActorTurretBasic = []
+	inline const vega::AbilityActorDefinition ActorTurretBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Turret::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::CombatSentryTurret;
-		definition.presentationProfileId = ly::CombatSentryPresentationIds::TurretBasic;
+		definition.actorType = vega::AbilityActorType::CombatSentryTurret;
+		definition.presentationProfileId = vega::CombatSentryPresentationIds::TurretBasic;
 		return definition;
 	}();
 
-	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+	inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::CombatSentryProjectile;
-		definition.presentationProfileId = ly::CombatSentryPresentationIds::ProjectileBasic;
+		definition.actorType = vega::AbilityActorType::CombatSentryProjectile;
+		definition.presentationProfileId = vega::CombatSentryPresentationIds::ProjectileBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition CombatSentry_Basic = []
+	inline const vega::GameAbilityDefinition CombatSentry_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::CombatSentry::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Only a fallback catalog slot; the player loadout remains runtime-owned.
@@ -42,13 +42,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::CombatSentry
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::CombatSentry
 		};
 		definition.displayName = "Combat Sentry";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 110, 210, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::CombatSentry;
+		definition.behaviorType = vega::AbilityBehaviorType::CombatSentry;
 		return definition;
 	}();
 }

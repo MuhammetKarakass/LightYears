@@ -8,12 +8,12 @@
 
 namespace AbilityData::CryoBola
 {
-	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+	inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::CryoBolaProjectile;
-		definition.presentationProfileId = ly::CryoBolaPresentationIds::ProjectileBasic;
+		definition.actorType = vega::AbilityActorType::CryoBolaProjectile;
+		definition.presentationProfileId = vega::CryoBolaPresentationIds::ProjectileBasic;
 		return definition;
 	}();
 }
@@ -21,24 +21,24 @@ namespace AbilityData::CryoBola
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition CryoBola_Basic = []
+	inline const vega::GameAbilityDefinition CryoBola_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::CryoBola::AbilityId::Basic;
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Utility,
-			ly::GameplayTags::Ability::Family::CryoBola
+			vega::GameplayTags::Ability::Utility,
+			vega::GameplayTags::Ability::Family::CryoBola
 		};
 		definition.displayName = "Cryo Bola";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
 		definition.accentColor = sf::Color{ 120, 225, 255, 255 };
 		definition.actions = {
-			ly::AbilityActionSpec{
+			vega::AbilityActionSpec{
 				sas::AbilityActionPhase::OnActivate,
-				ly::SpawnActorAction{
+				vega::SpawnActorAction{
 					AbilityData::CryoBola::Actor::Projectile::BasicDefinitionId,
 					sas::AbilitySpawnPolicy::OwnerForward,
 					sas::AbilityDirectionPolicy::OwnerForward
@@ -47,7 +47,7 @@ namespace AbilityData::Definitions
 				1
 			}
 		};
-		definition.behaviorType = ly::AbilityBehaviorType::CryoBola;
+		definition.behaviorType = vega::AbilityBehaviorType::CryoBola;
 		return definition;
 	}();
 }

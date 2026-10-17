@@ -19,7 +19,7 @@ namespace vega
 			try
 			{
 				const auto path = mDocument.Root() / "vega.project.json";
-				mProjectDraft = std::filesystem::exists(path) ? ly::ProjectSettings::Load(path) : ly::ProjectSettings{};
+				mProjectDraft = std::filesystem::exists(path) ? vega::ProjectSettings::Load(path) : vega::ProjectSettings{};
 				mProjectWindowSize[0] = static_cast<int>(mProjectDraft.windowWidth);
 				mProjectWindowSize[1] = static_cast<int>(mProjectDraft.windowHeight);
 				mProjectAutosaveSeconds = static_cast<int>(mProjectDraft.AutosaveSeconds());
@@ -56,7 +56,7 @@ namespace vega
 				mProjectDraft.windowWidth = static_cast<unsigned int>(mProjectWindowSize[0]);
 				mProjectDraft.windowHeight = static_cast<unsigned int>(mProjectWindowSize[1]);
 				mProjectDraft.editor["autosaveSeconds"] = mProjectAutosaveSeconds;
-				const auto project = ly::ProjectSettings::Parse(mProjectDraft.ToJson());
+				const auto project = vega::ProjectSettings::Parse(mProjectDraft.ToJson());
 				if (AtomicWriteText(mDocument.Root() / "vega.project.json", project.ToJson().dump(2) + "\n", mProjectError))
 				{
 					mProject.settings = project;
@@ -84,7 +84,7 @@ namespace vega
 	nlohmann::json EditorApplication::CaptureScene() const
 	{
 		return mContext.playMode ? mPlaySnapshot : mContext.world
-			? ly::SceneSerializer::Save(*mContext.world, mSceneSettings) : EmptyScene();
+			? vega::SceneSerializer::Save(*mContext.world, mSceneSettings) : EmptyScene();
 	}
 
 	bool EditorApplication::SceneDirty() const
@@ -322,7 +322,7 @@ namespace vega
 	void EditorApplication::BeginRename()
 	{
 		const auto actor = (mPrefabWorld ? mPrefabSelection : mSelection).Get();
-		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+		const auto* identity = actor ? actor->FindComponent<vega::SceneEntityComponent>() : nullptr;
 		if (!identity || mContext.playMode) return;
 		mRenameGuid = identity->guid;
 		std::snprintf(mRenameInput, sizeof(mRenameInput), "%s", identity->name.c_str());

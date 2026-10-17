@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Visual-only values. Gameplay radius, duration, travel and shielding are
 	// content attributes; this typed profile only establishes the family look.

@@ -11,34 +11,34 @@ namespace AbilityData::TemporalRecall
 		inline static constexpr char Basic[] = "Ability.Defense.TemporalRecall.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::TemporalRecall
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::TemporalRecall
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Focusing{
-			ly::GameplayTags::State::Ability::TemporalRecall::Focusing
+		inline static const vega::GameplayTag Focusing{
+			vega::GameplayTags::State::Ability::TemporalRecall::Focusing
 		};
-		inline static const ly::GameplayTag Rewinding{
-			ly::GameplayTags::State::Ability::TemporalRecall::Rewinding
+		inline static const vega::GameplayTag Rewinding{
+			vega::GameplayTags::State::Ability::TemporalRecall::Rewinding
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::TemporalRecall::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::TemporalRecall::Started
 		};
-		inline static const ly::GameplayTag RewindStarted{
-			ly::GameplayTags::Event::Ability::TemporalRecall::RewindStarted
+		inline static const vega::GameplayTag RewindStarted{
+			vega::GameplayTags::Event::Ability::TemporalRecall::RewindStarted
 		};
-		inline static const ly::GameplayTag Completed{
-			ly::GameplayTags::Event::Ability::TemporalRecall::Completed
+		inline static const vega::GameplayTag Completed{
+			vega::GameplayTags::Event::Ability::TemporalRecall::Completed
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::TemporalRecall::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::TemporalRecall::Ended
 		};
 	};
 
@@ -74,8 +74,8 @@ namespace AbilityData::TemporalRecall
 		// Explicit aliases document that abilities scale from canonical owner stats,
 		// never from derived Ship.Shield.Max or Afterburner capacity values.
 		inline static const sas::AttributeId HealthScalingSource =
-			ly::OwnerAttributeIds::MaxHealth;
+			vega::OwnerAttributeIds::MaxHealth;
 		inline static const sas::AttributeId ShieldScalingSource =
-			ly::OwnerAttributeIds::EnergyPower;
+			vega::OwnerAttributeIds::EnergyPower;
 	};
 }

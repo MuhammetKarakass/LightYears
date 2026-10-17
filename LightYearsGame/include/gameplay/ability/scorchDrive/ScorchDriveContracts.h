@@ -13,18 +13,18 @@ namespace AbilityData::ScorchDrive
 			"Ability.Movement.ScorchDrive.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTagSchema::AbilityMovement
+	inline const vega::GameplayTag CategoryTag{
+		vega::GameplayTagSchema::AbilityMovement
 	};
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::ScorchDrive
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::ScorchDrive
 	};
 
 	struct Attribute
 	{
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId SegmentWidth = ly::AreaAttributeIds::Width;
-		inline static const sas::AttributeId SegmentLength = ly::AreaAttributeIds::Length;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId SegmentWidth = vega::AreaAttributeIds::Width;
+		inline static const sas::AttributeId SegmentLength = vega::AreaAttributeIds::Length;
 
 		inline static const sas::AttributeId SegmentSpawnDistance{
 			"Ability.Movement.ScorchDrive.SegmentSpawnDistance"
@@ -51,7 +51,7 @@ namespace AbilityData::ScorchDrive
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active =
-			ly::GameplayTags::State::Ability::ScorchDrive::Active;
+		inline static const vega::GameplayTag Active =
+			vega::GameplayTags::State::Ability::ScorchDrive::Active;
 	};
 }

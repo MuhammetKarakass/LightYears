@@ -9,7 +9,7 @@
 #include <cmath>
 #include <cstdio>
 
-namespace ly
+namespace vega
 {
 	GameHUD::~GameHUD()
 	{

@@ -11,25 +11,25 @@ namespace AbilityData::TimeSlip
 		inline static constexpr char Basic[] = "Ability.Defense.TimeSlip.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::TimeSlip
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::TimeSlip
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::TimeSlip::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::TimeSlip::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::TimeSlip::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::TimeSlip::Started
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::TimeSlip::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::TimeSlip::Ended
 		};
 	};
 
@@ -54,6 +54,6 @@ namespace AbilityData::TimeSlip
 
 		// Explicit alias documents the only owner stat used by Time Slip scaling.
 		inline static const sas::AttributeId DurationScalingSource =
-			ly::OwnerAttributeIds::EnergyPower;
+			vega::OwnerAttributeIds::EnergyPower;
 	};
 }

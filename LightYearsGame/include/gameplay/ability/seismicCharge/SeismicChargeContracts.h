@@ -11,8 +11,8 @@ namespace AbilityData::SeismicCharge
 		inline static constexpr char Basic[] = "Ability.Offense.SeismicCharge.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::SeismicCharge };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Offense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::SeismicCharge };
 
 	struct Actor
 	{
@@ -29,8 +29,8 @@ namespace AbilityData::SeismicCharge
 	struct Attribute
 	{
 		// Damage and maximum shockwave reach use common, cross-family channels.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId MaximumRadius = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId MaximumRadius = vega::CommonAttributeIds::Range;
 
 		// These are delivery-specific timeline values, so they stay beneath the
 		// Seismic Charge bomb actor rather than expanding CommonAttributeIds.

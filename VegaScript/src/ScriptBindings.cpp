@@ -46,11 +46,11 @@ namespace vega::script
 			}
 			lua_Debug source{};
 			if (lua_getstack(state, 1, &source)) lua_getinfo(state, "Sl", &source);
-			ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Lua,
+			vega::debug::Log::Write(vega::debug::LogLevel::Info, vega::debug::LogChannel::Lua,
 				{ source.source && source.source[0] == '@' ? source.source + 1 : "", "print", source.currentline }, std::move(message));
 			return 0;
 		}
-		bool Matches(const ly::Actor& actor, const std::string& name)
+		bool Matches(const vega::Actor& actor, const std::string& name)
 		{
 			if (name.empty()) return true;
 			for (auto* type = actor.GetEngineContext().Types().FindMostDerived(actor); type; type = type->base)
@@ -101,7 +101,7 @@ namespace vega::script
 			for (const auto& entry : data.items()) table[entry.key()] = MessageObject(lua, entry.value());
 			return sol::make_object(lua, table);
 		}
-		sol::object ToLua(sol::state_view lua, const Value& value, ly::World* world)
+		sol::object ToLua(sol::state_view lua, const Value& value, vega::World* world)
 		{
 			return std::visit([&](const auto& item) -> sol::object
 			{
@@ -114,23 +114,23 @@ namespace vega::script
 					color["r"] = item.r; color["g"] = item.g; color["b"] = item.b; color["a"] = item.a;
 					return sol::make_object(lua, color);
 				}
-				else if constexpr (std::is_same_v<T, ly::ActorRef>)
+				else if constexpr (std::is_same_v<T, vega::ActorRef>)
 				{
 					const auto actor = world ? item.Resolve(*world) : nullptr;
 					return actor ? sol::make_object(lua, ActorHandle{ actor }) : sol::make_object(lua, sol::nil);
 				}
-				else if constexpr (std::is_same_v<T, ly::reflect::PropertyList>)
+				else if constexpr (std::is_same_v<T, vega::reflect::PropertyList>)
 				{
 					sol::table list = lua.create_table();
 					list["n"] = item.size();
-					for (std::size_t i = 0; i < item.size(); ++i) list[i + 1] = ToLua(lua, ly::reflect::ToValue(item[i]), world);
+					for (std::size_t i = 0; i < item.size(); ++i) list[i + 1] = ToLua(lua, vega::reflect::ToValue(item[i]), world);
 					return sol::make_object(lua, list);
 				}
-				else if constexpr (std::is_same_v<T, ly::reflect::StructValue>)
+				else if constexpr (std::is_same_v<T, vega::reflect::StructValue>)
 				{
 					// Fields are keyed by their reflected names, so Lua sees the same keys as the Inspector.
 					sol::table fields = lua.create_table();
-					for (const auto& field : item) fields[field.first] = ToLua(lua, ly::reflect::ToPropertyValue(field.second), world);
+					for (const auto& field : item) fields[field.first] = ToLua(lua, vega::reflect::ToPropertyValue(field.second), world);
 					return sol::make_object(lua, fields);
 				}
 				else return sol::make_object(lua, item);
@@ -162,28 +162,28 @@ namespace vega::script
 			}
 			return {};
 		}
-		sol::object ReadProperty(sol::this_state state, const void* object, const ly::reflect::TypeInfo* type, const std::string& name)
+		sol::object ReadProperty(sol::this_state state, const void* object, const vega::reflect::TypeInfo* type, const std::string& name)
 		{
 			const auto* property = type ? type->FindProperty(name) : nullptr;
 			return object && property ? ToLua(sol::state_view{ state }, property->getter(object), property->world ? property->world(object) : nullptr) : sol::make_object(state, sol::nil);
 		}
-		std::optional<Value> FromPropertyLua(const ly::reflect::PropertyInfo& property, const sol::object& input, ly::World* world)
+		std::optional<Value> FromPropertyLua(const vega::reflect::PropertyInfo& property, const sol::object& input, vega::World* world)
 		{
-			using ly::reflect::PropertyKind;
+			using vega::reflect::PropertyKind;
 			if (property.kind == PropertyKind::ActorRef)
 			{
-				if (input == sol::nil) return ly::ActorRef{};
+				if (input == sol::nil) return vega::ActorRef{};
 				if (!input.is<ActorHandle>()) return {};
 				const auto actor = input.as<ActorHandle>().Lock();
 				if (!actor || actor->GetWorld() != world) return {};
-				return ly::ActorRef{ *actor };
+				return vega::ActorRef{ *actor };
 			}
 			if (property.kind == PropertyKind::Struct)
 			{
 				// Missing fields keep the struct's defaults and unknown keys are ignored, as in scene loads.
 				if (input.get_type() != sol::type::table || !property.structInfo) return {};
 				const auto table = input.as<sol::table>();
-				ly::reflect::StructValue fields;
+				vega::reflect::StructValue fields;
 				for (const auto& field : property.structInfo->properties)
 				{
 					if (!field.setter) continue;
@@ -191,7 +191,7 @@ namespace vega::script
 					if (entry == sol::nil) continue;
 					const auto converted = FromPropertyLua(field, entry, world);
 					if (!converted) return {};
-					fields.emplace_back(field.name, ly::reflect::ToLeaf(*converted));
+					fields.emplace_back(field.name, vega::reflect::ToLeaf(*converted));
 				}
 				return fields;
 			}
@@ -213,12 +213,12 @@ namespace vega::script
 					++count;
 				}
 				if (count != size && property.elementKind != PropertyKind::ActorRef) return {};
-				ly::reflect::PropertyList list;
+				vega::reflect::PropertyList list;
 				for (std::size_t i = 1; i <= size; ++i)
 				{
 					auto value = FromPropertyLua(property.Element(), table.raw_get<sol::object>(i), world);
 					if (!value) return {};
-					list.push_back(ly::reflect::ToScalar(*value));
+					list.push_back(vega::reflect::ToScalar(*value));
 				}
 				return list;
 			}
@@ -242,7 +242,7 @@ namespace vega::script
 				int bits = 0;
 				bool legacy = false;
 				if (!property.ParseFlags(input.as<std::string>(), bits, &legacy)) return {};
-				if (legacy) LY_CORE_WARN("Lua %s: legacy flags label accepted; use project labels", property.name.c_str());
+				if (legacy) VEGA_CORE_WARN("Lua %s: legacy flags label accepted; use project labels", property.name.c_str());
 				return bits;
 			}
 			auto value = FromLua(input);
@@ -255,7 +255,7 @@ namespace vega::script
 			}
 			return value;
 		}
-		std::tuple<bool, std::string> WriteProperty(void* object, const ly::reflect::TypeInfo* type, const std::string& name, const sol::object& input)
+		std::tuple<bool, std::string> WriteProperty(void* object, const vega::reflect::TypeInfo* type, const std::string& name, const sol::object& input)
 		{
 			const auto* property = type ? type->FindProperty(name) : nullptr;
 			auto value = object && property ? FromPropertyLua(*property, input, property->world ? property->world(object) : nullptr) : std::optional<Value>{};
@@ -264,7 +264,7 @@ namespace vega::script
 			const bool ok = property->SetValue(object, *value, &error);
 			return { ok, std::move(error) };
 		}
-		void CallFunction(void* object, const ly::reflect::TypeInfo* type, const std::string& name)
+		void CallFunction(void* object, const vega::reflect::TypeInfo* type, const std::string& name)
 		{
 			if (!object) throw std::runtime_error("Cannot call reflected function '" + name + "': target is no longer alive");
 			const auto* function = type ? type->FindFunction(name) : nullptr;
@@ -354,7 +354,7 @@ namespace vega::script
 				"name", [](const ActorHandle& h)
 				{
 					const auto actor = h.Lock();
-					const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+					const auto* identity = actor ? actor->FindComponent<vega::SceneEntityComponent>() : nullptr;
 					return identity ? identity->name : std::string{};
 				},
 				"send", [](const ActorHandle& h, const std::string& name, sol::optional<sol::object> value)
@@ -365,7 +365,7 @@ namespace vega::script
 					const auto data = value ? MessageData(*value, count) : nlohmann::json{};
 					if (data.dump().size() > 65536) throw std::runtime_error("Message data exceeds 65536 bytes");
 					bool sent = false;
-					actor->ForEachComponent([&](ly::ActorComponent& component)
+					actor->ForEachComponent([&](vega::ActorComponent& component)
 					{
 						if (auto* script = dynamic_cast<ScriptComponent*>(&component)) sent = script->QueueMessage(name, data) || sent;
 					});
@@ -429,10 +429,10 @@ namespace vega::script
 					const auto a = h.Lock();
 					sol::object result = sol::make_object(s, sol::nil);
 
-					if (a) a->ForEachComponent([&](ly::ActorComponent& component)
+					if (a) a->ForEachComponent([&](vega::ActorComponent& component)
 					{
 						for (auto* type = component.GetOwner().GetEngineContext().Types().FindMostDerived(component); type; type = type->base)
-							if (result == sol::nil && type->name == name) result = sol::make_object(s, ComponentHandle{ h, *ly::IdentifyComponent(*a, component) });
+							if (result == sol::nil && type->name == name) result = sol::make_object(s, ComponentHandle{ h, *vega::IdentifyComponent(*a, component) });
 
 					});
 					return result;
@@ -518,9 +518,9 @@ namespace vega::script
 		{
 			const auto actor = owner.Lock();
 			if (actor && actor->GetWorld())
-				for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<ly::Actor>())
+				for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<vega::Actor>())
 					if (auto item = weak.lock(); item && !item->GetIsPendingDestroy())
-						if (const auto* identity = item->FindComponent<ly::SceneEntityComponent>(); identity && identity->name == name)
+						if (const auto* identity = item->FindComponent<vega::SceneEntityComponent>(); identity && identity->name == name)
 							return sol::make_object(state, ActorHandle{ item });
 			return sol::make_object(state, sol::nil);
 		};
@@ -536,7 +536,7 @@ namespace vega::script
 			const auto actor = owner.Lock();
 			int index = 1;
 			if (actor && actor->GetWorld())
-				for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<ly::Actor>())
+				for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<vega::Actor>())
 					if (auto item = weak.lock(); item && !item->GetIsPendingDestroy() && Matches(*item, type)) result[index++] = ActorHandle{ item };
 			return result;
 		};
@@ -548,7 +548,7 @@ namespace vega::script
 			const auto actor = owner.Lock();
 			int index = 1;
 			const auto filter = type.value_or("");
-			if (actor && actor->GetWorld()) actor->GetWorld()->ForEachActorInBounds({ { x - radius, y - radius }, { radius * 2.f, radius * 2.f } }, [&](ly::Actor& item)
+			if (actor && actor->GetWorld()) actor->GetWorld()->ForEachActorInBounds({ { x - radius, y - radius }, { radius * 2.f, radius * 2.f } }, [&](vega::Actor& item)
 			{
 				const auto delta = item.GetActorLocation() - sf::Vector2f{ x, y };
 				if (!item.GetIsPendingDestroy() && Matches(item, filter) && std::hypot(delta.x, delta.y) <= radius)
@@ -569,7 +569,7 @@ namespace vega::script
 				const auto resolved = actor->GetEngineContext().Prefabs().Resolve(source);
 				if (!resolved || !resolved.warnings.empty()) throw std::runtime_error(resolved.warnings.empty() ? "Cannot resolve prefab" : resolved.warnings.front());
 			}
-			const auto guid = ly::SceneEntityComponent::GenerateGuid();
+			const auto guid = vega::SceneEntityComponent::GenerateGuid();
 			nlohmann::json values = nlohmann::json::object();
 			if (properties) for (const auto& entry : *properties)
 			{
@@ -581,7 +581,7 @@ namespace vega::script
 					using T = std::decay_t<decltype(v)>;
 					if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ v.x, v.y });
 					else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
-					else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList> || std::is_same_v<T, ly::reflect::StructValue>) return nullptr;
+					else if constexpr (std::is_same_v<T, vega::ActorRef> || std::is_same_v<T, vega::reflect::PropertyList> || std::is_same_v<T, vega::reflect::StructValue>) return nullptr;
 					else if constexpr (std::is_same_v<T, float>)
 					{
 						// Scene enum/flag/int readers distinguish integral JSON values.
@@ -595,12 +595,12 @@ namespace vega::script
 			values["Location"] = { x, y };
 			nlohmann::json entity{ { "guid", guid }, { "name", source }, { "properties", values } };
 			entity[prefab ? "prefab" : "type"] = source;
-			const auto loaded = ly::SceneSerializer::Load(*actor->GetWorld(), { { "format", "vega.scene" }, { "version", 1 },
+			const auto loaded = vega::SceneSerializer::Load(*actor->GetWorld(), { { "format", "vega.scene" }, { "version", 1 },
 				{ "settings", nlohmann::json::object() }, { "entities", nlohmann::json::array({ entity }) } });
-			std::shared_ptr<ly::Actor> spawned;
-			for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<ly::Actor>())
+			std::shared_ptr<vega::Actor> spawned;
+			for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<vega::Actor>())
 				if (auto item = weak.lock())
-					if (const auto* identity = item->FindComponent<ly::SceneEntityComponent>(); identity && identity->guid == guid) { spawned = item; break; }
+					if (const auto* identity = item->FindComponent<vega::SceneEntityComponent>(); identity && identity->guid == guid) { spawned = item; break; }
 			if (!loaded.warnings.empty())
 			{
 				if (spawned) spawned->Destroy();

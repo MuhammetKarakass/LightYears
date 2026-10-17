@@ -22,8 +22,8 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	using namespace vega;
 	const auto root = std::filesystem::path{ VEGA_ASSET_OPERATIONS_TEST_ROOT };
 	if (!root.is_absolute() || root.filename() != "asset-operations-test") return 1;
@@ -106,9 +106,9 @@ int main()
 		Write(directory / "pending.json", journal.dump());
 		Check(!AssetMovePlan::RecoverPending(root, {}, error) && Read(root / "a.json") == "{\"external\":true}" && std::filesystem::exists(directory / "pending.json"), "Crash recovery must preserve conflicting external edits and its journal");
 	}
-	ly::content::ContentTypeSchema fixed;
+	vega::content::ContentTypeSchema fixed;
 	fixed.type = "fixed"; fixed.file = "destination/code/nested.prefab.json";
-	ly::content::ContentSchemaRegistry::Get().Register(std::move(fixed));
+	vega::content::ContentSchemaRegistry::Get().Register(std::move(fixed));
 	Check(!stale.Prepare(root, "destination/code", "scripts"), "Module-owned fixed catalog paths must not be moved");
 	return failures ? 1 : 0;
 }

@@ -38,7 +38,7 @@ namespace vega::script
 		const auto marker = message.find(".lua:");
 		int line = 0;
 		if (marker != std::string::npos) line = std::atoi(message.c_str() + marker + 5);
-		ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Lua,
+		vega::debug::Log::Write(vega::debug::LogLevel::Error, vega::debug::LogChannel::Lua,
 			{ path.c_str(), "Lua", line }, error);
 	}
 	std::filesystem::path ScriptComponent::Impl::FullPath() const
@@ -147,7 +147,7 @@ namespace vega::script
 		timers.erase(std::remove_if(timers.begin(), timers.end(), [](const Timer& timer) { return !*timer.active; }), timers.end());
 		if (!component.GetOwner().GetIsPendingDestroy()) Call("on_update", dt);
 	}
-	void ScriptComponent::Impl::Contact(const char* name, ly::Actor* other) noexcept
+	void ScriptComponent::Impl::Contact(const char* name, vega::Actor* other) noexcept
 	{
 		if (!other || ended || !running) return;
 		try { Call(name, ActorHandle{ other->GetWeakActor() }); }
@@ -215,7 +215,7 @@ namespace vega::script
 		}
 		return error.empty();
 	}
-	ScriptComponent::ScriptComponent(ly::Actor& owner, std::string path)
+	ScriptComponent::ScriptComponent(vega::Actor& owner, std::string path)
 		: ActorComponent{ owner }, mImpl{ std::make_unique<Impl>(*this, std::move(path)) }
 	{
 		// The context owns the interpreter and outlives its components.
@@ -274,7 +274,7 @@ namespace vega::script
 	void ScriptComponent::BeginPlay() { Reload(); }
 	void ScriptComponent::TickComponent(float deltaTime)
 	{
-		LY_PROFILE_SCOPE("Lua Script Tick");
+		VEGA_PROFILE_SCOPE("Lua Script Tick");
 		try
 		{
 			if (mImpl->ended) return;
@@ -304,9 +304,9 @@ namespace vega::script
 		catch (...) { mImpl->Fail("Unknown script error"); }
 		mImpl->running = false;
 	}
-	void ScriptComponent::OnOverlapBegin(ly::Actor* other) { mImpl->Contact("on_overlap_begin", other); }
-	void ScriptComponent::OnOverlapEnd(ly::Actor* other) { mImpl->Contact("on_overlap_end", other); }
-	void ScriptComponent::OnHit(ly::Actor* other) { mImpl->Contact("on_hit", other); }
+	void ScriptComponent::OnOverlapBegin(vega::Actor* other) { mImpl->Contact("on_overlap_begin", other); }
+	void ScriptComponent::OnOverlapEnd(vega::Actor* other) { mImpl->Contact("on_overlap_end", other); }
+	void ScriptComponent::OnHit(vega::Actor* other) { mImpl->Contact("on_hit", other); }
 	bool ScriptComponent::QueueMessage(const std::string& name, const nlohmann::json& data)
 	{
 		if (!mImpl->running || mImpl->ended || mImpl->messages.size() >= 128 || name.empty() || name.size() > 256) return false;
@@ -336,22 +336,22 @@ namespace vega::script
 		mImpl->overrides.erase(name);
 		return true;
 	}
-	VEGA_REFLECT(ScriptComponent, ly::ActorComponent)
+	VEGA_REFLECT(ScriptComponent, vega::ActorComponent)
 	{
 		VEGA_REMOVABLE();
-		VEGA_READONLY("Script", ScriptPath).Asset(ly::reflect::AssetKind::Script);
+		VEGA_READONLY("Script", ScriptPath).Asset(vega::reflect::AssetKind::Script);
 		VEGA_READONLY("Last Error", LastError);
 	}
 
-	void RegisterScriptTypes() { RegisterScriptTypes(ly::EngineContext::Current()); }
+	void RegisterScriptTypes() { RegisterScriptTypes(vega::EngineContext::Current()); }
 
-	void RegisterScriptTypes(ly::EngineContext& context)
+	void RegisterScriptTypes(vega::EngineContext& context)
 	{
-		ly::reflect::RegisterEngineTypes(context.Types());
+		vega::reflect::RegisterEngineTypes(context.Types());
 		VEGA_REGISTER_IN(ScriptComponent, context.Types());
-		ly::SceneSerializer::RegisterComponentSerializer("ScriptComponent", {
+		vega::SceneSerializer::RegisterComponentSerializer("ScriptComponent", {
 			"scripts",
-			[](const ly::ActorComponent& base)
+			[](const vega::ActorComponent& base)
 			{
 				const auto& component = dynamic_cast<const ScriptComponent&>(base);
 				nlohmann::json properties = nlohmann::json::object();
@@ -361,12 +361,12 @@ namespace vega::script
 						using T = std::decay_t<decltype(value)>;
 						if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ value.x, value.y });
 						else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
-						else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList> || std::is_same_v<T, ly::reflect::StructValue>) return nullptr;
+						else if constexpr (std::is_same_v<T, vega::ActorRef> || std::is_same_v<T, vega::reflect::PropertyList> || std::is_same_v<T, vega::reflect::StructValue>) return nullptr;
 						else return value;
 					}, entry.second);
 				return nlohmann::json{ { "path", component.ScriptPath() }, { "properties", std::move(properties) } };
 			},
-			[](ly::Actor& actor, const nlohmann::json& data, ly::SceneLoadResult& result)
+			[](vega::Actor& actor, const nlohmann::json& data, vega::SceneLoadResult& result)
 			{
 				const auto path = data.at("path").get<std::string>();
 				const auto& properties = data.at("properties");

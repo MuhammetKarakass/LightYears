@@ -4,7 +4,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

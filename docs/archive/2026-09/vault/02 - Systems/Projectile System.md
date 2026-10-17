@@ -15,11 +15,11 @@ source_files:
   - LightYearsGame/include/gameplay/weapon/impact/ShotgunVolleyImpactGroup.h
   - LightYearsGame/include/gameplay/projectile/ProjectileSweep.h
 symbols:
-  - ly::PrimaryWeaponProjectileSpawner::FireSet
-  - ly::PrimaryWeaponProjectileActor
-  - ly::ProjectileImpactBehavior
-  - ly::ShotgunVolleyImpactGroup
-  - ly::projectile::FindSweptContacts
+  - vega::PrimaryWeaponProjectileSpawner::FireSet
+  - vega::PrimaryWeaponProjectileActor
+  - vega::ProjectileImpactBehavior
+  - vega::ShotgunVolleyImpactGroup
+  - vega::projectile::FindSweptContacts
 related:
   - "[[Weapon System]]"
   - "[[Primary Weapon Projectile Lifecycle]]"

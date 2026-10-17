@@ -2,12 +2,12 @@
 
 #include "gameplay/movement/MovementPolicyTypes.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 }
 
-namespace ly::movement
+namespace vega::movement
 {
 	// Gameplay-facing adapter for movement policies. The adapter depends on the
 	// ship implementation, while MovementPolicyController itself remains a

@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

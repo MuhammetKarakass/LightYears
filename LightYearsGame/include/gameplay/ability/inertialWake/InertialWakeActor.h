@@ -4,7 +4,7 @@
 #include "presentation/ability/inertialWake/InertialWakePresentationProfile.h"
 #include "gameplay/targeting/ActorHitCooldowns.h"
 
-namespace ly
+namespace vega
 {
 	class SpaceShip;
 

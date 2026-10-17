@@ -3,7 +3,7 @@
 #include <framework/Core.h>
 #include <framework/MathUtility.h>
 
-namespace ly
+namespace vega
 {
 	class World;
 

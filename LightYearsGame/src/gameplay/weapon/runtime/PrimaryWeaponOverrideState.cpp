@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	PrimaryWeaponOverrideHandle PrimaryWeaponOverrideState::Push(
 		const sas::ContentId& sourceId,

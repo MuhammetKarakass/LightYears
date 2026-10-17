@@ -6,7 +6,7 @@
 namespace
 {
 	using namespace uncommon_p6_e2e;
-	shared_ptr<SpaceShip> Target(Fixture& f, float distance = 50.f) { const auto enemy = Enemy(f, distance); enemy->SetCollisionMask(ly::GameCollision::PlayerBullet); return enemy; }
+	shared_ptr<SpaceShip> Target(Fixture& f, float distance = 50.f) { const auto enemy = Enemy(f, distance); enemy->SetCollisionMask(vega::GameCollision::PlayerBullet); return enemy; }
 	void Sample(Fixture& f)
 	{
 		Move(f, 25.f, .25f); Move(f, 125.f, .25f); Move(f, 50.f, .25f); Move(f, 0.f, .25f);
@@ -61,7 +61,7 @@ namespace
 }
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	try

@@ -2,12 +2,12 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag FoldspaceArena{ "Ability.Utility.FoldspaceArena" };
 }
 
-namespace ly::GameplayTags::State::Ability::FoldspaceArena
+namespace vega::GameplayTags::State::Ability::FoldspaceArena
 {
 	inline const GameplayTag Active{ "State.Ability.FoldspaceArena.Active" };
 	inline const GameplayTag CancelAvailable{
@@ -15,7 +15,7 @@ namespace ly::GameplayTags::State::Ability::FoldspaceArena
 	};
 }
 
-namespace ly::GameplayTags::Event::Ability::FoldspaceArena
+namespace vega::GameplayTags::Event::Ability::FoldspaceArena
 {
 	inline const GameplayTag Started{ "Event.Ability.FoldspaceArena.Start" };
 	inline const GameplayTag CancelAvailable{

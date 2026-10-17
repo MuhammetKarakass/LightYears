@@ -16,7 +16,7 @@ namespace vega
 	class AssetMovePlan
 	{
 	public:
-		explicit AssetMovePlan(ly::EngineContext& context = ly::EngineContext::Current()) : mContext{ &context } {}
+		explicit AssetMovePlan(vega::EngineContext& context = vega::EngineContext::Current()) : mContext{ &context } {}
 		bool Prepare(const std::filesystem::path& root, const std::filesystem::path& from,
 			const std::filesystem::path& to, const std::filesystem::path& project = {});
 		bool Apply(bool forward = true);
@@ -31,7 +31,7 @@ namespace vega
 		static std::filesystem::path Remap(const std::filesystem::path& path,
 			const std::filesystem::path& from, const std::filesystem::path& to);
 	private:
-		ly::EngineContext* mContext;
+		vega::EngineContext* mContext;
 		struct Document
 		{
 			std::filesystem::path beforePath, afterPath;

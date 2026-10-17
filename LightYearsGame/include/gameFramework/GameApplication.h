@@ -3,7 +3,7 @@
 #include <framework/Application.h>
 #include <framework/GameModule.h>
 
-namespace ly
+namespace vega
 {
 	class GameApplication : public Application
 	{

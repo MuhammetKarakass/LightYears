@@ -15,7 +15,7 @@ namespace AbilityData::InfernoSpray
 	{
 		inline static constexpr char MinCancelDuration[] = "minCancelDuration";
 
-		inline static const ly::content::NumericSettingContract Contract{
+		inline static const vega::content::NumericSettingContract Contract{
 			{ MinCancelDuration },
 			{ MinCancelDuration }
 		};

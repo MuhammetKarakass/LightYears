@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace ly::glacialPressure
+namespace vega::glacialPressure
 {
 	// Segment falloff and maximum-health scaling are independent balance axes.
 	// The former may reduce range for distant targets; the latter can only extend

@@ -23,17 +23,17 @@ namespace EffectData
 	// Effect behavior selectors belong to the content/registry boundary, not to
 	// gameplay schemas or ability contracts.
 	inline const sas::GameplayEffectBehaviorKey& BarrierBehaviorKey =
-		ly::EffectBehaviorKeys::Barrier;
+		vega::EffectBehaviorKeys::Barrier;
 	inline const sas::GameplayEffectBehaviorKey& DamageIgniteBehaviorKey =
-		ly::EffectBehaviorKeys::DamageIgnite;
+		vega::EffectBehaviorKeys::DamageIgnite;
 	inline const sas::GameplayEffectBehaviorKey& DamageElectricBehaviorKey =
-		ly::EffectBehaviorKeys::DamageElectric;
+		vega::EffectBehaviorKeys::DamageElectric;
 	inline const sas::GameplayEffectBehaviorKey& GravityAnomalyBehaviorKey =
-		ly::EffectBehaviorKeys::GravityAnomaly;
+		vega::EffectBehaviorKeys::GravityAnomaly;
 	inline const sas::GameplayEffectBehaviorKey& DirectionalBarrierBehaviorKey =
-		ly::EffectBehaviorKeys::DirectionalBarrier;
+		vega::EffectBehaviorKeys::DirectionalBarrier;
 	inline const sas::GameplayEffectBehaviorKey& DamageReductionBehaviorKey =
-		ly::EffectBehaviorKeys::DamageReduction;
+		vega::EffectBehaviorKeys::DamageReduction;
 
 	// JSON fallback/test catalog only. Shipped runtime policy comes from
 	// effects.json; source-owned magnitudes and durations come from the weapon,
@@ -56,7 +56,7 @@ namespace EffectData
 			sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelay, 1.5f, 0.f },
 			sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelayRemaining, 0.f, 0.f }
 		},
-		ly::ShieldVisualIds::Basic,
+		vega::ShieldVisualIds::Basic,
 		{},
 		{},
 		false,
@@ -79,8 +79,8 @@ namespace EffectData
 			BarrierEffectSchema::BreakValidationTag
 		},
 		{
-			sas::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedVertical, sas::AttributeModifierOperation::Add, 0.25f, 0 },
-			sas::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedHorizontal, sas::AttributeModifierOperation::Add, 0.2f, 0 }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::MoveSpeedVertical, sas::AttributeModifierOperation::Add, 0.25f, 0 },
+			sas::AttributeModifier{ vega::OwnerAttributeIds::MoveSpeedHorizontal, sas::AttributeModifierOperation::Add, 0.2f, 0 }
 		},
 		{},
 		"",
@@ -95,13 +95,13 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition IgniteEffect{
-		ly::DamageStatusEffectIds::IgniteEffectId,
+		vega::DamageStatusEffectIds::IgniteEffectId,
 		DamageIgniteBehaviorKey,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		0.f,
 		1,
-		{ ly::DamageStatusSchema::Ignite },
+		{ vega::DamageStatusSchema::Ignite },
 		{},
 		{},
 		"",
@@ -119,13 +119,13 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition CryoSlowEffect{
-		ly::DamageStatusEffectIds::CryoSlowedEffectId,
+		vega::DamageStatusEffectIds::CryoSlowedEffectId,
 		{},
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		0.f,
 		1,
-		{ ly::DamageStatusSchema::CryoSlowed },
+		{ vega::DamageStatusSchema::CryoSlowed },
 		{},
 		{},
 		"",
@@ -143,13 +143,13 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition ElectricEffect{
-		ly::DamageStatusEffectIds::ElectricEffectId,
+		vega::DamageStatusEffectIds::ElectricEffectId,
 		DamageElectricBehaviorKey,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		0.f,
 		1,
-		{ ly::DamageStatusSchema::Electric },
+		{ vega::DamageStatusSchema::Electric },
 		{},
 		{},
 		"",
@@ -167,13 +167,13 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition KineticEffect{
-		ly::DamageStatusEffectIds::KineticEffectId,
+		vega::DamageStatusEffectIds::KineticEffectId,
 		{},
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		0.f,
 		1,
-		{ ly::DamageStatusSchema::Kinetic },
+		{ vega::DamageStatusSchema::Kinetic },
 		{},
 		{},
 		"",
@@ -204,21 +204,21 @@ namespace EffectData
 			AbilityData::GravityAnomaly::Effect::InsideEffectDurationSeconds;
 		definition.maxStacks = 1;
 		definition.grantedTags = {
-			ly::GameplayTags::State::Effect::GravityAnomaly::Inside
+			vega::GameplayTags::State::Effect::GravityAnomaly::Inside
 		};
 		definition.applicationBlockedTags = {
 			MovementEffectSchema::SlowImmunityGrantedTag
 		};
 		definition.modifiers = {
 			sas::AttributeModifier{
-				ly::OwnerAttributeIds::MovementSlow,
+				vega::OwnerAttributeIds::MovementSlow,
 				sas::AttributeModifierOperation::Add,
 				// GravityAnomalyFieldActor resolves this value from the JSON-loaded
 				// actor attributes before applying the effect spec.
 				0.f
 			}
 		};
-		definition.activeVisualId = ly::GravityAnomalyEffectVisualIds::Inside;
+		definition.activeVisualId = vega::GravityAnomalyEffectVisualIds::Inside;
 		definition.sourceScopedApplication = true;
 		definition.disposition = sas::GameplayEffectDisposition::Harmful;
 		definition.cleanseable = true;
@@ -239,7 +239,7 @@ namespace EffectData
 		},
 		{
 			sas::AttributeModifier{
-				ly::OwnerAttributeIds::MovementSlow,
+				vega::OwnerAttributeIds::MovementSlow,
 				sas::AttributeModifierOperation::Add,
 				0.35f,
 				0
@@ -290,7 +290,7 @@ namespace EffectData
 		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
 		definition.sourceParameterized = true;
 		definition.grantedTags = {
-			ly::GameplayTags::State::Effect::OverdriveCore::AttackSpeedBoost
+			vega::GameplayTags::State::Effect::OverdriveCore::AttackSpeedBoost
 		};
 		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
 		definition.category = "Offense.OverdriveCore.AttackSpeedBoost";
@@ -309,7 +309,7 @@ namespace EffectData
 		definition.sourceScopedApplication = true;
 		definition.sourceParameterized = true;
 		definition.grantedTags = {
-			ly::GameplayTags::State::Effect::Offense::ExecutionDrive::AttackPower
+			vega::GameplayTags::State::Effect::Offense::ExecutionDrive::AttackPower
 		};
 		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
 		definition.category = "Offense.ExecutionDrive.AttackPower";
@@ -325,7 +325,7 @@ namespace EffectData
 		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
 		definition.grantedTags = {
-			ly::GameplayTags::State::Effect::Control::Stunned
+			vega::GameplayTags::State::Effect::Control::Stunned
 		};
 		definition.disposition = sas::GameplayEffectDisposition::Harmful;
 		definition.cleanseable = true;
@@ -338,10 +338,10 @@ namespace EffectData
 	inline const sas::GameplayEffectDefinition CryoFrozenEffect = []
 	{
 		sas::GameplayEffectDefinition definition;
-		definition.effectId = ly::DamageStatusEffectIds::CryoFrozenEffectId;
+		definition.effectId = vega::DamageStatusEffectIds::CryoFrozenEffectId;
 		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
-		definition.grantedTags = { ly::DamageStatusSchema::CryoFrozen, ly::GameplayTags::State::Effect::Control::Stunned };
+		definition.grantedTags = { vega::DamageStatusSchema::CryoFrozen, vega::GameplayTags::State::Effect::Control::Stunned };
 		definition.disposition = sas::GameplayEffectDisposition::Harmful;
 		definition.cleanseable = true;
 		definition.category = "Control.Stun";
@@ -352,7 +352,7 @@ namespace EffectData
 	inline const sas::GameplayEffectDefinition CryoFreezeCooldownEffect = []
 	{
 		sas::GameplayEffectDefinition definition;
-		definition.effectId = ly::DamageStatusEffectIds::CryoFreezeCooldownEffectId;
+		definition.effectId = vega::DamageStatusEffectIds::CryoFreezeCooldownEffectId;
 		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
 		definition.category = "Runtime.CryoFreezeCooldown";
@@ -362,7 +362,7 @@ namespace EffectData
 	inline const sas::GameplayEffectDefinition KineticArmorRendEffect = []
 	{
 		sas::GameplayEffectDefinition definition;
-		definition.effectId = ly::DamageStatusEffectIds::KineticArmorRendEffectId;
+		definition.effectId = vega::DamageStatusEffectIds::KineticArmorRendEffectId;
 		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
 		definition.category = "Runtime.KineticArmorRend";
@@ -391,10 +391,10 @@ namespace EffectData
 	{
 		sas::GameplayEffectDefinition definition;
 		definition.effectId = AbilityData::Cryostasis::Effect::IceShellId;
-		definition.behaviorKey = ly::EffectBehaviorKeys::CryostasisIceShell;
+		definition.behaviorKey = vega::EffectBehaviorKeys::CryostasisIceShell;
 		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
-		definition.grantedTags = { ly::GameplayTags::State::Effect::Defense::Cryostasis::IceShell };
+		definition.grantedTags = { vega::GameplayTags::State::Effect::Defense::Cryostasis::IceShell };
 		definition.sourceScopedApplication = true;
 		definition.sourceParameterized = true;
 		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
@@ -417,10 +417,10 @@ namespace EffectData
 		return definition;
 	}();
 
-	inline const ly::List<const sas::GameplayEffectDefinition*>&
+	inline const vega::List<const sas::GameplayEffectDefinition*>&
 	GetBuiltinGameplayEffectDefinitions()
 	{
-		static const ly::List<const sas::GameplayEffectDefinition*> definitions{
+		static const vega::List<const sas::GameplayEffectDefinition*> definitions{
 			&BasicBarrierEffect,
 			&BarrierBreakThrustBoostEffect,
 			&IgniteEffect,
@@ -443,21 +443,21 @@ namespace EffectData
 		return definitions;
 	}
 
-	inline const ly::List<const sas::GameplayEffectDefinition*>&
+	inline const vega::List<const sas::GameplayEffectDefinition*>&
 	GetShippedGameplayEffectDefinitions()
 	{
-		if (ly::content::EffectContentCatalog::IsLoaded())
+		if (vega::content::EffectContentCatalog::IsLoaded())
 		{
-			return ly::content::EffectContentCatalog::GetDefinitions();
+			return vega::content::EffectContentCatalog::GetDefinitions();
 		}
 		return GetBuiltinGameplayEffectDefinitions();
 	}
 
 	inline const sas::GameplayEffectDefinition* FindGameplayEffectDefinition(const std::string& effectId)
 	{
-		if (ly::content::EffectContentCatalog::IsLoaded())
+		if (vega::content::EffectContentCatalog::IsLoaded())
 		{
-			return ly::content::EffectContentCatalog::FindById(effectId);
+			return vega::content::EffectContentCatalog::FindById(effectId);
 		}
 		for (const sas::GameplayEffectDefinition* definition :
 			GetBuiltinGameplayEffectDefinitions())

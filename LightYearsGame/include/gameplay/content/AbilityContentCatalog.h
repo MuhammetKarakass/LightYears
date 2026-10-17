@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	// Existing behavior validators resolve settings through the content catalog.
 	// This thread-local, stack-scoped view lets them inspect unsaved candidates

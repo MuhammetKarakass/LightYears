@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class SpaceShip;
 

@@ -33,7 +33,7 @@ namespace rare_owner_burst_e2e
 		constexpr const char* kRejectId = "Module.Defense.RareOwnerBurstRejectFixture.Rare";
 
 		// Test-only definitions parsed from fixture JSON. They never enter shipped content.
-		ly::List<ly::ModuleDefinition> gFixtureDefinitions;
+		vega::List<vega::ModuleDefinition> gFixtureDefinitions;
 
 		const ModuleDefinition* FixtureLookup(const sas::ContentId& id)
 		{
@@ -405,7 +405,7 @@ namespace rare_owner_burst_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_owner_burst_e2e;
 	if (argc != 2) return 2;
 	Report report;

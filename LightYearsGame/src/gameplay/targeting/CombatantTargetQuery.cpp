@@ -11,7 +11,7 @@
 #include <cmath>
 #include <limits>
 
-	namespace ly::targeting
+	namespace vega::targeting
 {
 	List<shared_ptr<Actor>> FindOpposingCombatants(
 		World& world,

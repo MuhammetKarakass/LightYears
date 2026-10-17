@@ -3,7 +3,7 @@
 #include "presentation/hud/ability/AbilityBarView.h"
 #include "widget/GameHUD.h"
 
-namespace ly
+namespace vega
 {
 	AbilityBarHUDController::AbilityBarHUDController(weak_ptr<GameHUD> gameHUD) : mGameHUD{ gameHUD }
 	{

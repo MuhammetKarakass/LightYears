@@ -3,15 +3,15 @@ type: class
 status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 source_files:
-  - LightYearsEngine/include/framework/Application.h
-  - LightYearsEngine/src/framework/Application.cpp
+  - VegaEngine/include/framework/Application.h
+  - VegaEngine/src/framework/Application.cpp
   - LightYearsGame/src/gameFramework/GameApplication.cpp
 symbols:
-  - ly::Application
-  - ly::Application::Run
-  - ly::Application::TickInternal
-  - ly::Application::LoadWorld
-  - ly::Application::ShutdownApplication
+  - vega::Application
+  - vega::Application::Run
+  - vega::Application::TickInternal
+  - vega::Application::LoadWorld
+  - vega::Application::ShutdownApplication
 related:
   - "[[Game Loop]]"
   - "[[Application Startup Flow]]"
@@ -20,7 +20,7 @@ related:
 
 # Application
 
-`ly::Application`, SFML window’unu, ana loop’u, current/pending World sahipliğini ve process-level servis sırasını yöneten merkezi runtime sınıfıdır. Somut `ly::GameApplication`, başlangıç content’ini kaydeder ve ilk world’ü ister.
+`vega::Application`, SFML window’unu, ana loop’u, current/pending World sahipliğini ve process-level servis sırasını yöneten merkezi runtime sınıfıdır. Somut `vega::GameApplication`, başlangıç content’ini kaydeder ve ilk world’ü ister.
 
 ## Temel ilişkiler
 
@@ -31,8 +31,8 @@ related:
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/Application.h`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/include/framework/Application.h`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: sınıf alanları  
 Görevi: Window, quit state ve World sahipliğini göstermek.
 
@@ -50,8 +50,8 @@ shared_ptr<World> mCurrentWorld;
 shared_ptr<World> mPendingWorld;
 ```
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `Run`  
 Görevi: Update sonrası quit kontrolünü ve render geçişini göstermek; event döngüsü bu alıntının dışındadır.
 
@@ -66,8 +66,8 @@ if (mQuitRequested)
 RenderInternal();
 ```
 
-Dosya: `LightYearsEngine/include/framework/Application.h`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/include/framework/Application.h`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `LoadWorld`  
 Görevi: World değişimini hemen uygulamak yerine pending state’e almak.
 
@@ -77,8 +77,8 @@ mPendingWorld = newWorld;
 return newWorld;
 ```
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `ShutdownApplication`  
 Görevi: Runtime servislerini ve world’leri normal kapanışta bırakmak.
 
@@ -115,7 +115,7 @@ SFML window yaşam döngüsü, platform event’leri ve normal/exception kapanı
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/include/framework/Application.h`
-2. `LightYearsEngine/src/framework/Application.cpp`
+1. `VegaEngine/include/framework/Application.h`
+2. `VegaEngine/src/framework/Application.cpp`
 3. `LightYearsGame/include/gameFramework/GameApplication.h`
 4. `LightYearsGame/src/gameFramework/GameApplication.cpp`

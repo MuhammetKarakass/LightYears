@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace ly
+namespace vega
 {
 	class EmberDroneActor;
 

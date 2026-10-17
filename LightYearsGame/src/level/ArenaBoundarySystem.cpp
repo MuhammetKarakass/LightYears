@@ -2,7 +2,7 @@
 #include "framework/Actor.h"
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	ArenaBoundarySystem::ArenaBoundarySystem()
 		: mArenaDefinition{},

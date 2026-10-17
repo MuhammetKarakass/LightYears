@@ -12,26 +12,26 @@ namespace AbilityData::HullShock
 		inline static constexpr char Basic[] = "Ability.Offense.HullShock.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::HullShock };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Offense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::HullShock };
 
 	struct State
 	{
-		inline static const ly::GameplayTag Focusing{
-			ly::GameplayTags::State::Ability::HullShock::Focusing
+		inline static const vega::GameplayTag Focusing{
+			vega::GameplayTags::State::Ability::HullShock::Focusing
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::HullShock::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::HullShock::Started
 		};
-		inline static const ly::GameplayTag Discharged{
-			ly::GameplayTags::Event::Ability::HullShock::Discharged
+		inline static const vega::GameplayTag Discharged{
+			vega::GameplayTags::Event::Ability::HullShock::Discharged
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::HullShock::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::HullShock::Ended
 		};
 	};
 
@@ -39,8 +39,8 @@ namespace AbilityData::HullShock
 	{
 		// Radius and damage are shared combat concepts; the ability aliases them
 		// instead of creating duplicate Common.* attribute IDs.
-		inline static const sas::AttributeId Radius = ly::CommonAttributeIds::Radius;
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId Radius = vega::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
 		inline static const sas::AttributeId FullRadiusDuration{
 			"Ability.Offense.HullShock.FullRadiusDuration"
 		};

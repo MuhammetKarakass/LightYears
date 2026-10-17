@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	bool ProjectileRelayLineage::HasVisited(std::uint64_t relayId) const
 	{

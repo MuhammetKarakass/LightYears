@@ -12,10 +12,10 @@ source_files:
   - LightYearsGame/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
   - LightYearsGame/src/gameplay/progression/ShipProgression.cpp
 symbols:
-  - ly::AbilityActionAttributeResolver::ResolveAttributes
-  - ly::GameAbility::RebuildDefinitionForLevel
-  - ly::PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured
-  - ly::ShipProgression::RebuildLevelModifiers
+  - vega::AbilityActionAttributeResolver::ResolveAttributes
+  - vega::GameAbility::RebuildDefinitionForLevel
+  - vega::PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured
+  - vega::ShipProgression::RebuildLevelModifiers
 related:
   - "[[Balance Atlas]]"
   - "[[Ability Skill Progression System]]"

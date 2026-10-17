@@ -4,7 +4,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Frozen Throng owns one typed profile for the Husk projectile. The actor
 	// consumes this small presentation contract and remains independent from a

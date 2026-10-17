@@ -15,12 +15,12 @@ source_files:
   - LightYearsGame/src/gameplay/damage/DamageTypeSystem.cpp
   - LightYearsGame/src/spaceShip/SpaceShip.cpp
 symbols:
-  - ly::ApplyCombatDamage
-  - ly::DamageContext
-  - ly::DamagePayload
-  - ly::CombatRuntime::ProcessIncomingDamage
-  - ly::CombatRuntime::NotifyDamageResolved
-  - ly::DamageTypeSystem::BuildPayload
+  - vega::ApplyCombatDamage
+  - vega::DamageContext
+  - vega::DamagePayload
+  - vega::CombatRuntime::ProcessIncomingDamage
+  - vega::CombatRuntime::NotifyDamageResolved
+  - vega::DamageTypeSystem::BuildPayload
 related:
   - "[[CombatRuntime]]"
   - "[[Damage and Shield Resolution Flow]]"

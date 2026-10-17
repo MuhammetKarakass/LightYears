@@ -16,8 +16,8 @@ Counts include all physical lines, including includes and blank lines.
 | `VegaScript/src/ScriptComponent.cpp` | 1157 | 398 | Component lifecycle, callbacks, reload, properties, errors, reflection and serialization registration |
 | `VegaEditor/src/EditorCommands.cpp` | 1043 | 150 | Command history, compound commands and pause command |
 | `VegaEditor/src/EditorPanels.cpp` | 899 | 44 | Stats panel |
-| `LightYearsEngine/src/framework/World.cpp` | 926 | 355 | World construction/destruction, actor lifecycle/tick, simulation time, stages and HUD event dispatch |
-| `LightYearsEngine/src/framework/Actor.cpp` | 470 | 333 | Actor/component lifecycle, rendering, collision forwarding and reflection |
+| `VegaEngine/src/framework/World.cpp` | 926 | 355 | World construction/destruction, actor lifecycle/tick, simulation time, stages and HUD event dispatch |
+| `VegaEngine/src/framework/Actor.cpp` | 470 | 333 | Actor/component lifecycle, rendering, collision forwarding and reflection |
 
 ## New source files and private headers
 
@@ -42,11 +42,11 @@ no public headers were added.
 | `VegaEditor/src/EditorInspectorPanel.cpp` | 461 | Inspector panel and its property drawing helpers |
 | `VegaEditor/src/EditorViewportPanel.cpp` | 163 | Viewport panel and actor picking |
 | `VegaEditor/src/EditorExportDialog.cpp` | 76 | Export dialog |
-| `LightYearsEngine/src/framework/WorldSpatialQueries.cpp` | 318 | Spatial index maintenance, bounds queries and collision-layer lookup |
-| `LightYearsEngine/src/framework/WorldRendering.cpp` | 142 | Render culling, layer submission, pipeline composition and HUD rendering |
-| `LightYearsEngine/src/framework/WorldCamera.cpp` | 146 | Camera controls, viewport mapping and input focus |
-| `LightYearsEngine/src/framework/WorldInternal.h` | 47 | Shared bounds intersection and slow-actor profiling helpers |
-| `LightYearsEngine/src/framework/ActorTransform.cpp` | 151 | Actor transforms, attachment hierarchy and transform propagation |
+| `VegaEngine/src/framework/WorldSpatialQueries.cpp` | 318 | Spatial index maintenance, bounds queries and collision-layer lookup |
+| `VegaEngine/src/framework/WorldRendering.cpp` | 142 | Render culling, layer submission, pipeline composition and HUD rendering |
+| `VegaEngine/src/framework/WorldCamera.cpp` | 146 | Camera controls, viewport mapping and input focus |
+| `VegaEngine/src/framework/WorldInternal.h` | 47 | Shared bounds intersection and slow-actor profiling helpers |
+| `VegaEngine/src/framework/ActorTransform.cpp` | 151 | Actor transforms, attachment hierarchy and transform propagation |
 
 ## Actor decision and review
 
@@ -71,7 +71,7 @@ EditorCommands.cpp directly. No test logic was changed.
 
 | Build list | Before | After |
 | --- | ---: | ---: |
-| `LightYearsEngine/CMakeLists.txt` | 328 | 332 |
+| `VegaEngine/CMakeLists.txt` | 328 | 332 |
 | `VegaEditor/CMakeLists.txt` | 394 | 408 |
 | `VegaScript/CMakeLists.txt` | 55 | 59 |
 

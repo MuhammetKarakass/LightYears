@@ -1,7 +1,7 @@
 #include "gameFramework/GameApplication.h"
 #include "gameFramework/LightYearsGameModule.h"
 
-namespace ly
+namespace vega
 {
 	GameApplication::GameApplication(bool editor)
 		: Application{ GameProjectWindowSize(editor), 64, "LightYears", sf::Style::Close | sf::Style::Titlebar },

@@ -8,8 +8,8 @@ subtitle alignment. Engine/editor code remains independent of LightYearsGame.
 ## API and persistence
 
 ```cpp
-ly::ActorRef GetTarget() const { return mTarget; }
-void SetTarget(const ly::ActorRef& value) { mTarget = value; }
+vega::ActorRef GetTarget() const { return mTarget; }
+void SetTarget(const vega::ActorRef& value) { mTarget = value; }
 const std::vector<sf::Vector2f>& GetPatrol() const { return mPatrol; }
 void SetPatrol(const std::vector<sf::Vector2f>& value) { mPatrol = value; }
 
@@ -89,14 +89,14 @@ reopening. Its assets are disposable build-tree copies.
 
 Engine:
 
-* `LightYearsEngine/CMakeLists.txt`
-* `LightYearsEngine/include/framework/ActorRef.h`, `src/framework/ActorRef.cpp`
-* `LightYearsEngine/include/framework/World.h`
-* `LightYearsEngine/include/framework/reflection/Reflection.h`, `ReflectionMacros.h`
-* `LightYearsEngine/src/framework/reflection/Reflection.cpp`
-* `LightYearsEngine/include/framework/scene/Scene.h`, `PrefabLibrary.h`
-* `LightYearsEngine/src/framework/scene/Scene.cpp`, `PrefabLibrary.cpp`
-* `LightYearsEngine/tests/ReflectionRegistryGoldenTests.cpp`, `reflection-registry.golden.json`
+* `VegaEngine/CMakeLists.txt`
+* `VegaEngine/include/framework/ActorRef.h`, `src/framework/ActorRef.cpp`
+* `VegaEngine/include/framework/World.h`
+* `VegaEngine/include/framework/reflection/Reflection.h`, `ReflectionMacros.h`
+* `VegaEngine/src/framework/reflection/Reflection.cpp`
+* `VegaEngine/include/framework/scene/Scene.h`, `PrefabLibrary.h`
+* `VegaEngine/src/framework/scene/Scene.cpp`, `PrefabLibrary.cpp`
+* `VegaEngine/tests/ReflectionRegistryGoldenTests.cpp`, `reflection-registry.golden.json`
 
 Scripting:
 

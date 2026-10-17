@@ -6,7 +6,7 @@
 #include "framework/Core.h"
 #include "gameplay/enemy/EnemySpawnContext.h"
 
-namespace ly
+namespace vega
 {
 	class EnemyActor;
 	class World;

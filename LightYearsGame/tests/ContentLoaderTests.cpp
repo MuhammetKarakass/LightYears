@@ -66,7 +66,7 @@
 #include <stdexcept>
 #include <variant>
 
-namespace ly
+namespace vega
 {
 	weak_ptr<Reward> CreateRewardHealth(World*) { return {}; }
 	weak_ptr<Reward> CreateRewardLife(World*) { return {}; }
@@ -91,7 +91,7 @@ namespace
 	}
 
 	const PrimaryWeaponDefinition* FindWeapon(
-		const ly::List<PrimaryWeaponDefinition>& definitions,
+		const vega::List<PrimaryWeaponDefinition>& definitions,
 		const char* weaponId
 	)
 	{
@@ -172,7 +172,7 @@ namespace
 
 	int ValidateShippedPlayerRoster(
 		const std::filesystem::path& shipPath,
-		const ly::content::ShipLoader::Result& loadedShips
+		const vega::content::ShipLoader::Result& loadedShips
 	)
 	{
 		const std::array<ExpectedPlayerShip, 6> expectedShips{{
@@ -223,12 +223,12 @@ namespace
 			return Fail("Ship JSON must contain six player ships and three enemy ships") ? 0 : 1;
 		}
 
-		ly::List<std::string> expectedPlayerShipIds;
+		vega::List<std::string> expectedPlayerShipIds;
 		for (const ExpectedPlayerShip& expected : expectedShips)
 		{
 			expectedPlayerShipIds.push_back(expected.id);
 		}
-		if (ly::content::ShipContentCatalog::GetPlayerShipIds() != expectedPlayerShipIds)
+		if (vega::content::ShipContentCatalog::GetPlayerShipIds() != expectedPlayerShipIds)
 		{
 			return Fail("Player ship catalog IDs do not match the six-ship roster order") ? 0 : 1;
 		}
@@ -273,11 +273,11 @@ namespace
 		for (std::size_t index = 0; index < expectedShips.size(); ++index)
 		{
 			const ExpectedPlayerShip& expected = expectedShips[index];
-			const ly::content::ShipLoader::LoadedDefinition& loaded = loadedShips.definitions[index];
+			const vega::content::ShipLoader::LoadedDefinition& loaded = loadedShips.definitions[index];
 			const ShipDefinition& ship = loaded.definition;
 			if (loaded.id != expected.id || ship.texturePath != expected.texturePath ||
 				ship.primaryWeaponId != expected.primaryWeaponId ||
-				!ly::content::WeaponContentCatalog::FindById(expected.primaryWeaponId) ||
+				!vega::content::WeaponContentCatalog::FindById(expected.primaryWeaponId) ||
 				!NearlyEqual(ship.health, expected.health) ||
 				!NearlyEqual(ship.speed.x, 350.f) || !NearlyEqual(ship.speed.y, 350.f) ||
 				!NearlyEqual(ship.collisionDamage, 25.f) || ship.scoreAmt != 0u ||
@@ -330,18 +330,18 @@ namespace
 			}
 
 			const std::array<ExpectedAttributeValue, 4> expectedOwnerAttributes{{
-				{ ly::OwnerAttributeIds::AttackPower, expected.ownerAttributes.attackPower },
-				{ ly::OwnerAttributeIds::Armor, expected.ownerAttributes.armor },
-				{ ly::OwnerAttributeIds::Luck, expected.ownerAttributes.luck },
-				{ ly::OwnerAttributeIds::AttackSpeed, expected.ownerAttributes.attackSpeed }
+				{ vega::OwnerAttributeIds::AttackPower, expected.ownerAttributes.attackPower },
+				{ vega::OwnerAttributeIds::Armor, expected.ownerAttributes.armor },
+				{ vega::OwnerAttributeIds::Luck, expected.ownerAttributes.luck },
+				{ vega::OwnerAttributeIds::AttackSpeed, expected.ownerAttributes.attackSpeed }
 			}};
 			const std::array<ExpectedAttributeValue, 6> expectedGrowth{{
-				{ ly::OwnerAttributeIds::MaxHealth, expected.growth.maxHealth },
-				{ ly::OwnerAttributeIds::AttackPower, expected.growth.attackPower },
-				{ ly::OwnerAttributeIds::EnergyPower, expected.growth.energyPower },
-				{ ly::OwnerAttributeIds::Armor, expected.growth.armor },
-				{ ly::OwnerAttributeIds::Luck, expected.growth.luck },
-				{ ly::OwnerAttributeIds::AttackSpeed, expected.growth.attackSpeed }
+				{ vega::OwnerAttributeIds::MaxHealth, expected.growth.maxHealth },
+				{ vega::OwnerAttributeIds::AttackPower, expected.growth.attackPower },
+				{ vega::OwnerAttributeIds::EnergyPower, expected.growth.energyPower },
+				{ vega::OwnerAttributeIds::Armor, expected.growth.armor },
+				{ vega::OwnerAttributeIds::Luck, expected.growth.luck },
+				{ vega::OwnerAttributeIds::AttackSpeed, expected.growth.attackSpeed }
 			}};
 			if (!entriesMatch(ship.baseOwnerAttributes, expectedOwnerAttributes,
 				[](const OwnerAttributeBaseEntry& entry) { return entry.baseValue; }) ||
@@ -360,8 +360,8 @@ namespace
 			}
 		}
 
-		const ly::JsonDocumentLoader::Result shipDocument =
-			ly::JsonDocumentLoader::LoadFromFile(shipPath);
+		const vega::JsonDocumentLoader::Result shipDocument =
+			vega::JsonDocumentLoader::LoadFromFile(shipPath);
 		if (!shipDocument.Succeeded())
 		{
 			return Fail("Ship JSON could not be parsed for removed-affinity checks") ? 0 : 1;
@@ -377,7 +377,7 @@ namespace
 
 		// Engine light offsets: the five new hulls place theirs from JSON; Fighter
 		// keeps the presentation base's mounts (this fixture's base has none).
-		const auto mountsAt = [](const ly::List<EngineMount>& mounts, float x, float y)
+		const auto mountsAt = [](const vega::List<EngineMount>& mounts, float x, float y)
 		{
 			return mounts.size() == 2 &&
 				NearlyEqual(mounts[0].offset.x, -x) && NearlyEqual(mounts[0].offset.y, y) &&
@@ -411,8 +411,8 @@ namespace
 				std::ofstream file{ badMountsPath, std::ios::trunc };
 				file << badShips;
 			}
-			const ly::content::ShipLoader::Result badResult =
-				ly::content::ShipLoader::LoadFromFile(badMountsPath, ShipData::Ship_Player_Fighter);
+			const vega::content::ShipLoader::Result badResult =
+				vega::content::ShipLoader::LoadFromFile(badMountsPath, ShipData::Ship_Player_Fighter);
 			std::error_code removeError;
 			std::filesystem::remove(badMountsPath, removeError);
 			if (badResult.Succeeded() || badResult.error.find("engineMounts must be an array") == std::string::npos)
@@ -433,16 +433,16 @@ namespace
 			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 			"LightYearsGame/assets/content/data/damage_status_balance.json";
 		std::string failureReason;
-		if (!ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+		if (!vega::content::DamageStatusBalanceCatalog::LoadFromFile(
 			balancePath,
 			&failureReason
-		) || !ly::content::DamageStatusBalanceCatalog::IsLoaded())
+		) || !vega::content::DamageStatusBalanceCatalog::IsLoaded())
 		{
 			return Fail("Damage status balance JSON did not load") ? 0 : 1;
 		}
 
-		const ly::DamageStatusBalance& balance =
-			ly::content::DamageStatusBalanceCatalog::Get();
+		const vega::DamageStatusBalance& balance =
+			vega::content::DamageStatusBalanceCatalog::Get();
 		if (!NearlyEqual(balance.energyShieldDamageMultiplier, 1.50f) ||
 			balance.cryo.maxStacks != 4 ||
 			!NearlyEqual(balance.cryo.duration, 6.f) ||
@@ -469,7 +469,7 @@ namespace
 		}
 		failureReason.clear();
 		const bool invalidLoaded =
-			ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+			vega::content::DamageStatusBalanceCatalog::LoadFromFile(
 				invalidPath,
 				&failureReason
 			);
@@ -477,14 +477,14 @@ namespace
 		bool invalidGetRejected = false;
 		try
 		{
-			ly::content::DamageStatusBalanceCatalog::Get();
+			vega::content::DamageStatusBalanceCatalog::Get();
 		}
 		catch (const std::logic_error&)
 		{
 			invalidGetRejected = true;
 		}
 		if (invalidLoaded || failureReason.empty() ||
-			ly::content::DamageStatusBalanceCatalog::IsLoaded() || !invalidGetRejected)
+			vega::content::DamageStatusBalanceCatalog::IsLoaded() || !invalidGetRejected)
 		{
 			return Fail("Invalid damage status balance JSON did not fail closed") ? 0 : 1;
 		}
@@ -495,32 +495,32 @@ namespace
 		std::filesystem::remove(missingPath);
 		failureReason.clear();
 		const bool missingLoaded =
-			ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+			vega::content::DamageStatusBalanceCatalog::LoadFromFile(
 				missingPath,
 				&failureReason
 			);
 		bool missingGetRejected = false;
 		try
 		{
-			ly::content::DamageStatusBalanceCatalog::Get();
+			vega::content::DamageStatusBalanceCatalog::Get();
 		}
 		catch (const std::logic_error&)
 		{
 			missingGetRejected = true;
 		}
 		if (missingLoaded || failureReason.empty() ||
-			ly::content::DamageStatusBalanceCatalog::IsLoaded() || !missingGetRejected)
+			vega::content::DamageStatusBalanceCatalog::IsLoaded() || !missingGetRejected)
 		{
 			return Fail("Missing damage status balance JSON did not fail closed") ? 0 : 1;
 		}
 
 		failureReason.clear();
-		if (!ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+		if (!vega::content::DamageStatusBalanceCatalog::LoadFromFile(
 			balancePath,
 			&failureReason
-		) || !ly::content::DamageStatusBalanceCatalog::IsLoaded() ||
+		) || !vega::content::DamageStatusBalanceCatalog::IsLoaded() ||
 			!NearlyEqual(
-				ly::content::DamageStatusBalanceCatalog::Get().energyShieldDamageMultiplier,
+				vega::content::DamageStatusBalanceCatalog::Get().energyShieldDamageMultiplier,
 				1.50f
 			))
 		{
@@ -601,20 +601,20 @@ namespace
 			abilityPath,
 			[](const std::filesystem::path& path, std::string* error)
 			{
-				return ly::content::AbilityContentCatalog::LoadFromFile(
+				return vega::content::AbilityContentCatalog::LoadFromFile(
 					path,
 					AbilityData::GetBuiltinShippedAbilityDefinitions(),
 					AbilityData::GetBuiltinAbilityActorDefinitions(),
 					error
 				);
 			},
-			[] { return ly::content::AbilityContentCatalog::IsLoaded(); },
+			[] { return vega::content::AbilityContentCatalog::IsLoaded(); },
 			[&]
 			{
-				return ly::content::AbilityContentCatalog::FindById(abilityId) == nullptr &&
-					ly::content::AbilityContentCatalog::GetDefinitions().empty();
+				return vega::content::AbilityContentCatalog::FindById(abilityId) == nullptr &&
+					vega::content::AbilityContentCatalog::GetDefinitions().empty();
 			},
-			[&] { return ly::content::AbilityContentCatalog::FindById(abilityId) != nullptr; }
+			[&] { return vega::content::AbilityContentCatalog::FindById(abilityId) != nullptr; }
 		)) return 1;
 
 		const std::string effectId = "Effect.Barrier.Basic";
@@ -623,19 +623,19 @@ namespace
 			effectPath,
 			[](const std::filesystem::path& path, std::string* error)
 			{
-				return ly::content::EffectContentCatalog::LoadFromFile(
+				return vega::content::EffectContentCatalog::LoadFromFile(
 					path,
 					EffectData::GetBuiltinGameplayEffectDefinitions(),
 					error
 				);
 			},
-			[] { return ly::content::EffectContentCatalog::IsLoaded(); },
+			[] { return vega::content::EffectContentCatalog::IsLoaded(); },
 			[&]
 			{
-				return ly::content::EffectContentCatalog::FindById(effectId) == nullptr &&
-					ly::content::EffectContentCatalog::GetDefinitions().empty();
+				return vega::content::EffectContentCatalog::FindById(effectId) == nullptr &&
+					vega::content::EffectContentCatalog::GetDefinitions().empty();
 			},
-			[&] { return ly::content::EffectContentCatalog::FindById(effectId) != nullptr; }
+			[&] { return vega::content::EffectContentCatalog::FindById(effectId) != nullptr; }
 		)) return 1;
 
 		const std::string weaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
@@ -644,16 +644,16 @@ namespace
 			weaponPath,
 			[](const std::filesystem::path& path, std::string* error)
 			{
-				return ly::content::WeaponContentCatalog::LoadFromFile(path, error);
+				return vega::content::WeaponContentCatalog::LoadFromFile(path, error);
 			},
-			[] { return ly::content::WeaponContentCatalog::IsLoaded(); },
+			[] { return vega::content::WeaponContentCatalog::IsLoaded(); },
 			[&]
 			{
-				return ly::content::WeaponContentCatalog::FindById(weaponId) == nullptr &&
-					!ly::content::WeaponContentCatalog::ResolveAuthoredAttributeAtLevel(
-						weaponId, 1, ly::CommonAttributeIds::Damage).has_value();
+				return vega::content::WeaponContentCatalog::FindById(weaponId) == nullptr &&
+					!vega::content::WeaponContentCatalog::ResolveAuthoredAttributeAtLevel(
+						weaponId, 1, vega::CommonAttributeIds::Damage).has_value();
 			},
-			[&] { return ly::content::WeaponContentCatalog::FindById(weaponId) != nullptr; }
+			[&] { return vega::content::WeaponContentCatalog::FindById(weaponId) != nullptr; }
 		)) return 1;
 
 		const std::string shipId = "Ship.Player.Fighter.Basic";
@@ -662,11 +662,11 @@ namespace
 			shipPath,
 			[](const std::filesystem::path& path, std::string* error)
 			{
-				return ly::content::ShipContentCatalog::LoadFromFile(path, error);
+				return vega::content::ShipContentCatalog::LoadFromFile(path, error);
 			},
-			[] { return ly::content::ShipContentCatalog::IsLoaded(); },
-			[&] { return ly::content::ShipContentCatalog::FindById(shipId) == nullptr; },
-			[&] { return ly::content::ShipContentCatalog::FindById(shipId) != nullptr; }
+			[] { return vega::content::ShipContentCatalog::IsLoaded(); },
+			[&] { return vega::content::ShipContentCatalog::FindById(shipId) == nullptr; },
+			[&] { return vega::content::ShipContentCatalog::FindById(shipId) != nullptr; }
 		)) return 1;
 
 		std::cout << "[PASS] Failed catalog reload content tests passed successfully\n";
@@ -688,14 +688,14 @@ namespace
 			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 			"LightYearsGame/assets/content/data/ships.json";
 
-		if (!ly::content::WeaponContentCatalog::IsLoaded())
+		if (!vega::content::WeaponContentCatalog::IsLoaded())
 		{
-			ly::content::WeaponContentCatalog::LoadFromFile(weaponPath);
+			vega::content::WeaponContentCatalog::LoadFromFile(weaponPath);
 		}
-		if (!ly::content::AbilityContentCatalog::IsLoaded())
+		if (!vega::content::AbilityContentCatalog::IsLoaded())
 		{
 			std::string abilityLoadErr;
-			if (!ly::content::AbilityContentCatalog::LoadFromFile(
+			if (!vega::content::AbilityContentCatalog::LoadFromFile(
 				abilitiesPath,
 				AbilityData::GetBuiltinShippedAbilityDefinitions(),
 				AbilityData::GetBuiltinAbilityActorDefinitions(),
@@ -705,8 +705,8 @@ namespace
 			}
 		}
 
-		const ly::content::EnemyCombatProfileLoader::Result loadedEnemyProfiles =
-			ly::content::EnemyCombatProfileLoader::LoadFromFile(enemyProfilePath);
+		const vega::content::EnemyCombatProfileLoader::Result loadedEnemyProfiles =
+			vega::content::EnemyCombatProfileLoader::LoadFromFile(enemyProfilePath);
 		if (!loadedEnemyProfiles.Succeeded())
 		{
 			return Fail(loadedEnemyProfiles.error.c_str()) ? 0 : 1;
@@ -717,17 +717,17 @@ namespace
 		}
 
 		std::string enemyCatalogError;
-		if (!ly::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath, &enemyCatalogError))
+		if (!vega::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath, &enemyCatalogError))
 		{
 			return Fail(enemyCatalogError.c_str()) ? 0 : 1;
 		}
 
-	const ly::EnemyCombatProfile* vanguardProfile =
-			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.ApproachGunner.Basic");
-		const ly::EnemyCombatProfile* twinBladeProfile =
-			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.StrafeSkirmisher.Basic");
-		const ly::EnemyCombatProfile* hexagonProfile =
-			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.RangeKeeper.Basic");
+	const vega::EnemyCombatProfile* vanguardProfile =
+			vega::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.ApproachGunner.Basic");
+		const vega::EnemyCombatProfile* twinBladeProfile =
+			vega::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.StrafeSkirmisher.Basic");
+		const vega::EnemyCombatProfile* hexagonProfile =
+			vega::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.RangeKeeper.Basic");
 
 		if (!vanguardProfile || !twinBladeProfile || !hexagonProfile)
 		{
@@ -735,7 +735,7 @@ namespace
 		}
 
 		if (vanguardProfile->weapons.size() != 1 || vanguardProfile->weapons.front().weaponId != "Weapon.Projectile.EnemyVanguardPulse.Basic" ||
-			vanguardProfile->powerScalingPolicy != ly::EnemyPowerScalingPolicy::Disabled)
+			vanguardProfile->powerScalingPolicy != vega::EnemyPowerScalingPolicy::Disabled)
 		{
 			return Fail("Vanguard enemy combat profile has unexpected weapon or scaling policy") ? 0 : 1;
 		}
@@ -753,8 +753,8 @@ namespace
 	  ]
 	})";
 		}
-		const ly::content::EnemyCombatProfileLoader::Result dupLoadResult =
-			ly::content::EnemyCombatProfileLoader::LoadFromFile(duplicateProfilePath);
+		const vega::content::EnemyCombatProfileLoader::Result dupLoadResult =
+			vega::content::EnemyCombatProfileLoader::LoadFromFile(duplicateProfilePath);
 		std::filesystem::remove(duplicateProfilePath);
 		if (dupLoadResult.Succeeded() || dupLoadResult.error.find("Duplicate") == std::string::npos)
 		{
@@ -775,7 +775,7 @@ namespace
 		}
 		std::string missingWeaponError;
 		const bool missingWeaponLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(missingWeaponPath, &missingWeaponError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(missingWeaponPath, &missingWeaponError);
 		std::filesystem::remove(missingWeaponPath);
 		if (missingWeaponLoaded || missingWeaponError.find("not found") == std::string::npos)
 		{
@@ -800,7 +800,7 @@ namespace
 		}
 		std::string missingAbilityError;
 		const bool missingAbilityLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(missingAbilityPath, &missingAbilityError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(missingAbilityPath, &missingAbilityError);
 		std::filesystem::remove(missingAbilityPath);
 		if (missingAbilityLoaded || missingAbilityError.find("not found") == std::string::npos)
 		{
@@ -828,7 +828,7 @@ namespace
 		}
 		std::string dupSlotError;
 		const bool dupSlotLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(dupSlotPath, &dupSlotError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(dupSlotPath, &dupSlotError);
 		std::filesystem::remove(dupSlotPath);
 		if (dupSlotLoaded || dupSlotError.find("slot") == std::string::npos)
 		{
@@ -853,7 +853,7 @@ namespace
 		}
 		std::string disabledScalingError;
 		const bool disabledScalingLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(disabledScalingPath, &disabledScalingError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(disabledScalingPath, &disabledScalingError);
 		std::filesystem::remove(disabledScalingPath);
 		if (disabledScalingLoaded || disabledScalingError.find("scaling") == std::string::npos)
 		{
@@ -878,15 +878,15 @@ namespace
 		}
 		std::string allowedScalingError;
 		const bool allowedScalingLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(allowedScalingPath, &allowedScalingError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(allowedScalingPath, &allowedScalingError);
 		std::filesystem::remove(allowedScalingPath);
 		if (!allowedScalingLoaded)
 		{
 			return Fail(allowedScalingError.c_str()) ? 0 : 1;
 		}
-		const ly::EnemyCombatProfile* allowedProfile =
-			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.Test.Basic");
-		if (!allowedProfile || allowedProfile->powerScalingPolicy != ly::EnemyPowerScalingPolicy::Allowed)
+		const vega::EnemyCombatProfile* allowedProfile =
+			vega::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.Test.Basic");
+		if (!allowedProfile || allowedProfile->powerScalingPolicy != vega::EnemyPowerScalingPolicy::Allowed)
 		{
 			return Fail("Allowed profile policy not preserved") ? 0 : 1;
 		}
@@ -912,7 +912,7 @@ namespace
 		}
 		std::string dupAbilityIdError;
 		const bool dupAbilityIdLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(dupAbilityIdPath, &dupAbilityIdError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(dupAbilityIdPath, &dupAbilityIdError);
 		std::filesystem::remove(dupAbilityIdPath);
 		if (dupAbilityIdLoaded || dupAbilityIdError.find("Duplicate ability ID") == std::string::npos)
 		{
@@ -934,17 +934,17 @@ namespace
 		  ]
 		})";
 		}
-		ly::EnemyCombatProfile invalidEnemyGrowth = *vanguardProfile;
+		vega::EnemyCombatProfile invalidEnemyGrowth = *vanguardProfile;
 		invalidEnemyGrowth.profileId = "EnemyCombat.Test.InvalidGrowth";
-		invalidEnemyGrowth.progression.naturalGrowth.push_back({ ly::OwnerAttributeIds::AttackPower, 1.f });
+		invalidEnemyGrowth.progression.naturalGrowth.push_back({ vega::OwnerAttributeIds::AttackPower, 1.f });
 		std::string invalidGrowthError;
-		if (ly::content::EnemyCombatProfileCatalog::ValidateProfile(invalidEnemyGrowth, &invalidGrowthError) || invalidGrowthError.find("Owner.MaxHealth") == std::string::npos)
+		if (vega::content::EnemyCombatProfileCatalog::ValidateProfile(invalidEnemyGrowth, &invalidGrowthError) || invalidGrowthError.find("Owner.MaxHealth") == std::string::npos)
 		{
 			return Fail("Enemy catalog accepted a non-whitelisted natural growth attribute") ? 0 : 1;
 		}
 		std::string legacyKeyError;
 		const bool legacyKeyLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(legacyKeyPath, &legacyKeyError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(legacyKeyPath, &legacyKeyError);
 		std::filesystem::remove(legacyKeyPath);
 		if (legacyKeyLoaded || legacyKeyError.find("Unknown key 'primaryWeaponId'") == std::string::npos)
 		{
@@ -953,7 +953,7 @@ namespace
 
 		// Catalog validation is generic and must not require a hardcoded roster.
 		std::string shippedValErr;
-		if (!ly::content::EnemyCombatProfileCatalog::ValidateShippedProfiles(&shippedValErr))
+		if (!vega::content::EnemyCombatProfileCatalog::ValidateShippedProfiles(&shippedValErr))
 		{
 			return Fail(("Generic enemy combat profile validation failed: " + shippedValErr).c_str()) ? 0 : 1;
 		}
@@ -979,7 +979,7 @@ namespace
 		}
 		std::string multiAbilityError;
 		const bool multiAbilityLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(multiAbilityPath, &multiAbilityError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(multiAbilityPath, &multiAbilityError);
 		std::filesystem::remove(multiAbilityPath);
 		if (!multiAbilityLoaded)
 		{
@@ -1002,7 +1002,7 @@ namespace
 		}
 		std::string noAttackError;
 		const bool noAttackLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(noAttackPath, &noAttackError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(noAttackPath, &noAttackError);
 		std::filesystem::remove(noAttackPath);
 		if (noAttackLoaded || noAttackError.find("no attack method") == std::string::npos)
 		{
@@ -1026,7 +1026,7 @@ namespace
 		}
 		std::string contactOnlyError;
 		const bool contactOnlyLoaded =
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(contactOnlyPath, &contactOnlyError);
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(contactOnlyPath, &contactOnlyError);
 		std::filesystem::remove(contactOnlyPath);
 		if (!contactOnlyLoaded)
 		{
@@ -1034,29 +1034,29 @@ namespace
 		}
 
 		// Restore original catalog
-		ly::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath);
+		vega::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath);
 
 		// Verify that the restored shipped catalog validates successfully
-		if (!ly::content::EnemyCombatProfileCatalog::ValidateShippedProfiles(&shippedValErr))
+		if (!vega::content::EnemyCombatProfileCatalog::ValidateShippedProfiles(&shippedValErr))
 		{
 			return Fail(("Shipped catalog failed validation after restoration: " + shippedValErr).c_str()) ? 0 : 1;
 		}
 
 		std::string shipCatalogError;
-		if (!ly::content::ShipContentCatalog::LoadFromFile(shipsPath, &shipCatalogError))
+		if (!vega::content::ShipContentCatalog::LoadFromFile(shipsPath, &shipCatalogError))
 		{
 			return Fail(("Ship catalog failed to load: " + shipCatalogError).c_str()) ? 0 : 1;
 		}
 		std::string enemyDefinitionCatalogError;
-		if (!ly::content::EnemyContentCatalog::LoadFromFiles(
+		if (!vega::content::EnemyContentCatalog::LoadFromFiles(
 			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_definitions.json",
 			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_behavior_profiles.json",
 			&enemyDefinitionCatalogError))
 		{
 			return Fail(("Enemy definition catalog failed to load: " + enemyDefinitionCatalogError).c_str()) ? 0 : 1;
 		}
-		if (ly::content::EnemyContentCatalog::GetDefinitions().size() != 3 ||
-			!ly::content::EnemyContentCatalog::FindById(ly::EnemyIds::ApproachGunnerBasic))
+		if (vega::content::EnemyContentCatalog::GetDefinitions().size() != 3 ||
+			!vega::content::EnemyContentCatalog::FindById(vega::EnemyIds::ApproachGunnerBasic))
 		{
 			return Fail("Enemy definition catalog did not resolve the shipped generic enemies") ? 0 : 1;
 		}
@@ -1073,13 +1073,13 @@ namespace
 				std::ofstream behavior{ fixtureBehaviorPath }; behavior << behaviorJson;
 			}
 			std::string fixtureError;
-			const bool combatLoaded = ly::content::EnemyCombatProfileCatalog::LoadFromFile(fixtureCombatPath, &fixtureError);
-			const bool combinedLoaded = combatLoaded && ly::content::EnemyContentCatalog::LoadFromFiles(fixtureDefinitionsPath, fixtureBehaviorPath, &fixtureError);
+			const bool combatLoaded = vega::content::EnemyCombatProfileCatalog::LoadFromFile(fixtureCombatPath, &fixtureError);
+			const bool combinedLoaded = combatLoaded && vega::content::EnemyContentCatalog::LoadFromFiles(fixtureDefinitionsPath, fixtureBehaviorPath, &fixtureError);
 			std::filesystem::remove(fixtureCombatPath);
 			std::filesystem::remove(fixtureDefinitionsPath);
 			std::filesystem::remove(fixtureBehaviorPath);
-			ly::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath);
-			ly::content::EnemyContentCatalog::LoadFromFiles(
+			vega::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath);
+			vega::content::EnemyContentCatalog::LoadFromFiles(
 				std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_definitions.json",
 				std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_behavior_profiles.json");
 			if (combinedLoaded != expected)
@@ -1109,15 +1109,15 @@ namespace
 		if (validateCombinedFixture("coverage_gap", coveredCombat, (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"PrimaryFire","inputMode":"Hold","requiresTarget":true,"minimumRange":400.0,"maximumRange":500.0},{"slot":"Ability1","inputMode":"Hold","requiresTarget":true,"minimumRange":600.0,"maximumRange":700.0}]}]})").c_str(), false, "Combined validation accepted a gap in the movement band") != 0)
 			return 1;
 
-		const ShipDefinition* approachShip = ly::content::ShipContentCatalog::FindById("Ship.Enemy.ApproachGunner.Basic");
-		const ShipDefinition* strafeShip = ly::content::ShipContentCatalog::FindById("Ship.Enemy.StrafeSkirmisher.Basic");
-		const ShipDefinition* rangeShip = ly::content::ShipContentCatalog::FindById("Ship.Enemy.RangeKeeper.Basic");
-		const PrimaryWeaponDefinition* approachWeapon = ly::content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyVanguardPulse.Basic");
-		const PrimaryWeaponDefinition* strafeWeapon = ly::content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyTwinBladeScatter.Basic");
-		const PrimaryWeaponDefinition* rangeWeapon = ly::content::WeaponContentCatalog::FindById("Weapon.Wave.EnemyHexagonCryoPulse.Basic");
-		const ly::EnemyBehaviorProfile* approachBehavior = ly::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.ApproachGunner.Basic");
-		const ly::EnemyBehaviorProfile* strafeBehavior = ly::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.StrafeSkirmisher.Basic");
-		const ly::EnemyBehaviorProfile* rangeBehavior = ly::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.RangeKeeper.Basic");
+		const ShipDefinition* approachShip = vega::content::ShipContentCatalog::FindById("Ship.Enemy.ApproachGunner.Basic");
+		const ShipDefinition* strafeShip = vega::content::ShipContentCatalog::FindById("Ship.Enemy.StrafeSkirmisher.Basic");
+		const ShipDefinition* rangeShip = vega::content::ShipContentCatalog::FindById("Ship.Enemy.RangeKeeper.Basic");
+		const PrimaryWeaponDefinition* approachWeapon = vega::content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyVanguardPulse.Basic");
+		const PrimaryWeaponDefinition* strafeWeapon = vega::content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyTwinBladeScatter.Basic");
+		const PrimaryWeaponDefinition* rangeWeapon = vega::content::WeaponContentCatalog::FindById("Weapon.Wave.EnemyHexagonCryoPulse.Basic");
+		const vega::EnemyBehaviorProfile* approachBehavior = vega::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.ApproachGunner.Basic");
+		const vega::EnemyBehaviorProfile* strafeBehavior = vega::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.StrafeSkirmisher.Basic");
+		const vega::EnemyBehaviorProfile* rangeBehavior = vega::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.RangeKeeper.Basic");
 		auto hasNonZeroOwnerAttribute = [](const ShipDefinition* ship, const sas::AttributeId& attributeId)
 		{
 			return ship && std::any_of(ship->baseOwnerAttributes.begin(), ship->baseOwnerAttributes.end(),
@@ -1126,12 +1126,12 @@ namespace
 		const bool enemyPowerScalingIsDisabled = approachShip && strafeShip && rangeShip &&
 			NearlyEqual(approachShip->energyAttributes.baseEnergyPower, 0.f) && NearlyEqual(strafeShip->energyAttributes.baseEnergyPower, 0.f) &&
 			NearlyEqual(rangeShip->energyAttributes.baseEnergyPower, 0.f) &&
-			!hasNonZeroOwnerAttribute(approachShip, ly::OwnerAttributeIds::AttackPower) &&
-			!hasNonZeroOwnerAttribute(strafeShip, ly::OwnerAttributeIds::AttackPower) &&
-			!hasNonZeroOwnerAttribute(rangeShip, ly::OwnerAttributeIds::AttackPower) &&
-			!hasNonZeroOwnerAttribute(approachShip, ly::OwnerAttributeIds::EnergyPower) &&
-			!hasNonZeroOwnerAttribute(strafeShip, ly::OwnerAttributeIds::EnergyPower) &&
-			!hasNonZeroOwnerAttribute(rangeShip, ly::OwnerAttributeIds::EnergyPower);
+			!hasNonZeroOwnerAttribute(approachShip, vega::OwnerAttributeIds::AttackPower) &&
+			!hasNonZeroOwnerAttribute(strafeShip, vega::OwnerAttributeIds::AttackPower) &&
+			!hasNonZeroOwnerAttribute(rangeShip, vega::OwnerAttributeIds::AttackPower) &&
+			!hasNonZeroOwnerAttribute(approachShip, vega::OwnerAttributeIds::EnergyPower) &&
+			!hasNonZeroOwnerAttribute(strafeShip, vega::OwnerAttributeIds::EnergyPower) &&
+			!hasNonZeroOwnerAttribute(rangeShip, vega::OwnerAttributeIds::EnergyPower);
 		const bool enemyStatsMatchRoles = approachShip && strafeShip && rangeShip &&
 			NearlyEqual(approachShip->health, 60.f) && NearlyEqual(strafeShip->health, 60.f) && NearlyEqual(rangeShip->health, 100.f) &&
 			NearlyEqual(approachShip->speed.x, 0.f) && NearlyEqual(approachShip->speed.y, 0.f) &&
@@ -1151,9 +1151,9 @@ namespace
 			NearlyEqual(rangeShip->movementAttributes.strafeThrust.currentValue, 360.f) &&
 			NearlyEqual(rangeShip->movementAttributes.maxSpeed.currentValue, 460.f);
 		const bool behaviorMatchesRoles = approachBehavior && strafeBehavior && rangeBehavior &&
-			approachBehavior->movementMode == ly::EnemyMovementMode::Approach &&
-			strafeBehavior->movementMode == ly::EnemyMovementMode::Strafe &&
-			rangeBehavior->movementMode == ly::EnemyMovementMode::HoldRange &&
+			approachBehavior->movementMode == vega::EnemyMovementMode::Approach &&
+			strafeBehavior->movementMode == vega::EnemyMovementMode::Strafe &&
+			rangeBehavior->movementMode == vega::EnemyMovementMode::HoldRange &&
 			NearlyEqual(approachBehavior->desiredDistance, 800.f) && NearlyEqual(approachBehavior->minimumDistance, 400.f) &&
 			NearlyEqual(strafeBehavior->minimumDistance, 300.f) && NearlyEqual(strafeBehavior->maximumDistance, 500.f) &&
 			NearlyEqual(rangeBehavior->minimumDistance, 800.f) && NearlyEqual(rangeBehavior->maximumDistance, 1200.f) &&
@@ -1164,30 +1164,30 @@ namespace
 			approachWeapon->weaponType == PrimaryWeaponType::ProjectileStandard &&
 			strafeWeapon->weaponType == PrimaryWeaponType::ProjectileShotgun &&
 			rangeWeapon->weaponType == PrimaryWeaponType::WaveExpanding &&
-			approachWeapon->damageTags == ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } &&
-			strafeWeapon->damageTags == ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic } &&
-			rangeWeapon->damageTags == ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo } &&
-			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 15.f) &&
-			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 8.f) &&
-			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 10.f) &&
-			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 1.8f) &&
-			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 1.2f) &&
-			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 0.9f) &&
-			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1300.f) &&
-			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 600.f) &&
-			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1400.f);
-		const auto hasMatchingRule = [](const ly::EnemyCombatProfile* combat, const ly::EnemyBehaviorProfile* behavior)
+			approachWeapon->damageTags == vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Energy } &&
+			strafeWeapon->damageTags == vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Kinetic } &&
+			rangeWeapon->damageTags == vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Cryo } &&
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, vega::CommonAttributeIds::Damage)->baseValue, 15.f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, vega::CommonAttributeIds::Damage)->baseValue, 8.f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, vega::CommonAttributeIds::Damage)->baseValue, 10.f) &&
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, vega::CommonAttributeIds::FireRate)->baseValue, 1.8f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, vega::CommonAttributeIds::FireRate)->baseValue, 1.2f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, vega::CommonAttributeIds::FireRate)->baseValue, 0.9f) &&
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, vega::CommonAttributeIds::Range)->baseValue, 1300.f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, vega::CommonAttributeIds::Range)->baseValue, 600.f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, vega::CommonAttributeIds::Range)->baseValue, 1400.f);
+		const auto hasMatchingRule = [](const vega::EnemyCombatProfile* combat, const vega::EnemyBehaviorProfile* behavior)
 		{
 			if (!combat || !behavior || combat->weapons.size() + combat->abilities.size() != behavior->slotRules.size()) return false;
-			for (const ly::EnemyWeaponBinding& binding : combat->weapons)
-				if (std::none_of(behavior->slotRules.begin(), behavior->slotRules.end(), [&](const ly::EnemySlotDecisionRule& rule) { return rule.slot == binding.slot; })) return false;
-			for (const ly::EnemyAbilityBinding& binding : combat->abilities)
-				if (std::none_of(behavior->slotRules.begin(), behavior->slotRules.end(), [&](const ly::EnemySlotDecisionRule& rule) { return rule.slot == binding.slot; })) return false;
+			for (const vega::EnemyWeaponBinding& binding : combat->weapons)
+				if (std::none_of(behavior->slotRules.begin(), behavior->slotRules.end(), [&](const vega::EnemySlotDecisionRule& rule) { return rule.slot == binding.slot; })) return false;
+			for (const vega::EnemyAbilityBinding& binding : combat->abilities)
+				if (std::none_of(behavior->slotRules.begin(), behavior->slotRules.end(), [&](const vega::EnemySlotDecisionRule& rule) { return rule.slot == binding.slot; })) return false;
 			return true;
 		};
-		const ly::EnemyCombatProfile* approachCombat = ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.ApproachGunner.Basic");
-		const ly::EnemyCombatProfile* strafeCombat = ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.StrafeSkirmisher.Basic");
-		const ly::EnemyCombatProfile* rangeCombat = ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.RangeKeeper.Basic");
+		const vega::EnemyCombatProfile* approachCombat = vega::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.ApproachGunner.Basic");
+		const vega::EnemyCombatProfile* strafeCombat = vega::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.StrafeSkirmisher.Basic");
+		const vega::EnemyCombatProfile* rangeCombat = vega::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.RangeKeeper.Basic");
 		if (!enemyPowerScalingIsDisabled || !enemyStatsMatchRoles || !behaviorMatchesRoles || !weaponsMatchRoles ||
 			!hasMatchingRule(approachCombat, approachBehavior) || !hasMatchingRule(strafeCombat, strafeBehavior) || !hasMatchingRule(rangeCombat, rangeBehavior))
 		{
@@ -1232,7 +1232,7 @@ namespace
 })";
 		}
 		std::string legacyBehaviorError;
-		const bool legacyBehaviorLoaded = ly::content::EnemyContentCatalog::LoadFromFiles(
+		const bool legacyBehaviorLoaded = vega::content::EnemyContentCatalog::LoadFromFiles(
 			testEnemyDefinitionsPath, testEnemyBehaviorPath, &legacyBehaviorError);
 		if (legacyBehaviorLoaded ||
 			(legacyBehaviorError.find("fireRange") == std::string::npos &&
@@ -1267,7 +1267,7 @@ namespace
 })";
 		}
 		std::string unboundRuleError;
-		const bool unboundRuleLoaded = ly::content::EnemyContentCatalog::LoadFromFiles(
+		const bool unboundRuleLoaded = vega::content::EnemyContentCatalog::LoadFromFiles(
 			testEnemyDefinitionsPath, testEnemyBehaviorPath, &unboundRuleError);
 		std::filesystem::remove(testEnemyDefinitionsPath);
 		std::filesystem::remove(testEnemyBehaviorPath);
@@ -1281,15 +1281,15 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	// The editor's acceptance test shares the production loaders without touching
 	// source assets or replacing process-global runtime content catalogs.
 	if (argc == 3 && std::string{ argv[1] } == "--content-root")
 	{
 		const auto data = std::filesystem::path{ argv[2] } / "content/data";
-		const auto effects = ly::content::EffectLoader::LoadFromFile(data / "effects.json", EffectData::GetBuiltinGameplayEffectDefinitions());
-		const auto abilities = ly::content::AbilityLoader::LoadFromFile(data / "abilities.json", AbilityData::GetBuiltinShippedAbilityDefinitions(), AbilityData::GetBuiltinAbilityActorDefinitions());
-		const auto modules = ly::content::ModuleLoader::LoadFromFile(data / "modules.json");
+		const auto effects = vega::content::EffectLoader::LoadFromFile(data / "effects.json", EffectData::GetBuiltinGameplayEffectDefinitions());
+		const auto abilities = vega::content::AbilityLoader::LoadFromFile(data / "abilities.json", AbilityData::GetBuiltinShippedAbilityDefinitions(), AbilityData::GetBuiltinAbilityActorDefinitions());
+		const auto modules = vega::content::ModuleLoader::LoadFromFile(data / "modules.json");
 		for (const auto& error : { effects.error, abilities.error, modules.error }) if (!error.empty()) return Fail(error.c_str()) ? 0 : 1;
 		bool editedEffect = false, editedAbility = false;
 		for (const auto& effect : effects.definitions) if (effect.id == "Effect.Authoring.Test.Renamed")
@@ -1318,12 +1318,12 @@ int main(int argc, char** argv)
 	const std::filesystem::path abilityPath =
 		std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 		"LightYearsGame/assets/content/data/abilities.json";
-	const ly::List<const ly::GameAbilityDefinition*>& fallbackAbilities =
+	const vega::List<const vega::GameAbilityDefinition*>& fallbackAbilities =
 		AbilityData::GetBuiltinShippedAbilityDefinitions();
-	const ly::List<const ly::AbilityActorDefinition*>& fallbackAbilityActors =
+	const vega::List<const vega::AbilityActorDefinition*>& fallbackAbilityActors =
 		AbilityData::GetBuiltinAbilityActorDefinitions();
-	const ly::content::AbilityLoader::Result loadedAbilities =
-		ly::content::AbilityLoader::LoadFromFile(
+	const vega::content::AbilityLoader::Result loadedAbilities =
+		vega::content::AbilityLoader::LoadFromFile(
 			abilityPath,
 			fallbackAbilities,
 			fallbackAbilityActors
@@ -1346,8 +1346,8 @@ int main(int argc, char** argv)
 		return Fail("Ability actor JSON catalog did not load the expected actor definitions") ? 0 : 1;
 	}
 
-	const ly::content::AbilityLoader::LoadedDefinition* railBurstLoaded = nullptr;
-	for (const ly::content::AbilityLoader::LoadedDefinition& loaded : loadedAbilities.definitions)
+	const vega::content::AbilityLoader::LoadedDefinition* railBurstLoaded = nullptr;
+	for (const vega::content::AbilityLoader::LoadedDefinition& loaded : loadedAbilities.definitions)
 	{
 		if (loaded.id == "Ability.Offense.RailBurst.Basic")
 		{
@@ -1362,7 +1362,7 @@ int main(int argc, char** argv)
 	if (!NearlyEqual(
 			sas::FindAttributeValue(
 				railBurstLoaded->actorDefinitions.front().attributes,
-				ly::CommonAttributeIds::PierceDamageLoss,
+				vega::CommonAttributeIds::PierceDamageLoss,
 				0.f
 			),
 			0.1f) ||
@@ -1380,7 +1380,7 @@ int main(int argc, char** argv)
 	const auto astralSurgeIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.AstralSurge.Basic";
 		}
@@ -1391,14 +1391,14 @@ int main(int argc, char** argv)
 		astralSurgeIt->definition.maxCharges != 1 ||
 		astralSurgeIt->definition.scalingRules.size() != 1 ||
 		astralSurgeIt->definition.scalingRules.front().sourceAttributeId !=
-			ly::OwnerAttributeIds::EnergyPower ||
+			vega::OwnerAttributeIds::EnergyPower ||
 		!NearlyEqual(astralSurgeIt->definition.scalingRules.front().coefficient, 0.6f) ||
 		!astralSurgeIt->definition.ResolveLevelStep(0) ||
 		astralSurgeIt->actorDefinitions.size() != 1 ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				astralSurgeIt->actorDefinitions.front().attributes,
-				ly::AreaAttributeIds::Width,
+				vega::AreaAttributeIds::Width,
 				0.f
 			),
 			280.f
@@ -1406,7 +1406,7 @@ int main(int argc, char** argv)
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				astralSurgeIt->actorDefinitions.front().attributes,
-				ly::CommonAttributeIds::PierceDamageLoss,
+				vega::CommonAttributeIds::PierceDamageLoss,
 				0.f
 			),
 			0.05f
@@ -1418,17 +1418,17 @@ int main(int argc, char** argv)
 	const auto crescentReaverIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.CrescentReaver.Basic";
 		}
 	);
-	const ly::SpawnActorAction* crescentSpawn = nullptr;
+	const vega::SpawnActorAction* crescentSpawn = nullptr;
 	if (crescentReaverIt != loadedAbilities.definitions.end())
 	{
-		for (const ly::AbilityActionSpec& action : crescentReaverIt->definition.actions)
+		for (const vega::AbilityActionSpec& action : crescentReaverIt->definition.actions)
 		{
-			if (const auto* spawn = std::get_if<ly::SpawnActorAction>(&action.action))
+			if (const auto* spawn = std::get_if<vega::SpawnActorAction>(&action.action))
 			{
 				crescentSpawn = spawn;
 				break;
@@ -1438,7 +1438,7 @@ int main(int argc, char** argv)
 	if (crescentReaverIt == loadedAbilities.definitions.end() ||
 		crescentReaverIt->definition.scalingRules.size() != 2 ||
 		crescentReaverIt->definition.damageTags !=
-			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic } ||
+			vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Kinetic } ||
 		!crescentSpawn ||
 		crescentSpawn->spawnPolicy != sas::AbilitySpawnPolicy::OwnerForward ||
 		crescentSpawn->directionPolicy != sas::AbilityDirectionPolicy::MouseWorld ||
@@ -1454,7 +1454,7 @@ int main(int argc, char** argv)
 	const auto energySpearIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Movement.EnergySpear.Basic";
 		}
@@ -1465,15 +1465,15 @@ int main(int argc, char** argv)
 		energySpearIt->definition.attributes.size() != 10 ||
 		!energySpearIt->definition.ResolveLevelStep(0) ||
 		energySpearIt->definition.damageTags !=
-			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } ||
+			vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Energy } ||
 		!sas::FindAttribute(
 			energySpearIt->definition.attributes,
-			ly::CommonAttributeIds::Radius
+			vega::CommonAttributeIds::Radius
 		) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				energySpearIt->definition.attributes,
-				ly::CommonAttributeIds::Range,
+				vega::CommonAttributeIds::Range,
 				0.f
 			),
 			600.f
@@ -1485,7 +1485,7 @@ int main(int argc, char** argv)
 	const auto frostMaelstromIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Utility.FrostMaelstrom.Basic";
 		}
@@ -1495,12 +1495,12 @@ int main(int argc, char** argv)
 		!frostMaelstromIt->definition.ResolveLevelStep(0) ||
 		!NearlyEqual(frostMaelstromIt->definition.duration, 6.f) ||
 		frostMaelstromIt->definition.damageTags !=
-			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo } ||
+			vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Cryo } ||
 		frostMaelstromIt->actorDefinitions.size() != 1 ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				frostMaelstromIt->actorDefinitions.front().attributes,
-				ly::CommonAttributeIds::Duration,
+				vega::CommonAttributeIds::Duration,
 				0.f
 			),
 			6.f
@@ -1574,8 +1574,8 @@ int main(int argc, char** argv)
   ]
 })";
 	}
-	const ly::content::AbilityLoader::Result duplicateAbilities =
-		ly::content::AbilityLoader::LoadFromFile(
+	const vega::content::AbilityLoader::Result duplicateAbilities =
+		vega::content::AbilityLoader::LoadFromFile(
 			duplicateAbilityPath,
 			fallbackAbilities,
 			fallbackAbilityActors
@@ -1603,8 +1603,8 @@ int main(int argc, char** argv)
   }]
 })";
 	}
-	const ly::content::AbilityLoader::Result malformedAbilityId =
-		ly::content::AbilityLoader::LoadFromFile(
+	const vega::content::AbilityLoader::Result malformedAbilityId =
+		vega::content::AbilityLoader::LoadFromFile(
 			malformedAbilityIdPath,
 			fallbackAbilities,
 			fallbackAbilityActors
@@ -1642,8 +1642,8 @@ int main(int argc, char** argv)
   ]
 })";
 	}
-	const ly::content::AbilityLoader::Result abilityVariant =
-		ly::content::AbilityLoader::LoadFromFile(
+	const vega::content::AbilityLoader::Result abilityVariant =
+		vega::content::AbilityLoader::LoadFromFile(
 			abilityVariantPath,
 			fallbackAbilities,
 			fallbackAbilityActors
@@ -1684,8 +1684,8 @@ int main(int argc, char** argv)
   }]
 })";
 	}
-	const ly::content::AbilityLoader::Result abilityScopedAttributes =
-		ly::content::AbilityLoader::LoadFromFile(
+	const vega::content::AbilityLoader::Result abilityScopedAttributes =
+		vega::content::AbilityLoader::LoadFromFile(
 			abilityScopedAttributesPath,
 			fallbackAbilities,
 			fallbackAbilityActors
@@ -1695,7 +1695,7 @@ int main(int argc, char** argv)
 		abilityScopedAttributes.definitions.size() != 1 ||
 		sas::FindAttributeValue(
 			abilityScopedAttributes.definitions.front().definition.attributes,
-			ly::CommonAttributeIds::ProjectileCount
+			vega::CommonAttributeIds::ProjectileCount
 		) != 8.f ||
 		sas::FindAttributeValue(
 			abilityScopedAttributes.definitions.front().definition.attributes,
@@ -1719,8 +1719,8 @@ int main(int argc, char** argv)
   }]
 })";
 	}
-	const ly::content::AbilityLoader::Result missingAbilityNumbers =
-		ly::content::AbilityLoader::LoadFromFile(
+	const vega::content::AbilityLoader::Result missingAbilityNumbers =
+		vega::content::AbilityLoader::LoadFromFile(
 			missingAbilityNumbersPath,
 			fallbackAbilities,
 			fallbackAbilityActors
@@ -1738,7 +1738,7 @@ int main(int argc, char** argv)
 		dash.definition.maxCharges != 1 ||
 		!dash.definition.ResolveLevelStep(0) ||
 		!dash.definition.ResolveLevelStep(30) ||
-		dash.definition.GetMaxLevel() != ly::GameAbilityDefinition::kUnboundedAbilityLevel ||
+		dash.definition.GetMaxLevel() != vega::GameAbilityDefinition::kUnboundedAbilityLevel ||
 		dash.definition.scrapCost.base != 40u ||
 		dash.definition.scrapCost.step != 10u ||
 		dash.definition.GetScrapCostToReachLevel(2) != 40u ||
@@ -1753,7 +1753,7 @@ int main(int argc, char** argv)
 	const auto shieldIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Defense.Shield.Basic";
 		}
@@ -1781,7 +1781,7 @@ int main(int argc, char** argv)
 	const auto sunBeamIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.SunBeam.Strike.Basic";
 		}
@@ -1801,7 +1801,7 @@ int main(int argc, char** argv)
 		bool hasFirstIncrement = false;
 		for (const std::size_t stepIndex : { std::size_t{ 0 }, std::size_t{ 3 }, std::size_t{ 23 }, std::size_t{ 98 } })
 		{
-			const ly::AbilityLevelStep* step = sunBeamIt->definition.ResolveLevelStep(stepIndex);
+			const vega::AbilityLevelStep* step = sunBeamIt->definition.ResolveLevelStep(stepIndex);
 			if (!step)
 			{
 				return Fail("Sun Beam progression does not resolve a step at every level") ? 0 : 1;
@@ -1810,7 +1810,7 @@ int main(int argc, char** argv)
 			bool foundDamage = false;
 			for (const sas::AttributeModifier& modifier : step->attributeModifiers)
 			{
-				if (modifier.attributeId == ly::CommonAttributeIds::Damage &&
+				if (modifier.attributeId == vega::CommonAttributeIds::Damage &&
 					modifier.operation == sas::AttributeModifierOperation::Add)
 				{
 					increment = modifier.magnitude;
@@ -1828,7 +1828,7 @@ int main(int argc, char** argv)
 	const auto rocketIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.Rocket.Basic";
 		}
@@ -1843,7 +1843,7 @@ int main(int argc, char** argv)
 	const auto gravityIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Utility.GravityAnomaly.Basic";
 		}
@@ -1859,7 +1859,7 @@ int main(int argc, char** argv)
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				gravityIt->actorDefinitions.front().attributes,
-				ly::CommonAttributeIds::Radius
+				vega::CommonAttributeIds::Radius
 			),
 			320.f
 		))
@@ -1869,7 +1869,7 @@ int main(int argc, char** argv)
 	const auto infernoIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.InfernoSpray.Basic";
 		}
@@ -1884,7 +1884,7 @@ int main(int argc, char** argv)
 	const auto overdriveIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.OverdriveCore.Basic";
 		}
@@ -1895,14 +1895,14 @@ int main(int argc, char** argv)
 		overdriveIt->definition.attributes.size() != 4 ||
 		overdriveIt->actorDefinitions.size() != 1 ||
 		overdriveIt->actorDefinitions.front().presentationProfileId !=
-			ly::OverdriveCorePresentationIds::ProjectileBasic)
+			vega::OverdriveCorePresentationIds::ProjectileBasic)
 	{
 		return Fail("Overdrive Core ability JSON profile is invalid") ? 0 : 1;
 	}
 	const auto nullPulseIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Utility.NullPulse.Basic";
 		}
@@ -1914,14 +1914,14 @@ int main(int argc, char** argv)
 		nullPulseIt->definition.attributes.size() != 4 ||
 		!nullPulseIt->definition.ResolveLevelStep(0) ||
 		nullPulseIt->definition.damageTags !=
-			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy })
+			vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Energy })
 	{
 		return Fail("Null Pulse ability JSON profile is invalid") ? 0 : 1;
 	}
 	const auto phaseDriftIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Movement.PhaseDrift.Basic";
 		}
@@ -1938,7 +1938,7 @@ int main(int argc, char** argv)
 	const auto shieldHarvestIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Defense.ShieldHarvest.Basic";
 		}
@@ -1952,7 +1952,7 @@ int main(int argc, char** argv)
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				shieldHarvestIt->definition.attributes,
-				ly::CommonAttributeIds::Radius
+				vega::CommonAttributeIds::Radius
 			),
 			700.f
 		))
@@ -1962,7 +1962,7 @@ int main(int argc, char** argv)
 	const auto hullShockIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.HullShock.Basic";
 		}
@@ -1975,18 +1975,18 @@ int main(int argc, char** argv)
 		hullShockIt->definition.scalingRules.size() != 1 ||
 		!hullShockIt->definition.ResolveLevelStep(0) ||
 		hullShockIt->definition.damageTags !=
-			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Electric } ||
+			vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Electric } ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				hullShockIt->definition.attributes,
-				ly::CommonAttributeIds::Radius
+				vega::CommonAttributeIds::Radius
 			),
 			600.f
 		) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				hullShockIt->definition.attributes,
-				ly::CommonAttributeIds::Damage
+				vega::CommonAttributeIds::Damage
 			),
 			30.f
 		) ||
@@ -2003,7 +2003,7 @@ int main(int argc, char** argv)
 	const auto orbitalDronesIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Offense.OrbitalDrones.Basic";
 		}
@@ -2016,20 +2016,20 @@ int main(int argc, char** argv)
 		!NearlyEqual(orbitalDronesIt->definition.duration, 6.f) ||
 		orbitalDronesIt->definition.maxCharges != 1 ||
 		orbitalDronesIt->definition.abilityTags !=
-			ly::List<ly::GameplayTag>{
-				ly::GameplayTags::Ability::Offense,
-				ly::GameplayTags::Ability::Family::OrbitalDrones
+			vega::List<vega::GameplayTag>{
+				vega::GameplayTags::Ability::Offense,
+				vega::GameplayTags::Ability::Family::OrbitalDrones
 			} ||
 		orbitalDronesIt->definition.attributes.size() != 6 ||
 		sas::FindAttributeValue(
 			orbitalDronesIt->definition.attributes,
-			ly::CommonAttributeIds::Radius,
+			vega::CommonAttributeIds::Radius,
 			0.f
 		) <= 0.f ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				orbitalDronesIt->definition.attributes,
-				ly::CommonAttributeIds::Damage,
+				vega::CommonAttributeIds::Damage,
 				0.f
 			),
 			25.f
@@ -2068,22 +2068,22 @@ int main(int argc, char** argv)
 		) ||
 		orbitalDronesIt->definition.scalingRules.size() != 1 ||
 		orbitalDronesIt->definition.scalingRules.front().targetAttributeId !=
-			ly::CommonAttributeIds::Damage ||
+			vega::CommonAttributeIds::Damage ||
 		orbitalDronesIt->definition.scalingRules.front().sourceAttributeId !=
-			ly::OwnerAttributeIds::AttackPower ||
+			vega::OwnerAttributeIds::AttackPower ||
 		orbitalDronesIt->definition.scalingRules.front().operation !=
 			sas::AttributeModifierOperation::Add ||
 		!NearlyEqual(orbitalDronesIt->definition.scalingRules.front().coefficient, 0.40f) ||
 		!orbitalDronesIt->definition.ResolveLevelStep(0) ||
 		orbitalDronesIt->definition.scrapCost.base != 60u ||
 		orbitalDronesIt->definition.damageTags !=
-			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
+			vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Kinetic })
 	{
 		return Fail("Orbital Drones ability JSON profile is invalid") ? 0 : 1;
 	}
 	for (const std::size_t stepIndex : { std::size_t{ 0 }, std::size_t{ 10 }, std::size_t{ 50 } })
 	{
-		const ly::AbilityLevelStep* step = orbitalDronesIt->definition.ResolveLevelStep(stepIndex);
+		const vega::AbilityLevelStep* step = orbitalDronesIt->definition.ResolveLevelStep(stepIndex);
 		if (!step || step->attributeModifiers.size() != 1)
 		{
 			return Fail("Orbital Drones level progression does not contain exactly one modifier")
@@ -2091,7 +2091,7 @@ int main(int argc, char** argv)
 				: 1;
 		}
 		const sas::AttributeModifier& modifier = step->attributeModifiers.front();
-		if (modifier.attributeId != ly::CommonAttributeIds::Damage ||
+		if (modifier.attributeId != vega::CommonAttributeIds::Damage ||
 			modifier.operation != sas::AttributeModifierOperation::Add ||
 			!NearlyEqual(modifier.magnitude, 4.f))
 		{
@@ -2106,7 +2106,7 @@ int main(int argc, char** argv)
 	const auto relayPrismIt = std::find_if(
 		loadedAbilities.definitions.begin(),
 		loadedAbilities.definitions.end(),
-		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		[](const vega::content::AbilityLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Ability.Utility.RelayPrism.Basic";
 		}
@@ -2123,7 +2123,7 @@ int main(int argc, char** argv)
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				relayPrismIt->definition.attributes,
-				ly::CommonAttributeIds::ProjectileCount,
+				vega::CommonAttributeIds::ProjectileCount,
 				0.f
 			),
 			4.f
@@ -2139,7 +2139,7 @@ int main(int argc, char** argv)
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				relayPrismIt->actorDefinitions.front().attributes,
-				ly::CommonAttributeIds::Radius,
+				vega::CommonAttributeIds::Radius,
 				0.f
 			),
 			100.f
@@ -2154,8 +2154,8 @@ int main(int argc, char** argv)
 		std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 		"LightYearsGame/assets/content/data/weapons.json";
 
-	const ly::content::WeaponLoader::Result loaded =
-		ly::content::WeaponLoader::LoadFromFile(weaponPath);
+	const vega::content::WeaponLoader::Result loaded =
+		vega::content::WeaponLoader::LoadFromFile(weaponPath);
 	if (!loaded.Succeeded())
 	{
 		return Fail(loaded.error.c_str()) ? 0 : 1;
@@ -2189,7 +2189,7 @@ int main(int argc, char** argv)
 		FindWeapon(loaded.definitions, "Weapon.Projectile.FighterRapidLaser.Basic");
 	const sas::GameplayAttribute* basicDamage = sas::FindAttribute(
 		basicLaser->attributes,
-		ly::CommonAttributeIds::Damage
+		vega::CommonAttributeIds::Damage
 	);
 	if (basicLaser->weaponType != PrimaryWeaponType::ProjectileStandard ||
 		!basicDamage ||
@@ -2199,7 +2199,7 @@ int main(int argc, char** argv)
 		basicLaser->progressionProfile.ResolveProgression().prefix.size() != 0 ||
 		basicLaser->progressionProfile.ResolveProgression().cycle.size() != 1 ||
 		basicLaser->progressionProfile.GetScrapCostToReachLevel(200) != 1030u ||
-		basicLaser->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic })
+		basicLaser->damageTags != vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Photonic })
 	{
 		return Fail("Basic rapid laser JSON profile is invalid") ? 0 : 1;
 	}
@@ -2208,7 +2208,7 @@ int main(int argc, char** argv)
 		FindWeapon(loaded.definitions, "Weapon.Projectile.DualKineticBlaster.Basic");
 	if (dual->muzzleDefinitions.size() != 2 ||
 		dual->progressionProfile.ResolveDistinctSteps().empty() ||
-		dual->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic })
+		dual->damageTags != vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Photonic })
 	{
 		return Fail("Dual kinetic blaster JSON profile is invalid") ? 0 : 1;
 	}
@@ -2229,15 +2229,15 @@ int main(int argc, char** argv)
 	const PrimaryWeaponDefinition* enemyEnergy =
 		FindWeapon(loaded.definitions, "Weapon.Projectile.EnemyVanguardPulse.Basic");
 	if (beam->weaponType != PrimaryWeaponType::BeamContinuous ||
-		beam->featureTypes != ly::List<PrimaryWeaponFeatureType>{ PrimaryWeaponFeatureType::Heat } ||
+		beam->featureTypes != vega::List<PrimaryWeaponFeatureType>{ PrimaryWeaponFeatureType::Heat } ||
 		beam->heatGainCurve.size() != 4 ||
 		beam->heatDamageRegions.empty() ||
-		beam->heatDamageRegions.back().damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } ||
+		beam->heatDamageRegions.back().damageTags != vega::List<vega::GameplayTag>{ vega::DamageTypeSchema::Energy } ||
 		!enemyEnergy ||
-		sas::FindAttribute(beam->attributes, ly::DamageAttributeIds::ShieldDamageMultiplier) ||
-		sas::FindAttribute(enemyEnergy->attributes, ly::DamageAttributeIds::ShieldDamageMultiplier) ||
-		!sas::FindAttribute(beam->attributes, ly::DamageAttributeIds::ShieldRegenerationDelay) ||
-		!sas::FindAttribute(enemyEnergy->attributes, ly::DamageAttributeIds::ShieldRegenerationDelay))
+		sas::FindAttribute(beam->attributes, vega::DamageAttributeIds::ShieldDamageMultiplier) ||
+		sas::FindAttribute(enemyEnergy->attributes, vega::DamageAttributeIds::ShieldDamageMultiplier) ||
+		!sas::FindAttribute(beam->attributes, vega::DamageAttributeIds::ShieldRegenerationDelay) ||
+		!sas::FindAttribute(enemyEnergy->attributes, vega::DamageAttributeIds::ShieldRegenerationDelay))
 	{
 		return Fail("Shipped Energy weapon JSON profiles must omit the baseline multiplier and retain shield regeneration delay") ? 0 : 1;
 	}
@@ -2262,8 +2262,8 @@ int main(int argc, char** argv)
 		{},
 		{}
 	};
-	const ly::content::ShipLoader::Result loadedShips =
-		ly::content::ShipLoader::LoadFromFile(
+	const vega::content::ShipLoader::Result loadedShips =
+		vega::content::ShipLoader::LoadFromFile(
 			shipPath,
 			shipPresentationBase
 		);
@@ -2279,15 +2279,15 @@ int main(int argc, char** argv)
 	const std::filesystem::path effectPath =
 		std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 		"LightYearsGame/assets/content/data/effects.json";
-	const ly::content::EffectLoader::Result loadedEffects =
-		ly::content::EffectLoader::LoadFromFile(
+	const vega::content::EffectLoader::Result loadedEffects =
+		vega::content::EffectLoader::LoadFromFile(
 			effectPath,
 		EffectData::GetBuiltinGameplayEffectDefinitions()
 	);
 	const auto barrierEffectIt = std::find_if(
 		loadedEffects.definitions.begin(),
 		loadedEffects.definitions.end(),
-		[](const ly::content::EffectLoader::LoadedDefinition& definition)
+		[](const vega::content::EffectLoader::LoadedDefinition& definition)
 		{
 			return definition.id == "Effect.Barrier.Basic";
 		}
@@ -2319,8 +2319,8 @@ int main(int argc, char** argv)
   }]
 })";
 	}
-	const ly::content::EffectLoader::Result invalidOwnedEffect =
-		ly::content::EffectLoader::LoadFromFile(
+	const vega::content::EffectLoader::Result invalidOwnedEffect =
+		vega::content::EffectLoader::LoadFromFile(
 			invalidEffectPath,
 			EffectData::GetBuiltinGameplayEffectDefinitions()
 		);
@@ -2344,8 +2344,8 @@ int main(int argc, char** argv)
   }]
 })";
 	}
-	const ly::content::EffectLoader::Result invalidEffectTags =
-		ly::content::EffectLoader::LoadFromFile(
+	const vega::content::EffectLoader::Result invalidEffectTags =
+		vega::content::EffectLoader::LoadFromFile(
 			invalidEffectTagsPath,
 			EffectData::GetBuiltinGameplayEffectDefinitions()
 		);
@@ -2369,8 +2369,8 @@ int main(int argc, char** argv)
   }]
 })";
 	}
-	const ly::content::EffectLoader::Result malformedEffectId =
-		ly::content::EffectLoader::LoadFromFile(
+	const vega::content::EffectLoader::Result malformedEffectId =
+		vega::content::EffectLoader::LoadFromFile(
 			malformedEffectIdPath,
 			EffectData::GetBuiltinGameplayEffectDefinitions()
 		);
@@ -2381,7 +2381,7 @@ int main(int argc, char** argv)
 		return Fail("Effect loader accepted an ID without a variant segment") ? 0 : 1;
 	}
 	std::string effectCatalogFailure;
-	if (!ly::content::EffectContentCatalog::LoadFromFile(
+	if (!vega::content::EffectContentCatalog::LoadFromFile(
 			effectPath,
 			EffectData::GetBuiltinGameplayEffectDefinitions(),
 			&effectCatalogFailure
@@ -2410,15 +2410,15 @@ int main(int argc, char** argv)
 	}
 	std::string partialEffectCatalogFailure;
 	const bool partialEffectCatalogLoaded =
-		ly::content::EffectContentCatalog::LoadFromFile(
+		vega::content::EffectContentCatalog::LoadFromFile(
 			partialEffectPath,
 			EffectData::GetBuiltinGameplayEffectDefinitions(),
 			&partialEffectCatalogFailure
 		);
 	std::filesystem::remove(partialEffectPath);
 	if (!partialEffectCatalogLoaded ||
-		ly::content::EffectContentCatalog::FindById("Effect.Barrier.Basic") == nullptr ||
-		ly::content::EffectContentCatalog::FindById("Effect.Status.Damage.Ignite") != nullptr)
+		vega::content::EffectContentCatalog::FindById("Effect.Barrier.Basic") == nullptr ||
+		vega::content::EffectContentCatalog::FindById("Effect.Status.Damage.Ignite") != nullptr)
 	{
 		return Fail("Effect catalog reintroduced a C++ fallback record missing from JSON") ? 0 : 1;
 	}

@@ -22,7 +22,7 @@
 
 namespace rare_static_damage_rules_e2e
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace common_module_e2e;
 	namespace
 	{
@@ -249,7 +249,7 @@ namespace rare_static_damage_rules_e2e
 			const auto enemy = f.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			f.level->TickInternal(0.f);
 			f.report.Check(enemy != nullptr, "Static damage E2E spawns a real enemy SpaceShip");
-			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
+			enemy->SetCollisionLayer(vega::GameCollision::Enemy);
 			enemy->SetCollisionMask(CollisionLayer::None);
 			enemy->SetEnablePhysics(false);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
@@ -471,7 +471,7 @@ namespace rare_static_damage_rules_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_static_damage_rules_e2e;
 	if (argc != 2) return 2;
 	Report report;

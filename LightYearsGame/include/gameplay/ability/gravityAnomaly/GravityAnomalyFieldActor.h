@@ -12,7 +12,7 @@
 
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	class GravityAnomalyRuntimeContext;
 

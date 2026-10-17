@@ -1,6 +1,6 @@
 # Vocabulary belongs to project settings, never production engine/editor/script sources.
 set(game_labels Player PlayerBullet Enemy EnemyBullet Powerup Environment RelayProjectile FriendlySummon)
-foreach(module LightYearsEngine VegaEditor VegaScript)
+foreach(module VegaEngine VegaEditor VegaScript)
 	file(GLOB_RECURSE sources "${SOURCE_ROOT}/${module}/include/*.h" "${SOURCE_ROOT}/${module}/src/*.cpp")
 	foreach(source IN LISTS sources)
 		file(READ "${source}" content)

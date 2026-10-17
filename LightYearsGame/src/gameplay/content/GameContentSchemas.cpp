@@ -20,7 +20,7 @@
 #include "gameConfigs/combat/EffectConfig.h"
 #include <algorithm>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

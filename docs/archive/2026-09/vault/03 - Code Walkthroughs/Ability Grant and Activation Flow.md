@@ -66,7 +66,7 @@ sequenceDiagram
 ## Kritik gerçek kod
 
 Dosya: `LightYearsGame/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp`  
-Sınıf: `ly::LightYearsAbilitySystemComponent`  
+Sınıf: `vega::LightYearsAbilitySystemComponent`  
 Fonksiyon: `SetAbilitySlotInput`  
 Görev: Slot binding üzerinden bulunmuş instance'a input state'i iletir.
 

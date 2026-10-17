@@ -4,7 +4,7 @@
 #include "visual/OrbitSky.h"
 #include "visual/ShaderLibrary.h"
 #include <sky/DeepSky.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::SkyFieldType;
 	using vega::sky::SkyField;

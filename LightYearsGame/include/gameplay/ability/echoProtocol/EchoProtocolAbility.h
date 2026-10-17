@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	class EchoProtocolAbility final : public GameAbilityBehavior
 	{

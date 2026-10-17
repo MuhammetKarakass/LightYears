@@ -3,7 +3,7 @@
 #include "presentation/hud/HUDController.h"
 #include "presentation/hud/modules/ModuleScreenPresenter.h"
 
-namespace ly
+namespace vega
 {
 	class GameHUD;
 	class ModuleScreenView;

@@ -7,23 +7,23 @@ uncommitted_areas:
   - GAS-Lite gameplay-effect runtime ownership and presentation cleanup
   - ability, damage, movement and test integrations
 source_files:
-  - LightYearsEngine/include/framework/Application.h
-  - LightYearsEngine/include/framework/World.h
-  - LightYearsEngine/include/framework/Actor.h
-  - LightYearsEngine/include/framework/Object.h
-  - LightYearsEngine/include/framework/TimerManager.h
-  - LightYearsEngine/src/framework/TimerManager.cpp
+  - VegaEngine/include/framework/Application.h
+  - VegaEngine/include/framework/World.h
+  - VegaEngine/include/framework/Actor.h
+  - VegaEngine/include/framework/Object.h
+  - VegaEngine/include/framework/TimerManager.h
+  - VegaEngine/src/framework/TimerManager.cpp
   - LightYearsGame/include/spaceShip/SpaceShip.h
   - LightYearsGame/include/gameplay/ability/actors/AbilityWorldActor.h
   - LightYearsGame/include/presentation/effects/GameplayEffectVisual.h
 symbols:
-  - ly::Application
-  - ly::World
-  - ly::Actor
-  - ly::Object::GetWeakPtr
-  - ly::Timer
-  - ly::AbilityWorldActor
-  - ly::GameplayEffectVisual
+  - vega::Application
+  - vega::World
+  - vega::Actor
+  - vega::Object::GetWeakPtr
+  - vega::Timer
+  - vega::AbilityWorldActor
+  - vega::GameplayEffectVisual
 related:
   - "[[Object Lifecycle]]"
   - "[[Actor and World System]]"
@@ -57,8 +57,8 @@ Generic `Actor` sınıfında owner/parent alanı yoktur. `mOwningWorld` containe
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/Application.h`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/include/framework/Application.h`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: sınıf alanları / `LoadWorld`  
 Görevi: Current ve pending world’leri güçlü referansla tutmak.
 
@@ -73,8 +73,8 @@ mPendingWorld = newWorld;
 return newWorld;
 ```
 
-Dosya: `LightYearsEngine/include/framework/World.h`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/include/framework/World.h`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: sınıf alanları  
 Görevi: Actor/HUD/stage sahipliğini ve Application’a non-owning bağlantıyı tanımlamak.
 
@@ -91,8 +91,8 @@ shared_ptr<HUD> mHUD;
 shared_ptr<HUD> mOverlayHUD;
 ```
 
-Dosya: `LightYearsEngine/include/framework/Actor.h`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/include/framework/Actor.h`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: sınıf alanı  
 Görevi: Actor’ın world’e non-owning raw pointer tuttuğunu göstermek.
 
@@ -102,7 +102,7 @@ bool mBeganPlay;
 ```
 
 Dosya: `LightYearsGame/include/spaceShip/SpaceShip.h`  
-Sınıf veya namespace: `ly::SpaceShip`  
+Sınıf veya namespace: `vega::SpaceShip`  
 Fonksiyon: sınıf alanları  
 Görevi: Component-benzeri nesnelerin value composition ile SpaceShip tarafından sahiplenildiğini göstermek.
 
@@ -116,7 +116,7 @@ MovementComponent mMovementComponent;
 ```
 
 Dosya: `LightYearsGame/include/gameplay/ability/actors/AbilityWorldActor.h`  
-Sınıf veya namespace: `ly::AbilityWorldActor`  
+Sınıf veya namespace: `vega::AbilityWorldActor`  
 Fonksiyon: owner alanı  
 Görevi: Projectile/ability actor owner ilişkisinin weak ve non-owning olduğunu göstermek.
 
@@ -128,7 +128,7 @@ List<GameplayTag> mDamageTags;
 ```
 
 Dosya: `LightYearsGame/include/presentation/effects/GameplayEffectVisual.h`  
-Sınıf veya namespace: `ly::GameplayEffectVisual`  
+Sınıf veya namespace: `vega::GameplayEffectVisual`  
 Fonksiyon: `GetVisualOwner` / owner alanı  
 Görevi: Bir visual actor türünün owner yaşamını `weak_ptr` ile izlemesini göstermek.
 
@@ -140,8 +140,8 @@ private:
 	weak_ptr<Actor> mOwner;
 ```
 
-Dosya: `LightYearsEngine/src/framework/TimerManager.cpp`  
-Sınıf veya namespace: `ly::Timer`  
+Dosya: `VegaEngine/src/framework/TimerManager.cpp`  
+Sınıf veya namespace: `vega::Timer`  
 Fonksiyon: `IsExpired`  
 Görevi: Listener yok olduğunda veya pending-destroy olduğunda timer’ı geçersiz saymak.
 
@@ -224,10 +224,10 @@ Owner’dan uzun yaşayan ability/visual actor senaryoları ve world kapatılır
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/include/framework/Application.h` — world sahipliği.
-2. `LightYearsEngine/include/framework/World.h` — actor/HUD/stage sahipliği.
-3. `LightYearsEngine/include/framework/Object.h` — weak reference tabanı.
-4. `LightYearsEngine/include/framework/Actor.h` — raw world bağlantısı.
-5. `LightYearsEngine/include/framework/TimerManager.h` — weak listener modeli.
+1. `VegaEngine/include/framework/Application.h` — world sahipliği.
+2. `VegaEngine/include/framework/World.h` — actor/HUD/stage sahipliği.
+3. `VegaEngine/include/framework/Object.h` — weak reference tabanı.
+4. `VegaEngine/include/framework/Actor.h` — raw world bağlantısı.
+5. `VegaEngine/include/framework/TimerManager.h` — weak listener modeli.
 6. `LightYearsGame/include/spaceShip/SpaceShip.h` — value component örneği.
 7. `LightYearsGame/include/gameplay/ability/actors/AbilityWorldActor.h` — feature-local raw owner örneği.

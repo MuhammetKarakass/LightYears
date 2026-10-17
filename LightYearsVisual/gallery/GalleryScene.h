@@ -23,7 +23,7 @@
 class GalleryScene
 {
 public:
-	GalleryScene(ly::visual::VisualAssets& assets, ly::visual::VisualPipeline& pipeline);
+	GalleryScene(vega::visual::VisualAssets& assets, vega::visual::VisualPipeline& pipeline);
 
 	void Update(float deltaSeconds);
 	// Call between pipeline.BeginFrame() and pipeline.Compose().
@@ -36,7 +36,7 @@ public:
 	// Position along the route from the Sun (0) to Sgr A* (1); clamped.
 	void SetGalaxyProgress(float progress);
 	float GalaxyProgress() const { return mGalaxyProgress; }
-	const ly::visual::galaxy::SkyState& Sky() const { return mSky; }
+	const vega::visual::galaxy::SkyState& Sky() const { return mSky; }
 
 	// Ship speed as a fraction of light speed and its on-screen direction (y down). beta eases over warp.rampSeconds and
 	// is clamped to warp.maxBeta; a zero direction keeps the previous one.
@@ -50,7 +50,7 @@ private:
 	// physical settings change; positions are fractions of the output.
 	struct Location
 	{
-		ly::visual::HostStar hostStar;
+		vega::visual::HostStar hostStar;
 		bool emission = false;
 		sf::Vector2f emissionAt;
 		float emissionTemperatureK = 38000.f;
@@ -64,30 +64,30 @@ private:
 		sf::Vector2f pulsarAt;
 		float pulsarPeriodSeconds = 1.337f;
 		// Backdrop planet kind and orbiting moon seed, from the progress seed (the gallery has no route data).
-		ly::visual::PlanetKind planetKind = ly::visual::PlanetKind::Terran;
+		vega::visual::PlanetKind planetKind = vega::visual::PlanetKind::Terran;
 		std::uint32_t moonSeed = 0;
-		std::optional<ly::visual::ShatteredMoon> moon;
+		std::optional<vega::visual::ShatteredMoon> moon;
 		bool lens = false;
 	};
 
 	void DrawBackground();
-	void RebuildLocation(const ly::visual::PipelineSettings& settings);
+	void RebuildLocation(const vega::visual::PipelineSettings& settings);
 	void DrawWorld();
 	void DrawShips();
 	void DrawEnergy();
 
-	ly::visual::VisualAssets& mAssets;
-	ly::visual::VisualPipeline& mPipeline;
-	ly::visual::ShapeBrush mBrush;
-	ly::visual::ShipRenderer mShips;
-	ly::visual::StarField mStars;
+	vega::visual::VisualAssets& mAssets;
+	vega::visual::VisualPipeline& mPipeline;
+	vega::visual::ShapeBrush mBrush;
+	vega::visual::ShipRenderer mShips;
+	vega::visual::StarField mStars;
 	float mGalaxyProgress = 0.f;
-	ly::visual::galaxy::GalacticPosition mPosition;
-	ly::visual::galaxy::SkyState mSky;
+	vega::visual::galaxy::GalacticPosition mPosition;
+	vega::visual::galaxy::SkyState mSky;
 	// The stars and the band are rebuilt when the sky or the settings they were built from change.
 	bool mStarsDirty = true;
-	ly::visual::StarFieldSettings mBuiltStars;
-	ly::visual::MilkyWaySettings mBuiltMilkyWay;
+	vega::visual::StarFieldSettings mBuiltStars;
+	vega::visual::MilkyWaySettings mBuiltMilkyWay;
 	float mTime = 0.f;
 	sf::Vector2f mScroll;
 	bool mStress = false;
@@ -95,13 +95,13 @@ private:
 
 	Location mLocation;
 	// Near-field rocks and motes of the current place, rebuilt with it.
-	std::optional<ly::visual::NearField> mNearField;
-	ly::visual::GalaxyLayer mGalaxy;
+	std::optional<vega::visual::NearField> mNearField;
+	vega::visual::GalaxyLayer mGalaxy;
 	bool mFeaturesDirty = true;
 	// Time the current place was set; the shattered moon's age counts from it.
 	float mLocationStart = 0.f;
-	ly::visual::NebulaSettings mBuiltNebula;
-	ly::visual::AnomalySettings mBuiltAnomalies;
+	vega::visual::NebulaSettings mBuiltNebula;
+	vega::visual::AnomalySettings mBuiltAnomalies;
 
 	// Warp: beta eases toward mWarpTarget; mWarpDirection is the unit on-screen direction of motion.
 	float mWarpTarget = 0.f;

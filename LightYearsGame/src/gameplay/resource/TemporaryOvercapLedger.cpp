@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	void TemporaryOvercapLedger::Add(const TemporaryOvercapRequest& request)
 	{

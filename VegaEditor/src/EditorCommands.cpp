@@ -14,7 +14,7 @@ namespace vega
 		if (!command || mContext.transitioning || (mContext.playMode && command->IsUndoable() && command->ChangesScene())) return false;
 		if (!command->Execute(mContext))
 		{
-			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
+			vega::debug::Log::Write(vega::debug::LogLevel::Error, vega::debug::LogChannel::Editor, VEGA_SOURCE_LOCATION,
 				command->Name() + ": " + (!mContext.propertyError.empty() ? mContext.propertyError : mContext.sceneError));
 			return false;
 		}

@@ -2,7 +2,7 @@
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	ModuleDelayedExplosionActor::ModuleDelayedExplosionActor(World* world, const weak_ptr<Actor>& source, const ModuleExplosionPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, float damage, float radius, float delay, const List<GameplayTag>& tags) : Actor{ world }, mSource{ source }, mProfile{ profile }, mLease{ lease }, mDamage{ damage }, mRadius{ radius }, mRemaining{ delay }, mTags{ tags }
 	{

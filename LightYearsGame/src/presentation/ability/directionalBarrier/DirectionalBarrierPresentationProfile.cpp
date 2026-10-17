@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/directionalBarrier/DirectionalBarrierPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterDirectionalBarrierPresentationProfiles()
 	{

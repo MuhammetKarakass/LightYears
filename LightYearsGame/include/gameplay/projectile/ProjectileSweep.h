@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-namespace ly::projectile
+namespace vega::projectile
 {
 	struct SweptContact
 	{

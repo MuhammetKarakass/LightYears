@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/crystalBarricade/CrystalBarricadePresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterCrystalBarricadePresentationProfiles()
 	{

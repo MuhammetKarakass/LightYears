@@ -105,7 +105,7 @@ namespace vega
 	void EditorApplication::BuildContentPanel()
 	{
 		mContentFocused = false;
-		LY_PROFILE_SCOPE("Editor Content");
+		VEGA_PROFILE_SCOPE("Editor Content");
 		mRetiredThumbnails.clear();
 		if (ImGui::Begin("Content", &mShowContent))
 		{

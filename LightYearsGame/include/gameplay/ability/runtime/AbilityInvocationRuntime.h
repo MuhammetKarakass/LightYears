@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class LightYearsAbilitySystemComponent;
 

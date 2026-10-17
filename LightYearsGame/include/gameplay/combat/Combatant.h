@@ -5,7 +5,7 @@
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageContext.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class CombatRuntime;

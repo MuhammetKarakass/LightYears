@@ -12,38 +12,38 @@ namespace AbilityData::VoidGate
 			"Ability.Utility.VoidGate.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Utility;
-	inline const ly::GameplayTag FamilyTag =
-		ly::GameplayTags::Ability::Family::VoidGate;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Utility;
+	inline const vega::GameplayTag FamilyTag =
+		vega::GameplayTags::Ability::Family::VoidGate;
 
 	struct State
 	{
-		inline static const ly::GameplayTag WaitingForPortalB =
-			ly::GameplayTags::State::Ability::VoidGate::WaitingForPortalB;
-		inline static const ly::GameplayTag Active =
-			ly::GameplayTags::State::Ability::VoidGate::Active;
+		inline static const vega::GameplayTag WaitingForPortalB =
+			vega::GameplayTags::State::Ability::VoidGate::WaitingForPortalB;
+		inline static const vega::GameplayTag Active =
+			vega::GameplayTags::State::Ability::VoidGate::Active;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started =
-			ly::GameplayTags::Event::Ability::VoidGate::Started;
-		inline static const ly::GameplayTag PortalAPlaced =
-			ly::GameplayTags::Event::Ability::VoidGate::PortalAPlaced;
-		inline static const ly::GameplayTag PortalBPlaced =
-			ly::GameplayTags::Event::Ability::VoidGate::PortalBPlaced;
-		inline static const ly::GameplayTag TransferStarted =
-			ly::GameplayTags::Event::Ability::VoidGate::TransferStarted;
-		inline static const ly::GameplayTag TransferCompleted =
-			ly::GameplayTags::Event::Ability::VoidGate::TransferCompleted;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::VoidGate::Ended;
+		inline static const vega::GameplayTag Started =
+			vega::GameplayTags::Event::Ability::VoidGate::Started;
+		inline static const vega::GameplayTag PortalAPlaced =
+			vega::GameplayTags::Event::Ability::VoidGate::PortalAPlaced;
+		inline static const vega::GameplayTag PortalBPlaced =
+			vega::GameplayTags::Event::Ability::VoidGate::PortalBPlaced;
+		inline static const vega::GameplayTag TransferStarted =
+			vega::GameplayTags::Event::Ability::VoidGate::TransferStarted;
+		inline static const vega::GameplayTag TransferCompleted =
+			vega::GameplayTags::Event::Ability::VoidGate::TransferCompleted;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::VoidGate::Ended;
 	};
 
 	struct Attribute
 	{
 		inline static const sas::AttributeId PortalRadius =
-			ly::CommonAttributeIds::Radius;
+			vega::CommonAttributeIds::Radius;
 		inline static const sas::AttributeId TransferDuration{
 			"Ability.Utility.VoidGate.TransferDuration"
 		};

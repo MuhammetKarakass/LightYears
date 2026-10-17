@@ -11,34 +11,34 @@ namespace AbilityData::EnergySpear
 		inline static constexpr char Basic[] = "Ability.Movement.EnergySpear.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Movement };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::EnergySpear
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Movement };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::EnergySpear
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Focusing{
-			ly::GameplayTags::State::Ability::EnergySpear::Focusing
+		inline static const vega::GameplayTag Focusing{
+			vega::GameplayTags::State::Ability::EnergySpear::Focusing
 		};
-		inline static const ly::GameplayTag Traversing{
-			ly::GameplayTags::State::Ability::EnergySpear::Traversing
+		inline static const vega::GameplayTag Traversing{
+			vega::GameplayTags::State::Ability::EnergySpear::Traversing
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::EnergySpear::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::EnergySpear::Started
 		};
-		inline static const ly::GameplayTag MaxDistanceReached{
-			ly::GameplayTags::Event::Ability::EnergySpear::MaxDistanceReached
+		inline static const vega::GameplayTag MaxDistanceReached{
+			vega::GameplayTags::Event::Ability::EnergySpear::MaxDistanceReached
 		};
-		inline static const ly::GameplayTag Released{
-			ly::GameplayTags::Event::Ability::EnergySpear::Released
+		inline static const vega::GameplayTag Released{
+			vega::GameplayTags::Event::Ability::EnergySpear::Released
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::EnergySpear::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::EnergySpear::Ended
 		};
 	};
 
@@ -46,9 +46,9 @@ namespace AbilityData::EnergySpear
 	{
 		// Shared channels are aliases. Energy Spear does not invent duplicate
 		// Damage, Range or Collision IDs for concepts already in the schema.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId MaximumDistance = ly::CommonAttributeIds::Range;
-		inline static const sas::AttributeId CollisionRadius = ly::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId MaximumDistance = vega::CommonAttributeIds::Range;
+		inline static const sas::AttributeId CollisionRadius = vega::CommonAttributeIds::Radius;
 
 		// These values describe Energy Spear's unique charge and movement formula.
 		// They are ability attributes, not JSON settings, so they use the normal

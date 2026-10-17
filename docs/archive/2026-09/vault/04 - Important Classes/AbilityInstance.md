@@ -10,7 +10,7 @@ source_files:
   - LightYearsGame/src/gameplay/ability/GameAbility.cpp
 symbols:
   - sas::GameplayAbilityInstance
-  - ly::GameAbility
+  - vega::GameAbility
 related:
   - "[[Ability System]]"
   - "[[Ability Cooldown and Charge Flow]]"
@@ -21,14 +21,14 @@ related:
 
 ## Güncel ayrım
 
-Eski `ly::GameAbilityInstance` kaldırılmıştır. Generic instance sorumluluğu
+Eski `vega::GameAbilityInstance` kaldırılmıştır. Generic instance sorumluluğu
 `sas::GameplayAbilityInstance<Definition, Execution>` içindedir.
 
 SAS tabanı input, activation, end, cooldown, duration, charge, level ve snapshot
 akışını yürütür. `AbilityRuntimeEntry` handle/base definition/resolved
 definition/runtime state/execution storage'ını sağlar.
 
-`ly::GameAbility` bu tabanın Light Years content uzantısıdır. Yalnız concrete
+`vega::GameAbility` bu tabanın Light Years content uzantısıdır. Yalnız concrete
 behavior/action dispatch'i, weapon runtime ve attachment loadout işlemlerini
 uygular. Framework lifecycle kararı içermez.
 

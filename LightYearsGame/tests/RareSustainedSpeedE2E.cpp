@@ -39,7 +39,7 @@ namespace rare_sustained_speed_e2e
 		constexpr float kProbeSpeed = 1100.f;
 
 		// Test-only definitions parsed from fixture JSON. They never enter shipped content.
-		ly::List<ly::ModuleDefinition> gFixtureDefinitions;
+		vega::List<vega::ModuleDefinition> gFixtureDefinitions;
 
 		const ModuleDefinition* FixtureLookup(const sas::ContentId& id)
 		{
@@ -364,8 +364,8 @@ namespace rare_sustained_speed_e2e
 
 			const auto target = f.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			f.level->TickInternal(0.f);
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 			target->GetShieldComponent().ChangeShield(-10000.f);
 			target->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f);
 			target->GetHealthComponent().SetMaxHealth(5000.f, true);
@@ -516,7 +516,7 @@ namespace rare_sustained_speed_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_sustained_speed_e2e;
 	if (argc != 2) return 2;
 	Report report;

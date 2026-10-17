@@ -12,7 +12,7 @@
 #include "VFX/Explosion.h" 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(SpaceShip, Actor)
 	{
@@ -46,7 +46,7 @@ namespace ly
 				content::WeaponContentCatalog::FindById(shipDef.primaryWeaponId);
 			if (!runtimeWeapon)
 			{
-				LY_GAME_ERROR("Primary weapon '%s' was not found in JSON content", shipDef.primaryWeaponId.c_str());
+				VEGA_GAME_ERROR("Primary weapon '%s' was not found in JSON content", shipDef.primaryWeaponId.c_str());
 				return;
 			}
 			std::string primaryWeaponFailureReason;
@@ -57,7 +57,7 @@ namespace ly
 				);
 			if (!primaryWeaponHandle.IsValid())
 			{
-				LY_GAME_ERROR("Invalid primary weapon '%s': %s", runtimeWeapon->weaponId.c_str(), primaryWeaponFailureReason.c_str());
+				VEGA_GAME_ERROR("Invalid primary weapon '%s': %s", runtimeWeapon->weaponId.c_str(), primaryWeaponFailureReason.c_str());
 			}
 		}
 	}
@@ -104,7 +104,7 @@ namespace ly
 		);
 		UpdateBlink(deltaTime);      
 		{
-			LY_PROFILE_SCOPE("Ship.CombatRuntimeTick");
+			VEGA_PROFILE_SCOPE("Ship.CombatRuntimeTick");
 			mCombatRuntime.Tick(deltaTime);
 		}
 		UpdateRegeneration(deltaTime);
@@ -380,14 +380,14 @@ namespace ly
 	
 	void SpaceShip::Blow()
 	{
-		LY_PROFILE_SCOPE("Ship.Blow");
+		VEGA_PROFILE_SCOPE("Ship.Blow");
 		Explosion::SpawnExplosion(GetWorld(), GetActorLocation(), Explosion::GetPreset(GetExplosionType()));
 		{
-			LY_PROFILE_SCOPE("Ship.Blow.Blew");
+			VEGA_PROFILE_SCOPE("Ship.Blow.Blew");
 			Blew();
 		}
 		{
-			LY_PROFILE_SCOPE("Ship.Blow.ShipRuntimeClear");
+			VEGA_PROFILE_SCOPE("Ship.Blow.ShipRuntimeClear");
 			mShipRuntime.Clear();
 		}
 		// Pending means the ability system kept retained cleanup (for example EndFire debt) and its
@@ -395,7 +395,7 @@ namespace ly
 		// ticked, so nothing retries the clear and the retained ability state is released by the
 		// combat runtime's destructor with the actor. Callback exceptions still propagate from Clear().
 		{
-			LY_PROFILE_SCOPE("Ship.Blow.CombatRuntimeClear");
+			VEGA_PROFILE_SCOPE("Ship.Blow.CombatRuntimeClear");
 			static_cast<void>(mCombatRuntime.Clear());
 		}
 		Destroy();

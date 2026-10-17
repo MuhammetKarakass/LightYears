@@ -11,31 +11,31 @@ namespace AbilityData::FoldspaceArena
 		inline static constexpr char Basic[] = "Ability.Utility.FoldspaceArena.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Utility };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::FoldspaceArena
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Utility };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::FoldspaceArena
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::FoldspaceArena::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::FoldspaceArena::Active
 		};
-		inline static const ly::GameplayTag CancelAvailable{
-			ly::GameplayTags::State::Ability::FoldspaceArena::CancelAvailable
+		inline static const vega::GameplayTag CancelAvailable{
+			vega::GameplayTags::State::Ability::FoldspaceArena::CancelAvailable
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::FoldspaceArena::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::FoldspaceArena::Started
 		};
-		inline static const ly::GameplayTag CancelAvailable{
-			ly::GameplayTags::Event::Ability::FoldspaceArena::CancelAvailable
+		inline static const vega::GameplayTag CancelAvailable{
+			vega::GameplayTags::Event::Ability::FoldspaceArena::CancelAvailable
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::FoldspaceArena::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::FoldspaceArena::Ended
 		};
 	};
 
@@ -48,8 +48,8 @@ namespace AbilityData::FoldspaceArena
 			inline static const sas::AttributeId AttributeRoot{
 				"AbilityActor.FoldspaceArena.Arena"
 			};
-			inline static const sas::AttributeId Width = ly::AreaAttributeIds::Width;
-			inline static const sas::AttributeId Height = ly::AreaAttributeIds::Length;
+			inline static const sas::AttributeId Width = vega::AreaAttributeIds::Width;
+			inline static const sas::AttributeId Height = vega::AreaAttributeIds::Length;
 			inline static const sas::AttributeId ProjectileSpeed{
 				"AbilityActor.FoldspaceArena.Arena.ProjectileSpeed"
 			};

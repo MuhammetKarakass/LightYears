@@ -17,9 +17,9 @@ namespace vega::script
 			for (unsigned char c : name) result += std::isalnum(c) ? static_cast<char>(c) : '_';
 			return result;
 		}
-		const char* PropertyType(ly::reflect::PropertyKind kind)
+		const char* PropertyType(vega::reflect::PropertyKind kind)
 		{
-			using ly::reflect::PropertyKind;
+			using vega::reflect::PropertyKind;
 			switch (kind)
 			{
 			case PropertyKind::Bool: return "boolean";
@@ -34,9 +34,9 @@ namespace vega::script
 		}
 	}
 
-	bool GenerateLuaTypes(const std::filesystem::path& output, std::string& error) noexcept { return GenerateLuaTypes(ly::EngineContext::Current(), output, error); }
+	bool GenerateLuaTypes(const std::filesystem::path& output, std::string& error) noexcept { return GenerateLuaTypes(vega::EngineContext::Current(), output, error); }
 
-	bool GenerateLuaTypes(ly::EngineContext& context, const std::filesystem::path& output, std::string& error) noexcept
+	bool GenerateLuaTypes(vega::EngineContext& context, const std::filesystem::path& output, std::string& error) noexcept
 	{
 		try
 		{
@@ -264,7 +264,7 @@ function time() end
 					names.insert(name);
 					text << (index ? "|" : "") << nlohmann::json(name).dump();
 				}
-				text << "\n---@class " << id << ": " << (type->root == ly::reflect::TypeRoot::Actor ? "ActorHandle" : "ComponentHandle")
+				text << "\n---@class " << id << ": " << (type->root == vega::reflect::TypeRoot::Actor ? "ActorHandle" : "ComponentHandle")
 					<< "\n" << id << " = {}\n";
 				for (const auto* property : properties)
 					text << "---@overload fun(self:" << id << ",name:" << nlohmann::json(property->name).dump() << "):"

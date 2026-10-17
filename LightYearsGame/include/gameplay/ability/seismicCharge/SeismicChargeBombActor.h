@@ -6,7 +6,7 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	class SeismicChargeBombActor final : public AbilityWorldActor
 	{

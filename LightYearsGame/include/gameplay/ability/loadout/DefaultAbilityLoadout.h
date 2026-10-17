@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	struct DefaultAbilityLoadoutEntry
 	{

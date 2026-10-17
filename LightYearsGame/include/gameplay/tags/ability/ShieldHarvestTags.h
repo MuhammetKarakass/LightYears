@@ -2,17 +2,17 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag ShieldHarvest{ "Ability.Defense.ShieldHarvest" };
 }
 
-namespace ly::GameplayTags::State::Ability::ShieldHarvest
+namespace vega::GameplayTags::State::Ability::ShieldHarvest
 {
 	inline const GameplayTag Focusing{ "State.Ability.ShieldHarvest.Focusing" };
 }
 
-namespace ly::GameplayTags::Event::Ability::ShieldHarvest
+namespace vega::GameplayTags::Event::Ability::ShieldHarvest
 {
 	inline const GameplayTag Started{ "Event.Ability.ShieldHarvest.Started" };
 	inline const GameplayTag Harvested{ "Event.Ability.ShieldHarvest.Harvested" };

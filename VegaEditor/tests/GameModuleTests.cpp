@@ -14,16 +14,16 @@ namespace
 	public:
 		const char* Name() const override { return "Minimal"; }
 		void RegisterTypes() override {}
-		std::shared_ptr<ly::World> CreateLevel(ly::Application&, const nlohmann::json&, bool) override { return {}; }
+		std::shared_ptr<vega::World> CreateLevel(vega::Application&, const nlohmann::json&, bool) override { return {}; }
 	};
 	class HookModule final : public vega::GameModule, public vega::IPlayHooks, public vega::IAppLoopHooks
 	{
 	public:
 		const char* Name() const override { return "Hooks"; }
 		void RegisterTypes() override {}
-		std::shared_ptr<ly::World> CreateLevel(ly::Application&, const nlohmann::json&, bool) override { return {}; }
-		void BeginPlay(ly::World&) override { ++begins; }
-		void EndPlay(ly::World&) override { ++ends; }
+		std::shared_ptr<vega::World> CreateLevel(vega::Application&, const nlohmann::json&, bool) override { return {}; }
+		void BeginPlay(vega::World&) override { ++begins; }
+		void EndPlay(vega::World&) override { ++ends; }
 		int ExitCode() const override { return 7; }
 		int begins = 0, ends = 0;
 	};
@@ -33,8 +33,8 @@ namespace
 	public:
 		const char* Name() const override { return "Example"; }
 		void RegisterTypes() override {}
-		std::shared_ptr<ly::World> CreateLevel(ly::Application&, const nlohmann::json&, bool) override { return {}; }
-		vega::ActorDisplayInfo DisplayInfo(const ly::Actor&) const override { return { true, "Example spawn" }; }
+		std::shared_ptr<vega::World> CreateLevel(vega::Application&, const nlohmann::json&, bool) override { return {}; }
+		vega::ActorDisplayInfo DisplayInfo(const vega::Actor&) const override { return { true, "Example spawn" }; }
 		void RegisterEditorExtensions(vega::EditorExtensions& extensions) override
 		{
 			engine = &extensions.Engine();
@@ -49,14 +49,14 @@ namespace
 			}));
 		}
 		int panels = 0, menus = 0, handles = 0;
-		ly::EngineContext* engine = nullptr;
+		vega::EngineContext* engine = nullptr;
 	};
 }
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	MinimalModule minimal;
 	vega::GameModule* core = &minimal;
 	if (vega::QueryCapability<vega::IModuleSetup>(core) || vega::QueryCapability<vega::IPlayHooks>(core) ||
@@ -66,7 +66,7 @@ int main()
 	if (vega::QueryCapability<vega::IPlayHooks>(static_cast<vega::GameModule*>(nullptr))) return 1;
 	HookModule hooks;
 	core = &hooks;
-	ly::World hookWorld{nullptr};
+	vega::World hookWorld{nullptr};
 	auto* play = vega::QueryCapability<vega::IPlayHooks>(core);
 	if (!play) return 1;
 	play->BeginPlay(hookWorld);
@@ -78,8 +78,8 @@ int main()
 	ExampleModule module;
 	vega::EditorExtensions extensions{ engineContext };
 	{
-		ly::EngineContext unrelated;
-		ly::EngineContext::Scope unrelatedScope{ unrelated };
+		vega::EngineContext unrelated;
+		vega::EngineContext::Scope unrelatedScope{ unrelated };
 		module.RegisterEditorExtensions(extensions);
 		if (module.engine != &engineContext) return 1;
 	}
@@ -110,9 +110,9 @@ int main()
 	context.playMode = true;
 	if (!execute(command.operation) || detail != "Example command") return 1;
 	if (execute("missing")) return 1;
-	ly::Actor actor{ nullptr };
+	vega::Actor actor{ nullptr };
 	if (!module.DisplayInfo(actor).spawnMarker || module.DisplayInfo(actor).label != "Example spawn") return 1;
-	ly::World world{ nullptr };
+	vega::World world{ nullptr };
 	if (vega::QueryCapability<vega::IPlayerProvider>(&module)) return 1;
 	if (module.panels != 1 || module.menus != 1 || module.handles != 1) return 1;
 	std::cout << "Game-independent editor extension contract passed\n";

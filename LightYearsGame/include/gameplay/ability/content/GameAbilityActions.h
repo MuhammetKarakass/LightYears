@@ -11,7 +11,7 @@
 #include <string>
 #include <variant>
 
-namespace ly
+namespace vega
 {
 	struct ApplyEffectAction
 	{

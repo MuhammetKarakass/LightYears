@@ -4,7 +4,7 @@
 #include "attributes/AttributeSystem.h"
 #include "framework/Core.h"
 
-namespace ly
+namespace vega
 {
 	struct ScopedAbilityRule
 	{

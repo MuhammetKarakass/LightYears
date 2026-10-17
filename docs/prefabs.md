@@ -92,7 +92,7 @@ An empty list removes every script. A null script property in an override clears
 the inherited authored override, allowing the Lua declaration default to apply.
 Null is consumed during resolution and is never passed to a script setter.
 
-`ly::PrefabLibrary` loads and caches documents by path, checking modification time
+`vega::PrefabLibrary` loads and caches documents by path, checking modification time
 and file size on access. `Reload()` explicitly clears the cache. `Resolve()`
 returns the complete normalized entity and warnings; `Merge()`, `Diff()`, and
 `Document()` support authoring tools. `Get()` provides the scene serializer's
@@ -155,7 +155,7 @@ timeout and AbilityBalance sandbox failure. Logs are
 
 ## Implementation files
 
-* Engine: `LightYearsEngine/include/framework/scene/PrefabLibrary.h` and
+* Engine: `VegaEngine/include/framework/scene/PrefabLibrary.h` and
   `src/framework/scene/PrefabLibrary.cpp`; scene `Scene.h` / `Scene.cpp`;
   `SceneEntityComponent.h`; framework `World.h`, `AssetManager.h` /
   `AssetManager.cpp`; `tests/PrefabLibraryTests.cpp`; `CMakeLists.txt`.

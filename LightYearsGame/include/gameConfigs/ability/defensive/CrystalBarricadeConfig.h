@@ -8,12 +8,12 @@
 
 namespace AbilityData::CrystalBarricade
 {
-	inline const ly::AbilityActorDefinition ActorWallBasic = []
+	inline const vega::AbilityActorDefinition ActorWallBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Wall::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::CrystalBarricadeWall;
-		definition.presentationProfileId = ly::CrystalBarricadePresentationIds::WallBasic;
+		definition.actorType = vega::AbilityActorType::CrystalBarricadeWall;
+		definition.presentationProfileId = vega::CrystalBarricadePresentationIds::WallBasic;
 		return definition;
 	}();
 }
@@ -21,21 +21,21 @@ namespace AbilityData::CrystalBarricade
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition CrystalBarricade_Basic = []
+	inline const vega::GameAbilityDefinition CrystalBarricade_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::CrystalBarricade::AbilityId::Basic;
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Defense,
-			ly::GameplayTags::Ability::Family::CrystalBarricade
+			vega::GameplayTags::Ability::Defense,
+			vega::GameplayTags::Ability::Family::CrystalBarricade
 		};
 		definition.displayName = "Crystal Barricade";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png";
 		definition.accentColor = sf::Color{ 110, 225, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::CrystalBarricade;
+		definition.behaviorType = vega::AbilityBehaviorType::CrystalBarricade;
 		return definition;
 	}();
 }

@@ -9,7 +9,7 @@
 #include <optional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Per-ability persistent weapon state. Any ability carrying a FireWeaponAction
 	// uses it, not only PrimaryFire definitions, so GameAbility owns it by value.

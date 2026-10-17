@@ -7,12 +7,12 @@
 #include <filesystem>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct EnemyCombatProfile;
 }
 
-namespace ly::content
+namespace vega::content
 {
 	class EnemyContentCatalog final
 	{

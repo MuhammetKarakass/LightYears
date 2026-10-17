@@ -7,7 +7,7 @@ namespace sas
 {
 	bool CanApplyGameplayEffect(
 		const GameplayEffectDefinition& definition,
-		const ly::GameplayTagContainer& ownedTags
+		const vega::GameplayTagContainer& ownedTags
 	)
 	{
 		return ownedTags.HasAll(definition.applicationRequiredTags) &&
@@ -85,15 +85,15 @@ namespace sas
 	void GrantGameplayEffectTags(
 		const GameplayEffectDefinition& definition,
 		GameplayEffectRuntimeState& state,
-		ly::GameplayTagContainer& ownedTags
+		vega::GameplayTagContainer& ownedTags
 	)
 	{
 		state.appliedGrantedTags.reserve(
 			state.appliedGrantedTags.size() + definition.grantedTags.size()
 		);
-		for (const ly::GameplayTag& tag : definition.grantedTags)
+		for (const vega::GameplayTag& tag : definition.grantedTags)
 		{
-			ly::GameplayTag acquiredTag{ tag };
+			vega::GameplayTag acquiredTag{ tag };
 			ownedTags.AddTag(tag);
 			state.appliedGrantedTags.emplace_back(std::move(acquiredTag));
 		}
@@ -101,13 +101,13 @@ namespace sas
 
 	void RemoveGameplayEffectTags(
 		GameplayEffectRuntimeState& state,
-		ly::GameplayTagContainer& ownedTags
+		vega::GameplayTagContainer& ownedTags
 	)
 	{
 		std::exception_ptr error;
 		while (!state.appliedGrantedTags.empty())
 		{
-			const ly::GameplayTag tag = state.appliedGrantedTags.back();
+			const vega::GameplayTag tag = state.appliedGrantedTags.back();
 			state.appliedGrantedTags.pop_back();
 			try { ownedTags.RemoveTag(tag); }
 			catch (...) { if (!error) error = std::current_exception(); }

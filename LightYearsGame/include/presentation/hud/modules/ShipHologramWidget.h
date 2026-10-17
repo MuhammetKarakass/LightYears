@@ -4,7 +4,7 @@
 #include "widget/Panel.h"
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	struct HologramModule
 	{

@@ -11,21 +11,21 @@ namespace AbilityData::LanceDrive
 {
 	// This local definition is the C++ owner of the actor type and its typed
 	// presentation profile; shipped JSON supplies only balance values.
-	inline const ly::AbilityActorDefinition ActorLanceBasic = []
+	inline const vega::AbilityActorDefinition ActorLanceBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Lance::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::LanceDrive;
-		definition.presentationProfileId = ly::LanceDrivePresentationIds::LanceBasic;
+		definition.actorType = vega::AbilityActorType::LanceDrive;
+		definition.presentationProfileId = vega::LanceDrivePresentationIds::LanceBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition LanceDrive_Basic = []
+	inline const vega::GameAbilityDefinition LanceDrive_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::LanceDrive::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// This is only the transitional catalog default; runtime key assignment
@@ -35,13 +35,13 @@ namespace AbilityData::Definitions
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.cooldownStartPolicy = sas::AbilityCooldownStartPolicy::OnActivation;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Movement,
-			ly::GameplayTags::Ability::Family::LanceDrive
+			vega::GameplayTags::Ability::Movement,
+			vega::GameplayTags::Ability::Family::LanceDrive
 		};
 		definition.displayName = "Lance Drive";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 255, 174, 76, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::LanceDrive;
+		definition.behaviorType = vega::AbilityBehaviorType::LanceDrive;
 		return definition;
 	}();
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sky/Astro.h>
-namespace ly::visual
+namespace vega::visual
 {
 	namespace astro = vega::sky::astro;
 }

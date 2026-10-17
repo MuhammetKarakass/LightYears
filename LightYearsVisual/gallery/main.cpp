@@ -22,13 +22,13 @@
 
 #include "GalleryScene.h"
 
-using namespace ly::visual;
+using namespace vega::visual;
 
 namespace
 {
 	struct Options
 	{
-		std::filesystem::path assets = LY_VISUAL_ASSETS_DIR;
+		std::filesystem::path assets = VEGA_VISUAL_ASSETS_DIR;
 		std::string capturePath;
 		std::string script;
 		int frames = 120;

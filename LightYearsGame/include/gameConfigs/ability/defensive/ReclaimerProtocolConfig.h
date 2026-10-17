@@ -8,21 +8,21 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::AbilityActorDefinition ReclaimerRepairKitBasic = []
+	inline const vega::AbilityActorDefinition ReclaimerRepairKitBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId =
 			AbilityData::ReclaimerProtocol::Actor::RepairKit::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::ReclaimerRepairKit;
+		definition.actorType = vega::AbilityActorType::ReclaimerRepairKit;
 		definition.presentationProfileId =
-			ly::ReclaimerProtocolPresentationIds::RepairKitBasic;
+			vega::ReclaimerProtocolPresentationIds::RepairKitBasic;
 		return definition;
 	}();
 
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition ReclaimerProtocol_Basic = []
+	inline const vega::GameAbilityDefinition ReclaimerProtocol_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::ReclaimerProtocol::AbilityId::Basic;
 		// This is only the builtin fallback slot. The runtime loadout owns the
 		// player's actual binding, so Reclaimer Protocol is not added to the default
@@ -31,13 +31,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Defense,
-			ly::GameplayTags::Ability::Family::ReclaimerProtocol
+			vega::GameplayTags::Ability::Defense,
+			vega::GameplayTags::Ability::Family::ReclaimerProtocol
 		};
 		definition.displayName = "Reclaimer Protocol";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupGreen_shield.png";
 		definition.accentColor = sf::Color{ 80, 220, 140, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::ReclaimerProtocol;
+		definition.behaviorType = vega::AbilityBehaviorType::ReclaimerProtocol;
 		return definition;
 	}();
 }

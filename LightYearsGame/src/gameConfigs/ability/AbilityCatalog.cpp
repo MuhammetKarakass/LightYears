@@ -57,9 +57,9 @@
 
 namespace AbilityData
 {
-	const ly::List<const ly::GameAbilityDefinition*>& GetBuiltinShippedAbilityDefinitions()
+	const vega::List<const vega::GameAbilityDefinition*>& GetBuiltinShippedAbilityDefinitions()
 	{
-		static const ly::List<const ly::GameAbilityDefinition*> definitions{
+		static const vega::List<const vega::GameAbilityDefinition*> definitions{
 			&Definitions::Shield_Basic,
 			&Definitions::DirectionalBarrier_Basic,
 			&Definitions::SunBeam_Strike_Basic,
@@ -137,19 +137,19 @@ namespace AbilityData
 		return definitions;
 	}
 
-	const ly::List<const ly::GameAbilityDefinition*>& GetShippedAbilityDefinitions()
+	const vega::List<const vega::GameAbilityDefinition*>& GetShippedAbilityDefinitions()
 	{
-		if (!ly::content::AbilityContentCatalog::IsLoaded())
+		if (!vega::content::AbilityContentCatalog::IsLoaded())
 		{
 			return GetBuiltinShippedAbilityDefinitions();
 		}
 
-		return ly::content::AbilityContentCatalog::GetDefinitions();
+		return vega::content::AbilityContentCatalog::GetDefinitions();
 	}
 
-	const ly::List<const ly::AbilityActorDefinition*>& GetBuiltinAbilityActorDefinitions()
+	const vega::List<const vega::AbilityActorDefinition*>& GetBuiltinAbilityActorDefinitions()
 	{
-		static const ly::List<const ly::AbilityActorDefinition*> definitions{
+		static const vega::List<const vega::AbilityActorDefinition*> definitions{
 			&GravityAnomaly::ActorProjectileBasic,
 			&GravityAnomaly::ActorFieldBasic,
 			&Rocket::ActorProjectileBasic,
@@ -198,16 +198,16 @@ namespace AbilityData
 		return definitions;
 	}
 
-	const ly::GameAbilityDefinition* FindShippedAbilityDefinition(
+	const vega::GameAbilityDefinition* FindShippedAbilityDefinition(
 		const std::string& abilityId
 	)
 	{
-		if (ly::content::AbilityContentCatalog::IsLoaded())
+		if (vega::content::AbilityContentCatalog::IsLoaded())
 		{
-			return ly::content::AbilityContentCatalog::FindById(abilityId);
+			return vega::content::AbilityContentCatalog::FindById(abilityId);
 		}
 
-		for (const ly::GameAbilityDefinition* definition : GetBuiltinShippedAbilityDefinitions())
+		for (const vega::GameAbilityDefinition* definition : GetBuiltinShippedAbilityDefinitions())
 		{
 			if (definition && definition->abilityId == abilityId)
 			{
@@ -217,15 +217,15 @@ namespace AbilityData
 		return nullptr;
 	}
 
-	const ly::AbilityActorDefinition* FindAbilityActorDefinition(
+	const vega::AbilityActorDefinition* FindAbilityActorDefinition(
 		const std::string& actorDefinitionId)
 	{
-		if (ly::content::AbilityContentCatalog::IsLoaded())
+		if (vega::content::AbilityContentCatalog::IsLoaded())
 		{
-			return ly::content::AbilityContentCatalog::FindActorById(actorDefinitionId);
+			return vega::content::AbilityContentCatalog::FindActorById(actorDefinitionId);
 		}
 
-		for (const ly::AbilityActorDefinition* definition : GetBuiltinAbilityActorDefinitions())
+		for (const vega::AbilityActorDefinition* definition : GetBuiltinAbilityActorDefinitions())
 		{
 			if (definition && definition->actorDefinitionId.ToString() == actorDefinitionId)
 			{

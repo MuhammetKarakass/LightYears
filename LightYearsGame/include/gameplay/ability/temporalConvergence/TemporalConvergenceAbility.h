@@ -2,7 +2,7 @@
 
 #include "gameplay/ability/GameAbility.h"
 
-namespace ly
+namespace vega
 {
 	// The ability is instant: it snapshots the cursor and creates an independent
 	// world actor. That is why its cooldown begins on cast rather than after the

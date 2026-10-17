@@ -3,7 +3,7 @@
 #include "visual/Galaxy.h"
 #include "visual/ShaderLibrary.h"
 #include <sky/OrbitSky.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::OrbitFraming;
 	using vega::sky::OrbitRing;

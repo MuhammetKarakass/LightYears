@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class LightYearsAbilitySystemComponent;
 	class CombatRuntime;

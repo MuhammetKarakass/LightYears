@@ -6,9 +6,9 @@
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition IroncladProtocol_Basic = []
+	inline const vega::GameAbilityDefinition IroncladProtocol_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::IroncladProtocol::AbilityId::Basic;
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
@@ -17,7 +17,7 @@ namespace AbilityData::Definitions
 		definition.displayName = "Ironclad Protocol";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 		definition.accentColor = sf::Color{ 180, 180, 200, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::IroncladProtocol;
+		definition.behaviorType = vega::AbilityBehaviorType::IroncladProtocol;
 		return definition;
 	}();
 }

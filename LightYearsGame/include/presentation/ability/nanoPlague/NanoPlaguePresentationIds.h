@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::NanoPlaguePresentationIds
+namespace vega::NanoPlaguePresentationIds
 {
 	inline constexpr char InfectionBasic[] =
 		"Presentation.Ability.NanoPlague.Infection.Basic";

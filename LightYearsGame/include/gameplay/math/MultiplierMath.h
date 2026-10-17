@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <limits>
 
-namespace ly::math
+namespace vega::math
 {
 	inline bool IsFiniteNonNegativeMultiplier(float value) noexcept
 	{

@@ -7,7 +7,7 @@ uncommitted_areas:
   - attribute and gameplay-effect tag consumers
   - GasLiteCoreTests
 source_files:
-  - LightYearsEngine/include/framework/Core.h
+  - VegaEngine/include/framework/Core.h
   - LightYearsGame/include/gameplay/attributes/AttributeIds.h
   - SpaceAbilitySystem/include/attributes/GameplayAttribute.h
   - SpaceAbilitySystem/include/AbilitySystemComponent.h
@@ -15,11 +15,11 @@ source_files:
   - SpaceAbilitySystem/include/effects/GameplayEffectRuntimeSystem.h
   - LightYearsGame/tests/GasLiteCoreTests.cpp
 symbols:
-  - ly::GameplayTag::GetBaseTag
-  - ly::GameplayTag::MatchesTag
-  - ly::GameplayTagContainer::AddTag
-  - ly::GameplayTagContainer::RemoveTag
-  - ly::GameplayTagContainer::HasTag
+  - vega::GameplayTag::GetBaseTag
+  - vega::GameplayTag::MatchesTag
+  - vega::GameplayTagContainer::AddTag
+  - vega::GameplayTagContainer::RemoveTag
+  - vega::GameplayTagContainer::HasTag
   - sas::AbilitySystemComponent::CanApplyGameplayEffect
   - sas::GameplayEffectRuntimeSystem::CanApplyEffect
 related:
@@ -64,8 +64,8 @@ sequenceDiagram
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/Core.h`  
-Sınıf veya namespace: `ly::GameplayTag`  
+Dosya: `VegaEngine/include/framework/Core.h`  
+Sınıf veya namespace: `vega::GameplayTag`  
 Fonksiyon: `WithIndex`  
 Görevi: Runtime'a özel suffix'li tag üretir.
 
@@ -76,8 +76,8 @@ Görevi: Runtime'a özel suffix'li tag üretir.
         }
 ```
 
-Dosya: `LightYearsEngine/include/framework/Core.h`  
-Sınıf veya namespace: `ly::GameplayTagContainer`  
+Dosya: `VegaEngine/include/framework/Core.h`  
+Sınıf veya namespace: `vega::GameplayTagContainer`  
 Fonksiyon: `RemoveTag`  
 Görevi: Counted ownership bittiğinde tag'i gerçekten siler.
 

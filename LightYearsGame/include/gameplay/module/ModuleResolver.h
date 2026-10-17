@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct ResolvedModuleTriggerBuff
 	{

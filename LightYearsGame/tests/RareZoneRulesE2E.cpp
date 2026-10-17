@@ -11,7 +11,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace common_module_e2e;
 
 	// Subjects are shipped modules, reduced in a fixture copy. Each gets a single owner probe (Owner.AttackSpeed,
@@ -458,7 +458,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	try

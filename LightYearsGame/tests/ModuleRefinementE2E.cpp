@@ -103,7 +103,7 @@ namespace
 	{
 		Fixture f{ report, application }; const auto enemy = Enemy(f);
 		const auto* authored = content::AbilityContentCatalog::FindById("Ability.Offense.InfernoSpray.Basic");
-		enemy->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		enemy->SetCollisionMask(vega::GameCollision::PlayerBullet);
 		auto definition = *authored; definition.slot = sas::AbilitySlot::Ability3;
 		auto& asc = f.ship->GetAbilitySystemComponent();
 		report.Check(asc.RemoveAbility(asc.GetAbility(sas::AbilitySlot::Ability3)->GetHandle()) && asc.GrantAbility(definition).IsValid(), "remaining ability is shipped Inferno Spray");
@@ -177,7 +177,7 @@ namespace
 }
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2 && !(argc == 3 && std::string{ argv[2] } == "cfg")) return 2;
 	Report report;
 	try

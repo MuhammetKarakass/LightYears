@@ -17,7 +17,7 @@ namespace
 
 	struct PlayerManagerResetGuard
 	{
-		ly::PlayerManager& playerManager;
+		vega::PlayerManager& playerManager;
 
 		~PlayerManagerResetGuard()
 		{
@@ -29,7 +29,7 @@ namespace
 	{
 		int calls{ 0 };
 
-		void OnShipDestroyed(ly::Actor*)
+		void OnShipDestroyed(vega::Actor*)
 		{
 			++calls;
 		}
@@ -38,7 +38,7 @@ namespace
 
 int RunPlayerShipLifetimeTests()
 {
-	using namespace ly;
+	using namespace vega;
 	AssetManager::GetAssetManager().SetAssetRootDirectory("LightYearsGame/assets/");
 	if (!GameContentBootstrap::Register())
 	{

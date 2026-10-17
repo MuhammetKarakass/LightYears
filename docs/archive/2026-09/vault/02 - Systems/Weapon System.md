@@ -16,12 +16,12 @@ source_files:
   - LightYearsGame/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
   - LightYearsGame/src/gameplay/ability/GameAbilityActionExecutor.cpp
 symbols:
-  - ly::PrimaryWeaponDefinition
-  - ly::PrimaryWeaponHandler
-  - ly::PrimaryWeaponFeatureHandler
-  - ly::PrimaryWeaponHandlerRegistry
-  - ly::PrimaryWeaponExecutionSystem
-  - ly::PrimaryWeaponRuntimeState
+  - vega::PrimaryWeaponDefinition
+  - vega::PrimaryWeaponHandler
+  - vega::PrimaryWeaponFeatureHandler
+  - vega::PrimaryWeaponHandlerRegistry
+  - vega::PrimaryWeaponExecutionSystem
+  - vega::PrimaryWeaponRuntimeState
 related:
   - "[[Ability Execution System]]"
   - "[[Primary Weapon Fire Lifecycle]]"
@@ -64,14 +64,14 @@ Sembol: `PrimaryWeaponDefinition`
 struct PrimaryWeaponDefinition
 {
     std::string weaponId;
-    ly::GameplayTag weaponTypeTag;
+    vega::GameplayTag weaponTypeTag;
     WeaponPresentationDefinition presentationDefinition;
     sas::GameplayAttributeList attributes;
-    ly::List<WeaponMuzzleDefinition> muzzleDefinitions;
+    vega::List<WeaponMuzzleDefinition> muzzleDefinitions;
     bool automaticFire;
     WeaponProgressionProfile progressionProfile;
-    ly::List<ly::GameplayTag> featureTags;
-    ly::List<ly::GameplayTag> damageTags;
+    vega::List<vega::GameplayTag> featureTags;
+    vega::List<vega::GameplayTag> damageTags;
     PrimaryWeaponCadenceMode cadenceMode{ PrimaryWeaponCadenceMode::FixedInterval };
     std::optional<PrimaryWeaponMagazineDefinition> magazine;
 };

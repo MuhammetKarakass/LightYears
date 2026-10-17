@@ -9,7 +9,7 @@ verified_worktree_state: dirty
 
 ## Kaynakta mevcut
 
-`LightYearsEngine/include/framework/SimulationTime.h`: RealTime, HostileGameplay, ProjectileGameplay. `World::TickInternal` actor dt'sini domain ölçeğiyle çarpar; `GetSimulationTimeScale` kaynaklar arasındaki en küçük multiplier'ı seçer, çarpımla birleştirmez. Camera/HUD ve Application timer/physics dt'si aynı yoldan ölçeklenmez.
+`VegaEngine/include/framework/SimulationTime.h`: RealTime, HostileGameplay, ProjectileGameplay. `World::TickInternal` actor dt'sini domain ölçeğiyle çarpar; `GetSimulationTimeScale` kaynaklar arasındaki en küçük multiplier'ı seçer, çarpımla birleştirmez. Camera/HUD ve Application timer/physics dt'si aynı yoldan ölçeklenmez.
 
 `LightYearsGame/src/gameplay/ability/timeSlip/TimeSlipAbility.cpp`, `Activate`, hostile ve projectile domain'lerine modifier ekler ve owner primary fire rate'ini ayrıca değiştirir. `End` yalnız kendi source-id modifier'larını kaldırır. Player movement/diğer ability zamanını global olarak yavaşlatmaz. Bu aile kayıtlı fakat güncel default loadout'ta değildir.
 

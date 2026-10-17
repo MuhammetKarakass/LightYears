@@ -9,7 +9,7 @@
 #include "spaceShip/SpaceShip.h"
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

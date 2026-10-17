@@ -1,7 +1,7 @@
 #include "level/SpriteActor.h"
 #include <framework/reflection/Reflection.h>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(SpriteActor, Actor)
 	{

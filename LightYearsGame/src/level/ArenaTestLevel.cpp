@@ -24,7 +24,7 @@
 #include <cmath>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -153,7 +153,7 @@ namespace ly
 		);
 		if (!dummySource)
 		{
-			LY_GAME_ERROR("Arena test dummy ship definition is unavailable.");
+			VEGA_GAME_ERROR("Arena test dummy ship definition is unavailable.");
 			return;
 		}
 		ShipDefinition oldDummyDefinition = *dummySource;
@@ -295,7 +295,7 @@ namespace ly
 				{
 					mHeldShipSelectionKey = keyPressed->code;
 					PlayerManager::GetPlayerManager().SetSelectedShipId(shipIds[shipIndex]);
-					LY_GAME_INFO("Player ship selected: %s", shipIds[shipIndex].c_str());
+					VEGA_GAME_INFO("Player ship selected: %s", shipIds[shipIndex].c_str());
 					OnRestartLevel();
 					return true;
 				}
@@ -346,7 +346,7 @@ namespace ly
 			EncounterSequenceMode::EndlessCycle,
 			&failureReason))
 		{
-			LY_GAME_ERROR("Arena encounter could not start: %s", failureReason.c_str());
+			VEGA_GAME_ERROR("Arena encounter could not start: %s", failureReason.c_str());
 			mEncounterFailureReported = true;
 			mEncounterState = ArenaEncounterState::Failed;
 			return false;
@@ -449,7 +449,7 @@ namespace ly
 		}
 		if (!mEncounterFailureReported)
 		{
-			LY_GAME_ERROR("Arena encounter failed: %s", failureReason.c_str());
+			VEGA_GAME_ERROR("Arena encounter failed: %s", failureReason.c_str());
 			mEncounterFailureReported = true;
 		}
 	}
@@ -843,7 +843,7 @@ namespace ly
 		summary += "BOUNDARY\n";
 		summary += "  penalties=" + std::to_string(mPlaytestMetrics.boundaryPenaltyCount) + "\n";
 
-		LY_GAME_INFO("%s", summary.c_str());
+		VEGA_GAME_INFO("%s", summary.c_str());
 	}
 }
 

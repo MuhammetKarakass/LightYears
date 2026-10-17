@@ -31,7 +31,7 @@ namespace vega
 		for (const auto& actor : context.selection.GetAll())
 		{
 			if (HasSelectedAncestor(context.selection, *actor)) continue;
-			if (!actor->FindComponent<ly::SceneEntityComponent>() || actor->GetWorld() != context.world) return false;
+			if (!actor->FindComponent<vega::SceneEntityComponent>() || actor->GetWorld() != context.world) return false;
 			command->Add(std::make_unique<DestroyActor>(actor->GetUniqueID()));
 		}
 		return history.Execute(std::move(command));
@@ -44,7 +44,7 @@ namespace vega
 		const sf::Vector2f high{ std::max(first.x, last.x), std::max(first.y, last.y) };
 		const sf::FloatRect rectangle{ low, high - low };
 		if (!add && !remove) context.selection.Clear();
-		for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+		for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 		{
 			const auto actor = weak.lock();
 			if (!actor || actor->GetIsPendingDestroy()) continue;
@@ -84,7 +84,7 @@ namespace vega
 			}
 			pivot /= static_cast<float>(entities.size());
 			auto command = std::make_unique<CompoundCommand>("Paste selection", 0, true);
-			ly::SceneSerializer::RemapGuids(entities);
+			vega::SceneSerializer::RemapGuids(entities);
 			for (auto& entity : entities)
 			{
 				

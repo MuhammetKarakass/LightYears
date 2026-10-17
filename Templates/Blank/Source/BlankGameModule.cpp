@@ -12,7 +12,7 @@
 
 namespace blank
 {
-	BlankMovement::BlankMovement(ly::Actor& owner) : ActorComponent{ owner }
+	BlankMovement::BlankMovement(vega::Actor& owner) : ActorComponent{ owner }
 	{
 		mCanEverTick = true;
 	}
@@ -32,19 +32,19 @@ namespace blank
 		}
 	}
 
-	BlankPlayer::BlankPlayer(ly::World* world) : Actor{ world, "textures/tile.png" }
+	BlankPlayer::BlankPlayer(vega::World* world) : Actor{ world, "textures/tile.png" }
 	{
 		AddComponent<BlankMovement>();
 	}
-	float BlankPlayer::GetSize() const { return FindComponent<ly::SpriteComponent>()->GetScale().x; }
-	void BlankPlayer::SetSize(float size) { FindComponent<ly::SpriteComponent>()->SetScale({ size, size }); }
+	float BlankPlayer::GetSize() const { return FindComponent<vega::SpriteComponent>()->GetScale().x; }
+	void BlankPlayer::SetSize(float size) { FindComponent<vega::SpriteComponent>()->SetScale({ size, size }); }
 
-	VEGA_REFLECT(BlankMovement, ly::ActorComponent)
+	VEGA_REFLECT(BlankMovement, vega::ActorComponent)
 	{
 		VEGA_ADDABLE();
 		VEGA_PROPERTY("Speed", GetSpeed, SetSpeed).Range(0.f, 2000.f);
 	}
-	VEGA_REFLECT(BlankPlayer, ly::Actor)
+	VEGA_REFLECT(BlankPlayer, vega::Actor)
 	{
 		VEGA_SPAWNABLE();
 		VEGA_REQUIRES(SpriteComponent);
@@ -56,13 +56,13 @@ namespace blank
 
 	namespace
 	{
-		class BlankWorld final : public ly::World
+		class BlankWorld final : public vega::World
 		{
 		public:
-			BlankWorld(ly::Application* app, const nlohmann::json& scene, bool edit)
+			BlankWorld(vega::Application* app, const nlohmann::json& scene, bool edit)
 				: World{ app }, mEdit{ edit }
 			{
-				const auto loaded = ly::SceneSerializer::Load(*this, scene);
+				const auto loaded = vega::SceneSerializer::Load(*this, scene);
 				if (!loaded.warnings.empty()) throw std::runtime_error(loaded.warnings.front());
 				SetPaused(edit);
 			}
@@ -74,36 +74,36 @@ namespace blank
 
 	void BlankGameModule::RegisterTypes()
 	{
-		ly::reflect::RegisterEngineTypes();
+		vega::reflect::RegisterEngineTypes();
 		VEGA_REGISTER(BlankMovement);
 		VEGA_REGISTER(BlankPlayer);
 		vega::script::RegisterScriptTypes();
 	}
 	void BlankGameModule::ConfigureProject(const std::filesystem::path& file)
 	{
-		const auto project = ly::ProjectSettings::Load(file);
+		const auto project = vega::ProjectSettings::Load(file);
 		mRoot = std::filesystem::absolute(file.parent_path() / project.editor.value("assetRoot", std::string{ "." }));
 	}
-	void BlankGameModule::Initialize(ly::Application&, bool)
+	void BlankGameModule::Initialize(vega::Application&, bool)
 	{
 #ifdef _MSC_VER
 		for (int i = 1; i + 1 < __argc; ++i)
 			if (std::string{ __argv[i] } == "--asset-root") mRoot = __argv[++i];
 #endif
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(mRoot.generic_string() + "/");
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(mRoot.generic_string() + "/");
 		vega::script::SetScriptRoot(mRoot);
-		vega::script::ScriptRuntime::Get().SetPlayerResolver([this](ly::World& world) { return PlayerActor(world); });
+		vega::script::ScriptRuntime::Get().SetPlayerResolver([this](vega::World& world) { return PlayerActor(world); });
 	}
-	std::shared_ptr<ly::World> BlankGameModule::CreateLevel(ly::Application& application,
+	std::shared_ptr<vega::World> BlankGameModule::CreateLevel(vega::Application& application,
 		const nlohmann::json& scene, bool edit)
 	{
 		return std::make_shared<BlankWorld>(&application, scene, edit);
 	}
-	std::shared_ptr<ly::Actor> BlankGameModule::PlayerActor(ly::World& world)
+	std::shared_ptr<vega::Actor> BlankGameModule::PlayerActor(vega::World& world)
 	{
 		for (const auto& weak : world.GetActorsByTypeIncludingPending<BlankPlayer>())
 			if (auto actor = weak.lock())
-				if (auto* identity = actor->FindComponent<ly::SceneEntityComponent>(); identity && identity->name == "Player") return actor;
+				if (auto* identity = actor->FindComponent<vega::SceneEntityComponent>(); identity && identity->name == "Player") return actor;
 		return {};
 	}
 }

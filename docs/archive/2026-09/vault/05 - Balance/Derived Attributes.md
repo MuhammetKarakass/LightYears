@@ -20,7 +20,7 @@ symbols:
   - sas::AttributeMath::GetCombatLuckFactor
   - sas::AttributeMath::GetLootLuckFactor
   - sas::AttributeMath::GetArmorDamageReduction
-  - ly::ShipRuntime::RecalculateAttributes
+  - vega::ShipRuntime::RecalculateAttributes
 related:
   - "[[Attribute Catalog]]"
   - "[[Attribute System]]"
@@ -108,7 +108,7 @@ Görevi: Base chance ile rating katkısını kalan olasılık üzerinde birleşt
 ```
 
 Dosya: `LightYearsGame/src/gameplay/ship/ShipRuntime.cpp`  
-Sınıf veya namespace: `ly::ShipRuntime`  
+Sınıf veya namespace: `vega::ShipRuntime`  
 Fonksiyon: `RecalculateAttributes`  
 Görevi: EnergyPower'ten shield ve afterburner kapasitesini türetir.
 
@@ -124,7 +124,7 @@ Görevi: EnergyPower'ten shield ve afterburner kapasitesini türetir.
 ```
 
 Dosya: `LightYearsGame/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp`  
-Sınıf veya namespace: `ly::AbilityActionAttributeResolver`  
+Sınıf veya namespace: `vega::AbilityActionAttributeResolver`  
 Fonksiyon: `ResolveAttributes`  
 Görevi: Scaling-rule operation semantiğini definition-local değere uygular.
 

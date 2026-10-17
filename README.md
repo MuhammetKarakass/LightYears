@@ -6,7 +6,7 @@
 ![CMake](https://img.shields.io/badge/CMake-3.31.6-red)
 ![License](https://img.shields.io/badge/license-Educational-lightgrey)
 
-A high-performance 2D space shooter built from scratch with a custom engine architecture, featuring dynamic lighting, advanced physics, and procedurally managed enemy waves.
+A high-performance 2D space shooter built from scratch with Vega Engine, featuring dynamic lighting, advanced physics, and procedurally managed enemy waves.
 
 ---
 
@@ -32,7 +32,7 @@ A high-performance 2D space shooter built from scratch with a custom engine arch
 
 ## Introduction
 
-**Light Years** is a modern C++17 space shooter game built from the ground up with a custom game engine. The player commands a hero spaceship against waves of enemy ships through procedurally managed stages, culminating in a boss battle and an infinite survival mode.
+**Light Years** is a modern C++17 space shooter game built from the ground up with Vega Engine. The player commands a hero spaceship against waves of enemy ships through procedurally managed stages, culminating in a boss battle and an infinite survival mode.
 
 **Project Origin & Evolution:**
 This project initially started as part of the **[Learn C++ and Make a Game from Scratch](https://www.udemy.com/course/complete-game-development-series-04-making-a-game-with-c/learn/lecture/40817092#overview)** course on Udemy. It has since been significantly expanded with custom systems including shaders, sound system, parallax scrolling, multi-phase boss AI, and more.
@@ -94,7 +94,7 @@ You can download the game from this repository (see `LightYears.7z`) or from [it
 
 ```
 LightYears/
-├── LightYearsEngine/              # Core engine (reusable framework)
+├── VegaEngine/              # Core engine (reusable framework)
 │   ├── framework/                 # Application, World, Actor, Physics, Audio, Assets
 │   ├── gameplay/                  # Game stage management (wave system)
 │   ├── widget/                    # UI framework (HUD, Buttons, Gauges, Text)

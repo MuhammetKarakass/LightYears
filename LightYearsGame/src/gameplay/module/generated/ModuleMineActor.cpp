@@ -3,7 +3,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	ModuleMineActor::ModuleMineActor(World* world, const weak_ptr<Actor>& source, const ModuleMinePresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, float damage, float radius, float fuse, int cryoStacks, const GameplayTag& damageType) : Actor{ world }, mSource{ source }, mProfile{ profile }, mLease{ lease }, mDamage{ damage }, mRadius{ radius }, mFuse{ fuse }, mRemaining{ fuse }, mCryoStacks{ cryoStacks }, mDamageType{ damageType }
 	{

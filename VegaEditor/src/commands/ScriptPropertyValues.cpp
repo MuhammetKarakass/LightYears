@@ -7,9 +7,9 @@
 namespace vega
 {
 	bool ParsePropertyValue(
-	    const ly::reflect::PropertyInfo& property, const std::vector<std::string>& arguments, bool expect, ly::reflect::PropertyValue& value, float& tolerance)
+	    const vega::reflect::PropertyInfo& property, const std::vector<std::string>& arguments, bool expect, vega::reflect::PropertyValue& value, float& tolerance)
 	{
-		using ly::reflect::PropertyKind;
+		using vega::reflect::PropertyKind;
 		const std::size_t count = property.kind == PropertyKind::Vector2 ? 2u : property.kind == PropertyKind::Color ? 4u : 1u;
 		if (arguments.size() != count && (!expect || arguments.size() != count + 1)) return false;
 		const auto real = [&](std::size_t index, float& number)
@@ -70,7 +70,7 @@ namespace vega
 		return false;
 	}
 
-	bool PropertyEquals(const ly::reflect::PropertyValue& actual, const ly::reflect::PropertyValue& expected, float tolerance)
+	bool PropertyEquals(const vega::reflect::PropertyValue& actual, const vega::reflect::PropertyValue& expected, float tolerance)
 	{
 		if (actual.index() != expected.index()) return false;
 		if (const auto* number = std::get_if<float>(&actual)) return std::abs(*number - std::get<float>(expected)) <= tolerance;

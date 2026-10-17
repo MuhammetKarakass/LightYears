@@ -19,7 +19,7 @@ namespace vega
 		void FocusConsole() { showConsole = true; mFocusConsole = true; }
 		void TrackSettings();
 		void ReportError(const char* field, const std::string& error);
-		ly::debug::LogCapture capture;
+		vega::debug::LogCapture capture;
 		bool showConsole = true, showProfiler = true, clearOnPlay = false;
 	private:
 		void FilterRows();
@@ -32,18 +32,18 @@ namespace vega
 		std::unordered_map<std::string, std::string> mEditorErrors;
 		struct ConsoleRow
 		{
-			std::shared_ptr<const ly::debug::ConsoleRecord> record;
+			std::shared_ptr<const vega::debug::ConsoleRecord> record;
 			std::size_t count = 1;
 		};
-		std::vector<std::shared_ptr<const ly::debug::ConsoleRecord>> mRecords;
+		std::vector<std::shared_ptr<const vega::debug::ConsoleRecord>> mRecords;
 		std::vector<ConsoleRow> mRows;
-		std::optional<ly::debug::ConsoleRecord> mSelected;
+		std::optional<vega::debug::ConsoleRecord> mSelected;
 		std::size_t mCounts[3]{};
 		std::string mLatest;
 		double mLatestUntil = 0;
 		std::uint64_t mLatestID = 0;
 		unsigned int mSavedFlags = 0;
-		ly::debug::ProfileFrame mProfile;
+		vega::debug::ProfileFrame mProfile;
 		std::string mCaptureStatus;
 	};
 }

@@ -9,7 +9,7 @@
 #include <functional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	class GameHUD;
 	class EncounterHUDView;

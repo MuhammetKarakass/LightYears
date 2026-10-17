@@ -2,7 +2,7 @@
 
 #include "framework/Actor.h"
 
-namespace ly::DirectionalBarrierEffectBehavior
+namespace vega::DirectionalBarrierEffectBehavior
 {
 	bool RegisterDirectionalBarrierEffectBehavior();
 

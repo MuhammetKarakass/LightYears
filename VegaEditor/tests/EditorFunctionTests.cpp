@@ -28,7 +28,7 @@ namespace
 	}
 
 	// Test-only component whose reflected functions mutate a field, throw, or opt into play mode.
-	class TestActionComponent : public ly::ActorComponent
+	class TestActionComponent : public vega::ActorComponent
 	{
 	public:
 		using ActorComponent::ActorComponent;
@@ -41,8 +41,8 @@ namespace
 
 	void RegisterTestTypes()
 	{
-		ly::reflect::RegisterEngineTypes();
-		ly::reflect::Class<TestActionComponent, ly::ActorComponent> builder{ "TestActionComponent" };
+		vega::reflect::RegisterEngineTypes();
+		vega::reflect::Class<TestActionComponent, vega::ActorComponent> builder{ "TestActionComponent" };
 		builder.Property("Count", [](const TestActionComponent& c) { return c.GetCount(); });
 		builder.Function("Count", "Count", &TestActionComponent::Count);
 		builder.Function("Throw", "Throw", &TestActionComponent::Throw);
@@ -68,15 +68,15 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	RegisterTestTypes();
-	ly::World world{ nullptr };
-	auto first = world.SpawnActor<ly::Actor>().lock();
-	first->AddComponent<ly::SceneEntityComponent>("a", "Caller A");
+	vega::World world{ nullptr };
+	auto first = world.SpawnActor<vega::Actor>().lock();
+	first->AddComponent<vega::SceneEntityComponent>("a", "Caller A");
 	auto& firstComponent = first->AddComponent<TestActionComponent>();
-	auto second = world.SpawnActor<ly::Actor>().lock();
-	second->AddComponent<ly::SceneEntityComponent>("b", "Caller B");
+	auto second = world.SpawnActor<vega::Actor>().lock();
+	second->AddComponent<vega::SceneEntityComponent>("b", "Caller B");
 	auto& secondComponent = second->AddComponent<TestActionComponent>();
 	world.TickInternal(0.f);
 	vega::EditorSelection selection;

@@ -2,7 +2,7 @@
 
 #include "content/ContentId.h"
 
-namespace ly::InertialWakePresentationIds
+namespace vega::InertialWakePresentationIds
 {
 	inline const sas::ContentId WakeBasic{
 		"Presentation.Ability.InertialWake.Wake.Basic"

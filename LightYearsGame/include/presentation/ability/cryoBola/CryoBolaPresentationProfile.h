@@ -4,7 +4,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Kept family-local: the linked spinning weights and the rupture are unique
 	// to Cryo Bola, so they do not enlarge a global visual configuration type.

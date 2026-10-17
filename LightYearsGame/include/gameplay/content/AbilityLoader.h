@@ -8,7 +8,7 @@
 #include <map>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	class AbilityLoader
 	{

@@ -3,7 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <widget/UIViewModel.h>
 
-namespace ly
+namespace vega
 {
 	struct VitalsViewModel
 	{

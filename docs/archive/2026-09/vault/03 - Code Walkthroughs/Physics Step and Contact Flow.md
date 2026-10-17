@@ -4,13 +4,13 @@ status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
-  - LightYearsEngine/src/framework/Actor.cpp
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/src/framework/Actor.cpp
 symbols:
-  - ly::Application::TickInternal
-  - ly::PhysicsSystem::Step
-  - ly::PhysicsSystem::ProcessContactEvents
+  - vega::Application::TickInternal
+  - vega::PhysicsSystem::Step
+  - vega::PhysicsSystem::ProcessContactEvents
 related:
   - "[[Physics System]]"
   - "[[PhysicsSystem]]"

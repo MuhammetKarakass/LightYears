@@ -7,34 +7,34 @@
 
 namespace AbilityData::WingSentinels
 {
-	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+	inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::WingSentinelProjectile;
-		definition.presentationProfileId = ly::WingSentinelsPresentationIds::Basic;
+		definition.actorType = vega::AbilityActorType::WingSentinelProjectile;
+		definition.presentationProfileId = vega::WingSentinelsPresentationIds::Basic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition WingSentinels_Basic = []
+	inline const vega::GameAbilityDefinition WingSentinels_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::WingSentinels::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability4;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::WingSentinels
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::WingSentinels
 		};
 		definition.displayName = "Wing Sentinels";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 100, 205, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::WingSentinels;
+		definition.behaviorType = vega::AbilityBehaviorType::WingSentinels;
 		return definition;
 	}();
 }

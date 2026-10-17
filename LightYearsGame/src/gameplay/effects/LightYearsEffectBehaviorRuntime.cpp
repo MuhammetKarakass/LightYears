@@ -1,6 +1,6 @@
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 
-namespace ly
+namespace vega
 {
 	LightYearsEffectBehaviorRuntime& GetEffectBehaviorRuntime()
 	{

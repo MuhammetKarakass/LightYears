@@ -37,7 +37,7 @@
 #include <iostream>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -260,10 +260,10 @@ namespace ly
 					? owner->GetActorLocation() + owner->GetActorForwardDirection() * targetDistance
 					: sf::Vector2f{ 0.f, 0.f };
 			target->SetActorLocation(targetLocation);
-			owner->SetCollisionLayer(ly::GameCollision::Player);
-			owner->SetCollisionMask(ly::GameCollision::Enemy);
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::Player | ly::GameCollision::PlayerBullet);
+			owner->SetCollisionLayer(vega::GameCollision::Player);
+			owner->SetCollisionMask(vega::GameCollision::Enemy);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::Player | vega::GameCollision::PlayerBullet);
 			sas::AttributeSystem& ownerAttributes =
 				owner->GetCombatRuntime().GetAbilitySystemComponent().GetAttributes();
 			ownerAttributes.SetBaseValue(OwnerAttributeIds::AttackPower, TestPower);

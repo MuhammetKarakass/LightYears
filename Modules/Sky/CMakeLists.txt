@@ -1,5 +1,5 @@
 # The module has no engine, game, scripting or ability-system dependency.
-set(CMAKE_CXX_FLAGS_DEBUG "${LY_DEBUG_FLAGS_RENDER}")
+set(CMAKE_CXX_FLAGS_DEBUG "${VEGA_DEBUG_FLAGS_RENDER}")
 add_library(VegaSkyAstro STATIC src/Astro.cpp src/GalaxyModel.cpp)
 target_include_directories(VegaSkyAstro PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_library(VegaSky STATIC
@@ -10,8 +10,8 @@ add_library(VegaSky STATIC
 	src/OrbitSky.cpp src/VisualPipeline.cpp)
 target_include_directories(VegaSky PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(VegaSky PUBLIC VegaSkyAstro SFML::Graphics nlohmann_json::nlohmann_json)
-ly_enable_warnings(VegaSky)
-ly_enable_warnings(VegaSkyAstro)
+vega_enable_warnings(VegaSky)
+vega_enable_warnings(VegaSkyAstro)
 
 # Copy only reusable renderer assets. Each game owns its authored sky documents
 # and can replace this neutral palette with its own art direction.

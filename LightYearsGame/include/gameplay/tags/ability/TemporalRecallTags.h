@@ -2,18 +2,18 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag TemporalRecall{ "Ability.Defense.TemporalRecall" };
 }
 
-namespace ly::GameplayTags::State::Ability::TemporalRecall
+namespace vega::GameplayTags::State::Ability::TemporalRecall
 {
 	inline const GameplayTag Focusing{ "State.Ability.TemporalRecall.Focusing" };
 	inline const GameplayTag Rewinding{ "State.Ability.TemporalRecall.Rewinding" };
 }
 
-namespace ly::GameplayTags::Event::Ability::TemporalRecall
+namespace vega::GameplayTags::Event::Ability::TemporalRecall
 {
 	inline const GameplayTag Started{ "Event.Ability.TemporalRecall.Started" };
 	inline const GameplayTag RewindStarted{

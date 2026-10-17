@@ -3,7 +3,7 @@
 #include <functional>
 #include <framework/Actor.h>
 
-namespace ly
+namespace vega
 {
 	class PlayerSpaceShip;
 	class World;

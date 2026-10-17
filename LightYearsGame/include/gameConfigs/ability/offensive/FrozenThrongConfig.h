@@ -8,20 +8,20 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::AbilityActorDefinition FrozenThrongHuskBasic = []
+	inline const vega::AbilityActorDefinition FrozenThrongHuskBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId =
 			AbilityData::FrozenThrong::Actor::Husk::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::FrozenThrongHusk;
+		definition.actorType = vega::AbilityActorType::FrozenThrongHusk;
 		definition.presentationProfileId =
-			ly::FrozenThrongPresentationIds::HuskBasic;
+			vega::FrozenThrongPresentationIds::HuskBasic;
 		return definition;
 	}();
 
-	inline const ly::GameAbilityDefinition FrozenThrong_Basic = []
+	inline const vega::GameAbilityDefinition FrozenThrong_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::FrozenThrong::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// This is only the builtin fallback slot. The runtime loadout owns the
@@ -31,13 +31,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::FrozenThrong
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::FrozenThrong
 		};
 		definition.displayName = "Frozen Throng";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 150, 225, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::FrozenThrong;
+		definition.behaviorType = vega::AbilityBehaviorType::FrozenThrong;
 		return definition;
 	}();
 }

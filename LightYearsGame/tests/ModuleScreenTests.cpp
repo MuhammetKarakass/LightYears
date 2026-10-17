@@ -28,19 +28,19 @@ namespace
 {
 	using Json = nlohmann::json;
 
-	class HeadlessModuleLevel final : public ly::GameLevel
+	class HeadlessModuleLevel final : public vega::GameLevel
 	{
 	public:
-		explicit HeadlessModuleLevel(ly::Application* application) : GameLevel{ application } {}
+		explicit HeadlessModuleLevel(vega::Application* application) : GameLevel{ application } {}
 		bool Dispatch(const sf::Event& event) { return DispatchEvent(event); }
-		std::shared_ptr<ly::ModuleScreenHUDController> controller;
+		std::shared_ptr<vega::ModuleScreenHUDController> controller;
 
 	protected:
 		void InitializeLevelSystems() override {}
 		void CreateGameHUD() override {}
 		void CreateHUDControllers() override
 		{
-			controller = std::make_shared<ly::ModuleScreenHUDController>(std::weak_ptr<ly::GameHUD>{});
+			controller = std::make_shared<vega::ModuleScreenHUDController>(std::weak_ptr<vega::GameHUD>{});
 			AddHUDController(controller);
 		}
 		void OnGameStart() override {}
@@ -48,7 +48,7 @@ namespace
 
 	struct PlayerManagerResetGuard
 	{
-		ly::PlayerManager& manager;
+		vega::PlayerManager& manager;
 		~PlayerManagerResetGuard() { manager.Reset(); }
 	};
 
@@ -73,23 +73,23 @@ namespace
 		output << artifact.dump(2) << '\n';
 	}
 
-	Json CellsJson(const ly::List<sf::Vector2i>& cells)
+	Json CellsJson(const vega::List<sf::Vector2i>& cells)
 	{
 		Json result = Json::array();
 		for (const sf::Vector2i& cell : cells) result.push_back({ cell.x, cell.y });
 		return result;
 	}
 
-	std::uint32_t FindInventoryId(const ly::Player& player, const std::string& moduleId, int variant = 0)
+	std::uint32_t FindInventoryId(const vega::Player& player, const std::string& moduleId, int variant = 0)
 	{
-		for (const ly::ModulePlacement& item : player.GetModuleLoadout().GetInventory())
+		for (const vega::ModulePlacement& item : player.GetModuleLoadout().GetInventory())
 			if (item.moduleId.ToString() == moduleId && item.variantIndex == variant) return item.instanceId;
 		return 0;
 	}
 
 	void RunTests(Report& report, const std::filesystem::path& artifacts)
 	{
-		using namespace ly;
+		using namespace vega;
 		const std::string piercingTip = "Module.Primary.PiercingTip.Basic";
 
 		std::string title = "Module Screen E2E";
@@ -476,7 +476,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: LightYearsModuleScreenTests <artifact-path>\n";
@@ -487,10 +487,10 @@ int main(int argc, char** argv)
 	const std::filesystem::path artifactPath{ argv[1] };
 	try
 	{
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
-		if (!ly::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
+		if (!vega::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
 		RunTests(report, artifactPath.parent_path());
 	}
 	catch (const std::exception& exception)

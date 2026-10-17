@@ -3,7 +3,7 @@
 #include <set>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	// Declares the numeric JSON keys a concrete ability family owns. The loader
 	// uses this data generically and never needs to know individual settings.

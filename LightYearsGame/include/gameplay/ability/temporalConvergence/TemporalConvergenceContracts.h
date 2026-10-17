@@ -12,9 +12,9 @@ namespace AbilityData::TemporalConvergence
 			"Ability.Defense.TemporalConvergence.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::TemporalConvergence
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::TemporalConvergence
 	};
 
 	struct Actor
@@ -40,8 +40,8 @@ namespace AbilityData::TemporalConvergence
 		// the field's influence circle. The rest describe this family's timeline
 		// and shield policy, so they remain ability-local instead of bloating
 		// CommonAttributeIds.
-		inline static const sas::AttributeId CastRange = ly::CommonAttributeIds::Range;
-		inline static const sas::AttributeId Radius = ly::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId CastRange = vega::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Radius = vega::CommonAttributeIds::Radius;
 		inline static const sas::AttributeId BaseShield{
 			"Ability.Defense.TemporalConvergence.BaseShield"
 		};

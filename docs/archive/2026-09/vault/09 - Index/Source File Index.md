@@ -7,121 +7,121 @@ verified_on: 2026-09-20
 
 Dosya envanteri: çalışma ağacındaki tracked ve untracked `.h/.cpp` dosyaları. Üç proje ağacıyla sınırlıdır; build/vendor çıktıları dahil değil. Listeleme ayrıntılı kod okuması değildir. İnceleme kapsamı [[2026-09-07 Project Status Review]], sistem eşlemesi [[System Index]].
 
-## LightYearsEngine — 66 dosya
+## VegaEngine — 66 dosya
 
-### LightYearsEngine/include/engineConfigs
+### VegaEngine/include/engineConfigs
 
-- [EngineStructs.h](<../../../LightYearsEngine/include/engineConfigs/EngineStructs.h>)
+- [EngineStructs.h](<../../../VegaEngine/include/engineConfigs/EngineStructs.h>)
 
-### LightYearsEngine/include
+### VegaEngine/include
 
-- [EntryPoint.h](<../../../LightYearsEngine/include/EntryPoint.h>)
+- [EntryPoint.h](<../../../VegaEngine/include/EntryPoint.h>)
 
-### LightYearsEngine/include/framework
+### VegaEngine/include/framework
 
-- [Actor.h](<../../../LightYearsEngine/include/framework/Actor.h>)
-- [Application.h](<../../../LightYearsEngine/include/framework/Application.h>)
-- [AssetManager.h](<../../../LightYearsEngine/include/framework/AssetManager.h>)
-- [AudioManager.h](<../../../LightYearsEngine/include/framework/AudioManager.h>)
-- [BackGroundActor.h](<../../../LightYearsEngine/include/framework/BackGroundActor.h>)
-- [BackgroundLayer.h](<../../../LightYearsEngine/include/framework/BackgroundLayer.h>)
-- [Core.h](<../../../LightYearsEngine/include/framework/Core.h>)
-- [Delegate.h](<../../../LightYearsEngine/include/framework/Delegate.h>)
-- [JsonDocumentLoader.h](<../../../LightYearsEngine/include/framework/JsonDocumentLoader.h>)
-- [MathUtility.h](<../../../LightYearsEngine/include/framework/MathUtility.h>)
-- [Object.h](<../../../LightYearsEngine/include/framework/Object.h>)
-- [PerfMonitor.h](<../../../LightYearsEngine/include/framework/PerfMonitor.h>)
-- [PhysicsSystem.h](<../../../LightYearsEngine/include/framework/PhysicsSystem.h>)
-- [ShaderManager.h](<../../../LightYearsEngine/include/framework/ShaderManager.h>)
-- [SimulationTime.h](<../../../LightYearsEngine/include/framework/SimulationTime.h>)
-- [SoundComponent.h](<../../../LightYearsEngine/include/framework/SoundComponent.h>)
-- [TimerManager.h](<../../../LightYearsEngine/include/framework/TimerManager.h>)
-- [World.h](<../../../LightYearsEngine/include/framework/World.h>)
+- [Actor.h](<../../../VegaEngine/include/framework/Actor.h>)
+- [Application.h](<../../../VegaEngine/include/framework/Application.h>)
+- [AssetManager.h](<../../../VegaEngine/include/framework/AssetManager.h>)
+- [AudioManager.h](<../../../VegaEngine/include/framework/AudioManager.h>)
+- [BackGroundActor.h](<../../../VegaEngine/include/framework/BackGroundActor.h>)
+- [BackgroundLayer.h](<../../../VegaEngine/include/framework/BackgroundLayer.h>)
+- [Core.h](<../../../VegaEngine/include/framework/Core.h>)
+- [Delegate.h](<../../../VegaEngine/include/framework/Delegate.h>)
+- [JsonDocumentLoader.h](<../../../VegaEngine/include/framework/JsonDocumentLoader.h>)
+- [MathUtility.h](<../../../VegaEngine/include/framework/MathUtility.h>)
+- [Object.h](<../../../VegaEngine/include/framework/Object.h>)
+- [PerfMonitor.h](<../../../VegaEngine/include/framework/PerfMonitor.h>)
+- [PhysicsSystem.h](<../../../VegaEngine/include/framework/PhysicsSystem.h>)
+- [ShaderManager.h](<../../../VegaEngine/include/framework/ShaderManager.h>)
+- [SimulationTime.h](<../../../VegaEngine/include/framework/SimulationTime.h>)
+- [SoundComponent.h](<../../../VegaEngine/include/framework/SoundComponent.h>)
+- [TimerManager.h](<../../../VegaEngine/include/framework/TimerManager.h>)
+- [World.h](<../../../VegaEngine/include/framework/World.h>)
 
-### LightYearsEngine/include/framework/camera
+### VegaEngine/include/framework/camera
 
-- [CameraManager.h](<../../../LightYearsEngine/include/framework/camera/CameraManager.h>)
+- [CameraManager.h](<../../../VegaEngine/include/framework/camera/CameraManager.h>)
 
-### LightYearsEngine/include/framework/debug
+### VegaEngine/include/framework/debug
 
-- [Assert.h](<../../../LightYearsEngine/include/framework/debug/Assert.h>)
-- [Log.h](<../../../LightYearsEngine/include/framework/debug/Log.h>)
-- [Profiler.h](<../../../LightYearsEngine/include/framework/debug/Profiler.h>)
+- [Assert.h](<../../../VegaEngine/include/framework/debug/Assert.h>)
+- [Log.h](<../../../VegaEngine/include/framework/debug/Log.h>)
+- [Profiler.h](<../../../VegaEngine/include/framework/debug/Profiler.h>)
 
-### LightYearsEngine/include/gameplay
+### VegaEngine/include/gameplay
 
-- [GameStage.h](<../../../LightYearsEngine/include/gameplay/GameStage.h>)
-- [WaitStage.h](<../../../LightYearsEngine/include/gameplay/WaitStage.h>)
+- [GameStage.h](<../../../VegaEngine/include/gameplay/GameStage.h>)
+- [WaitStage.h](<../../../VegaEngine/include/gameplay/WaitStage.h>)
 
-### LightYearsEngine/include/VFX
+### VegaEngine/include/VFX
 
-- [Particle.h](<../../../LightYearsEngine/include/VFX/Particle.h>)
+- [Particle.h](<../../../VegaEngine/include/VFX/Particle.h>)
 
-### LightYearsEngine/include/widget
+### VegaEngine/include/widget
 
-- [Button.h](<../../../LightYearsEngine/include/widget/Button.h>)
-- [HUD.h](<../../../LightYearsEngine/include/widget/HUD.h>)
-- [ImageWidget.h](<../../../LightYearsEngine/include/widget/ImageWidget.h>)
-- [TextWidget.h](<../../../LightYearsEngine/include/widget/TextWidget.h>)
-- [TimerWidget.h](<../../../LightYearsEngine/include/widget/TimerWidget.h>)
-- [ValueGauge.h](<../../../LightYearsEngine/include/widget/ValueGauge.h>)
-- [Widget.h](<../../../LightYearsEngine/include/widget/Widget.h>)
+- [Button.h](<../../../VegaEngine/include/widget/Button.h>)
+- [HUD.h](<../../../VegaEngine/include/widget/HUD.h>)
+- [ImageWidget.h](<../../../VegaEngine/include/widget/ImageWidget.h>)
+- [TextWidget.h](<../../../VegaEngine/include/widget/TextWidget.h>)
+- [TimerWidget.h](<../../../VegaEngine/include/widget/TimerWidget.h>)
+- [ValueGauge.h](<../../../VegaEngine/include/widget/ValueGauge.h>)
+- [Widget.h](<../../../VegaEngine/include/widget/Widget.h>)
 
-### LightYearsEngine/src
+### VegaEngine/src
 
-- [EntryPoint.cpp](<../../../LightYearsEngine/src/EntryPoint.cpp>)
+- [EntryPoint.cpp](<../../../VegaEngine/src/EntryPoint.cpp>)
 
-### LightYearsEngine/src/framework
+### VegaEngine/src/framework
 
-- [Actor.cpp](<../../../LightYearsEngine/src/framework/Actor.cpp>)
-- [Application.cpp](<../../../LightYearsEngine/src/framework/Application.cpp>)
-- [AssetManager.cpp](<../../../LightYearsEngine/src/framework/AssetManager.cpp>)
-- [AudioManager.cpp](<../../../LightYearsEngine/src/framework/AudioManager.cpp>)
-- [BackGroundActor.cpp](<../../../LightYearsEngine/src/framework/BackGroundActor.cpp>)
-- [BackgroundLayer.cpp](<../../../LightYearsEngine/src/framework/BackgroundLayer.cpp>)
-- [Core.cpp](<../../../LightYearsEngine/src/framework/Core.cpp>)
-- [Delegate.cpp](<../../../LightYearsEngine/src/framework/Delegate.cpp>)
-- [JsonDocumentLoader.cpp](<../../../LightYearsEngine/src/framework/JsonDocumentLoader.cpp>)
-- [MathUtility.cpp](<../../../LightYearsEngine/src/framework/MathUtility.cpp>)
-- [Object.cpp](<../../../LightYearsEngine/src/framework/Object.cpp>)
-- [PhysicsSystem.cpp](<../../../LightYearsEngine/src/framework/PhysicsSystem.cpp>)
-- [ShaderManager.cpp](<../../../LightYearsEngine/src/framework/ShaderManager.cpp>)
-- [SoundComponent.cpp](<../../../LightYearsEngine/src/framework/SoundComponent.cpp>)
-- [TimerManager.cpp](<../../../LightYearsEngine/src/framework/TimerManager.cpp>)
-- [World.cpp](<../../../LightYearsEngine/src/framework/World.cpp>)
+- [Actor.cpp](<../../../VegaEngine/src/framework/Actor.cpp>)
+- [Application.cpp](<../../../VegaEngine/src/framework/Application.cpp>)
+- [AssetManager.cpp](<../../../VegaEngine/src/framework/AssetManager.cpp>)
+- [AudioManager.cpp](<../../../VegaEngine/src/framework/AudioManager.cpp>)
+- [BackGroundActor.cpp](<../../../VegaEngine/src/framework/BackGroundActor.cpp>)
+- [BackgroundLayer.cpp](<../../../VegaEngine/src/framework/BackgroundLayer.cpp>)
+- [Core.cpp](<../../../VegaEngine/src/framework/Core.cpp>)
+- [Delegate.cpp](<../../../VegaEngine/src/framework/Delegate.cpp>)
+- [JsonDocumentLoader.cpp](<../../../VegaEngine/src/framework/JsonDocumentLoader.cpp>)
+- [MathUtility.cpp](<../../../VegaEngine/src/framework/MathUtility.cpp>)
+- [Object.cpp](<../../../VegaEngine/src/framework/Object.cpp>)
+- [PhysicsSystem.cpp](<../../../VegaEngine/src/framework/PhysicsSystem.cpp>)
+- [ShaderManager.cpp](<../../../VegaEngine/src/framework/ShaderManager.cpp>)
+- [SoundComponent.cpp](<../../../VegaEngine/src/framework/SoundComponent.cpp>)
+- [TimerManager.cpp](<../../../VegaEngine/src/framework/TimerManager.cpp>)
+- [World.cpp](<../../../VegaEngine/src/framework/World.cpp>)
 
-### LightYearsEngine/src/framework/camera
+### VegaEngine/src/framework/camera
 
-- [CameraManager.cpp](<../../../LightYearsEngine/src/framework/camera/CameraManager.cpp>)
+- [CameraManager.cpp](<../../../VegaEngine/src/framework/camera/CameraManager.cpp>)
 
-### LightYearsEngine/src/framework/debug
+### VegaEngine/src/framework/debug
 
-- [Assert.cpp](<../../../LightYearsEngine/src/framework/debug/Assert.cpp>)
-- [Log.cpp](<../../../LightYearsEngine/src/framework/debug/Log.cpp>)
-- [Profiler.cpp](<../../../LightYearsEngine/src/framework/debug/Profiler.cpp>)
+- [Assert.cpp](<../../../VegaEngine/src/framework/debug/Assert.cpp>)
+- [Log.cpp](<../../../VegaEngine/src/framework/debug/Log.cpp>)
+- [Profiler.cpp](<../../../VegaEngine/src/framework/debug/Profiler.cpp>)
 
-### LightYearsEngine/src/gameplay
+### VegaEngine/src/gameplay
 
-- [GameStage.cpp](<../../../LightYearsEngine/src/gameplay/GameStage.cpp>)
-- [WaitStage.cpp](<../../../LightYearsEngine/src/gameplay/WaitStage.cpp>)
+- [GameStage.cpp](<../../../VegaEngine/src/gameplay/GameStage.cpp>)
+- [WaitStage.cpp](<../../../VegaEngine/src/gameplay/WaitStage.cpp>)
 
-### LightYearsEngine/src/VFX
+### VegaEngine/src/VFX
 
-- [Particle.cpp](<../../../LightYearsEngine/src/VFX/Particle.cpp>)
+- [Particle.cpp](<../../../VegaEngine/src/VFX/Particle.cpp>)
 
-### LightYearsEngine/src/widget
+### VegaEngine/src/widget
 
-- [Button.cpp](<../../../LightYearsEngine/src/widget/Button.cpp>)
-- [HUD.cpp](<../../../LightYearsEngine/src/widget/HUD.cpp>)
-- [ImageWidget.cpp](<../../../LightYearsEngine/src/widget/ImageWidget.cpp>)
-- [TextWidget.cpp](<../../../LightYearsEngine/src/widget/TextWidget.cpp>)
-- [TimerWidget.cpp](<../../../LightYearsEngine/src/widget/TimerWidget.cpp>)
-- [ValueGauge.cpp](<../../../LightYearsEngine/src/widget/ValueGauge.cpp>)
-- [Widget.cpp](<../../../LightYearsEngine/src/widget/Widget.cpp>)
+- [Button.cpp](<../../../VegaEngine/src/widget/Button.cpp>)
+- [HUD.cpp](<../../../VegaEngine/src/widget/HUD.cpp>)
+- [ImageWidget.cpp](<../../../VegaEngine/src/widget/ImageWidget.cpp>)
+- [TextWidget.cpp](<../../../VegaEngine/src/widget/TextWidget.cpp>)
+- [TimerWidget.cpp](<../../../VegaEngine/src/widget/TimerWidget.cpp>)
+- [ValueGauge.cpp](<../../../VegaEngine/src/widget/ValueGauge.cpp>)
+- [Widget.cpp](<../../../VegaEngine/src/widget/Widget.cpp>)
 
-### LightYearsEngine/tests
+### VegaEngine/tests
 
-- [EngineLifetimeTests.cpp](<../../../LightYearsEngine/tests/EngineLifetimeTests.cpp>)
+- [EngineLifetimeTests.cpp](<../../../VegaEngine/tests/EngineLifetimeTests.cpp>)
 
 ## SpaceAbilitySystem — 63 dosya
 
@@ -1944,6 +1944,6 @@ Dosya envanteri: çalışma ağacındaki tracked ve untracked `.h/.cpp` dosyalar
 - [ships.json](<../../../LightYearsGame/assets/content/data/ships.json>)
 - [weapons.json](<../../../LightYearsGame/assets/content/data/weapons.json>)
 - [CMakeLists.txt](<../../../CMakeLists.txt>)
-- [LightYearsEngine/CMakeLists.txt](<../../../LightYearsEngine/CMakeLists.txt>)
+- [VegaEngine/CMakeLists.txt](<../../../VegaEngine/CMakeLists.txt>)
 - [LightYearsGame/CMakeLists.txt](<../../../LightYearsGame/CMakeLists.txt>)
 - [SpaceAbilitySystem/CMakeLists.txt](<../../../SpaceAbilitySystem/CMakeLists.txt>)

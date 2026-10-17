@@ -2,7 +2,7 @@
 #include <editor/LightYearsEditorModule.h>
 #include "editor/EditorHost.h"
 
-ly::Application* GetApplication()
+vega::Application* GetApplication()
 {
-	return vega::CreateEditorApplication(ly::CreateLightYearsEditorModule());
+	return vega::CreateEditorApplication(vega::CreateLightYearsEditorModule());
 }

@@ -4,7 +4,7 @@
 #include "gameplay/damage/DamageContext.h"
 #include "gameplay/weapon/impact/ProjectileImpactBehavior.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 

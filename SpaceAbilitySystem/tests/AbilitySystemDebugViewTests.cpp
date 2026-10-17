@@ -25,7 +25,7 @@ int main()
 	check(frozen.effects[0].modifiers.size() == 1 && frozen.effects[0].grantedTags.size() == 1, "Effect detail missing");
 	check(frozen.attributes.size() == 1 && frozen.attributes[0].baseValue == 10.f && frozen.attributes[0].currentValue == 13.f, "Attribute snapshot incorrect");
 	check(frozen.tags.size() == 1 && frozen.tags[0].second == 1, "Tag counts missing");
-	asc.AddOwnedTag(ly::GameplayTag{ "State.Buff.Speed" });
+	asc.AddOwnedTag(vega::GameplayTag{ "State.Buff.Speed" });
 	check(asc.BuildDebugSnapshot().tags[0].second == 2, "Owned tag count incorrect");
 	asc.Tick(1.f);
 	check(frozen.effects[0].remainingDuration == 5.f, "Snapshot retains mutable state");
@@ -38,7 +38,7 @@ int main()
 	asc.ApplyGameplayEffect(definition);
 	check(asc.BuildDebugSnapshot().events.back().message.find(definition.effectId) != std::string::npos, "Instant effect ID missing");
 	sas::AbilityEvent event;
-	event.eventTag = ly::GameplayTag{ "Event.Test.Debug" };
+	event.eventTag = vega::GameplayTag{ "Event.Test.Debug" };
 	for (int i = 0; i < 120; ++i) asc.HandleGameplayEvent(event);
 	const auto ring = asc.BuildDebugSnapshot().events;
 	check(ring.size() == 100 && ring.front().seconds <= ring.back().seconds, "Event ring bound/timestamps incorrect");

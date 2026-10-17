@@ -4,19 +4,19 @@ status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/include/framework/Delegate.h
-  - LightYearsEngine/include/framework/TimerManager.h
-  - LightYearsEngine/src/framework/TimerManager.cpp
-  - LightYearsEngine/include/framework/camera/CameraManager.h
-  - LightYearsEngine/src/framework/camera/CameraManager.cpp
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/src/framework/World.cpp
+  - VegaEngine/include/framework/Delegate.h
+  - VegaEngine/include/framework/TimerManager.h
+  - VegaEngine/src/framework/TimerManager.cpp
+  - VegaEngine/include/framework/camera/CameraManager.h
+  - VegaEngine/src/framework/camera/CameraManager.cpp
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/src/framework/World.cpp
 symbols:
-  - ly::Delegate
-  - ly::TimerManager
-  - ly::CameraManager
-  - ly::Application::TickInternal
-  - ly::World::UpdateCamera
+  - vega::Delegate
+  - vega::TimerManager
+  - vega::CameraManager
+  - vega::Application::TickInternal
+  - vega::World::UpdateCamera
 related:
   - "[[Game Loop]]"
   - "[[TimerManager]]"
@@ -36,7 +36,7 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 
 ## Kapsam
 
-Bu not `LightYearsEngine` içindeki event callback, timer ve kamera servislerini kapsar. `World`/Actor sahipliği için [[Actor and World System]] ve [[Ownership and Lifetime]] temel notlardır; burada onların üstünde çalışan servislerin yaşam döngüsü gösterilir.
+Bu not `VegaEngine` içindeki event callback, timer ve kamera servislerini kapsar. `World`/Actor sahipliği için [[Actor and World System]] ve [[Ownership and Lifetime]] temel notlardır; burada onların üstünde çalışan servislerin yaşam döngüsü gösterilir.
 
 | Servis | Sorumluluk | Sahiplik / yaşam döngüsü |
 |---|---|---|

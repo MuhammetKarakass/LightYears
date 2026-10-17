@@ -12,15 +12,15 @@ namespace AbilityData::NullPulse
 		inline static constexpr char Basic[] = "Ability.Utility.NullPulse.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Utility };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::NullPulse };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Utility };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::NullPulse };
 
 	struct Attribute
 	{
 		// Radius and damage are shared numeric concepts. They are aliases here so
 		// the behavior remains readable without creating duplicate AttributeIds.
-		inline static const sas::AttributeId Radius = ly::CommonAttributeIds::Radius;
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId Radius = vega::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
 
 		// Stun tuning is specific to Null Pulse's control formula and therefore
 		// belongs to the ability-scoped attribute list in abilities.json.
@@ -41,11 +41,11 @@ namespace AbilityData::NullPulse
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Activated =
-			ly::GameplayTags::Event::Ability::NullPulse::Activated;
-		inline static const ly::GameplayTag ProjectilesCleared =
-			ly::GameplayTags::Event::Ability::NullPulse::ProjectilesCleared;
-		inline static const ly::GameplayTag Completed =
-			ly::GameplayTags::Event::Ability::NullPulse::Completed;
+		inline static const vega::GameplayTag Activated =
+			vega::GameplayTags::Event::Ability::NullPulse::Activated;
+		inline static const vega::GameplayTag ProjectilesCleared =
+			vega::GameplayTags::Event::Ability::NullPulse::ProjectilesCleared;
+		inline static const vega::GameplayTag Completed =
+			vega::GameplayTags::Event::Ability::NullPulse::Completed;
 	};
 }

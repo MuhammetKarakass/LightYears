@@ -216,18 +216,18 @@ namespace sas
 		});
 	}
 
-	ly::List<AbilityRuntimeSnapshot>
+	vega::List<AbilityRuntimeSnapshot>
 	AbilitySystemComponent::BuildAbilitySnapshots() const
 	{
 		return mAbilityRuntime
 			? mAbilityRuntime->BuildSnapshots()
-			: ly::List<AbilityRuntimeSnapshot>{};
+			: vega::List<AbilityRuntimeSnapshot>{};
 	}
 
-	const ly::List<AbilityHandle>&
+	const vega::List<AbilityHandle>&
 	AbilitySystemComponent::GetPassiveAbilities() const
 	{
-		static const ly::List<AbilityHandle> Empty;
+		static const vega::List<AbilityHandle> Empty;
 		return mAbilityRuntime
 			? mAbilityRuntime->GetPassiveAbilities()
 			: Empty;
@@ -310,7 +310,7 @@ namespace sas
 		}
 	}
 
-	void AbilitySystemComponent::AddOwnedTag(const ly::GameplayTag& tag)
+	void AbilitySystemComponent::AddOwnedTag(const vega::GameplayTag& tag)
 	{
 		return RunOperation([&]()
 		{
@@ -319,7 +319,7 @@ namespace sas
 		});
 	}
 
-	void AbilitySystemComponent::RemoveOwnedTag(const ly::GameplayTag& tag)
+	void AbilitySystemComponent::RemoveOwnedTag(const vega::GameplayTag& tag)
 	{
 		return RunOperation([&]()
 		{
@@ -328,7 +328,7 @@ namespace sas
 	}
 
 	bool AbilitySystemComponent::HasOwnedTag(
-		const ly::GameplayTag& tag,
+		const vega::GameplayTag& tag,
 		bool exactMatch
 	) const
 	{
@@ -336,14 +336,14 @@ namespace sas
 	}
 
 	bool AbilitySystemComponent::HasAllOwnedTags(
-		const ly::List<ly::GameplayTag>& tags
+		const vega::List<vega::GameplayTag>& tags
 	) const
 	{
 		return mOwnedTags.HasAll(tags);
 	}
 
 	bool AbilitySystemComponent::HasAnyOwnedTags(
-		const ly::List<ly::GameplayTag>& tags
+		const vega::List<vega::GameplayTag>& tags
 	) const
 	{
 		return mOwnedTags.HasAny(tags);
@@ -516,7 +516,7 @@ namespace sas
 		return mEffects.FindEffectById(effectId);
 	}
 
-	ly::List<GameplayEffectRuntimeSnapshot>
+	vega::List<GameplayEffectRuntimeSnapshot>
 	AbilitySystemComponent::BuildGameplayEffectSnapshots() const
 	{
 		return mEffects.BuildSnapshots();

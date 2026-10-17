@@ -6,7 +6,7 @@
 #include <cassert>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	void ShipProgression::Configure(const ShipProgressionDefinition& definition)
 	{

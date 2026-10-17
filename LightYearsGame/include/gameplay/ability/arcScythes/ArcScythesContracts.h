@@ -13,14 +13,14 @@ namespace AbilityData::ArcScythes
 		inline static constexpr char Basic[] = "Ability.Offense.ArcScythes.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ArcScythes };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Offense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::ArcScythes };
 
 	struct State
 	{
 		// The beam actor consumes this tag, so it cannot outlive its ability's
 		// active lifecycle after a cancellation, stun, or normal duration end.
-		inline static const ly::GameplayTag Active{ "State.Ability.ArcScythes.Active" };
+		inline static const vega::GameplayTag Active{ "State.Ability.ArcScythes.Active" };
 	};
 
 	struct Setting
@@ -29,7 +29,7 @@ namespace AbilityData::ArcScythes
 		// input may end the active ability, so it stays in JSON settings.
 		inline static constexpr char MinActiveDuration[] = "minActiveDuration";
 
-		inline static const ly::content::NumericSettingContract Contract{
+		inline static const vega::content::NumericSettingContract Contract{
 			{ MinActiveDuration },
 			{ MinActiveDuration }
 		};
@@ -50,8 +50,8 @@ namespace AbilityData::ArcScythes
 	struct Attribute
 	{
 		// These are reusable ability outputs rather than Arc-only concepts.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId Range = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId Range = vega::CommonAttributeIds::Range;
 
 		// The cadence and collision width belong to this continuous-beam delivery
 		// model, not to every ranged ability in the project.
@@ -62,6 +62,6 @@ namespace AbilityData::ArcScythes
 		// Electric behavior is already a shared damage-payload contract. Arc
 		// Scythes declares values for it; DamageTypeSystem applies the status.
 		inline static const sas::AttributeId ElectricStacks =
-			ly::DamageAttributeIds::ElectricStacks;
+			vega::DamageAttributeIds::ElectricStacks;
 	};
 }

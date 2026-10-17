@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace ly::movement
+namespace vega::movement
 {
 	// A stable source identity lets a persistent field remove only the movement
 	// it owns from a target. Source IDs are local to each target controller.

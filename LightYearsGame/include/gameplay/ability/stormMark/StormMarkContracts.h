@@ -13,11 +13,11 @@ namespace AbilityData::StormMark
 			"Ability.Offense.StormMark.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTags::Ability::Offense
+	inline const vega::GameplayTag CategoryTag{
+		vega::GameplayTags::Ability::Offense
 	};
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::StormMark
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::StormMark
 	};
 
 	struct Attribute
@@ -25,9 +25,9 @@ namespace AbilityData::StormMark
 		// Damage and search radius are shared ability concepts. Storm Mark's
 		// family-specific values describe only its target count/timing rules.
 		inline static const sas::AttributeId Damage =
-			ly::CommonAttributeIds::Damage;
+			vega::CommonAttributeIds::Damage;
 		inline static const sas::AttributeId SearchRadius =
-			ly::CommonAttributeIds::Range;
+			vega::CommonAttributeIds::Range;
 		inline static const sas::AttributeId BaseTargetCount{
 			"Ability.Offense.StormMark.BaseTargetCount"
 		};

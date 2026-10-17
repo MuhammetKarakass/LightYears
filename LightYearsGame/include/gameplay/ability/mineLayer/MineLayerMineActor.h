@@ -6,7 +6,7 @@
 
 #include <cstddef>
 
-namespace ly
+namespace vega
 {
 	class MineLayerMineActor final
 		: public AbilityWorldActor,

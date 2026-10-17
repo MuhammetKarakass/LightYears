@@ -2,21 +2,21 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag FrozenThrong{
 		"Ability.Offense.FrozenThrong"
 	};
 }
 
-namespace ly::GameplayTags::State::Ability::FrozenThrong
+namespace vega::GameplayTags::State::Ability::FrozenThrong
 {
 	inline const GameplayTag Active{
 		"State.Ability.FrozenThrong.Active"
 	};
 }
 
-namespace ly::GameplayTags::Event::Ability::FrozenThrong
+namespace vega::GameplayTags::Event::Ability::FrozenThrong
 {
 	inline const GameplayTag Started{
 		"Event.Ability.FrozenThrong.Started"

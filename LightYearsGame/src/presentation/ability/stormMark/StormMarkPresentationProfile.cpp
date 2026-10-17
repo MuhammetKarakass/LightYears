@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/stormMark/StormMarkPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterStormMarkPresentationProfiles()
 	{

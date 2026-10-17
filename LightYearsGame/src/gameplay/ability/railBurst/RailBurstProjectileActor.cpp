@@ -21,7 +21,7 @@
 #include <string>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

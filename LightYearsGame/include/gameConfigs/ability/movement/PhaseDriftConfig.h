@@ -7,22 +7,22 @@
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition PhaseDrift_Basic = []
+	inline const vega::GameAbilityDefinition PhaseDrift_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::PhaseDrift::AbilityId::Basic;
 		// Ability3 is mapped to F by the existing player input layer.
 		definition.slot = sas::AbilitySlot::Ability3;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Movement,
-			ly::GameplayTags::Ability::Family::PhaseDrift
+			vega::GameplayTags::Ability::Movement,
+			vega::GameplayTags::Ability::Family::PhaseDrift
 		};
 		definition.displayName = "Phase Drift";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 120, 220, 255, 180 };
-		definition.behaviorType = ly::AbilityBehaviorType::PhaseDrift;
+		definition.behaviorType = vega::AbilityBehaviorType::PhaseDrift;
 		return definition;
 	}();
 }

@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	// Family identity is shared by the content validator and the runtime
 	// behavior registry. Keeping it in the common tag catalog prevents the
@@ -12,14 +12,14 @@ namespace ly::GameplayTags::Ability::Family
 	};
 }
 
-namespace ly::GameplayTags::State::Ability::ChainLightning
+namespace vega::GameplayTags::State::Ability::ChainLightning
 {
 	inline const GameplayTag Active{
 		"State.Ability.ChainLightning.Active"
 	};
 }
 
-namespace ly::GameplayTags::Event::Ability::ChainLightning
+namespace vega::GameplayTags::Event::Ability::ChainLightning
 {
 	inline const GameplayTag Started{
 		"Event.Ability.ChainLightning.Started"

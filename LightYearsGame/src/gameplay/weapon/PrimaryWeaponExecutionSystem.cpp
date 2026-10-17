@@ -17,7 +17,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

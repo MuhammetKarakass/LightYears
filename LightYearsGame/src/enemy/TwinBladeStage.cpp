@@ -4,7 +4,7 @@
 #include <framework/MathUtility.h>
 #include <framework/World.h>
 
-namespace ly {
+namespace vega {
 	TwinBladeStage::TwinBladeStage(World* world):
 		GameStage(world),
 		mSpawnInterval{ {.75f,1.5f} },

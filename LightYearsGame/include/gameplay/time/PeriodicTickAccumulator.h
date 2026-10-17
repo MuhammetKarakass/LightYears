@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly::time
+namespace vega::time
 {
 	inline constexpr int DefaultMaximumCatchUpTicks = 4;
 

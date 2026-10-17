@@ -22,19 +22,19 @@
 
 namespace
 {
-	class TestCombatant final : public ly::Actor, public ly::Combatant
+	class TestCombatant final : public vega::Actor, public vega::Combatant
 	{
 	public:
-		explicit TestCombatant(ly::World* world = nullptr)
-			: Actor{ world }, mHealth{ AddComponent<ly::HealthComponent>(100.f, 100.f) }, mCombatRuntime{ *this }
+		explicit TestCombatant(vega::World* world = nullptr)
+			: Actor{ world }, mHealth{ AddComponent<vega::HealthComponent>(100.f, 100.f) }, mCombatRuntime{ *this }
 		{
 			mCombatRuntime.InitializeOwnerAttributes(100.f);
 		}
 
-		ly::CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
-		const ly::CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
+		vega::CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
+		const vega::CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
 		float GetHealth() const { return mHealth.GetHealth(); }
-		void ReceiveDamage(ly::DamageContext context) override
+		void ReceiveDamage(vega::DamageContext context) override
 		{
 			mCombatRuntime.ProcessIncomingDamage(context);
 			mCombatRuntime.ApplyHullDamageMitigation(context);
@@ -43,8 +43,8 @@ namespace
 		}
 
 	private:
-		ly::HealthComponent& mHealth;
-		ly::CombatRuntime mCombatRuntime;
+		vega::HealthComponent& mHealth;
+		vega::CombatRuntime mCombatRuntime;
 	};
 
 	int Fail(const char* message)
@@ -56,8 +56,8 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
-	using namespace ly;
+	vega::InstallVegaEngineAssets();
+	using namespace vega;
 	TimerManager& timers = TimerManager::GetGameTimerManager();
 	timers.ClearAllTimers();
 	std::string balanceLoadFailure;
@@ -82,17 +82,17 @@ int main()
 	{
 		return Fail("Storm Mark timing fixture failed to spawn combatants");
 	}
-	owner->SetCollisionLayer(ly::GameCollision::Player);
-	owner->SetCollisionMask(ly::GameCollision::Enemy);
+	owner->SetCollisionLayer(vega::GameCollision::Player);
+	owner->SetCollisionMask(vega::GameCollision::Enemy);
 	owner->SetActorLocation({ 0.f, 0.f });
-	first->SetCollisionLayer(ly::GameCollision::Enemy);
-	first->SetCollisionMask(ly::GameCollision::Player);
+	first->SetCollisionLayer(vega::GameCollision::Enemy);
+	first->SetCollisionMask(vega::GameCollision::Player);
 	first->SetActorLocation({ 20.f, 0.f });
-	second->SetCollisionLayer(ly::GameCollision::Enemy);
-	second->SetCollisionMask(ly::GameCollision::Player);
+	second->SetCollisionLayer(vega::GameCollision::Enemy);
+	second->SetCollisionMask(vega::GameCollision::Player);
 	second->SetActorLocation({ 40.f, 0.f });
-	third->SetCollisionLayer(ly::GameCollision::Enemy);
-	third->SetCollisionMask(ly::GameCollision::Player);
+	third->SetCollisionLayer(vega::GameCollision::Enemy);
+	third->SetCollisionMask(vega::GameCollision::Player);
 	third->SetActorLocation({ 60.f, 0.f });
 	world.TickInternal(0.f);
 

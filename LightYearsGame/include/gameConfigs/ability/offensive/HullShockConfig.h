@@ -6,9 +6,9 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition HullShock_Basic = []
+	inline const vega::GameAbilityDefinition HullShock_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::HullShock::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Ability1 is mapped to Q. Hull Shock replaces the previous default
@@ -17,13 +17,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::WhileHeld;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::WhileInputHeld;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::HullShock
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::HullShock
 		};
 		definition.displayName = "Hull Shock";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 		definition.accentColor = sf::Color{ 75, 244, 255, 235 };
-		definition.behaviorType = ly::AbilityBehaviorType::HullShock;
+		definition.behaviorType = vega::AbilityBehaviorType::HullShock;
 		return definition;
 	}();
 }

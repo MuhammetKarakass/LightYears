@@ -9,9 +9,9 @@ namespace sas
 		GameplayEffectDefinition definition;
 		float duration = 0.f;
 		int maxStacks = 1;
-		ly::List<AttributeModifier> modifiers;
+		vega::List<AttributeModifier> modifiers;
 		GameplayAttributeList attributes;
-		ly::List<std::string> sourceAbilityUpgradeIds;
+		vega::List<std::string> sourceAbilityUpgradeIds;
 
 		bool HasSourceAbilityUpgrade(const std::string& upgradeId) const
 		{

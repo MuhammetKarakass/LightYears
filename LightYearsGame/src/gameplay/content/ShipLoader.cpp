@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{
@@ -26,14 +26,14 @@ namespace ly::content
 			return { value.at(0).get<float>(), value.at(1).get<float>() };
 		}
 
-		ly::ControlTargetClass ParseControlTargetClass(const Json& value)
+		vega::ControlTargetClass ParseControlTargetClass(const Json& value)
 		{
 			if (!value.is_string()) throw std::runtime_error("Ship controlTargetClass must be a string");
 			const std::string name = value.get<std::string>();
-			if (name == "Normal") return ly::ControlTargetClass::Normal;
-			if (name == "Elite") return ly::ControlTargetClass::Elite;
-			if (name == "MiniBoss") return ly::ControlTargetClass::MiniBoss;
-			if (name == "Boss") return ly::ControlTargetClass::Boss;
+			if (name == "Normal") return vega::ControlTargetClass::Normal;
+			if (name == "Elite") return vega::ControlTargetClass::Elite;
+			if (name == "MiniBoss") return vega::ControlTargetClass::MiniBoss;
+			if (name == "Boss") return vega::ControlTargetClass::Boss;
 			throw std::runtime_error("Unknown ship controlTargetClass: " + name);
 		}
 
@@ -84,18 +84,18 @@ namespace ly::content
 			).get<float>();
 		}
 
-		ly::List<ly::WeightedReward> ParseRewards(const Json& value)
+		vega::List<vega::WeightedReward> ParseRewards(const Json& value)
 		{
 			if (!value.is_array()) throw std::runtime_error("Ship rewards must be an array");
-			ly::List<ly::WeightedReward> rewards;
+			vega::List<vega::WeightedReward> rewards;
 			float totalWeight = 0.f;
 			for (const Json& entry : value)
 			{
 				const std::string type = entry.at("type").get<std::string>();
-				ly::RewardFactoryFunc factory;
-				if (type == "Health") factory = &ly::CreateRewardHealth;
-				else if (type == "Life") factory = &ly::CreateRewardLife;
-				else if (type == "Shield") factory = &ly::CreateRewardShield;
+				vega::RewardFactoryFunc factory;
+				if (type == "Health") factory = &vega::CreateRewardHealth;
+				else if (type == "Life") factory = &vega::CreateRewardLife;
+				else if (type == "Shield") factory = &vega::CreateRewardShield;
 				else throw std::runtime_error("Unknown ship reward type: " + type);
 				const float weight = entry.at("weight").get<float>();
 				if (!std::isfinite(weight) || weight < 0.f || weight > 1.f)
@@ -302,7 +302,7 @@ namespace ly::content
 			ParseMovement(loaded.definition.movementAttributes, object.at("movement"));
 			ParseEnergy(loaded.definition.energyAttributes, object.at("energy"));
 			ParseProgression(loaded.definition.progressionDefinition, object.at("progression"));
-			loaded.definition.controlTargetClass = ly::ControlTargetClass::Normal;
+			loaded.definition.controlTargetClass = vega::ControlTargetClass::Normal;
 			if (object.contains("controlTargetClass"))
 			{
 				loaded.definition.controlTargetClass = ParseControlTargetClass(object.at("controlTargetClass"));

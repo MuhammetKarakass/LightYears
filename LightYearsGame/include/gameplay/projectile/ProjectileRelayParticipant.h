@@ -2,7 +2,7 @@
 
 #include "gameplay/projectile/ProjectileRelayPayload.h"
 
-namespace ly
+namespace vega
 {
 	class AbilityWorldActor;
 

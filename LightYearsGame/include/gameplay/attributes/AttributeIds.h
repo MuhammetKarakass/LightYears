@@ -2,7 +2,7 @@
 
 #include "attributes/AttributeId.h"
 
-namespace ly
+namespace vega
 {
 	struct OwnerAttributeIds
 	{

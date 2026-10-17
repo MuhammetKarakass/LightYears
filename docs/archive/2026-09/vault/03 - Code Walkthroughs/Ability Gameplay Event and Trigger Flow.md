@@ -13,7 +13,7 @@ source_files:
   - LightYearsGame/include/gameplay/ability/LightYearsAbilitySystemComponent.h
 symbols:
   - sas::AbilityEvent
-  - ly::AbilityTriggerSpec
+  - vega::AbilityTriggerSpec
   - sas::AbilitySystemRuntime<GameAbilityDefinition, GameAbility>::HandleGameplayEvent
   - sas::AbilityCooldownTracker::Tick
   - sas::MakeAbilityTriggerCooldownKey
@@ -44,8 +44,8 @@ Görev: Trigger işleminin aldığı event payload'ını taşır.
 		GameplayTag eventTag;
 		float magnitude = 0.f;
 		ContentId sourceAbilityId;
-		ly::List<ly::GameplayTag> sourceAbilityTags;
-		ly::List<ly::GameplayTag> payloadTags;
+		vega::List<vega::GameplayTag> sourceAbilityTags;
+		vega::List<vega::GameplayTag> payloadTags;
 	};
 ```
 

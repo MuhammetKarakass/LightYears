@@ -43,7 +43,7 @@ paths would add disruption without improving the dependency boundary.
   The old `VEGA_EDITOR_WITH_SKY` / `VEGA_EDITOR_WITH_GAS` assemblies and stubs
   are gone.
 - LightYears installs `EngineAssets` from module initialization through
-  `InstallLightYearsEngineAssets`. Its 64 direct test entry points call the same
+  `InstallVegaEngineAssets`. Its 64 direct test entry points call the same
   function explicitly. Reflection linking no longer changes process defaults.
   The project already specifies `runtime.log: "LightYears.log"`; it remains so.
 - Blank remains independent by default. Module enablement and the neutral

@@ -2,7 +2,7 @@
 #include <vector>
 #include <utility>
 
-namespace ly::content
+namespace vega::content
 {
 	// Runtime objects can keep raw definition pointers. Retain replaced generations
 	// for the process lifetime so reloading only changes future catalog lookups.

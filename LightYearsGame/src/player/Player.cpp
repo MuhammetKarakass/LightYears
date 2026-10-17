@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -510,7 +510,7 @@ namespace ly
 		if (!rules) return;
 		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))
 		{
-			LY_GAME_ERROR("Default modules for '%s' are invalid; the ship starts without modules.", mShipId.c_str());
+			VEGA_GAME_ERROR("Default modules for '%s' are invalid; the ship starts without modules.", mShipId.c_str());
 		}
 		if (kGrantAllModulesForTesting && !mTestModulesGranted)
 		{

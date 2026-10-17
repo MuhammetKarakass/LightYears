@@ -6,7 +6,7 @@
 #include <cmath>
 #include <variant>
 
-namespace ly
+namespace vega
 {
 	bool ShieldAbility::Validate(
 		const GameAbilityDefinition& definition,

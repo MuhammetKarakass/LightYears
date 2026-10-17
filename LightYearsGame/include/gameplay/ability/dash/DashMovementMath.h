@@ -2,7 +2,7 @@
 
 #include "gameplay/movement/MovementBurstMath.h"
 
-namespace ly::DashMovementMath
+namespace vega::DashMovementMath
 {
 	inline constexpr float RatingDiminishingScale = movement::MovementBurstMath::RatingDiminishingScale;
 	inline constexpr float MaximumDistanceBonus = movement::MovementBurstMath::MaximumDistanceBonus;

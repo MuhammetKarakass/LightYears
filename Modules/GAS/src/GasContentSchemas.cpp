@@ -4,9 +4,9 @@
 
 namespace sas
 {
-	ly::content::ContentField MakeContentField(const std::string& path, const char* example, bool curve)
+	vega::content::ContentField MakeContentField(const std::string& path, const char* example, bool curve)
 	{
-		using namespace ly::content;
+		using namespace vega::content;
 		ContentField field;
 		field.path = path;
 		field.defaultValue = AuthoringJson::parse(example);
@@ -33,9 +33,9 @@ namespace sas
 		return field;
 	}
 
-	void RegisterContentSchemas(ly::EngineContext& context)
+	void RegisterContentSchemas(vega::EngineContext& context)
 	{
-		using namespace ly::content;
+		using namespace vega::content;
 		auto& registry = context.ContentSchemas();
 		for (const auto* type : {"ability", "effect"})
 		{

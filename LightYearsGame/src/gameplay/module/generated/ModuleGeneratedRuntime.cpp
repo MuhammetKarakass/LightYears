@@ -18,7 +18,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sky/ColorRamp.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::ColorStop;
 	using vega::sky::ColorRamp;

@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace uncommon_p4_e2e;
 	if (argc != 2) return 2;
 	Report report;

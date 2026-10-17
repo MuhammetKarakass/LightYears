@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	// Game-content composition registers family contracts once. This registry
 	// decouples JSON parsing from concrete ability families such as Dash.

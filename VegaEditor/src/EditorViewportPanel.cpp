@@ -20,7 +20,7 @@ namespace vega
 {
 	void EditorApplication::BuildViewportPanel()
 	{
-		LY_PROFILE_SCOPE("Editor Viewport");
+		VEGA_PROFILE_SCOPE("Editor Viewport");
 		const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
 		if (ImGui::Begin("Viewport", &mShowViewport))
 		{
@@ -65,7 +65,7 @@ namespace vega
 				if (!mContext.playMode && mContext.world)
 				{
 					draw->PushClipRect(topLeft, bottomRight, true);
-					for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<ly::Actor>())
+					for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<vega::Actor>())
 					{
 						const auto start = weak.lock();
 						if (!start || start->GetIsPendingDestroy()) continue;
@@ -95,7 +95,7 @@ namespace vega
 
 	void EditorApplication::PickViewportActor()
 	{
-		ly::World* world = GetCurrentWorld();
+		vega::World* world = GetCurrentWorld();
 		if (!world)
 		{
 			return;
@@ -104,7 +104,7 @@ namespace vega
 		const auto mainPos = ImGui::GetMainViewport()->Pos;
 		const auto pixel = MapWindowToTexturePixel({ static_cast<int>(mouse.x - mainPos.x), static_cast<int>(mouse.y - mainPos.y) }, mViewportImageRect, mViewport.GetSize());
 		const sf::Vector2f point = mViewport.MapPixelToCoords(pixel, world->GetWorldView());
-		const auto actors = world->GetActorsByTypeIncludingPending<ly::Actor>();
+		const auto actors = world->GetActorsByTypeIncludingPending<vega::Actor>();
 		std::vector<ActorPickBounds> candidates;
 		for (const auto& weakActor : actors)
 		{
@@ -128,12 +128,12 @@ namespace vega
 			const auto* property = target.type ? target.type->FindProperty(request.property) : nullptr;
 			if (!property) return;
 			auto value = property->getter(target.object);
-			if (request.index < 0) value = ly::ActorRef{ *targetActor };
+			if (request.index < 0) value = vega::ActorRef{ *targetActor };
 			else
 			{
-				auto* list = std::get_if<ly::reflect::PropertyList>(&value);
+				auto* list = std::get_if<vega::reflect::PropertyList>(&value);
 				if (!list || static_cast<std::size_t>(request.index) >= list->size()) return;
-				(*list)[request.index] = ly::ActorRef{ *targetActor };
+				(*list)[request.index] = vega::ActorRef{ *targetActor };
 			}
 			mHistory.Execute(std::make_unique<SetPropertyCommand>(request.actor, request.component, request.property, value));
 			return;

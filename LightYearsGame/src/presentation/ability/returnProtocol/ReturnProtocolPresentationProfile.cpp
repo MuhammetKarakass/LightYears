@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/returnProtocol/ReturnProtocolPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterReturnProtocolPresentationProfiles()
 	{

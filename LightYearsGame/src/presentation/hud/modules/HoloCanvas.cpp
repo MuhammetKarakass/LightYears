@@ -1,6 +1,6 @@
 #include "presentation/hud/modules/HoloCanvas.h"
 
-namespace ly
+namespace vega
 {
 	HoloCanvas::HoloCanvas() : Panel{ { 0.f, 0.f } }
 	{

@@ -4,7 +4,7 @@
 #include "framework/AudioManager.h"
 #include "level/ArenaTestLevel.h"
 
-namespace ly
+namespace vega
 {
 	MainMenuLevel::MainMenuLevel(Application* owningApplication):
 		World(owningApplication)

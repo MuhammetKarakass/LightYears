@@ -10,7 +10,7 @@ int main(int argc, char** argv)
 	const bool selectedProject = argc > 1 && std::string{ argv[1] } == "--project";
 	const auto selected = root / "selected/project/vega.project.json";
 	fs::create_directories(selected.parent_path());
-	ly::ProjectSettings project;
+	vega::ProjectSettings project;
 	project.name = "Other";
 	project.editor = { { "assetRoot", "../content" }, { "font", "../ui/font.ttf" }, { "visualAssets", "../art" },
 		{ "gameBuildDir", "../runtime" }, { "releaseGameBuildDir", "../release" }, { "exportDir", "../export" } };

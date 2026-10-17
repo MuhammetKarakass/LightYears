@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly
+namespace vega
 {
 	// Closed implementation selector for actor-handler dispatch. It is not a
 	// gameplay tag and does not represent a content identity.

@@ -13,30 +13,30 @@ namespace AbilityData::ChainLightning
 			"Ability.Offense.ChainLightning.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTags::Ability::Offense
+	inline const vega::GameplayTag CategoryTag{
+		vega::GameplayTags::Ability::Offense
 	};
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::ChainLightning
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::ChainLightning
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::ChainLightning::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::ChainLightning::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::ChainLightning::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::ChainLightning::Started
 		};
-		inline static const ly::GameplayTag LinkHit{
-			ly::GameplayTags::Event::Ability::ChainLightning::LinkHit
+		inline static const vega::GameplayTag LinkHit{
+			vega::GameplayTags::Event::Ability::ChainLightning::LinkHit
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::ChainLightning::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::ChainLightning::Ended
 		};
 	};
 
@@ -44,9 +44,9 @@ namespace AbilityData::ChainLightning
 	{
 		// Damage and the first target's range are shared ability concepts. They
 		// reuse Common.* so future abilities can consume the same resolver path.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
 		inline static const sas::AttributeId InitialTargetRange =
-			ly::CommonAttributeIds::Range;
+			vega::CommonAttributeIds::Range;
 
 		// These values describe Chain Lightning's unique traversal rules, so they
 		// stay under this ability family instead of expanding Common.* globally.

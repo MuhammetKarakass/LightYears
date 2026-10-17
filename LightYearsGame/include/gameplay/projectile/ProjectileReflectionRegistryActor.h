@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <unordered_map>
 
-namespace ly
+namespace vega
 {
 	class AbilityWorldActor;
 	class ProjectileReflectionReceiver;

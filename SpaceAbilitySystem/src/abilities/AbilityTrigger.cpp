@@ -5,16 +5,16 @@ namespace sas
 	bool MatchesAbilityTrigger(
 		const AbilityEvent& event,
 		const AbilityTrigger& trigger,
-		const ly::GameplayTagContainer& ownedTags
+		const vega::GameplayTagContainer& ownedTags
 	)
 	{
-		ly::GameplayTagContainer payloadTags;
-		for (const ly::GameplayTag& tag : event.payloadTags)
+		vega::GameplayTagContainer payloadTags;
+		for (const vega::GameplayTag& tag : event.payloadTags)
 		{
 			payloadTags.AddTag(tag);
 		}
-		ly::GameplayTagContainer sourceAbilityTags;
-		for (const ly::GameplayTag& tag : event.sourceAbilityTags)
+		vega::GameplayTagContainer sourceAbilityTags;
+		for (const vega::GameplayTag& tag : event.sourceAbilityTags)
 		{
 			sourceAbilityTags.AddTag(tag);
 		}
@@ -33,16 +33,16 @@ namespace sas
 	bool MatchesAbilityTrigger(
 		const AbilityLifecycleEvent& event,
 		const AbilityTrigger& trigger,
-		const ly::GameplayTagContainer& ownedTags
+		const vega::GameplayTagContainer& ownedTags
 	)
 	{
-		ly::GameplayTagContainer payloadTags;
-		for (const ly::GameplayTag& tag : event.payloadTags)
+		vega::GameplayTagContainer payloadTags;
+		for (const vega::GameplayTag& tag : event.payloadTags)
 		{
 			payloadTags.AddTag(tag);
 		}
-		ly::GameplayTagContainer sourceAbilityTags;
-		for (const ly::GameplayTag& tag : event.abilityTags)
+		vega::GameplayTagContainer sourceAbilityTags;
+		for (const vega::GameplayTag& tag : event.abilityTags)
 		{
 			sourceAbilityTags.AddTag(tag);
 		}

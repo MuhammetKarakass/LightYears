@@ -6,7 +6,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/damage/DamageContext.h"
 
-namespace ly
+namespace vega
 {
 	namespace DamageTypeSystem
 	{

@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	class EnemyActor;
 

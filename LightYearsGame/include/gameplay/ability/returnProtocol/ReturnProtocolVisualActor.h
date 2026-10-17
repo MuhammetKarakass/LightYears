@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	class ReturnProtocolVisualActor final : public Actor
 	{

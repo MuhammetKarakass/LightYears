@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::BlastbackPresentationIds
+namespace vega::BlastbackPresentationIds
 {
 	// Focus is the profile's primary lifecycle. The same typed profile also
 	// supplies its tightly coupled release burst; no generic visual ID is added.

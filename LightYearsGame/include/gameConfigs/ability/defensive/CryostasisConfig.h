@@ -9,9 +9,9 @@ namespace AbilityData::Definitions
 	// Fallback/test definition. Shipped balance is loaded from abilities.json;
 	// this preserves the C++ behavior identity when JSON is not loaded yet.
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition Cryostasis_Basic = []
+	inline const vega::GameAbilityDefinition Cryostasis_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::Cryostasis::AbilityId::Basic;
 		// Content validation requires a legal loadout-slot fallback. This is not
 		// an equip command: the runtime AbilityLoadout still decides which owned
@@ -20,13 +20,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Defense,
-			ly::GameplayTags::Ability::Family::Cryostasis
+			vega::GameplayTags::Ability::Defense,
+			vega::GameplayTags::Ability::Family::Cryostasis
 		};
 		definition.displayName = "Cryostasis";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 130, 220, 255, 235 };
-		definition.behaviorType = ly::AbilityBehaviorType::Cryostasis;
+		definition.behaviorType = vega::AbilityBehaviorType::Cryostasis;
 		return definition;
 	}();
 }

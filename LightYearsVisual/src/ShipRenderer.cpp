@@ -5,7 +5,7 @@
 
 #include "visual/UniformWriter.h"
 
-namespace ly::visual
+namespace vega::visual
 {
 	namespace
 	{

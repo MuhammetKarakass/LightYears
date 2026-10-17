@@ -1,6 +1,6 @@
 #include "gameplay/ability/loadout/AbilityLoadout.h"
 
-namespace ly
+namespace vega
 {
 	bool AbilityLoadout::Bind(
 		sas::AbilitySlot slot,

@@ -106,7 +106,7 @@ namespace vega
 		if (!document.empty() && !mDocument.Open(document.lexically_relative(root))) mContentError = mDocument.Error();
 		mContentAuthoring.ReloadIfLoaded(root);
 		if (!mScenePath.empty()) OpenScene(mScenePath);
-		try { if (std::filesystem::exists(mProject.file)) mProject.settings = ly::ProjectSettings::Load(mProject.file); }
+		try { if (std::filesystem::exists(mProject.file)) mProject.settings = vega::ProjectSettings::Load(mProject.file); }
 		catch (const std::exception& error) { mProjectError = error.what(); }
 		for (auto& [path, thumbnail] : mThumbnails) mRetiredThumbnails.push_back(std::move(thumbnail.texture));
 		mThumbnails.clear();

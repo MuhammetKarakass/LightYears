@@ -3,7 +3,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/foldspaceArena/FoldspaceArenaPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	// One lightweight actor owns both phases because the delivery is only a
 	// non-damaging route to a fixed target. It becomes the arena at impact.

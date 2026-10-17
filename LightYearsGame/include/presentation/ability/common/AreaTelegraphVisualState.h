@@ -6,7 +6,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	// These states are intentionally specific to circular area telegraphs. They
 	// describe the small runtime state needed by the typed visual profile and do

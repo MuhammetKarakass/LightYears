@@ -24,7 +24,7 @@ namespace
 
 namespace
 {
-	namespace rel = ly::visual::relativity;
+	namespace rel = vega::visual::relativity;
 
 	bool Near(float a, float b)
 	{

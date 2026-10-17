@@ -4,7 +4,7 @@
 #include "gameplay/combat/summon/SummonedCombatantActor.h"
 #include "presentation/ability/combatSentry/CombatSentryPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class CombatSentryActor final : public SummonedCombatantActor
 	{

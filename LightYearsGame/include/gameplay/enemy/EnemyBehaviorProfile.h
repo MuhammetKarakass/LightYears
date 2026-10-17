@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace ly
+namespace vega
 {
 	enum class EnemyMovementMode
 	{

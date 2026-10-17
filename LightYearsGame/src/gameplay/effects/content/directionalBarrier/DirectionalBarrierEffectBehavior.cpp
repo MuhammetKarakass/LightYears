@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly::DirectionalBarrierEffectBehavior
+namespace vega::DirectionalBarrierEffectBehavior
 {
 	namespace
 	{

@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstdio>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

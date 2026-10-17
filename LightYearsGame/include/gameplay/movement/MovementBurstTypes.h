@@ -2,7 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 
-namespace ly::movement
+namespace vega::movement
 {
 	// Generic movement burst request. The movement layer does not know whether a
 	// caller uses this for Dash or another authored burst-like movement action.

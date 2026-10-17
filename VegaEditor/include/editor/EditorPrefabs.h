@@ -11,7 +11,7 @@ namespace vega
 	bool CreateVariant(EditorContext&, const std::string& parent, const std::string& path);
 	bool PlacePrefab(EditorContext&, CommandHistory&, const std::string& path, sf::Vector2f location);
 	bool RefreshPrefabs(EditorContext&, CommandHistory&);
-	bool PrefabPropertyOverridden(EditorContext&, ly::Actor&, const ReflectedTarget&, const std::string& property);
+	bool PrefabPropertyOverridden(EditorContext&, vega::Actor&, const ReflectedTarget&, const std::string& property);
 	bool ChangePrefabProperty(EditorContext&, CommandHistory&, const ReflectedTarget&, const std::string& property, bool apply);
 	bool ChangePrefabSection(EditorContext&, CommandHistory&, const ReflectedTarget&, bool apply);
 	bool ChangeAllPrefab(EditorContext&, CommandHistory&, bool apply);

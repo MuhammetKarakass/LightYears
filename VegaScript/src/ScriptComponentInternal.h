@@ -58,7 +58,7 @@ namespace vega::script
 		template<typename... Args>
 		void Call(const char* name, Args&&... args);
 		void Tick(float dt);
-		void Contact(const char* name, ly::Actor* other) noexcept;
+		void Contact(const char* name, vega::Actor* other) noexcept;
 		TimerHandle Schedule(double seconds, sol::protected_function function, bool repeat);
 		void BindWorld(sol::state& lua);
 		void MakeEnvironment(sol::state& lua);

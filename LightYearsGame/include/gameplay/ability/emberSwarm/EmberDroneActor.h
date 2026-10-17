@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	class EmberDroneActor final : public AbilityWorldActor
 	{

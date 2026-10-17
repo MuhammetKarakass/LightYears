@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace ly
+namespace vega
 {
 	// Linear upgrade price shared by abilities and primary weapons. Reaching
 	// level L (L >= 2) costs base + step * (L - 2) scrap for every level, with no

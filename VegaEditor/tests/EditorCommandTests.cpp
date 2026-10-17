@@ -17,32 +17,32 @@
 namespace
 {
 	bool prefixComponent = false;
-	class AuthoredActor : public ly::Actor
+	class AuthoredActor : public vega::Actor
 	{
 	public:
-		explicit AuthoredActor(ly::World* world) : Actor{ world }
+		explicit AuthoredActor(vega::World* world) : Actor{ world }
 		{
-			if (prefixComponent) AddComponent<ly::SpriteComponent>();
-			AddComponent<ly::ActorComponent>();
+			if (prefixComponent) AddComponent<vega::SpriteComponent>();
+			AddComponent<vega::ActorComponent>();
 		}
 	};
-	class ComponentActor : public ly::Actor
+	class ComponentActor : public vega::Actor
 	{
 	public:
-		explicit ComponentActor(ly::World* world) : Actor{ world } { AddComponent<ly::SpriteComponent>(); }
+		explicit ComponentActor(vega::World* world) : Actor{ world } { AddComponent<vega::SpriteComponent>(); }
 	};
 	class RequiredActor : public ComponentActor
 	{
 	public:
 		using ComponentActor::ComponentActor;
 	};
-	class ThrowingActor : public ly::Actor
+	class ThrowingActor : public vega::Actor
 	{
 	public:
 		using Actor::Actor;
 	};
 	int failures = 0;
-	class HierarchyCommandActor : public ly::Actor
+	class HierarchyCommandActor : public vega::Actor
 	{
 	public:
 		using Actor::Actor;
@@ -58,12 +58,12 @@ namespace
 
 	void TestHierarchyCommands()
 	{
-		ly::reflect::Class<HierarchyCommandActor, ly::Actor>("HierarchyCommandActor").Spawnable();
-		ly::World world{ nullptr };
+		vega::reflect::Class<HierarchyCommandActor, vega::Actor>("HierarchyCommandActor").Spawnable();
+		vega::World world{ nullptr };
 		auto root = world.SpawnActor<HierarchyCommandActor>().lock();
 		auto child = world.SpawnActor<HierarchyCommandActor>().lock();
-		root->AddComponent<ly::SceneEntityComponent>("root", "Root");
-		child->AddComponent<ly::SceneEntityComponent>("child", "Child");
+		root->AddComponent<vega::SceneEntityComponent>("root", "Root");
+		child->AddComponent<vega::SceneEntityComponent>("child", "Child");
 		root->SetActorLocation({ 100, 100 }); child->SetActorLocation({ 110, 100 });
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &world, selection };
@@ -96,8 +96,8 @@ namespace
 	}
 	void TestHistory()
 	{
-		ly::World world{ nullptr };
-		auto actor = world.SpawnActor<ly::Actor>().lock();
+		vega::World world{ nullptr };
+		auto actor = world.SpawnActor<vega::Actor>().lock();
 		world.TickInternal(0.f);
 		const auto id = actor->GetUniqueID();
 		actor->SetActorLocation({ 10.f, 20.f });
@@ -141,10 +141,10 @@ namespace
 		Check(actor->GetActorRotation() == 45.f, "Rotation did not apply");
 		Check(history.Undo() && actor->GetActorRotation() == 0.f, "Rotation undo failed");
 		Check(history.Redo() && actor->GetActorRotation() == 45.f, "Rotation redo failed");
-		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "RenderLayer", static_cast<int>(ly::RenderLayer::Foreground)));
-		Check(actor->GetRenderLayer() == ly::RenderLayer::Foreground, "Layer did not apply");
-		Check(history.Undo() && actor->GetRenderLayer() == ly::RenderLayer::World, "Layer undo failed");
-		Check(history.Redo() && actor->GetRenderLayer() == ly::RenderLayer::Foreground, "Layer redo failed");
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "RenderLayer", static_cast<int>(vega::RenderLayer::Foreground)));
+		Check(actor->GetRenderLayer() == vega::RenderLayer::Foreground, "Layer did not apply");
+		Check(history.Undo() && actor->GetRenderLayer() == vega::RenderLayer::World, "Layer undo failed");
+		Check(history.Redo() && actor->GetRenderLayer() == vega::RenderLayer::Foreground, "Layer redo failed");
 		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Render Enabled", false));
 		Check(!actor->IsRenderEnabled(), "Render enabled did not apply");
 		Check(history.Undo() && actor->IsRenderEnabled(), "Render enabled undo failed");
@@ -153,7 +153,7 @@ namespace
 		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id + 1000, std::nullopt, "Location", sf::Vector2f{})) && history.CanRedo(),
 			"Failed commands must not invalidate redo");
 		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", std::numeric_limits<float>::infinity())), "Nonfinite rotation must fail");
-		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "RenderLayer", static_cast<int>(ly::RenderLayer::Count))), "Invalid render layer must fail");
+		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "RenderLayer", static_cast<int>(vega::RenderLayer::Count))), "Invalid render layer must fail");
 		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{}));
 		Check(!history.CanRedo(), "New edit must invalidate redo");
 		history.Undo();
@@ -169,17 +169,17 @@ namespace
 		vega::script::SetScriptRoot(root);
 		vega::script::RegisterScriptTypes();
 		std::ofstream{ root / "command.lua" } << "properties={speed=12,enabled=true,offset={x=1,y=2},label='hello'}";
-		ly::World world{ nullptr };
-		auto actor = world.SpawnActor<ly::Actor>().lock();
+		vega::World world{ nullptr };
+		auto actor = world.SpawnActor<vega::Actor>().lock();
 		world.TickInternal(0.f);
 		auto& script = actor->AddComponent<vega::script::ScriptComponent>("command.lua");
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &world, selection };
 		vega::CommandHistory history{ context };
 		const auto group = history.BeginMergeGroup();
-		const auto set = [&](const std::string& name, ly::reflect::PropertyValue value, std::uint64_t merge = 0)
+		const auto set = [&](const std::string& name, vega::reflect::PropertyValue value, std::uint64_t merge = 0)
 		{
-			return history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), ly::ComponentIdentity{ "ScriptComponent", 0 }, name, value, merge));
+			return history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), vega::ComponentIdentity{ "ScriptComponent", 0 }, name, value, merge));
 		};
 		Check(set("speed", 30.f, group) && set("speed", 90.f, group), "Script drag refused");
 		Check(history.Undo() && !history.CanUndo() && script.Overrides().empty() && std::get<float>(script.Properties().at("speed")) == 12.f,
@@ -196,18 +196,18 @@ namespace
 
 	void TestReflectedProperties()
 	{
-		ly::reflect::RegisterEngineTypes();
-		ly::World world{ nullptr };
-		auto actor = world.SpawnActor<ly::Actor>().lock();
-		auto& first = actor->AddComponent<ly::ActorComponent>();
-		auto& second = actor->AddComponent<ly::ActorComponent>();
+		vega::reflect::RegisterEngineTypes();
+		vega::World world{ nullptr };
+		auto actor = world.SpawnActor<vega::Actor>().lock();
+		auto& first = actor->AddComponent<vega::ActorComponent>();
+		auto& second = actor->AddComponent<vega::ActorComponent>();
 		world.TickInternal(0.f);
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &world, selection };
 		vega::CommandHistory history{ context };
 		const auto id = actor->GetUniqueID();
 		const auto group = history.BeginMergeGroup();
-		const auto edit = [&](std::optional<ly::ComponentIdentity> index, const char* property, ly::reflect::PropertyValue value, std::uint64_t merge = 0)
+		const auto edit = [&](std::optional<vega::ComponentIdentity> index, const char* property, vega::reflect::PropertyValue value, std::uint64_t merge = 0)
 		{
 			return history.Execute(std::make_unique<vega::SetPropertyCommand>(id, index, property, std::move(value), merge));
 		};
@@ -215,14 +215,14 @@ namespace
 		Check(history.Undo() && actor->GetActorRotation() == 0.f && !history.CanUndo(), "Reflected drag must merge and keep first before value");
 		Check(history.Redo() && actor->GetActorRotation() == 45.f, "Reflected merged redo failed");
 		Check(!edit({}, "Rotation", 5) && !edit({}, "Velocity", sf::Vector2f{}) && !edit({}, "Missing", 1.f), "Invalid reflected writes must fail");
-		Check(edit(ly::ComponentIdentity{ "ActorComponent", 0 }, "Active", false, group) && edit(ly::ComponentIdentity{ "ActorComponent", 1 }, "Active", false, group), "Component property edits failed");
+		Check(edit(vega::ComponentIdentity{ "ActorComponent", 0 }, "Active", false, group) && edit(vega::ComponentIdentity{ "ActorComponent", 1 }, "Active", false, group), "Component property edits failed");
 		Check(history.Undo() && !first.IsActive() && second.IsActive(), "Different component indices must not merge");
 		Check(history.Undo() && first.IsActive(), "Component undo failed");
 		Check(history.Redo() && !first.IsActive(), "Component redo failed");
-		Check(!edit(ly::ComponentIdentity{ "ActorComponent", 100 }, "Active", false) && history.CanRedo(), "Missing component must preserve redo");
-		Check(vega::FindPropertyTarget(*actor, "ActorComponent").componentIdentity == ly::ComponentIdentity{ "ActorComponent", 0 }, "Named component target must use first match");
+		Check(!edit(vega::ComponentIdentity{ "ActorComponent", 100 }, "Active", false) && history.CanRedo(), "Missing component must preserve redo");
+		Check(vega::FindPropertyTarget(*actor, "ActorComponent").componentIdentity == vega::ComponentIdentity{ "ActorComponent", 0 }, "Named component target must use first match");
 		Check(!vega::FindPropertyTarget(*actor, "Missing").object, "Unknown named target must fail");
-		ly::reflect::Class<ThrowingActor, ly::Actor>("ThrowingActor")
+		vega::reflect::Class<ThrowingActor, vega::Actor>("ThrowingActor")
 			.Property("Throwing", [](const ThrowingActor& a) { return a.GetActorRotation(); },
 				[](ThrowingActor&, float) { throw std::runtime_error("editor setter refused"); });
 		auto throwingActor = world.SpawnActor<ThrowingActor>().lock();
@@ -247,9 +247,9 @@ namespace
 
 	void TestMergeAndDepth()
 	{
-		ly::World world{ nullptr };
-		auto actor = world.SpawnActor<ly::Actor>().lock();
-		auto other = world.SpawnActor<ly::Actor>().lock();
+		vega::World world{ nullptr };
+		auto actor = world.SpawnActor<vega::Actor>().lock();
+		auto other = world.SpawnActor<vega::Actor>().lock();
 		world.TickInternal(0.f);
 		const auto id = actor->GetUniqueID();
 		vega::EditorSelection selection;
@@ -299,8 +299,8 @@ namespace
 
 	void TestDestroyAndResolution()
 	{
-		ly::World world{ nullptr };
-		auto actor = world.SpawnActor<ly::Actor>().lock();
+		vega::World world{ nullptr };
+		auto actor = world.SpawnActor<vega::Actor>().lock();
 		world.TickInternal(0.f);
 		const auto id = actor->GetUniqueID();
 		vega::EditorSelection selection;
@@ -316,7 +316,7 @@ namespace
 		Check(!context.Resolve(id), "Pending destroyed actors must not resolve");
 		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", 1.f)), "Destroyed actors must reject edits");
 		Check(!vega::SelectActor{ id }.Execute(context), "Destroyed actors must reject selection");
-		auto removed = world.SpawnActor<ly::Actor>().lock();
+		auto removed = world.SpawnActor<vega::Actor>().lock();
 		world.TickInternal(0.f);
 		history.Execute(std::make_unique<vega::SetPropertyCommand>(removed->GetUniqueID(), std::nullopt, "Location", sf::Vector2f{ 9.f, 10.f }));
 		removed->Destroy();
@@ -331,9 +331,9 @@ namespace
 
 	void TestSceneIdentity()
 	{
-		ly::reflect::RegisterEngineTypes();
-		ly::reflect::Class<AuthoredActor, ly::Actor>("AuthoredActor").Spawnable();
-		ly::World original{ nullptr };
+		vega::reflect::RegisterEngineTypes();
+		vega::reflect::Class<AuthoredActor, vega::Actor>("AuthoredActor").Spawnable();
+		vega::World original{ nullptr };
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &original, selection };
 		vega::CommandHistory history{ context };
@@ -341,21 +341,21 @@ namespace
 		auto actor = selection.Get();
 		if (!actor) return;
 		const auto id = actor->GetUniqueID();
-		const auto guid = actor->FindComponent<ly::SceneEntityComponent>()->guid;
+		const auto guid = actor->FindComponent<vega::SceneEntityComponent>()->guid;
 		const auto initialLocation = actor->GetActorLocation();
 		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 500.f, 400.f })), "Pending scene actor must resolve");
 		Check(vega::RenameSceneEntity(context, history, "Rock A"), "Scene rename failed");
-		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, ly::ComponentIdentity{ "ActorComponent", 0 }, "Active", false)), "Component edit failed");
-		const auto snapshot = ly::SceneSerializer::Save(original);
-		ly::World restored{ nullptr };
-		ly::SceneSerializer::Load(restored, snapshot);
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, vega::ComponentIdentity{ "ActorComponent", 0 }, "Active", false)), "Component edit failed");
+		const auto snapshot = vega::SceneSerializer::Save(original);
+		vega::World restored{ nullptr };
+		vega::SceneSerializer::Load(restored, snapshot);
 		context.world = &restored;
 		auto replacement = context.ResolveGuid(guid);
 		Check(replacement && replacement->GetUniqueID() != id, "Reload must preserve GUID with a new runtime ID");
 		std::string capturedGuid = guid;
 		Check(!context.Resolve(id) && context.Resolve(id, capturedGuid) == replacement, "GUID resolution must work when the old runtime ID is absent");
-		Check(history.Undo() && replacement->FindComponent<ly::ActorComponent>()->IsActive(), "Component undo must resolve GUID after reload");
-		Check(history.Undo() && replacement->FindComponent<ly::SceneEntityComponent>()->name == "AuthoredActor 1", "Rename undo after reload failed");
+		Check(history.Undo() && replacement->FindComponent<vega::ActorComponent>()->IsActive(), "Component undo must resolve GUID after reload");
+		Check(history.Undo() && replacement->FindComponent<vega::SceneEntityComponent>()->name == "AuthoredActor 1", "Rename undo after reload failed");
 		Check(history.Undo() && replacement->GetActorLocation() == initialLocation, "Move undo after reload failed");
 		Check(history.Redo() && history.Redo() && history.Redo(), "Redo across reload failed");
 		selection.Select(replacement);
@@ -364,14 +364,14 @@ namespace
 		Check(history.Undo(), "Scene deletion undo failed");
 		auto recreated = context.ResolveGuid(guid);
 		Check(recreated && recreated->GetUniqueID() != replacement->GetUniqueID() && selection.Get() == recreated, "Delete undo must recreate and select same GUID");
-		Check(ly::SceneSerializer::Save(restored) == snapshot, "Delete undo must restore all serialized entity data");
-		Check(history.Undo() && recreated->FindComponent<ly::ActorComponent>()->IsActive(), "Earlier component edit must reach recreated actor");
+		Check(vega::SceneSerializer::Save(restored) == snapshot, "Delete undo must restore all serialized entity data");
+		Check(history.Undo() && recreated->FindComponent<vega::ActorComponent>()->IsActive(), "Earlier component edit must reach recreated actor");
 		Check(history.Redo() && history.Redo() && !context.ResolveGuid(guid), "Delete redo must resolve recreated actor");
 		Check(history.Undo(), "Repeated delete undo failed");
 		selection.Select(context.ResolveGuid(guid));
 		Check(vega::DuplicateSceneEntity(context, history), "Duplicate failed");
 		const auto duplicate = selection.Get();
-		Check(duplicate && duplicate->FindComponent<ly::SceneEntityComponent>()->guid != guid &&
+		Check(duplicate && duplicate->FindComponent<vega::SceneEntityComponent>()->guid != guid &&
 			duplicate->GetActorLocation() == sf::Vector2f{ 532.f, 432.f }, "Duplicate must use new GUID and offset");
 		Check(history.Undo() && history.Redo(), "Duplicate undo/redo failed");
 		context.playMode = true;
@@ -384,7 +384,7 @@ namespace
 
 	void TestComponentCommands()
 	{
-		using namespace ly;
+		using namespace vega;
 		using namespace vega;
 		reflect::Class<ComponentActor, Actor>("ComponentActor").Spawnable();
 		reflect::Class<RequiredActor, ComponentActor>("RequiredActor").Spawnable().RequiresComponent("SpriteComponent");
@@ -434,14 +434,14 @@ namespace
 
 	void TestActorCacheAndRevisions()
 	{
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &world, selection };
 		vega::CommandHistory history{ context };
-		auto actor = world.SpawnActor<ly::Actor>().lock();
+		auto actor = world.SpawnActor<vega::Actor>().lock();
 		const auto id = actor->GetUniqueID();
 		Check(context.Resolve(id) == actor, "Cache must resolve pending actors");
-		const auto guid = actor->AddComponent<ly::SceneEntityComponent>().guid;
+		const auto guid = actor->AddComponent<vega::SceneEntityComponent>().guid;
 		Check(context.ResolveGuid(guid) == actor, "Cache must discover identities added after its build");
 		Check(history.Execute(std::make_unique<vega::SelectActor>(id)) && context.sceneRevision == 0,
 			"Selection must not revise the scene");
@@ -456,18 +456,18 @@ namespace
 		actor->Destroy();
 		Check(!context.Resolve(id) && !context.ResolveGuid(guid), "Cache must reject retained destroyed actors");
 		world.CleanCycle();
-		auto replacement = world.SpawnActor<ly::Actor>().lock();
-		replacement->AddComponent<ly::SceneEntityComponent>(guid, "Replacement");
+		auto replacement = world.SpawnActor<vega::Actor>().lock();
+		replacement->AddComponent<vega::SceneEntityComponent>(guid, "Replacement");
 		Check(context.ResolveGuid(guid) == replacement && context.Resolve(replacement->GetUniqueID()) == replacement,
 			"Same-count replacement must refresh cached actors");
-		ly::World foreign{ nullptr };
+		vega::World foreign{ nullptr };
 		context.world = &foreign;
 		Check(!context.Resolve(id) && !context.Resolve(replacement->GetUniqueID()) && !context.ResolveGuid(guid),
 			"Cache must never return an actor from the previous world");
 		context.world = &world;
 		Check(context.ResolveGuid(guid) == replacement, "Returning to a world must refresh the cache");
-		const auto newGuid = ly::SceneEntityComponent::GenerateGuid();
-		replacement->FindComponent<ly::SceneEntityComponent>()->guid = newGuid;
+		const auto newGuid = vega::SceneEntityComponent::GenerateGuid();
+		replacement->FindComponent<vega::SceneEntityComponent>()->guid = newGuid;
 		Check(!context.ResolveGuid(guid) && context.ResolveGuid(newGuid) == replacement,
 			"Cache hits must validate current GUIDs");
 	}
@@ -475,19 +475,19 @@ namespace
 	void TestPrefabReplacements()
 	{
 		using Json = nlohmann::json;
-		ly::World world{ nullptr };
+		vega::World world{ nullptr };
 		auto actor = world.SpawnActor<AuthoredActor>().lock();
-		const auto guid = actor->AddComponent<ly::SceneEntityComponent>("", "Replacement").guid;
+		const auto guid = actor->AddComponent<vega::SceneEntityComponent>("", "Replacement").guid;
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &world, selection };
 		vega::CommandHistory history{ context };
 		selection.Select(actor);
-		const auto before = ly::SceneSerializer::SaveEntity(*actor);
+		const auto before = vega::SceneSerializer::SaveEntity(*actor);
 		auto after = before;
 		after["properties"]["Location"] = { 70, 80 };
 		Check(history.Execute(std::make_unique<vega::ReplaceEntities>(Json::array({ before }), Json::array({ after }), "Replace")), "Replacement entity list must not be nested");
 		Check(selection.Get() == context.ResolveGuid(guid) && selection.Get()->GetActorLocation() == sf::Vector2f{ 70, 80 }, "Replacement must preserve GUID and selection");
-		Check(history.Undo() && ly::SceneSerializer::SaveEntity(*context.ResolveGuid(guid)) == before, "Replacement undo must restore exact values");
+		Check(history.Undo() && vega::SceneSerializer::SaveEntity(*context.ResolveGuid(guid)) == before, "Replacement undo must restore exact values");
 		Check(history.Redo() && context.ResolveGuid(guid)->GetActorLocation() == sf::Vector2f{ 70, 80 }, "Replacement redo must re-resolve GUID");
 		auto missingTarget = after;
 		missingTarget["guid"] = "absent-target";
@@ -496,19 +496,19 @@ namespace
 		Check(!history.Execute(std::make_unique<vega::ReplaceEntities>(Json::array({ after, missingTarget }), Json::array({ changed, missingTarget }), "Fail")), "Unavailable replacement must fail");
 		Check(context.ResolveGuid(guid)->GetActorLocation() == sf::Vector2f{ 70, 80 }, "Failed multi-entity replacement must roll back earlier entities");
 		const auto root = std::filesystem::path(VEGA_COMMAND_SCRIPT_ROOT);
-		ly::PrefabLibrary::Get().SetRoot(root);
+		vega::PrefabLibrary::Get().SetRoot(root);
 		std::filesystem::create_directories(root / "prefabs");
 		const auto path = root / "prefabs/recovered.prefab.json";
-		std::ofstream{ path } << ly::PrefabLibrary::Document(after, "Created").dump();
-		ly::PrefabLibrary::Get().Reload();
+		std::ofstream{ path } << vega::PrefabLibrary::Document(after, "Created").dump();
+		vega::PrefabLibrary::Get().Reload();
 		const Json instance{ { "guid", guid }, { "name", after["name"] }, { "prefab", "prefabs/recovered.prefab.json" },
 			{ "properties", { { "Location", after["properties"]["Location"] } } } };
 		Check(history.Execute(std::make_unique<vega::ReplaceEntities>(Json::array({ after }), Json::array({ instance }), "Create Prefab")),
 			"Create prefab replacement must load its instance");
 		Check(selection.Get() == context.ResolveGuid(guid), "Create prefab must keep GUID and selection");
-		Check(history.Undo() && selection.Get() == context.ResolveGuid(guid) && ly::SceneSerializer::SaveEntity(*selection.Get()) == after,
+		Check(history.Undo() && selection.Get() == context.ResolveGuid(guid) && vega::SceneSerializer::SaveEntity(*selection.Get()) == after,
 			"Undo create prefab must restore the plain entity, GUID and selection");
-		Check(history.Redo() && selection.Get() == context.ResolveGuid(guid) && selection.Get()->FindComponent<ly::SceneEntityComponent>()->prefab == "prefabs/recovered.prefab.json",
+		Check(history.Redo() && selection.Get() == context.ResolveGuid(guid) && selection.Get()->FindComponent<vega::SceneEntityComponent>()->prefab == "prefabs/recovered.prefab.json",
 			"Redo create prefab must restore the selected instance");
 		std::filesystem::remove(path);
 		const Json missing{ { "guid", guid }, { "name", "Keep authored" }, { "prefab", "prefabs/recovered.prefab.json" }, { "extra", 42 } };
@@ -521,27 +521,27 @@ namespace
 
 	void TestSceneScriptIdentity()
 	{
-		ly::World original{ nullptr };
+		vega::World original{ nullptr };
 		auto actor = original.SpawnActor<AuthoredActor>().lock();
-		const auto guid = actor->AddComponent<ly::SceneEntityComponent>().guid;
+		const auto guid = actor->AddComponent<vega::SceneEntityComponent>().guid;
 		auto& script = actor->AddComponent<vega::script::ScriptComponent>("command.lua");
 		Check(script.Prepare(), "Scene script preparation failed");
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &original, selection };
 		vega::CommandHistory history{ context };
-		Check(history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), ly::ComponentIdentity{ "ScriptComponent", 0 }, "speed", 90.f)), "Scene script edit failed");
-		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(actor->GetUniqueID(), ly::ComponentIdentity{ "ActorComponent", 0 }, "Active", false)), "Stable reflected edit failed");
-		ly::World restored{ nullptr };
+		Check(history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), vega::ComponentIdentity{ "ScriptComponent", 0 }, "speed", 90.f)), "Scene script edit failed");
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(actor->GetUniqueID(), vega::ComponentIdentity{ "ActorComponent", 0 }, "Active", false)), "Stable reflected edit failed");
+		vega::World restored{ nullptr };
 		// A new default component precedes both targets in the reconstructed actor.
 		prefixComponent = true;
-		ly::SceneSerializer::Load(restored, ly::SceneSerializer::Save(original));
+		vega::SceneSerializer::Load(restored, vega::SceneSerializer::Save(original));
 		prefixComponent = false;
 		context.world = &restored;
 		const auto replacement = context.ResolveGuid(guid);
 		const auto* restoredScript = replacement ? replacement->FindComponent<vega::script::ScriptComponent>() : nullptr;
 		Check(restoredScript && std::get<float>(restoredScript->Properties().at("speed")) == 90.f, "Scene script snapshot lost its override");
-		const auto* target = ly::FindComponentByTypeOccurrence(*replacement, { "ActorComponent", 0 });
-		Check(history.Undo() && target->IsActive() && replacement->FindComponent<ly::SpriteComponent>()->IsActive(),
+		const auto* target = vega::FindComponentByTypeOccurrence(*replacement, { "ActorComponent", 0 });
+		Check(history.Undo() && target->IsActive() && replacement->FindComponent<vega::SpriteComponent>()->IsActive(),
 			"Undo must find the same type after an earlier component is added");
 		Check(history.Undo() && restoredScript->Overrides().empty() && std::get<float>(restoredScript->Properties().at("speed")) == 12.f,
 			"Script undo must resolve GUID after reload");
@@ -555,12 +555,12 @@ namespace
 	void TestSceneSettingsCommands()
 	{
 		using Json = nlohmann::json;
-		ly::SceneSettingField field;
+		vega::SceneSettingField field;
 		field.key = "testSetting";
-		field.type = ly::SceneSettingType::Int;
+		field.type = vega::SceneSettingType::Int;
 		field.defaultValue = 0;
 		field.min = 0; field.max = 10;
-		ly::SceneSettingsSchema::Get().Register(field);
+		vega::SceneSettingsSchema::Get().Register(field);
 		vega::EditorSelection selection;
 		vega::EditorContext context{ nullptr, selection };
 		vega::CommandHistory history{ context };
@@ -570,7 +570,7 @@ namespace
 		int applied = -1;
 		context.applySettings = [&](const Json& authored)
 		{
-			applied = ly::SceneSettingsSchema::Get().Value(authored, "testSetting").get<int>();
+			applied = vega::SceneSettingsSchema::Get().Value(authored, "testSetting").get<int>();
 		};
 		Check(history.Execute(std::make_unique<vega::SetSceneSettingCommand>("testSetting", Json(2))), "Setting command failed");
 		Check(applied == 2 && context.sceneRevision == 1, "Setting did not apply live or mark revision");
@@ -595,8 +595,8 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	TestSceneSettingsCommands();
 	TestScriptProperties();
 	TestReflectedProperties();

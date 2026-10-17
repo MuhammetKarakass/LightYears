@@ -4,7 +4,7 @@
 #include <functional>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 class Actor;
 
@@ -50,4 +50,4 @@ private:
     uint64_t mNextId{1};
 };
 
-} // namespace ly
+} // namespace vega

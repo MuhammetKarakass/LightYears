@@ -2,7 +2,7 @@
 
 #include "gameplay/movement/MovementBurstTypes.h"
 
-namespace ly
+namespace vega
 {
 	// Compatibility alias for the Dash ability contract. The actual movement
 	// request is owned by the generic movement layer.

@@ -22,7 +22,7 @@ namespace
 	}
 }
 
-namespace ly
+namespace vega
 {
 	void TemporalStateHistory::Reset()
 	{

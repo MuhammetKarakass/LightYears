@@ -58,7 +58,7 @@
 #include "gameplay/tags/ability/EmberSwarmTags.h"
 #include "gameplay/tags/ability/ReclaimerProtocolTags.h"
 
-namespace ly::GameplayTags
+namespace vega::GameplayTags
 {
 	namespace Ability
 	{

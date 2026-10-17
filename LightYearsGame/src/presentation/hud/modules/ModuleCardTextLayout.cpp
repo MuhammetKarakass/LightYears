@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace ly::ModuleCardText
+namespace vega::ModuleCardText
 {
 	namespace
 	{

@@ -2,7 +2,7 @@
 
 #include "gameplay/targeting/TargetingTypes.h"
 
-namespace ly
+namespace vega
 {
 	namespace targeting
 	{

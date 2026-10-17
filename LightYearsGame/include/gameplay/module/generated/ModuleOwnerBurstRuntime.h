@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	class LightYearsAbilitySystemComponent;
 	class SpaceShip;

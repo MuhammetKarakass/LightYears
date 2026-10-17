@@ -15,7 +15,7 @@
 #include <widget/TextWidget.h>
 #include <visual/VisualPipeline.h>
 
-namespace ly
+namespace vega
 {
 	// Game-side implementation of the engine's WorldRenderPipeline seam, built on LightYearsVisual.
 	// Background layer -> procedural backdrop; every other render layer -> the undithered pixel sprite layer; energy glows are

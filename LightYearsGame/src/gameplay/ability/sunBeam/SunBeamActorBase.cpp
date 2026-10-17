@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	SunBeamActorBase::SunBeamActorBase(
 		World* world,

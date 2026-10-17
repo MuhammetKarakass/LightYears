@@ -77,7 +77,7 @@ struct PrimaryWeaponEmpoweredShotDefinition
 	float chargedFireRate = 0.f;
 	// When set, an empowered shot deals these damage types instead of the
 	// weapon's damageTags (e.g. Photonic normal shots, Electric empowered ones).
-	ly::List<ly::GameplayTag> damageTags;
+	vega::List<vega::GameplayTag> damageTags;
 
 	bool operator==(const PrimaryWeaponEmpoweredShotDefinition& other) const
 	{
@@ -135,10 +135,10 @@ struct PrimaryWeaponFrostMeterState
 
 struct PrimaryWeaponShotMetadata
 {
-	std::shared_ptr<ly::DamageHitGroup> moduleHitGroup = std::make_shared<ly::DamageHitGroup>(ly::DamageHitGroup::Kind::PrimaryShot);
+	std::shared_ptr<vega::DamageHitGroup> moduleHitGroup = std::make_shared<vega::DamageHitGroup>(vega::DamageHitGroup::Kind::PrimaryShot);
 	bool isEmpowered = false;
 	float shotDamageMultiplier = 1.f;
-	ly::DamageCriticalPolicy criticalPolicy = ly::DamageCriticalPolicy::Random;
+	vega::DamageCriticalPolicy criticalPolicy = vega::DamageCriticalPolicy::Random;
 	bool roundFinalDamageUp = false;
 	// statusStacksOnlyWhenEmpowered on a non-empowered shot.
 	bool suppressStatusStacks = false;
@@ -173,7 +173,7 @@ struct PrimaryWeaponShotMetadata
 
 // Applies per-shot policy (critical, rounding, empowered-only status stacks)
 // to a payload already built from the weapon's attributes.
-inline void ApplyShotMetadataToPayload(ly::DamagePayload& payload, const PrimaryWeaponShotMetadata& metadata)
+inline void ApplyShotMetadataToPayload(vega::DamagePayload& payload, const PrimaryWeaponShotMetadata& metadata)
 {
 	payload.hitGroup = metadata.moduleHitGroup;
 	payload.criticalPolicy = metadata.criticalPolicy;
@@ -438,15 +438,15 @@ struct HeatDamageRegionDefinition
 {
 	float upToHeatPercentage = 100.f;
 	float damageMultiplier = 1.f;
-	ly::List<ly::GameplayTag> damageTags;
+	vega::List<vega::GameplayTag> damageTags;
 };
 
 struct PrimaryWeaponLevelStep
 {
-	ly::List<sas::AttributeModifier> attributeModifiers;
-	ly::List<sas::AttributeScalingRule> scalingRules;
-	ly::List<std::string> unlockedUpgradeIds;
-	ly::List<PrimaryWeaponFeatureType> unlockedFeatureTypes;
+	vega::List<sas::AttributeModifier> attributeModifiers;
+	vega::List<sas::AttributeScalingRule> scalingRules;
+	vega::List<std::string> unlockedUpgradeIds;
+	vega::List<PrimaryWeaponFeatureType> unlockedFeatureTypes;
 };
 
 // lastLevel == kOpenEndedWeaponLevel means the rule keeps applying forever.
@@ -478,8 +478,8 @@ struct WeaponLevelRule
 // repeats after the prefix (cycle[0] is the first level after the prefix).
 struct ResolvedWeaponProgression
 {
-	ly::List<PrimaryWeaponLevelStep> prefix;
-	ly::List<PrimaryWeaponLevelStep> cycle;
+	vega::List<PrimaryWeaponLevelStep> prefix;
+	vega::List<PrimaryWeaponLevelStep> cycle;
 };
 
 // Keeps weapon progression declarative without forcing a hand-written step for
@@ -487,15 +487,15 @@ struct ResolvedWeaponProgression
 // for milestones or temporary growth bands.
 struct WeaponProgressionProfile
 {
-	ly::List<WeaponLevelRule> rules;
+	vega::List<WeaponLevelRule> rules;
 	// Linear price per level; base == 0 is not purchasable.
-	ly::ScrapCostFormula scrapCost;
+	vega::ScrapCostFormula scrapCost;
 
 	WeaponProgressionProfile& EveryLevel(
-		const ly::List<sas::AttributeModifier>& modifiers,
-		const ly::List<std::string>& upgradeIds = {},
-		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
-		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
+		const vega::List<sas::AttributeModifier>& modifiers,
+		const vega::List<std::string>& upgradeIds = {},
+		const vega::List<PrimaryWeaponFeatureType>& featureTypes = {},
+		const vega::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
 		return BetweenLevels(2, kOpenEndedWeaponLevel, modifiers, upgradeIds, featureTypes, 1, scalingRules);
@@ -503,16 +503,16 @@ struct WeaponProgressionProfile
 
 	WeaponProgressionProfile& ScrapCost(unsigned int base, unsigned int step)
 	{
-		scrapCost = ly::ScrapCostFormula{ base, step };
+		scrapCost = vega::ScrapCostFormula{ base, step };
 		return *this;
 	}
 
 	WeaponProgressionProfile& AtLevel(
 		int level,
-		const ly::List<sas::AttributeModifier>& modifiers = {},
-		const ly::List<std::string>& upgradeIds = {},
-		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
-		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
+		const vega::List<sas::AttributeModifier>& modifiers = {},
+		const vega::List<std::string>& upgradeIds = {},
+		const vega::List<PrimaryWeaponFeatureType>& featureTypes = {},
+		const vega::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
 		return BetweenLevels(level, level, modifiers, upgradeIds, featureTypes, 1, scalingRules);
@@ -522,11 +522,11 @@ struct WeaponProgressionProfile
 	WeaponProgressionProfile& BetweenLevels(
 		int firstLevel,
 		int lastLevel,
-		const ly::List<sas::AttributeModifier>& modifiers = {},
-		const ly::List<std::string>& upgradeIds = {},
-		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
+		const vega::List<sas::AttributeModifier>& modifiers = {},
+		const vega::List<std::string>& upgradeIds = {},
+		const vega::List<PrimaryWeaponFeatureType>& featureTypes = {},
 		int levelInterval = 1,
-		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
+		const vega::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
 		rules.push_back(WeaponLevelRule{
@@ -540,11 +540,11 @@ struct WeaponProgressionProfile
 
 	WeaponProgressionProfile& FromLevel(
 		int firstLevel,
-		const ly::List<sas::AttributeModifier>& modifiers = {},
-		const ly::List<std::string>& upgradeIds = {},
-		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
+		const vega::List<sas::AttributeModifier>& modifiers = {},
+		const vega::List<std::string>& upgradeIds = {},
+		const vega::List<PrimaryWeaponFeatureType>& featureTypes = {},
 		int levelInterval = 1,
-		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
+		const vega::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
 		return BetweenLevels(
@@ -587,7 +587,7 @@ struct WeaponProgressionProfile
 	}
 
 	// Every distinct step (prefix followed by one cycle); for validators/scanners.
-	ly::List<PrimaryWeaponLevelStep> ResolveDistinctSteps() const
+	vega::List<PrimaryWeaponLevelStep> ResolveDistinctSteps() const
 	{
 		ResolvedWeaponProgression progression = ResolveProgression();
 		progression.prefix.insert(
@@ -679,16 +679,16 @@ struct PrimaryWeaponDefinition
 	PrimaryWeaponType weaponType = PrimaryWeaponType::ProjectileStandard;
 	WeaponPresentationDefinition presentationDefinition;
 	sas::GameplayAttributeList attributes;
-	ly::List<WeaponMuzzleDefinition> muzzleDefinitions;
+	vega::List<WeaponMuzzleDefinition> muzzleDefinitions;
 	bool automaticFire;
 	WeaponProgressionProfile progressionProfile;
-	ly::List<sas::AttributeModifier> attributeModifiers;
-	ly::List<sas::AttributeScalingRule> scalingRules;
-	ly::List<PrimaryWeaponFeatureType> featureTypes;
-	ly::List<HeatGainCurveSegmentDefinition> heatGainCurve;
+	vega::List<sas::AttributeModifier> attributeModifiers;
+	vega::List<sas::AttributeScalingRule> scalingRules;
+	vega::List<PrimaryWeaponFeatureType> featureTypes;
+	vega::List<HeatGainCurveSegmentDefinition> heatGainCurve;
 	// When set, replaces the linear DamageMultiplierAtMaxHeat model.
-	ly::List<HeatDamageRegionDefinition> heatDamageRegions;
-	ly::List<ly::GameplayTag> damageTags;
+	vega::List<HeatDamageRegionDefinition> heatDamageRegions;
+	vega::List<vega::GameplayTag> damageTags;
 	std::optional<PrimaryWeaponMagazineDefinition> magazine;
 	PrimaryWeaponCadenceMode cadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling;
 	PrimaryWeaponDamageRoundingPolicy damageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None;
@@ -703,14 +703,14 @@ struct PrimaryWeaponDefinition
 		PrimaryWeaponType inWeaponType = PrimaryWeaponType::ProjectileStandard,
 		const WeaponPresentationDefinition& inPresentationDefinition = WeaponPresentationDefinition{},
 		const sas::GameplayAttributeList& inAttributes = {},
-		const ly::List<WeaponMuzzleDefinition>& inMuzzleDefinitions = { WeaponMuzzleDefinition{} },
+		const vega::List<WeaponMuzzleDefinition>& inMuzzleDefinitions = { WeaponMuzzleDefinition{} },
 		bool inAutomaticFire = true,
 		const WeaponProgressionProfile& inProgressionProfile = WeaponProgressionProfile{},
-		const ly::List<sas::AttributeModifier>& inAttributeModifiers = {},
-		const ly::List<sas::AttributeScalingRule>& inScalingRules = {},
-		const ly::List<PrimaryWeaponFeatureType>& inFeatureTypes = {},
-		const ly::List<HeatGainCurveSegmentDefinition>& inHeatGainCurve = {},
-		const ly::List<ly::GameplayTag>& inDamageTags = {},
+		const vega::List<sas::AttributeModifier>& inAttributeModifiers = {},
+		const vega::List<sas::AttributeScalingRule>& inScalingRules = {},
+		const vega::List<PrimaryWeaponFeatureType>& inFeatureTypes = {},
+		const vega::List<HeatGainCurveSegmentDefinition>& inHeatGainCurve = {},
+		const vega::List<vega::GameplayTag>& inDamageTags = {},
 		const std::optional<PrimaryWeaponMagazineDefinition>& inMagazine = std::nullopt,
 		PrimaryWeaponCadenceMode inCadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling,
 		PrimaryWeaponDamageRoundingPolicy inDamageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None,

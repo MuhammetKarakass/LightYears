@@ -24,7 +24,7 @@
 #include <limits>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

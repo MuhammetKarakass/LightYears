@@ -19,7 +19,7 @@ function(vega_add_game_editor name)
 	# Hosts share binaries, while their synchronized assets have separate roots.
 	set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor")
 	add_dependencies(${name} ${GAME_RUNTIME})
-	ly_enable_warnings(${name})
+	vega_enable_warnings(${name})
 	if(MSVC)
 		target_link_options(${name} PRIVATE /INCREMENTAL:NO)
 	endif()

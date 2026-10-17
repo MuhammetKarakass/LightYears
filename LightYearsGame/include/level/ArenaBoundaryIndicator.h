@@ -4,7 +4,7 @@
 #include "framework/Actor.h"
 #include <SFML/Graphics/RectangleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	class ArenaBoundaryIndicator : public Actor
 	{

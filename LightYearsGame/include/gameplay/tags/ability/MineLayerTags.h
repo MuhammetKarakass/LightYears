@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	// The family tag is the stable semantic identity shared by Mine Layer
 	// content and the executable behavior registry.

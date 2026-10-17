@@ -5,7 +5,7 @@
 #include "gameplay/ability/rocket/RocketContracts.h"
 #include "gameplay/ability/solarBombardment/SolarBombardmentContracts.h"
 
-namespace ly
+namespace vega
 {
 	// Default kit provides one Cryo, Kinetic, Thermal, and Electric ability.
 	const std::vector<DefaultAbilityLoadoutEntry>& GetDefaultAbilityLoadout()

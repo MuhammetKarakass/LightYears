@@ -62,7 +62,7 @@ namespace sas
 
 	inline float CalculateModifiedAttributeValue(
 		const GameplayAttribute& attribute,
-		const ly::List<AttributeModifier>& modifiers
+		const vega::List<AttributeModifier>& modifiers
 	)
 	{
 		float additive = 0.f;
@@ -108,7 +108,7 @@ namespace sas
 	struct GameplayAttributeEntry
 	{
 		GameplayAttribute attribute;
-		ly::Map<unsigned int, AttributeModifier> modifiers;
+		vega::Map<unsigned int, AttributeModifier> modifiers;
 	};
 
 	class AttributeSystem
@@ -126,7 +126,7 @@ namespace sas
 		GameplayAttributeList BuildSnapshot() const;
 		float GetBaseValue(const AttributeId& id) const;
 		float GetCurrentValue(const AttributeId& id, float fallback = 0.f) const;
-		float GetCurrentValueExcludingModifiers(const AttributeId& id, const ly::List<AttributeModifierHandle>& excludedHandles, float fallback = 0.f) const;
+		float GetCurrentValueExcludingModifiers(const AttributeId& id, const vega::List<AttributeModifierHandle>& excludedHandles, float fallback = 0.f) const;
 		float GetSequentialReductionMultiplier(
 			const AttributeId& id,
 			float minimumMultiplier = 0.05f
@@ -144,19 +144,19 @@ namespace sas
 		void RemoveModifier(AttributeModifierHandle handle);
 		void Clear();
 
-		ly::Delegate<AttributeId, float, float> onAttributeChanged;
-		ly::Delegate<AttributeId> onAttributeRegistered;
-		ly::Delegate<> onAttributesCleared;
+		vega::Delegate<AttributeId, float, float> onAttributeChanged;
+		vega::Delegate<AttributeId> onAttributeRegistered;
+		vega::Delegate<> onAttributesCleared;
 
 	private:
 		void Recalculate(const AttributeId& id);
 
-		ly::Dictionary<
+		vega::Dictionary<
 			AttributeId,
 			GameplayAttributeEntry,
 			AttributeIdHash
 		> mAttributes;
-		ly::Map<unsigned int, AttributeId> mHandleToAttribute;
+		vega::Map<unsigned int, AttributeId> mHandleToAttribute;
 		unsigned int mNextHandleId = 1;
 		uint64_t mClearGeneration = 1;
 		uint64_t mRevision = 1;
@@ -165,7 +165,7 @@ namespace sas
 	float ApplyAttributeScalings(
 		float baseValue,
 		const AttributeId& targetAttributeId,
-		const ly::List<AttributeScalingRule>& scalingRules,
+		const vega::List<AttributeScalingRule>& scalingRules,
 		const AttributeSystem& sourceAttributes
 	);
 }

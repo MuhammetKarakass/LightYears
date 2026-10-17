@@ -3,7 +3,7 @@
 #include <fstream>
 #include <sstream>
 
-namespace ly::visual
+namespace vega::visual
 {
 	bool ReadTextFile(const std::filesystem::path& file, std::string& text)
 	{

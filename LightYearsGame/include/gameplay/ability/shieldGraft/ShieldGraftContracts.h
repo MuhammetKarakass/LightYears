@@ -11,8 +11,8 @@ namespace AbilityData::ShieldGraft
 		inline static constexpr char Basic[] = "Ability.Defense.ShieldGraft.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ShieldGraft };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::ShieldGraft };
 
 	struct Attribute
 	{

@@ -14,7 +14,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class GameplayEffectPresentationBinding;

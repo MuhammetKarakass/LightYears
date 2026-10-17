@@ -7,9 +7,9 @@
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition VectorSync_Basic = []
+	inline const vega::GameAbilityDefinition VectorSync_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::VectorSync::AbilityId::Basic;
 		// Loadouts own real bindings. This only keeps the catalog definition
 		// valid before a player equips Vector Sync into a runtime slot.
@@ -17,13 +17,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Movement,
-			ly::GameplayTags::Ability::Family::VectorSync
+			vega::GameplayTags::Ability::Movement,
+			vega::GameplayTags::Ability::Family::VectorSync
 		};
 		definition.displayName = "Vector Sync";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 90, 225, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::VectorSync;
+		definition.behaviorType = vega::AbilityBehaviorType::VectorSync;
 		return definition;
 	}();
 }

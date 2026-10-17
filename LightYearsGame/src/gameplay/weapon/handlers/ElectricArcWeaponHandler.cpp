@@ -19,7 +19,7 @@
 #include <optional>
 #include <unordered_set>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

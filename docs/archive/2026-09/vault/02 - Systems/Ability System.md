@@ -17,9 +17,9 @@ symbols:
   - sas::AbilitySystemComponent
   - sas::GameplayAbilityInstance
   - sas::AbilityRuntimeSystem
-  - ly::GameAbilityDefinition
-  - ly::LightYearsAbilitySystemComponent
-  - ly::GameAbility
+  - vega::GameAbilityDefinition
+  - vega::LightYearsAbilitySystemComponent
+  - vega::GameAbility
 related:
   - "[[Gameplay Tag System]]"
   - "[[Attribute System]]"
@@ -70,8 +70,8 @@ content ID'si, behavior'ı ve balance verisi sabit kalır.
 
 ## Game tarafında kalanlar
 
-`ly::GameAbilityDefinition`, Light Years'a ait action/trigger/level, weapon,
-attachment, economy ve UI içeriğidir. `ly::GameAbility`,
+`vega::GameAbilityDefinition`, Light Years'a ait action/trigger/level, weapon,
+attachment, economy ve UI içeriğidir. `vega::GameAbility`,
 `sas::GameplayAbilityInstance` tabanına yalnız şu concrete bağlamaları sağlar:
 
 - owner tag gate;
@@ -80,7 +80,7 @@ attachment, economy ve UI içeriğidir. `ly::GameAbility`,
 - weapon ve attachment runtime verisi;
 - Actor, World ve `DamageContext` erişimi.
 
-`ly::LightYearsAbilitySystemComponent`, `sas::AbilitySystemComponent`'tan türeyen
+`vega::LightYearsAbilitySystemComponent`, `sas::AbilitySystemComponent`'tan türeyen
 game kurulumu adaptörüdür. Base component attribute/tag/effect/ability storage'ını
 sahiplenir; game component ise typed `GameAbility` runtime callback'lerini,
 behavior/action/content doğrulamasını ve gameplay event adaptasyonunu kurar.

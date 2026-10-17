@@ -13,23 +13,23 @@ namespace AbilityData::InertialWake
 		inline static constexpr char Basic[] = "Ability.Offense.InertialWake.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityOffense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::InertialWake };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTagSchema::AbilityOffense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::InertialWake };
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::InertialWake::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::InertialWake::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::InertialWake::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::InertialWake::Started
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::InertialWake::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::InertialWake::Ended
 		};
 	};
 

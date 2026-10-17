@@ -2,7 +2,7 @@
 #include "presentation/ability/infernoSpray/InfernoSprayPresentationIds.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

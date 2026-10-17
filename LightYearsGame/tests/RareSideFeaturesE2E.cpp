@@ -26,7 +26,7 @@
 
 namespace rare_side_features_e2e
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace uncommon_p5_e2e;
 	using Json = common_module_e2e::Json;
 
@@ -490,7 +490,7 @@ namespace rare_side_features_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_side_features_e2e;
 	if (argc != 2) return 2;
 	Report report;

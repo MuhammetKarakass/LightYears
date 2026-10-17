@@ -7,7 +7,7 @@
 #include "effects/GameplayEffectSpec.h"
 #include "gameplay/module/ModuleFirstHitHistory.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 

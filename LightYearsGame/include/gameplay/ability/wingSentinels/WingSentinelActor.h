@@ -4,7 +4,7 @@
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 #include "presentation/ability/wingSentinels/WingSentinelsPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class WingSentinelActor final : public AbilityWorldActor
 	{

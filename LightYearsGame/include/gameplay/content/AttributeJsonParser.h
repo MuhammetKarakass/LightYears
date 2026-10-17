@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace ly::content::AttributeJsonParser
+namespace vega::content::AttributeJsonParser
 {
 	using Json = JsonDocumentLoader::Json;
 

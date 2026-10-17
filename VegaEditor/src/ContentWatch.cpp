@@ -11,7 +11,7 @@ namespace vega
 	{
 		// Persistent filesystem errors must not flood the Console every poll.
 		if (mReportedErrors.insert(message).second)
-			ly::debug::Log::Write(ly::debug::LogLevel::Warning, ly::debug::LogChannel::Editor, {}, "Content watch: " + message);
+			vega::debug::Log::Write(vega::debug::LogLevel::Warning, vega::debug::LogChannel::Editor, {}, "Content watch: " + message);
 	}
 
 	void ContentWatch::Begin(const std::filesystem::path& root)

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::DamageReductionEffectBehavior
+namespace vega::DamageReductionEffectBehavior
 {
 	bool RegisterDamageReductionEffectBehavior();
 }

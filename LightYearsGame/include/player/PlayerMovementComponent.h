@@ -3,7 +3,7 @@
 #include <framework/ActorComponent.h>
 #include <SFML/System/Vector2.hpp>
 
-namespace ly
+namespace vega
 {
 	class PlayerSpaceShip;
 

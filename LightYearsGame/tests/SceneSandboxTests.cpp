@@ -32,11 +32,11 @@ namespace
 	{
 		if (!condition) { std::cerr << message << '\n'; ++failures; }
 	}
-	class HeadlessSceneLevel : public ly::SceneLevel
+	class HeadlessSceneLevel : public vega::SceneLevel
 	{
 	public:
 		using SceneLevel::SceneLevel;
-		ly::PlayerRespawnDefinition Respawn() const { return CreatePlayerRespawnDefinition(); }
+		vega::PlayerRespawnDefinition Respawn() const { return CreatePlayerRespawnDefinition(); }
 	protected:
 		void CreateGameHUD() override {}
 		void CreateHUDControllers() override {}
@@ -46,10 +46,10 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
-	ly::InstallLightYearsEngineAssets();
-	using namespace ly;
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
+	vega::InstallVegaEngineAssets();
+	using namespace vega;
 	using Json = nlohmann::json;
 	const auto root = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets";
 	AssetManager::GetAssetManager().SetAssetRootDirectory(root.generic_string() + "/");
@@ -88,7 +88,7 @@ int main()
 		auto fixture = labelled.SpawnActor<SpriteActor>().lock();
 		fixture->AddComponent<SceneEntityComponent>("labels", "Labels");
 		auto& collision = fixture->AddComponent<CollisionComponent>();
-		collision.SetCollisionLayer(ly::GameCollision::Player);
+		collision.SetCollisionLayer(vega::GameCollision::Player);
 		collision.SetCollisionMask(static_cast<CollisionLayer>(255));
 		const auto encoded = SceneSerializer::Save(labelled);
 		bool found = false;

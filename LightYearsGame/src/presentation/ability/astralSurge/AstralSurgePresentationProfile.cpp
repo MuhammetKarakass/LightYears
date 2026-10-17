@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/astralSurge/AstralSurgePresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

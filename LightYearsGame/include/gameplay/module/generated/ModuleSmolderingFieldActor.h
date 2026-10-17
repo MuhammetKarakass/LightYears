@@ -5,7 +5,7 @@
 
 #include <SFML/System/Vector2.hpp>
 
-namespace ly
+namespace vega
 {
 	// Smoldering Remains: the Thermal field left by an Ember burst. Once per second it adds stacksPerPulse Ignite stacks to the
 	// combatants inside radius through status application only (no damage, no module triggers). It lasts seconds and ends early

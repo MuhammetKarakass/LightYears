@@ -9,7 +9,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 	constexpr float Tolerance = 0.001f;
 
 	// Minimal owner for standalone resource components.
@@ -61,7 +61,7 @@ namespace
 	bool TestTemporalRecallOverhealthAndCryostasisRegeneration()
 	{
 		ResourceChangeRecorder changes;
-		ly::HealthComponent health{ TestOwner(), 100.f, 100.f };
+		vega::HealthComponent health{ TestOwner(), 100.f, 100.f };
 		health.onHealthChanged.BindAction(&changes, &ResourceChangeRecorder::Record);
 
 		const float granted = health.GrantTemporaryOverhealth(
@@ -108,7 +108,7 @@ namespace
 	bool TestShieldHealingAndDamage()
 	{
 		ResourceChangeRecorder changes;
-		ly::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
+		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.onShieldChanged.BindAction(&changes, &ResourceChangeRecorder::Record);
 		const float granted = shield.GrantTemporaryOvershield(
 			"Ability.Utility.TemporalRecall.Basic",
@@ -147,7 +147,7 @@ namespace
 	bool TestMaximumReductionPreservesAbsoluteExcess()
 	{
 		ResourceChangeRecorder healthChanges;
-		ly::HealthComponent health{ TestOwner(), 100.f, 100.f };
+		vega::HealthComponent health{ TestOwner(), 100.f, 100.f };
 		health.onHealthChanged.BindAction(&healthChanges, &ResourceChangeRecorder::Record);
 		health.GrantTemporaryOverhealth("Recall", 40.f, 0.f, 10.f);
 		healthChanges.Reset();
@@ -169,7 +169,7 @@ namespace
 		}
 
 		ResourceChangeRecorder shieldChanges;
-		ly::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
+		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.onShieldChanged.BindAction(&shieldChanges, &ResourceChangeRecorder::Record);
 		shield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
 		shieldChanges.Reset();
@@ -191,7 +191,7 @@ namespace
 	bool TestMaximumIncreaseAndPercentPreservation()
 	{
 		ResourceChangeRecorder healthChanges;
-		ly::HealthComponent health{ TestOwner(), 100.f, 100.f };
+		vega::HealthComponent health{ TestOwner(), 100.f, 100.f };
 		health.onHealthChanged.BindAction(&healthChanges, &ResourceChangeRecorder::Record);
 		health.GrantTemporaryOverhealth("Recall", 40.f, 0.f, 10.f);
 		healthChanges.Reset();
@@ -211,7 +211,7 @@ namespace
 			return false;
 		}
 
-		ly::HealthComponent absorbedHealth{ TestOwner(), 100.f, 100.f };
+		vega::HealthComponent absorbedHealth{ TestOwner(), 100.f, 100.f };
 		absorbedHealth.GrantTemporaryOverhealth("Recall", 40.f, 0.f, 10.f);
 		absorbedHealth.SetMaxHealth(150.f);
 		absorbedHealth.TickTemporaryOverhealths(1.f);
@@ -221,7 +221,7 @@ namespace
 			return false;
 		}
 
-		ly::HealthComponent scaledHealth{ TestOwner(), 100.f, 100.f };
+		vega::HealthComponent scaledHealth{ TestOwner(), 100.f, 100.f };
 		scaledHealth.GrantTemporaryOverhealth("Recall", 40.f, 0.f, 10.f);
 		scaledHealth.SetMaxHealth(80.f, true);
 		if (!Expect(NearlyEqual(scaledHealth.GetHealth(), 120.f),
@@ -231,7 +231,7 @@ namespace
 		}
 
 		ResourceChangeRecorder shieldChanges;
-		ly::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
+		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.onShieldChanged.BindAction(&shieldChanges, &ResourceChangeRecorder::Record);
 		shield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
 		shieldChanges.Reset();
@@ -251,7 +251,7 @@ namespace
 			return false;
 		}
 
-		ly::ShieldComponent absorbedShield{ TestOwner(), 100.f, 100.f, 3.f };
+		vega::ShieldComponent absorbedShield{ TestOwner(), 100.f, 100.f, 3.f };
 		absorbedShield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
 		absorbedShield.SetMaxShield(150.f);
 		absorbedShield.TickTemporaryOvershields(1.f);
@@ -261,7 +261,7 @@ namespace
 			return false;
 		}
 
-		ly::ShieldComponent scaledShield{ TestOwner(), 100.f, 100.f, 3.f };
+		vega::ShieldComponent scaledShield{ TestOwner(), 100.f, 100.f, 3.f };
 		scaledShield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
 		scaledShield.SetMaxShield(80.f, true);
 		return Expect(NearlyEqual(scaledShield.GetShield(), 120.f),
@@ -270,7 +270,7 @@ namespace
 
 	bool TestMultipleTemporarySourcesExpireIndependently()
 	{
-		ly::HealthComponent health{ TestOwner(), 100.f, 100.f };
+		vega::HealthComponent health{ TestOwner(), 100.f, 100.f };
 		health.GrantTemporaryOverhealth("Recall.A", 20.f, 1.f, 10.f);
 		health.GrantTemporaryOverhealth("Recall.B", 30.f, 2.f, 20.f);
 		health.ChangeHealth(-10.f);
@@ -294,7 +294,7 @@ namespace
 			return false;
 		}
 
-		ly::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
+		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.GrantTemporaryOvershield("Recall.A", 20.f, 1.f, 10.f);
 		shield.GrantTemporaryOvershield("Recall.B", 30.f, 2.f, 20.f);
 		shield.ChangeShield(-10.f);
@@ -318,7 +318,7 @@ namespace
 
 	bool TestMaximumInputPolicy()
 	{
-		ly::HealthComponent health{ TestOwner(), 100.f, 100.f };
+		vega::HealthComponent health{ TestOwner(), 100.f, 100.f };
 		health.SetMaxHealth(0.f);
 		health.SetMaxHealth(-10.f);
 		if (!Expect(NearlyEqual(health.GetMaxHealth(), 100.f) && NearlyEqual(health.GetHealth(), 100.f),
@@ -333,7 +333,7 @@ namespace
 			return false;
 		}
 
-		ly::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
+		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.SetMaxShield(-10.f);
 		return Expect(NearlyEqual(shield.GetMaxShield(), 0.f) && NearlyEqual(shield.GetShield(), 0.f),
 			"Negative maximum shield no longer clamps to zero");
@@ -342,7 +342,7 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (!TestTemporalRecallOverhealthAndCryostasisRegeneration() ||
 		!TestShieldHealingAndDamage() ||
 		!TestMaximumReductionPreservesAbsoluteExcess() ||

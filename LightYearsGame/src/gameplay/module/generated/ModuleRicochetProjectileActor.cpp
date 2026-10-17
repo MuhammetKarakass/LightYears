@@ -9,7 +9,7 @@
 #include "framework/World.h"
 #include <random>
 
-namespace ly
+namespace vega
 {
 	ModuleRicochetProjectileActor::ModuleRicochetProjectileActor(World* world, Actor* owner, const ModuleRicochetProjectileSnapshot& snapshot, const std::shared_ptr<ModuleGeneratedLease>& lease, const List<std::uint64_t>& visited, float range, float damage, const List<GameplayTag>& tags, float secondaryDamage, const std::optional<sas::GameplayEffectSpec>& status) : PrimaryWeaponProjectileActor{ world, owner, snapshot.presentation, snapshot.attributes }, mSnapshot{ snapshot }, mLease{ lease }, mVisited{ visited }, mRange{ range }, mSecondaryDamage{ secondaryDamage }, mStatus{ status }
 	{

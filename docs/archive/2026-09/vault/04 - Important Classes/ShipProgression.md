@@ -8,10 +8,10 @@ source_files:
   - LightYearsGame/src/gameplay/progression/ShipProgression.cpp
   - LightYearsGame/include/gameConfigs/ship/ShipStructs.h
 symbols:
-  - ly::ShipProgression
-  - ly::ShipProgression::Configure
-  - ly::ShipProgression::AddXP
-  - ly::ShipProgression::BindAttributes
+  - vega::ShipProgression
+  - vega::ShipProgression::Configure
+  - vega::ShipProgression::AddXP
+  - vega::ShipProgression::BindAttributes
 related:
   - "[[Ship Progression System]]"
   - "[[Ship Progression and Respawn Flow]]"
@@ -22,7 +22,7 @@ related:
 
 ## Rol
 
-`ly::ShipProgression`, player run'ına ait XP/level state'ini active ship actor'ından bağımsız tutar. Attribute modifier'larını temporary olarak bound `CombatRuntime::AttributeSystem`e uygular; ship respawn olduğunda aynı state'i yeni runtime'a rebind eder.
+`vega::ShipProgression`, player run'ına ait XP/level state'ini active ship actor'ından bağımsız tutar. Attribute modifier'larını temporary olarak bound `CombatRuntime::AttributeSystem`e uygular; ship respawn olduğunda aynı state'i yeni runtime'a rebind eder.
 
 ## Public yüzey
 

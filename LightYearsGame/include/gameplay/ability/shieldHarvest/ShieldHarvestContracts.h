@@ -11,26 +11,26 @@ namespace AbilityData::ShieldHarvest
 		inline static constexpr char Basic[] = "Ability.Defense.ShieldHarvest.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ShieldHarvest };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::ShieldHarvest };
 
 	struct State
 	{
-		inline static const ly::GameplayTag Focusing{
-			ly::GameplayTags::State::Ability::ShieldHarvest::Focusing
+		inline static const vega::GameplayTag Focusing{
+			vega::GameplayTags::State::Ability::ShieldHarvest::Focusing
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::ShieldHarvest::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::ShieldHarvest::Started
 		};
-		inline static const ly::GameplayTag Harvested{
-			ly::GameplayTags::Event::Ability::ShieldHarvest::Harvested
+		inline static const vega::GameplayTag Harvested{
+			vega::GameplayTags::Event::Ability::ShieldHarvest::Harvested
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::ShieldHarvest::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::ShieldHarvest::Ended
 		};
 	};
 
@@ -42,7 +42,7 @@ namespace AbilityData::ShieldHarvest
 	struct Attribute
 	{
 		// Radius is a common spatial concept; the ability only aliases it.
-		inline static const sas::AttributeId Radius = ly::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId Radius = vega::CommonAttributeIds::Radius;
 		inline static const sas::AttributeId ShieldPerEnemy{
 			"Ability.Defense.ShieldHarvest.ShieldPerEnemy"
 		};

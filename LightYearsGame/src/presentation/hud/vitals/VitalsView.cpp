@@ -1,7 +1,7 @@
 #include "presentation/hud/vitals/VitalsView.h"
 #include "widget/UIStyle.h"
 
-namespace ly
+namespace vega
 {
 	VitalsView::VitalsView(shared_ptr<const VitalsViewModel> viewModel)
 		: Panel{ { 510.f, 92.f } }, mViewModel{ std::move(viewModel) }

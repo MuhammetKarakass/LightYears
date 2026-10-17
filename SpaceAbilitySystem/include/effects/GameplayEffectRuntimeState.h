@@ -16,8 +16,8 @@ namespace sas
 		float totalDuration = 0.f;
 		float stackDecayInterval = 1.f;
 		int stackCount = 1;
-		ly::List<AttributeModifierHandle> appliedModifierHandles;
-		ly::List<ly::GameplayTag> appliedGrantedTags;
+		vega::List<AttributeModifierHandle> appliedModifierHandles;
+		vega::List<vega::GameplayTag> appliedGrantedTags;
 		GameplayAttributeList runtimeAttributes;
 		// Owned by the runtime system's operation scope; callbacks must not touch these.
 		bool operationActive = false;

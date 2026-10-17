@@ -2,7 +2,7 @@
 
 #include "content/ContentId.h"
 
-namespace ly::StrikeRunPresentationIds
+namespace vega::StrikeRunPresentationIds
 {
 	inline const sas::ContentId BombardmentBasic{
 		"Presentation.Ability.StrikeRun.Bombardment.Basic"

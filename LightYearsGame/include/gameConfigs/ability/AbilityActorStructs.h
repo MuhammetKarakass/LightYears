@@ -6,7 +6,7 @@
 #include "content/ContentId.h"
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct AbilityActorDefinition
 	{
@@ -21,7 +21,7 @@ namespace ly
 
 namespace AbilityData
 {
-	const ly::AbilityActorDefinition* FindAbilityActorDefinition(const std::string& actorDefinitionId);
+	const vega::AbilityActorDefinition* FindAbilityActorDefinition(const std::string& actorDefinitionId);
 }
 
 

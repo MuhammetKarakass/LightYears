@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/RectangleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	class ScorchDriveTrailCoordinatorActor;
 

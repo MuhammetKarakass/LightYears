@@ -11,13 +11,13 @@ namespace sas
 {
 	struct AbilityEvent
 	{
-		ly::GameplayTag eventTag;
+		vega::GameplayTag eventTag;
 		float magnitude = 0.f;
 		ContentId sourceAbilityId;
-		ly::List<ly::GameplayTag> sourceAbilityTags;
+		vega::List<vega::GameplayTag> sourceAbilityTags;
 		// Optional semantic payload selectors (damage type, status, category,
 		// capability...). Identity remains in typed context or dedicated fields.
-		ly::List<ly::GameplayTag> payloadTags;
+		vega::List<vega::GameplayTag> payloadTags;
 
 		template <typename Source>
 		void SetSource(Source* source)
@@ -92,7 +92,7 @@ namespace sas
 		// Semantic tags describe the source ability (category, family and other
 		// queryable capabilities). The event kind remains generic; consumers do
 		// not need one event tag per ability.
-		ly::List<ly::GameplayTag> abilityTags;
+		vega::List<vega::GameplayTag> abilityTags;
 		AbilityEndReason endReason = AbilityEndReason::Completed;
 	};
 }

@@ -13,15 +13,15 @@ namespace AbilityData::RelayPrism
 		inline static constexpr char Basic[] = "Ability.Utility.RelayPrism.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityUtility };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::RelayPrism };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTagSchema::AbilityUtility };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::RelayPrism };
 
 	struct Attribute
 	{
 		// ProjectileCount is shared because it is useful to other projectile
 		// transforming mechanics too; Relay-specific policy remains family-local.
 		inline static const sas::AttributeId ProjectileCount =
-			ly::CommonAttributeIds::ProjectileCount;
+			vega::CommonAttributeIds::ProjectileCount;
 		inline static const sas::AttributeId BaseTransfer{
 			"Ability.Utility.RelayPrism.BaseTransfer"
 		};
@@ -58,17 +58,17 @@ namespace AbilityData::RelayPrism
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active =
-			ly::GameplayTags::State::Ability::RelayPrism::Active;
+		inline static const vega::GameplayTag Active =
+			vega::GameplayTags::State::Ability::RelayPrism::Active;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started =
-			ly::GameplayTags::Event::Ability::RelayPrism::Started;
-		inline static const ly::GameplayTag Captured =
-			ly::GameplayTags::Event::Ability::RelayPrism::Captured;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::RelayPrism::Ended;
+		inline static const vega::GameplayTag Started =
+			vega::GameplayTags::Event::Ability::RelayPrism::Started;
+		inline static const vega::GameplayTag Captured =
+			vega::GameplayTags::Event::Ability::RelayPrism::Captured;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::RelayPrism::Ended;
 	};
 }

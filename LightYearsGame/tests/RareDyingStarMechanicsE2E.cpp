@@ -34,8 +34,8 @@ namespace rare_dying_star_e2e
 		constexpr const char* kRejectId = "Module.Offense.RareDyingStarReject.Rare";
 
 		// Test-only definitions parsed from fixture JSON. They never enter shipped content.
-		ly::List<ly::ModuleDefinition> gFixtureDefinitions;
-		ly::List<ly::ModuleSideFeatureDefinition> gFixtureSideFeatures;
+		vega::List<vega::ModuleDefinition> gFixtureDefinitions;
+		vega::List<vega::ModuleSideFeatureDefinition> gFixtureSideFeatures;
 
 		const ModuleDefinition* FixtureLookup(const sas::ContentId& id)
 		{
@@ -502,7 +502,7 @@ namespace rare_dying_star_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_dying_star_e2e;
 	if (argc != 2) return 2;
 	Report report;

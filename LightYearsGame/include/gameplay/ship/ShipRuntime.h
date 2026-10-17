@@ -6,7 +6,7 @@
 #include <optional>
 #include <unordered_map>
 
-namespace ly
+namespace vega
 {
 	enum class ShipSystem { Shield, Afterburner };
 

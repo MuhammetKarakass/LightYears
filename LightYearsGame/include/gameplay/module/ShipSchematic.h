@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	// A module that comes installed on a ship. Origin is the grid cell the
 	// rotated shape's (0,0) offset lands on.

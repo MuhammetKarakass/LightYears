@@ -5,7 +5,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/sunBeam/SunBeamVisual.h"
 
-namespace ly
+namespace vega
 {
 	class SunBeamActorBase : public AbilityWorldActor
 	{

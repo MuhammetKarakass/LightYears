@@ -189,10 +189,10 @@ namespace vega
 		{
 			// Layouts also come from tools and tests; validate package destinations
 			// before copying or clearing an earlier export.
-			auto contract = ly::ProjectSettings{}.ToJson();
+			auto contract = vega::ProjectSettings{}.ToJson();
 			contract["runtime"] = { { "executable", layout.runtimeExecutable }, { "assetDirectory", layout.assetDirectory },
 				{ "visualDirectory", layout.visualDirectory }, { "log", layout.gameLogName } };
-			ly::ProjectSettings::Parse(contract);
+			vega::ProjectSettings::Parse(contract);
 			result.configuration = request.configuration;
 			if (result.configuration == GameExportConfiguration::Automatic)
 			{
@@ -213,8 +213,8 @@ namespace vega
 				throw std::runtime_error("Game build has no assets folder: " + buildDir.u8string());
 			}
 			const fs::path assetRoot = layout.assetRoot.empty() ? buildDir / layout.assetDirectory : layout.assetRoot;
-			ly::ProjectSettings project;
-			if (fs::exists(assetRoot / "vega.project.json")) project = ly::ProjectSettings::Load(assetRoot / "vega.project.json");
+			vega::ProjectSettings project;
+			if (fs::exists(assetRoot / "vega.project.json")) project = vega::ProjectSettings::Load(assetRoot / "vega.project.json");
 			executableName = project.ExecutableName();
 			const fs::path visualAssets = layout.visualAssetsDir.empty() ? fs::path{} : release ? buildDir / layout.visualDirectory : layout.visualAssetsDir;
 			if (!visualAssets.empty() && !fs::is_directory(visualAssets))
@@ -332,10 +332,10 @@ namespace vega
 	GameSmokeTestResult RunGameSmokeTest(const fs::path& gameDir, unsigned int timeoutMs, const std::string& assetDirectory)
 	{
 		GameSmokeTestResult result;
-		ly::ProjectSettings project;
+		vega::ProjectSettings project;
 		try
 		{
-			if (fs::exists(gameDir / assetDirectory / "vega.project.json")) project = ly::ProjectSettings::Load(gameDir / assetDirectory / "vega.project.json");
+			if (fs::exists(gameDir / assetDirectory / "vega.project.json")) project = vega::ProjectSettings::Load(gameDir / assetDirectory / "vega.project.json");
 		}
 		catch (const std::exception& error) { result.detail = error.what(); return result; }
 		const fs::path executable = gameDir / fs::u8path(project.ExecutableName());

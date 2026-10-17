@@ -14,7 +14,7 @@
 #include <exception>
 #include <limits>
 
-namespace ly
+namespace vega
 {
 	NanoPlagueControllerActor::NanoPlagueControllerActor(
 		World* world,

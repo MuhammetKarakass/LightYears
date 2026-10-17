@@ -4,7 +4,7 @@
 #include "visual/PipelineSettings.h"
 #include "visual/ShaderLibrary.h"
 #include <sky/Galaxy.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::BandStyle;
 	using vega::sky::GalaxyLayer;

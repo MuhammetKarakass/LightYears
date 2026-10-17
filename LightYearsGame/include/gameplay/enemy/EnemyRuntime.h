@@ -12,7 +12,7 @@
 
 struct PrimaryWeaponDefinition;
 
-namespace ly
+namespace vega
 {
 	class CombatRuntime;
 	class ShipRuntime;

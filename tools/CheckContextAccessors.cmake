@@ -1,16 +1,16 @@
 # Compatibility definitions are allowed; callers must select their owning context.
 set(shims
-	"LightYearsEngine/src/framework/reflection/Reflection.cpp|TypeRegistry|Get"
-	"LightYearsEngine/src/framework/scene/PrefabLibrary.cpp|PrefabLibrary|Get"
-	"LightYearsEngine/src/framework/AssetManager.cpp|AssetManager|GetAssetManager"
-	"LightYearsEngine/src/framework/AudioManager.cpp|AudioManager|GetAudioManager"
-	"LightYearsEngine/src/framework/EngineContext.cpp|EngineAssets|Get"
-	"LightYearsEngine/src/framework/scene/SceneSettings.cpp|SceneSettingsSchema|Get"
-	"LightYearsEngine/src/framework/EngineContext.cpp|ContentSchemaRegistry|Get"
+	"VegaEngine/src/framework/reflection/Reflection.cpp|TypeRegistry|Get"
+	"VegaEngine/src/framework/scene/PrefabLibrary.cpp|PrefabLibrary|Get"
+	"VegaEngine/src/framework/AssetManager.cpp|AssetManager|GetAssetManager"
+	"VegaEngine/src/framework/AudioManager.cpp|AudioManager|GetAudioManager"
+	"VegaEngine/src/framework/EngineContext.cpp|EngineAssets|Get"
+	"VegaEngine/src/framework/scene/SceneSettings.cpp|SceneSettingsSchema|Get"
+	"VegaEngine/src/framework/EngineContext.cpp|ContentSchemaRegistry|Get"
 	"VegaScript/src/ScriptRuntime.cpp|ScriptRuntime|Get")
 set(space "[ \t\r\n]*")
 set(accessor "((TypeRegistry|PrefabLibrary|EngineAssets|SceneSettingsSchema|ContentSchemaRegistry|ScriptRuntime)${space}::${space}Get|AssetManager${space}::${space}GetAssetManager|AudioManager${space}::${space}GetAudioManager)${space}\\(${space}\\)")
-foreach(module LightYearsEngine VegaEditor VegaScript Modules/GAS Modules/GAS/editor SpaceAbilitySystem)
+foreach(module VegaEngine VegaEditor VegaScript Modules/GAS Modules/GAS/editor SpaceAbilitySystem)
 	file(GLOB_RECURSE sources
 		"${SOURCE_ROOT}/${module}/include/*.h" "${SOURCE_ROOT}/${module}/include/*.hpp"
 		"${SOURCE_ROOT}/${module}/src/*.h" "${SOURCE_ROOT}/${module}/src/*.hpp"

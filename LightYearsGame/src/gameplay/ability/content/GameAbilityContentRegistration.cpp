@@ -105,7 +105,7 @@
 #include <functional>
 #include <initializer_list>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -124,7 +124,7 @@ namespace ly
 				{
 					continue;
 				}
-				LY_GAME_ERROR("Failed to register gameplay content step: %s", step.name);
+				VEGA_GAME_ERROR("Failed to register gameplay content step: %s", step.name);
 				allRegistered = false;
 			}
 			return allRegistered;

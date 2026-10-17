@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include "gameplay/projectile/ProjectileReflectionSurface.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 

@@ -24,7 +24,7 @@ Tasarım yönü: effect başına apply/refresh/remove işlem sahipliği; dış b
 
 Kaynak: [AttributeSystem::RemoveModifier](../SpaceAbilitySystem/src/attributes/AttributeSystem.cpp), 205–220.
 
-Reverse-map iterator'ı bulunuyor, modifier siliniyor, `Recalculate` ile kullanıcı callback'i çalışıyor; ardından eski iterator ile reverse-map erase yapılıyor. Callback aynı handle'ı yeniden kaldırırsa iç çağrı reverse-map kaydını siler; dış çağrı geçersiz iterator kullanır. Attribute Clear da iterator'ı geçersizleştirir. **Düzeltme:** Bu reverse-map `ly::Map`, yani `std::map` türündedir; önceki “modifier ekleme ile rehash” gerekçesi yanlıştı. Callback exception'ında reverse-map temizliği hiç yapılmaz.
+Reverse-map iterator'ı bulunuyor, modifier siliniyor, `Recalculate` ile kullanıcı callback'i çalışıyor; ardından eski iterator ile reverse-map erase yapılıyor. Callback aynı handle'ı yeniden kaldırırsa iç çağrı reverse-map kaydını siler; dış çağrı geçersiz iterator kullanır. Attribute Clear da iterator'ı geçersizleştirir. **Düzeltme:** Bu reverse-map `vega::Map`, yani `std::map` türündedir; önceki “modifier ekleme ile rehash” gerekçesi yanlıştı. Callback exception'ında reverse-map temizliği hiç yapılmaz.
 
 Koşul: attribute-change callback'inin bu map'i değiştirmesi; sıradan callbacksiz remove kusurlu sayılmıyor. Tasarım yönü: reverse-index ve modifier kaydını bildirimden önce tutarlı duruma getirmek; callback sonrasına iterator taşımamak. Effect katmanındaki koruma bunu tek başına çözmez; AttributeSystem doğrudan da kullanılıyor.
 
@@ -76,7 +76,7 @@ Koşul: işlem exception'ı veya aynı CombatRuntime'a nested damage. Tam shippe
 
 ### R8 — P2: Tek seferlik timer hata sonrasında yeniden çalışabiliyor
 
-Kaynak: [Timer::TickTimer](../LightYearsEngine/src/framework/TimerManager.cpp), 203–206; UpdateTimer catch yolu.
+Kaynak: [Timer::TickTimer](../VegaEngine/src/framework/TimerManager.cpp), 203–206; UpdateTimer catch yolu.
 
 One-shot callback, `SetExpired()` çağrısından önce çalışıyor. Callback throw ederse expiry yapılmaz. UpdateTimer catch'i flush edip hatayı yeniden fırlatır; timer expired olmadığı için tutulur. Üst katman hatayı yakalayıp oyunu sürdürürse sonraki update aynı işi yeniden çalıştırır. Callback'in throw etmediği normal akış etkilenmez; yakalanmayan exception ile süreç sonlanırsa tekrar yoktur.
 

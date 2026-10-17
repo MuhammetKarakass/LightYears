@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::ShieldHarvestPresentationIds
+namespace vega::ShieldHarvestPresentationIds
 {
 	inline constexpr char FocusBasic[] =
 		"Presentation.Ability.ShieldHarvest.Focus.Basic";

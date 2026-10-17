@@ -4,7 +4,7 @@
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
 #include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterGravityAnomalyEffectVisuals()
 	{

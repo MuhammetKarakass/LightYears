@@ -9,7 +9,7 @@
 
 #include <cmath>
 
-namespace ly::content
+namespace vega::content
 {
 	weak_ptr<EnemyActor> SpawnEnemy(World& world, const std::string& enemyId, const sf::Vector2f& location, float encounterDamageMultiplier)
 	{
@@ -23,21 +23,21 @@ namespace ly::content
 		float encounterDamageMultiplier,
 		const EnemySpawnContext& spawnContext)
 	{
-		LY_PROFILE_SCOPE("Enemy.Spawn");
+		VEGA_PROFILE_SCOPE("Enemy.Spawn");
 		if (spawnContext.level < 1)
 		{
-			LY_GAME_ERROR("Cannot spawn enemy '%s': level must be at least one.", enemyId.c_str());
+			VEGA_GAME_ERROR("Cannot spawn enemy '%s': level must be at least one.", enemyId.c_str());
 			return {};
 		}
 		if (!std::isfinite(encounterDamageMultiplier) || encounterDamageMultiplier < 0.f)
 		{
-			LY_GAME_ERROR("Cannot spawn enemy '%s': invalid encounter damage multiplier.", enemyId.c_str());
+			VEGA_GAME_ERROR("Cannot spawn enemy '%s': invalid encounter damage multiplier.", enemyId.c_str());
 			return {};
 		}
 		const EnemyDefinition* enemy = EnemyContentCatalog::FindById(enemyId);
 		if (!enemy)
 		{
-			LY_GAME_ERROR("Cannot spawn unknown enemy definition '%s'.", enemyId.c_str());
+			VEGA_GAME_ERROR("Cannot spawn unknown enemy definition '%s'.", enemyId.c_str());
 			return {};
 		}
 		const ShipDefinition* ship = ShipContentCatalog::FindById(enemy->shipId);
@@ -45,7 +45,7 @@ namespace ly::content
 		const EnemyBehaviorProfile* behavior = EnemyContentCatalog::FindBehaviorById(enemy->behaviorProfileId);
 		if (!ship || !combat || !behavior)
 		{
-			LY_GAME_ERROR("Cannot spawn enemy '%s': referenced content is unavailable.", enemyId.c_str());
+			VEGA_GAME_ERROR("Cannot spawn enemy '%s': referenced content is unavailable.", enemyId.c_str());
 			return {};
 		}
 		weak_ptr<EnemyActor> spawned = world.SpawnActor<EnemyActor>(

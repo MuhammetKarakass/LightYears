@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class EngineContext;
 	// Composition root for shipped game content. It owns loading, registration,

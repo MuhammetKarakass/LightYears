@@ -6,7 +6,7 @@
 #include <SFML/Graphics/ConvexShape.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 
-namespace ly
+namespace vega
 {
 	class DirectionalBarrierVisualActor final : public Actor
 	{

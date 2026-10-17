@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly::targeting::swept
+namespace vega::targeting::swept
 {
 	inline sf::FloatRect SegmentBounds(
 		const sf::Vector2f& segmentStart,

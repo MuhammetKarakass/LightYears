@@ -7,19 +7,19 @@ uncommitted_areas:
   - gameplay-effect, ability, movement and presentation frame integrations
   - GasLiteCoreTests
 source_files:
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/src/framework/World.cpp
-  - LightYearsEngine/src/framework/Actor.cpp
-  - LightYearsEngine/src/framework/TimerManager.cpp
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/src/framework/World.cpp
+  - VegaEngine/src/framework/Actor.cpp
+  - VegaEngine/src/framework/TimerManager.cpp
+  - VegaEngine/src/framework/PhysicsSystem.cpp
 symbols:
-  - ly::Application::Run
-  - ly::Application::TickInternal
-  - ly::World::TickInternal
-  - ly::Actor::TickInternal
-  - ly::TimerManager::UpdateTimer
-  - ly::PhysicsSystem::Step
-  - ly::Application::RenderInternal
+  - vega::Application::Run
+  - vega::Application::TickInternal
+  - vega::World::TickInternal
+  - vega::Actor::TickInternal
+  - vega::TimerManager::UpdateTimer
+  - vega::PhysicsSystem::Step
+  - vega::Application::RenderInternal
 related:
   - "[[Game Loop]]"
   - "[[Actor and World System]]"
@@ -68,15 +68,15 @@ sequenceDiagram
 
 ## Adım 1 — Delta time ve event dispatch
 
-- Dosya: `LightYearsEngine/src/framework/Application.cpp`
-- Sembol: `ly::Application::Run`
+- Dosya: `VegaEngine/src/framework/Application.cpp`
+- Sembol: `vega::Application::Run`
 - Çağıran: `main`
 - Çağrılan: `DispatchEvent`, `TickInternal`
 - State değişikliği: Clock restart ile frame `dt`; input event’leri current world/HUD’a gider.
 - Sonraki adım: Application update.
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `Run`  
 Görevi: Frame başında delta time ve input event sırasını oluşturmak. Quit branch’leri bu parçada çıkarılmıştır.
 
@@ -104,15 +104,15 @@ while (const std::optional event = mWindow.pollEvent())
 
 ## Adım 2 — Application ve World update
 
-- Dosya: `LightYearsEngine/src/framework/Application.cpp`
-- Sembol: `ly::Application::TickInternal`
+- Dosya: `VegaEngine/src/framework/Application.cpp`
+- Sembol: `vega::Application::TickInternal`
 - Çağıran: `Application::Run`
 - Çağrılan: `Application::Tick`, `World::TickInternal`
 - State değişikliği: Game-specific application hook ve current world state’i güncellenir.
 - Sonraki adım: Timer ve physics.
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `TickInternal`  
 Görevi: Application hook’unu World’den önce çalıştırmak.
 
@@ -127,15 +127,15 @@ if(mCurrentWorld)
 
 ## Adım 3 — Pending spawn ve actor update
 
-- Dosya: `LightYearsEngine/src/framework/World.cpp`
-- Sembol: `ly::World::TickInternal`
+- Dosya: `VegaEngine/src/framework/World.cpp`
+- Sembol: `vega::World::TickInternal`
 - Çağıran: `Application::TickInternal`
 - Çağrılan: `Actor::BeginPlayInternal`, `Actor::TickInternal`
 - State değişikliği: Pending actor’lar active listeye; canlı actor state’i bir frame ilerler.
 - Sonraki adım: Stage, World, HUD ve cleanup.
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `TickInternal`  
 Görevi: Collection değişimini tick iterasyonundan önce tamamlamak.
 
@@ -151,15 +151,15 @@ for (auto iter = mActors.begin(); iter != mActors.end();)
 
 ## Adım 4 — Timer ve collision
 
-- Dosya: `LightYearsEngine/src/framework/Application.cpp`
-- Sembol: `ly::Application::TickInternal`
+- Dosya: `VegaEngine/src/framework/Application.cpp`
+- Sembol: `vega::Application::TickInternal`
 - Çağıran: `Application::Run`
 - Çağrılan: `TimerManager::UpdateTimer`, `PhysicsSystem::Step`
 - State değişikliği: Global timer her frame; game timer ve physics yalnız pause değilken ilerler.
 - Sonraki adım: Audio ve bakım.
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `TickInternal`  
 Görevi: Pause-aware timer/physics sırası.
 
@@ -177,15 +177,15 @@ if (!isPaused)
 
 ## Adım 5 — Deferred timer ve physics temizliği
 
-- Dosya: `LightYearsEngine/src/framework/TimerManager.cpp`, `LightYearsEngine/src/framework/PhysicsSystem.cpp`
-- Sembol: `ly::TimerManager::UpdateTimer`, `ly::PhysicsSystem::Step`
+- Dosya: `VegaEngine/src/framework/TimerManager.cpp`, `VegaEngine/src/framework/PhysicsSystem.cpp`
+- Sembol: `vega::TimerManager::UpdateTimer`, `vega::PhysicsSystem::Step`
 - Çağıran: `Application::TickInternal`
 - Çağrılan: timer callback’leri, `ProcessPendingRemoveListeners`, contact callbacks
 - State değişikliği: Expired timer’lar silinir; pending Box2D body removal uygulanır.
 - Sonraki adım: Application maintenance ve render.
 
-Dosya: `LightYearsEngine/src/framework/TimerManager.cpp`  
-Sınıf veya namespace: `ly::TimerManager`  
+Dosya: `VegaEngine/src/framework/TimerManager.cpp`  
+Sınıf veya namespace: `vega::TimerManager`  
 Fonksiyon: `UpdateTimer`  
 Görevi: Expired timer’ları iterator-safe biçimde silmek, diğerlerini ilerletmek.
 
@@ -204,8 +204,8 @@ for(auto iter=mTimers.begin(); iter!=mTimers.end();)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/PhysicsSystem.cpp`  
-Sınıf veya namespace: `ly::PhysicsSystem`  
+Dosya: `VegaEngine/src/framework/PhysicsSystem.cpp`  
+Sınıf veya namespace: `vega::PhysicsSystem`  
 Fonksiyon: `Step`  
 Görevi: Önce deferred body removal, sonra simulation, sonra overlap dispatch.
 
@@ -218,15 +218,15 @@ ProcessContactEvents();
 
 ## Adım 6 — Render ve frame sunumu
 
-- Dosya: `LightYearsEngine/src/framework/Application.cpp`
-- Sembol: `ly::Application::RenderInternal`
+- Dosya: `VegaEngine/src/framework/Application.cpp`
+- Sembol: `vega::Application::RenderInternal`
 - Çağıran: `Application::Run`
 - Çağrılan: `Application::Render`, `World::Render`
 - State değişikliği: Back buffer temizlenir ve sunulur.
 - Sonraki adım: Yeni frame delta time.
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `RenderInternal`  
 Görevi: Update/collision sonrası render frame’i.
 
@@ -265,8 +265,8 @@ SFML input gecikmesi, real-time input kullanan actor’ların frame yeri, Box2D 
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/src/framework/Application.cpp`
-2. `LightYearsEngine/src/framework/World.cpp`
-3. `LightYearsEngine/src/framework/Actor.cpp`
-4. `LightYearsEngine/src/framework/TimerManager.cpp`
-5. `LightYearsEngine/src/framework/PhysicsSystem.cpp`
+1. `VegaEngine/src/framework/Application.cpp`
+2. `VegaEngine/src/framework/World.cpp`
+3. `VegaEngine/src/framework/Actor.cpp`
+4. `VegaEngine/src/framework/TimerManager.cpp`
+5. `VegaEngine/src/framework/PhysicsSystem.cpp`

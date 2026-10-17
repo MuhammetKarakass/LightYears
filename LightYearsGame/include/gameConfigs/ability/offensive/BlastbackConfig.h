@@ -4,9 +4,9 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition Blastback_Basic = []
+	inline const vega::GameAbilityDefinition Blastback_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::Blastback::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Runtime loadouts own the actual binding. Ability1 is only the catalog
@@ -17,13 +17,13 @@ namespace AbilityData::Definitions
 		// Duration is precisely the input-locked focus time. Recoil continues in
 		// a separate actor so it cannot delay cooldown start.
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::Blastback
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::Blastback
 		};
 		definition.displayName = "Blastback";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupRed.png";
 		definition.accentColor = sf::Color{ 255, 105, 48, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::Blastback;
+		definition.behaviorType = vega::AbilityBehaviorType::Blastback;
 		return definition;
 	}();
 }

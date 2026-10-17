@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	struct AuditFixesE2EAccess
 	{
@@ -76,14 +76,14 @@ namespace ly
 		{
 		public:
 			explicit EndpointWall(World* world) : Actor(world)
-			{ SetPhysicsBodyType(PhysicsBodyType::Static); SetCollisionLayer(ly::GameCollision::Environment); }
+			{ SetPhysicsBodyType(PhysicsBodyType::Static); SetCollisionLayer(vega::GameCollision::Environment); }
 			sf::Vector2f GetPhysicsCollisionBoxHalfExtents() const override { return { 10.f, 20.f }; }
 		};
 		class RotatingWall final : public Actor
 		{
 		public:
 			explicit RotatingWall(World* world) : Actor(world)
-			{ SetEnablePhysics(false); SetPhysicsBodyType(PhysicsBodyType::Static); SetCollisionLayer(ly::GameCollision::Environment); }
+			{ SetEnablePhysics(false); SetPhysicsBodyType(PhysicsBodyType::Static); SetCollisionLayer(vega::GameCollision::Environment); }
 			sf::Vector2f GetPhysicsCollisionBoxHalfExtents() const override { return { 400.f, 10.f }; }
 		};
 		struct LifecycleFaultObserver
@@ -845,13 +845,13 @@ namespace ly
 				auto ship = world.SpawnActor<SpaceShip>(definition).lock();
 				ship->SetActorLocation({ x, 0.f });
 				ship->SetCollisionLayer(layer);
-				ship->SetCollisionMask(layer == ly::GameCollision::Player ? ly::GameCollision::Enemy : ly::GameCollision::Player);
+				ship->SetCollisionMask(layer == vega::GameCollision::Player ? vega::GameCollision::Enemy : vega::GameCollision::Player);
 				return ship;
 			};
-			auto owner = spawn(0.f, ly::GameCollision::Player);
-			auto infected = spawn(100.f, ly::GameCollision::Enemy);
+			auto owner = spawn(0.f, vega::GameCollision::Player);
+			auto infected = spawn(100.f, vega::GameCollision::Enemy);
 			std::vector<shared_ptr<SpaceShip>> targets;
-			for (int i = 0; i < 4; ++i) targets.push_back(spawn(130.f + 30.f * i, ly::GameCollision::Enemy));
+			for (int i = 0; i < 4; ++i) targets.push_back(spawn(130.f + 30.f * i, vega::GameCollision::Enemy));
 			world.TickInternal(0.f);
 			auto& system = owner->GetAbilitySystemComponent();
 
@@ -965,7 +965,7 @@ namespace ly
 			check("rotationRemovesOldCells", !movement::FindFirstStaticGeometryHit(*owner, { 100.f, 4450.f }, { 155.f, 4450.f }, 0.f, hit, false));
 
 			// Real shipped activation; Clear runs from the activation delegate.
-			auto lifecycleOwner = spawn(3000.f, ly::GameCollision::Player);
+			auto lifecycleOwner = spawn(3000.f, vega::GameCollision::Player);
 			world.TickInternal(0.f);
 			auto& lifecycle = lifecycleOwner->GetAbilitySystemComponent();
 			AbilityLoadoutManager lifecycleLoadout{ lifecycle };
@@ -1846,7 +1846,7 @@ namespace ly
 
 			// Production GameAbility action phases stop after a callback cancels the
 			// executing instance, and nested instance operations are rejected.
-			auto actionOwner = spawn(7000.f, ly::GameCollision::Player);
+			auto actionOwner = spawn(7000.f, vega::GameCollision::Player);
 			world.TickInternal(0.f);
 			auto& actionSystem = actionOwner->GetAbilitySystemComponent();
 			const GameplayTag actionEventTag = GameplayTags::Event::Owner::DamageTaken;
@@ -2090,7 +2090,7 @@ namespace ly
 			// Real OnPressed abilities create several shipped beam visuals. Clear
 			// must attempt every visual and every ability after the first EndFire
 			// callback throws, then retry only the retained cleanup debt.
-			auto beamOwner = spawn(8000.f, ly::GameCollision::Player);
+			auto beamOwner = spawn(8000.f, vega::GameCollision::Player);
 			world.TickInternal(0.f);
 			auto& beamSystem = beamOwner->GetAbilitySystemComponent();
 			const auto existingBeamActors = world.GetActorsByTypeIncludingPending<ContinuousBeamVisualActor>();
@@ -2772,8 +2772,8 @@ namespace ly
 				AbilityData::Cryostasis::Effect::IceShellId
 			);
 			if (!iceShellDefinition) throw std::runtime_error("E14 shipped Cryostasis Ice Shell definition is missing");
-			auto damageFirst = spawn(8200.f, ly::GameCollision::Player);
-			auto damageMiddle = spawn(8260.f, ly::GameCollision::Enemy);
+			auto damageFirst = spawn(8200.f, vega::GameCollision::Player);
+			auto damageMiddle = spawn(8260.f, vega::GameCollision::Enemy);
 			world.TickInternal(0.f);
 			const std::size_t e14EffectsBeforeA = damageFirst->GetAbilitySystemComponent().BuildGameplayEffectSnapshots().size();
 			const std::size_t e14EffectsBeforeB = damageMiddle->GetAbilitySystemComponent().BuildGameplayEffectSnapshots().size();
@@ -2846,8 +2846,8 @@ namespace ly
 			// DamageReceived, Thermal/Ignite, source-status, or processed callbacks.
 			const auto* barrierDefinition = EffectData::FindGameplayEffectDefinition(BarrierEffectSchema::BasicEffectId);
 			if (!barrierDefinition) throw std::runtime_error("E15 shipped Basic Barrier definition is missing");
-			auto controlDamageTarget = spawn(8300.f, ly::GameCollision::Enemy);
-			auto controlDamageSource = spawn(8360.f, ly::GameCollision::Player);
+			auto controlDamageTarget = spawn(8300.f, vega::GameCollision::Enemy);
+			auto controlDamageSource = spawn(8360.f, vega::GameCollision::Player);
 			world.TickInternal(0.f);
 			const float e15BarrierDuration = 5.f;
 			const std::size_t controlEffectsBeforeSetup = controlDamageTarget->GetAbilitySystemComponent().BuildGameplayEffectSnapshots().size();
@@ -2888,8 +2888,8 @@ namespace ly
 				normalDamageControl.remainingDamageAtReceived == 15.f && normalDamageControl.sourceStatusEvents == 1 &&
 				normalDamageControl.damageProcessedEvents == 1 && e15ControlIgniteTag && e15ControlEffectsAfter > 0;
 			check("E15BarrierNormalControlReachesLateCallbacks", e15ControlPassed);
-			auto clearDamageTarget = spawn(8400.f, ly::GameCollision::Enemy);
-			auto clearDamageSource = spawn(8460.f, ly::GameCollision::Player);
+			auto clearDamageTarget = spawn(8400.f, vega::GameCollision::Enemy);
+			auto clearDamageSource = spawn(8460.f, vega::GameCollision::Player);
 			world.TickInternal(0.f);
 			const std::size_t e15EffectsBeforeSetup = clearDamageTarget->GetAbilitySystemComponent().BuildGameplayEffectSnapshots().size();
 			const auto e15Barrier = ApplyAuditBarrier(*clearDamageTarget, *barrierDefinition, 5.f, e15BarrierDuration);
@@ -2983,7 +2983,7 @@ namespace ly
 
 			// A production effect activation callback cancels an active beam ability,
 			// requests component Clear, and crosses the one-shot visual cleanup fault.
-			auto crossFlowOwner = spawn(8600.f, ly::GameCollision::Player);
+			auto crossFlowOwner = spawn(8600.f, vega::GameCollision::Player);
 			world.TickInternal(0.f);
 			auto& crossFlowSystem = crossFlowOwner->GetAbilitySystemComponent();
 			Set<std::uint64_t> e18ExistingBeamIds;
@@ -3161,12 +3161,12 @@ namespace ly
 			check("E18EffectCancelClearCleanupAndReuse", e18Passed);
 
 			// Damage callback grows indexed storage and refreshes its live entry.
-			auto nanoTarget = spawn(3500.f, ly::GameCollision::Enemy);
+			auto nanoTarget = spawn(3500.f, vega::GameCollision::Enemy);
 			auto reentryController = NanoPlagueControllerActor::FindOrCreate(world, *owner, NanoPlaguePresentationProfile{});
 			NanoReentryObserver reentry{ reentryController, nanoTarget };
 			reentry.settings.baseTickDamage = 1.f;
 			reentry.settings.energyPowerTickScale = 0.f;
-			for (int i = 0; i < 32; ++i) reentry.additions.push_back(spawn(3600.f + i * 20.f, ly::GameCollision::Enemy));
+			for (int i = 0; i < 32; ++i) reentry.additions.push_back(spawn(3600.f + i * 20.f, vega::GameCollision::Enemy));
 			check("nanoReentryApplied", reentryController->ApplyOrRefreshInfection(*nanoTarget, 1, reentry.settings));
 			world.TickInternal(0.f);
 			const auto countBefore = AuditFixesE2EAccess::Count(*reentryController);

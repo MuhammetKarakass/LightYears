@@ -15,7 +15,7 @@ namespace ShipData
 		sf::Vector2f{ 350.f, 350.f },
 		25.f,
 		0.f,
-		(int)ly::ExplosionType::Medium,
+		(int)vega::ExplosionType::Medium,
 		{
 			EngineMount{ {-22.f, -12.f}, LightingData::Engine_Cyan_PointLightDef },
 			EngineMount{ {+22.f, -12.f}, LightingData::Engine_Cyan_PointLightDef }
@@ -54,18 +54,18 @@ namespace ShipData
 			100.f,
 			1.25f,
 			{
-				{ ly::OwnerAttributeIds::MaxHealth, 40.f },
-				{ ly::OwnerAttributeIds::AttackPower, 3.f },
-				{ ly::OwnerAttributeIds::EnergyPower, 2.f },
-				{ ly::OwnerAttributeIds::Armor, 2.f },
-				{ ly::OwnerAttributeIds::Luck, 1.f }
+				{ vega::OwnerAttributeIds::MaxHealth, 40.f },
+				{ vega::OwnerAttributeIds::AttackPower, 3.f },
+				{ vega::OwnerAttributeIds::EnergyPower, 2.f },
+				{ vega::OwnerAttributeIds::Armor, 2.f },
+				{ vega::OwnerAttributeIds::Luck, 1.f }
 			}
 		},
 		0.f,
-		ly::ControlTargetClass::Normal,
+		vega::ControlTargetClass::Normal,
 		{
-			{ ly::OwnerAttributeIds::AttackPower, 39.f },
-			{ ly::OwnerAttributeIds::Armor, 2.f }
+			{ vega::OwnerAttributeIds::AttackPower, 39.f },
+			{ vega::OwnerAttributeIds::Armor, 2.f }
 		}
 	);
 
@@ -76,7 +76,7 @@ namespace ShipData
 		sf::Vector2f{ 0.f,125.f },
 		60.f,
 		30.f,
-		(int)ly::ExplosionType::Heavy,
+		(int)vega::ExplosionType::Heavy,
 		{
 			EngineMount{ {0.f,-25.f},PointLightDefinition("SpaceShooterRedux/Shaders/point_light.frag",
 		sf::Color{ 255, 255, 0, 200 },
@@ -90,9 +90,9 @@ namespace ShipData
 			}
 		},
 		{
-			{ ly::CreateRewardHealth, 0.3f },
-			{ ly::CreateRewardLife, 0.05f},
-			{ ly::CreateRewardShield, 0.10f }
+			{ vega::CreateRewardHealth, 0.3f },
+			{ vega::CreateRewardLife, 0.05f},
+			{ vega::CreateRewardShield, 0.10f }
 		},
 		""
 	);

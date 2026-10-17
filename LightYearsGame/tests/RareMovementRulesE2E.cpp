@@ -27,7 +27,7 @@ namespace rare_movement_e2e
 		constexpr float kTolerance = 0.5f;
 
 		// Test-only definitions parsed from fixture JSON. They never enter shipped content.
-		ly::List<ly::ModuleDefinition> gFixtureDefinitions;
+		vega::List<vega::ModuleDefinition> gFixtureDefinitions;
 		// Fighter movement block from ships.json, read by main before any check runs.
 		float gShipForward = 0.f;
 		float gShipReverse = 0.f;
@@ -118,19 +118,19 @@ namespace rare_movement_e2e
 		// Removes every placement the loadout holds (the shipped default modules bring movement ratings).
 		void ClearLoadout(Fixture& f)
 		{
-			ly::List<std::uint32_t> installed;
+			vega::List<std::uint32_t> installed;
 			for (const ModulePlacement& placement : f.loadout.GetPlacements()) installed.push_back(placement.instanceId);
 			for (const std::uint32_t id : installed) f.Remove(id);
 		}
 
-		void ParsedChecks(Report& report, const ly::List<ly::ModuleDefinition>& definitions)
+		void ParsedChecks(Report& report, const vega::List<vega::ModuleDefinition>& definitions)
 		{
 			const auto found = std::find_if(definitions.begin(), definitions.end(),
 				[](const ModuleDefinition& definition) { return definition.moduleId == sas::ContentId{ kOmniId }; });
 			report.Check(found != definitions.end() && !found->sizeVariants.empty(), "Omni fixture parses into a movement rule");
 			const auto& rules = found->sizeVariants[0].movementRules;
 			report.Check(rules.size() == 1 && rules[0].equalizeDirections &&
-				rules[0].thrustMultiplierByLevel.values == ly::List<float>{ 0.70f, 0.715f, 0.73f },
+				rules[0].thrustMultiplierByLevel.values == vega::List<float>{ 0.70f, 0.715f, 0.73f },
 				"level table and equalizeDirections parse exactly", Json{ { "count", rules.size() } });
 		}
 
@@ -211,7 +211,7 @@ namespace rare_movement_e2e
 
 			// Ten install and removal cycles must leave the handle count and thrust unchanged.
 			const std::size_t handlesBefore = f.ship->GetModuleApplier().GetOwnedHandleCount();
-			ly::List<std::size_t> handlesPerCycle;
+			vega::List<std::size_t> handlesPerCycle;
 			bool cyclesStable = true;
 			for (int cycle = 0; cycle < 10; ++cycle)
 			{
@@ -281,7 +281,7 @@ namespace rare_movement_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_movement_e2e;
 	if (argc != 2) return 2;
 	Report report;

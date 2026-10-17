@@ -4,7 +4,7 @@
 #include "level/ArenaDefinition.h"
 #include "framework/Delegate.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	

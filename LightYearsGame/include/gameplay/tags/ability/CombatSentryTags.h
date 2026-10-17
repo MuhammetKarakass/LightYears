@@ -2,14 +2,14 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag CombatSentry{
 		"Ability.Offense.CombatSentry"
 	};
 }
 
-namespace ly::GameplayTags::Event::Ability::CombatSentry
+namespace vega::GameplayTags::Event::Ability::CombatSentry
 {
 	inline const GameplayTag Spawned{ "Event.Ability.CombatSentry.Spawned" };
 	inline const GameplayTag Ended{ "Event.Ability.CombatSentry.Ended" };

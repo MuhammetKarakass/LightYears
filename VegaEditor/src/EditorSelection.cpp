@@ -8,7 +8,7 @@
 
 namespace vega
 {
-	void EditorSelection::Select(std::weak_ptr<ly::Actor> actor)
+	void EditorSelection::Select(std::weak_ptr<vega::Actor> actor)
 	{
 		const auto selected = actor.lock();
 		if (mActors.size() == 1 && Get() == selected) return;
@@ -23,22 +23,22 @@ namespace vega
 		++mRevision;
 	}
 
-	void EditorSelection::Add(std::weak_ptr<ly::Actor> weak)
+	void EditorSelection::Add(std::weak_ptr<vega::Actor> weak)
 	{
 		const auto actor = weak.lock();
 		if (!actor || actor->GetIsPendingDestroy()) return;
 		// Re-adding an existing row makes the last clicked actor primary.
 		if (Get() == actor) return;
 		Remove(actor);
-		const auto* identity = actor->FindComponent<ly::SceneEntityComponent>();
+		const auto* identity = actor->FindComponent<vega::SceneEntityComponent>();
 		mActors.push_back({ actor, identity ? identity->guid : std::string{} });
 		++mRevision;
 	}
 
-	void EditorSelection::Remove(const std::shared_ptr<ly::Actor>& actor)
+	void EditorSelection::Remove(const std::shared_ptr<vega::Actor>& actor)
 	{
 		if (!actor) return;
-		const auto* identity = actor->FindComponent<ly::SceneEntityComponent>();
+		const auto* identity = actor->FindComponent<vega::SceneEntityComponent>();
 		const auto size = mActors.size();
 		mActors.erase(std::remove_if(mActors.begin(), mActors.end(), [&](const Entry& entry)
 		{
@@ -47,18 +47,18 @@ namespace vega
 		if (size != mActors.size()) ++mRevision;
 	}
 
-	void EditorSelection::Toggle(const std::shared_ptr<ly::Actor>& actor)
+	void EditorSelection::Toggle(const std::shared_ptr<vega::Actor>& actor)
 	{
 		if (Contains(actor)) Remove(actor); else Add(actor);
 	}
 
-	bool EditorSelection::Contains(const std::shared_ptr<ly::Actor>& actor) const
+	bool EditorSelection::Contains(const std::shared_ptr<vega::Actor>& actor) const
 	{
 		return actor && !actor->GetIsPendingDestroy() && std::any_of(mActors.begin(), mActors.end(),
 			[&](const Entry& entry) { return entry.actor.lock() == actor; });
 	}
 
-	std::shared_ptr<ly::Actor> EditorSelection::Get() const
+	std::shared_ptr<vega::Actor> EditorSelection::Get() const
 	{
 		RefreshValidity();
 		for (auto it = mActors.rbegin(); it != mActors.rend(); ++it)
@@ -66,10 +66,10 @@ namespace vega
 		return {};
 	}
 
-	std::vector<std::shared_ptr<ly::Actor>> EditorSelection::GetAll() const
+	std::vector<std::shared_ptr<vega::Actor>> EditorSelection::GetAll() const
 	{
 		RefreshValidity();
-		std::vector<std::shared_ptr<ly::Actor>> actors;
+		std::vector<std::shared_ptr<vega::Actor>> actors;
 		actors.reserve(mActors.size());
 		for (const auto& entry : mActors)
 			if (auto actor = entry.actor.lock(); actor && !actor->GetIsPendingDestroy()) actors.push_back(std::move(actor));
@@ -92,14 +92,14 @@ namespace vega
 		return static_cast<std::size_t>(std::count_if(mActors.begin(), mActors.end(), [](const Entry& entry) { return entry.live; }));
 	}
 
-	void EditorSelection::Rebind(const std::function<std::shared_ptr<ly::Actor>(const std::string&)>& resolve)
+	void EditorSelection::Rebind(const std::function<std::shared_ptr<vega::Actor>(const std::string&)>& resolve)
 	{
 		for (auto& entry : mActors)
 		{
 			if (entry.guid.empty())
 			{
 				const auto actor = entry.actor.lock();
-				if (const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr) entry.guid = identity->guid;
+				if (const auto* identity = actor ? actor->FindComponent<vega::SceneEntityComponent>() : nullptr) entry.guid = identity->guid;
 				else continue;
 			}
 			const auto actor = resolve(entry.guid);
@@ -107,7 +107,7 @@ namespace vega
 		}
 	}
 
-	void EditorSelection::Replace(const std::shared_ptr<ly::Actor>& before, const std::shared_ptr<ly::Actor>& after)
+	void EditorSelection::Replace(const std::shared_ptr<vega::Actor>& before, const std::shared_ptr<vega::Actor>& after)
 	{
 		for (auto& entry : mActors) if (entry.actor.lock() == before)
 		{

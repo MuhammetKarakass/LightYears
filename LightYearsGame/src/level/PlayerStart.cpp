@@ -3,7 +3,7 @@
 #include <framework/reflection/Reflection.h>
 #include <stdexcept>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(PlayerStart, Actor)
 	{

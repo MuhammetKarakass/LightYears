@@ -4,7 +4,7 @@
 #include "presentation/hud/HUDController.h"
 #include "presentation/hud/warning/GameplayWarningViewModel.h"
 
-namespace ly
+namespace vega
 {
 	struct HUDMigrationWarningTestAccess;
 	class GameHUD;

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::StormMarkPresentationIds
+namespace vega::StormMarkPresentationIds
 {
 	inline constexpr char LightningBasic[] =
 		"Presentation.Ability.StormMark.Lightning.Basic";

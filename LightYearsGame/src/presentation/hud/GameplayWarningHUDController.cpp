@@ -2,7 +2,7 @@
 #include "presentation/hud/warning/GameplayWarningView.h"
 #include "widget/GameHUD.h"
 
-namespace ly
+namespace vega
 {
 	GameplayWarningHUDController::GameplayWarningHUDController(weak_ptr<GameHUD> gameHUD)
 		: mGameHUD{ gameHUD }, mViewModel{ std::make_shared<GameplayWarningViewModel>() }

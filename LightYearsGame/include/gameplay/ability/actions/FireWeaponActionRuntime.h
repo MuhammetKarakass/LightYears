@@ -2,7 +2,7 @@
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 
-namespace ly
+namespace vega
 {
 	// Owns the persistent fire lifecycle for FireWeaponAction while the generic
 	// executor retains scheduling and dispatch for every action variant.

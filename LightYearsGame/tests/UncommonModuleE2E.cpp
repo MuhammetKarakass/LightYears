@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace uncommon_module_e2e;
 	if (argc != 2)
 	{
@@ -16,12 +16,12 @@ int main(int argc, char** argv)
 	const std::filesystem::path fixtureRoot = artifactPath.parent_path() / "uncommon-fixtures";
 	try
 	{
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
-		if (!ly::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
+		if (!vega::GameContentBootstrap::Register()) throw std::runtime_error{ "GameContentBootstrap::Register failed" };
 		std::string windowTitle = "Uncommon module E2E";
-		ly::Application application{ sf::Vector2u{ 64u, 64u }, 32u, windowTitle, sf::Style::None };
+		vega::Application application{ sf::Vector2u{ 64u, 64u }, 32u, windowTitle, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
 		RunUncommonContentChecks(report, fixtureRoot);
 		RunUncommonRollerChecks(report);

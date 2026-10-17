@@ -6,7 +6,7 @@
 #include <limits>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	ClosedCircuitFieldRegistryActor::Registration::Registration(
 		weak_ptr<ClosedCircuitFieldRegistryActor> registry,

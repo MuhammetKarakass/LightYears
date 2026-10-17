@@ -6,7 +6,7 @@
 
 #include <cstddef>
 
-namespace ly
+namespace vega
 {
 	// A cast-local radial boundary. The same resolver is used by gameplay and
 	// rendering so the visible storm edge is always the real damage edge.

@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace ly
+namespace vega
 {
 	class LightYearsAbilitySystemComponent;
 

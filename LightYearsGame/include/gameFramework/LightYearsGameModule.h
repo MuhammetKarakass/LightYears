@@ -2,7 +2,7 @@
 
 #include <framework/GameModule.h>
 
-namespace ly
+namespace vega
 {
 	class GameVisualPipeline;
 

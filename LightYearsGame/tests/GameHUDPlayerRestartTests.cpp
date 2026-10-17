@@ -2,7 +2,7 @@
 #include "presentation/hud/vitals/VitalsPresenter.h"
 #include <iostream>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -49,7 +49,7 @@ namespace ly
 
 int RunGameHUDPlayerRestartTests()
 {
-	using namespace ly;
+	using namespace vega;
 	PlayerManager& playerManager = PlayerManager::GetPlayerManager();
 	playerManager.Reset();
 

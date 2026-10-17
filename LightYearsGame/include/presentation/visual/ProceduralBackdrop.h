@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class World;
 	struct RouteStop;

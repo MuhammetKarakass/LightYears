@@ -17,7 +17,7 @@ namespace sas
 		GameplayEffectHandle handle;
 		std::string source;
 		bool infinite = false;
-		ly::List<AttributeModifier> modifiers;
-		ly::List<ly::GameplayTag> grantedTags;
+		vega::List<AttributeModifier> modifiers;
+		vega::List<vega::GameplayTag> grantedTags;
 	};
 }

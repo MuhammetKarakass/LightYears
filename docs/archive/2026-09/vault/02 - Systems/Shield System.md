@@ -14,10 +14,10 @@ source_files:
   - LightYearsGame/src/gameplay/effects/content/barrier/BarrierEffectBehavior.cpp
   - LightYearsGame/src/gameplay/ability/shield/ShieldAbility.cpp
 symbols:
-  - ly::ShieldComponent
-  - ly::ShieldComponent::AbsorbDamage
-  - ly::BarrierEffectBehavior::ProcessIncomingDamage
-  - ly::ShieldAbility::Validate
+  - vega::ShieldComponent
+  - vega::ShieldComponent::AbsorbDamage
+  - vega::BarrierEffectBehavior::ProcessIncomingDamage
+  - vega::ShieldAbility::Validate
 related:
   - "[[Combat and Damage System]]"
   - "[[Damage and Shield Resolution Flow]]"

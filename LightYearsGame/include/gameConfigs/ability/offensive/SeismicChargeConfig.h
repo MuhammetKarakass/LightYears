@@ -8,34 +8,34 @@
 
 namespace AbilityData::SeismicCharge
 {
-	inline const ly::AbilityActorDefinition ActorBombBasic = []
+	inline const vega::AbilityActorDefinition ActorBombBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Bomb::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::SeismicChargeBomb;
-		definition.presentationProfileId = ly::SeismicChargePresentationIds::BombBasic;
+		definition.actorType = vega::AbilityActorType::SeismicChargeBomb;
+		definition.presentationProfileId = vega::SeismicChargePresentationIds::BombBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition SeismicCharge_Basic = []
+	inline const vega::GameAbilityDefinition SeismicCharge_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::SeismicCharge::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::SeismicCharge
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::SeismicCharge
 		};
 		definition.displayName = "Seismic Charge";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 85, 190, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::SeismicCharge;
+		definition.behaviorType = vega::AbilityBehaviorType::SeismicCharge;
 		return definition;
 	}();
 }

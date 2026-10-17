@@ -1,6 +1,6 @@
 #include "gameFramework/GameApplication.h"
 
-ly::Application* GetApplication()
+vega::Application* GetApplication()
 {
-	return new ly::GameApplication();
+	return new vega::GameApplication();
 }

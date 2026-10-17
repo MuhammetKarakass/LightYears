@@ -15,7 +15,7 @@ namespace sas
 
 	template <typename Definition, typename Validator>
 	bool ValidateAbilityDefinitionCatalog(
-		const ly::List<const Definition*>& definitions,
+		const vega::List<const Definition*>& definitions,
 		Validator&& validate,
 		std::string* failureReason = nullptr
 	)

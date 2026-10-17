@@ -5,7 +5,7 @@
 #include "gameplay/GameplayWarning.h"
 
 
-namespace ly
+namespace vega
 {
 
 	class Application;

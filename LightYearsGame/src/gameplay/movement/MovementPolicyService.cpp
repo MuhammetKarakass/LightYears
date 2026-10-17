@@ -4,7 +4,7 @@
 #include "gameplay/MovementComponent.h"
 #include "spaceShip/SpaceShip.h"
 
-namespace ly::movement
+namespace vega::movement
 {
 	bool MovementPolicyService::SetPolicy(
 		Actor& target,

@@ -3,7 +3,7 @@
 #include <cctype>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	// Content IDs are string identifiers, not GameplayTags stored in a generic
 	// registry. This schema keeps their grammar in one place so loaders and

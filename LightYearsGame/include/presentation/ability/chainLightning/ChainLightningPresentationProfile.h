@@ -4,7 +4,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// Chain Lightning owns the electric arc's presentation values in its
 	// feature-local typed profile. Gameplay code only supplies the resolved

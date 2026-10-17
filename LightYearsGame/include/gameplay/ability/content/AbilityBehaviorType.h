@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	// This selector crosses catalog, registry, and validator translation units.
 	// Values are explicit so appending a new family cannot silently reinterpret

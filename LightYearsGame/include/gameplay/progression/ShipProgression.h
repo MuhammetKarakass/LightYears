@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <array>
 
-namespace ly
+namespace vega
 {
 	class ShipProgression
 	{

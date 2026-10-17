@@ -2,12 +2,12 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag GravityAnomaly{ "Ability.Utility.GravityAnomaly" };
 }
 
-namespace ly::GameplayTags::State::Effect::GravityAnomaly
+namespace vega::GameplayTags::State::Effect::GravityAnomaly
 {
 	inline const GameplayTag Inside{ "State.Effect.GravityAnomaly.Inside" };
 }

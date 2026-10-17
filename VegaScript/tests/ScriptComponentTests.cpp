@@ -15,10 +15,10 @@
 namespace
 {
 	int failures = 0;
-	class ReflectedActor : public ly::Actor
+	class ReflectedActor : public vega::Actor
 	{
 	public:
-		explicit ReflectedActor(ly::World* world) : Actor{ world } {}
+		explicit ReflectedActor(vega::World* world) : Actor{ world } {}
 		float GetPower() const { return power; }
 		void SetPower(float value) { power = value; }
 	private:
@@ -48,7 +48,7 @@ namespace
 		const auto entry = component.Properties().find(name);
 		return entry != component.Properties().end() && std::holds_alternative<float>(entry->second) ? std::get<float>(entry->second) : -999.f;
 	}
-	void Poll(ly::World& world)
+	void Poll(vega::World& world)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(510));
 		world.TickInternal(0.f);
@@ -57,22 +57,22 @@ namespace
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	using namespace vega::script;
 	std::filesystem::create_directories(root);
 	SetScriptRoot(root);
 	RegisterScriptTypes();
 	{
-		ly::debug::LogCapture capture;
-		ly::World diagnosticsWorld{ nullptr };
-		auto diagnosticActor = diagnosticsWorld.SpawnActor<ly::Actor>().lock();
+		vega::debug::LogCapture capture;
+		vega::World diagnosticsWorld{ nullptr };
+		auto diagnosticActor = diagnosticsWorld.SpawnActor<vega::Actor>().lock();
 		diagnosticsWorld.TickInternal(0.f);
 		Write("console-print.lua", "function on_create(self)\n print('unit hello', 42, true)\nend\n");
 		diagnosticActor->AddComponent<ScriptComponent>("console-print.lua");
 		bool printed = false;
 		for (const auto& row : capture.Buffer().Snapshot())
-			if (row.channel == ly::debug::LogChannel::Lua && row.message == "unit hello\t42\ttrue" && row.line == 2 && row.file.find("console-print.lua") != std::string::npos) printed = true;
+			if (row.channel == vega::debug::LogChannel::Lua && row.message == "unit hello\t42\ttrue" && row.line == 2 && row.file.find("console-print.lua") != std::string::npos) printed = true;
 		Check(printed, "Lua print must retain arguments and source line");
 		Write("console-runtime.lua", "function on_create(self)\n error('unit runtime failure')\nend\n");
 		diagnosticActor->AddComponent<ScriptComponent>("console-runtime.lua");
@@ -81,15 +81,15 @@ int main()
 		bool runtime = false, load = false;
 		for (const auto& row : capture.Buffer().Snapshot())
 		{
-			if (row.level != ly::debug::LogLevel::Error || row.channel != ly::debug::LogChannel::Lua || row.line != 2) continue;
+			if (row.level != vega::debug::LogLevel::Error || row.channel != vega::debug::LogChannel::Lua || row.line != 2) continue;
 			runtime |= row.file == "console-runtime.lua" && row.message.find("unit runtime failure") != std::string::npos;
 			load |= row.file == "console-load.lua";
 		}
 		Check(runtime && load, "Lua runtime/load errors must retain script source line");
 	}
 	ScriptRuntime::Get().SetHotReload(true);
-	ly::World world{ nullptr };
-	auto actor = world.SpawnActor<ly::Actor>().lock();
+	vega::World world{ nullptr };
+	auto actor = world.SpawnActor<vega::Actor>().lock();
 	world.TickInternal(0.f);
 	Write("lifecycle.lua", R"(
 properties = { speed = 12, enabled = true, color = "#ff8800", offset = {x=2,y=3} }
@@ -129,7 +129,7 @@ end
 	actor->Destroy();
 	Check(component.LastError().empty() && actor->GetActorLocation() == sf::Vector2f{123.f,456.f}, "Lifecycle callback order failed");
 
-	auto hotActor = world.SpawnActor<ly::Actor>().lock();
+	auto hotActor = world.SpawnActor<vega::Actor>().lock();
 	world.TickInternal(0.f);
 	Write("hot.lua", "properties={speed=1}\nfunction on_create(self) self.actor:set_rotation(self.props.speed) end");
 	auto& hot = hotActor->AddComponent<ScriptComponent>("hot.lua");
@@ -177,7 +177,7 @@ end
 )");
 	auto& api = hotActor->AddComponent<ScriptComponent>("api.lua");
 	Check(api.LastError().empty() && hotActor->GetActorRotation() == 33.f && hotActor->GetActorLocation() == sf::Vector2f{4.f,5.f}, "Sandbox/reflection/handle API failed");
-	auto otherActor = world.SpawnActor<ly::Actor>().lock();
+	auto otherActor = world.SpawnActor<vega::Actor>().lock();
 	world.TickInternal(0.f);
 	auto& isolated = otherActor->AddComponent<ScriptComponent>("api.lua");
 	Check(isolated.LastError().empty(), "Environments leaked globals/library mutations");
@@ -195,14 +195,14 @@ function on_update(self, dt)
     assert(target:get("Collision Mask") == 4)
 end
 )");
-	auto stableActor = world.SpawnActor<ly::Actor>().lock();
+	auto stableActor = world.SpawnActor<vega::Actor>().lock();
 	// A script precedes the target; more components arrive after the handle is retained.
 	stableActor->AddComponent<ScriptComponent>("command-prefix.lua");
-	auto& stableCollision = stableActor->AddComponent<ly::CollisionComponent>();
+	auto& stableCollision = stableActor->AddComponent<vega::CollisionComponent>();
 	stableCollision.SetCollisionMask(static_cast<CollisionLayer>(5));
 	world.TickInternal(0.f);
 	auto& stableScript = stableActor->AddComponent<ScriptComponent>("component-handle.lua");
-	stableActor->AddComponent<ly::ActorComponent>();
+	stableActor->AddComponent<vega::ActorComponent>();
 	stableActor->AddComponent<ScriptComponent>("command-prefix.lua");
 	world.TickInternal(0.1f);
 	Check(stableScript.LastError().empty() && static_cast<int>(stableCollision.GetCollisionMask()) == 4,
@@ -225,7 +225,7 @@ function on_destroy(self) assert(not self.actor:is_valid()) end
 	auto& escape = hotActor->AddComponent<ScriptComponent>("../outside.lua");
 	Check(!escape.LastError().empty(), "Asset root traversal accepted");
 
-	ly::reflect::Class<ReflectedActor, ly::Actor>("ReflectedActor")
+	vega::reflect::Class<ReflectedActor, vega::Actor>("ReflectedActor")
 		.Spawnable()
 		.Property("Power", &ReflectedActor::GetPower, &ReflectedActor::SetPower);
 	auto derived = world.SpawnActor<ReflectedActor>().lock();
@@ -233,7 +233,7 @@ function on_destroy(self) assert(not self.actor:is_valid()) end
 	Write("derived.lua", "function on_create(self) assert(self.actor:type()=='ReflectedActor'); assert(self.actor:set('Power',77)); assert(self.actor:get('Power')==77) end");
 	auto& reflected = derived->AddComponent<ScriptComponent>("derived.lua");
 	Check(reflected.LastError().empty() && derived->GetPower() == 77.f, "Lua did not use most-derived reflection");
-	ly::reflect::Class<ThrowingActor, ReflectedActor>("ThrowingActor")
+	vega::reflect::Class<ThrowingActor, ReflectedActor>("ThrowingActor")
 		.Property("Throwing", &ReflectedActor::GetPower, [](ThrowingActor&, float) { throw std::runtime_error("Lua setter refused"); });
 	auto throwingActor = world.SpawnActor<ThrowingActor>().lock();
 	throwingActor->SetPower(77.f);
@@ -252,13 +252,13 @@ function on_destroy(self) assert(not self.actor:is_valid()) end
 	Poll(world);
 	Check(destroyError.LastError().empty() && derived->GetActorRotation() == 88.f, "Teardown error did not recover on file change");
 	derived->Destroy();
-	auto teardownActor = world.SpawnActor<ly::Actor>().lock();
+	auto teardownActor = world.SpawnActor<vega::Actor>().lock();
 	world.TickInternal(0.f);
 	Write("reentrant.lua", "local calls=0\nfunction on_destroy(self) calls=calls+1; assert(calls==1); self.actor:destroy() end");
 	auto& reentrant = teardownActor->AddComponent<ScriptComponent>("reentrant.lua");
 	teardownActor->Destroy();
 	Check(teardownActor->GetIsPendingDestroy() && reentrant.LastError().empty(), "Destroy from on_destroy recursively entered actor teardown");
-	auto reloadActor = world.SpawnActor<ly::Actor>().lock();
+	auto reloadActor = world.SpawnActor<vega::Actor>().lock();
 	world.TickInternal(0.f);
 	auto& reloadDestroy = reloadActor->AddComponent<ScriptComponent>("reentrant.lua");
 	reloadDestroy.Reload();
@@ -272,18 +272,18 @@ function on_create(self)
 	self.actor:set_rotation(self.props.speed)
 end
 )");
-	ly::World stagedWorld{ nullptr };
+	vega::World stagedWorld{ nullptr };
 	auto stagedActor = stagedWorld.SpawnActor<ReflectedActor>().lock();
-	stagedActor->AddComponent<ly::SceneEntityComponent>("", "Script round trip");
+	stagedActor->AddComponent<vega::SceneEntityComponent>("", "Script round trip");
 	auto& staged = stagedActor->AddComponent<ScriptComponent>("staged.lua");
 	Check(staged.SetOverrides({ { "speed", 27.f }, { "enabled", false }, { "text", std::string{ "authored" } },
 		{ "offset", sf::Vector2f{ 3.f, 4.f } } }), "Could not stage pre-BeginPlay overrides");
 	Check(!staged.SetOverrides({ { "invalid", 5 } }), "Unsupported override type was accepted");
-	const auto scene = ly::SceneSerializer::Save(stagedWorld);
-	ly::World restoredWorld{ nullptr };
-	const auto restoredResult = ly::SceneSerializer::Load(restoredWorld, scene);
+	const auto scene = vega::SceneSerializer::Save(stagedWorld);
+	vega::World restoredWorld{ nullptr };
+	const auto restoredResult = vega::SceneSerializer::Load(restoredWorld, scene);
 	Check(restoredResult.spawned == 1 && restoredResult.warnings.empty(), "Script scene failed to load");
-	Check(ly::SceneSerializer::Save(restoredWorld) == scene, "Script scene round trip changed overrides");
+	Check(vega::SceneSerializer::Save(restoredWorld) == scene, "Script scene round trip changed overrides");
 	const auto restoredActor = restoredWorld.GetActorsByTypeIncludingPending<ReflectedActor>()[0].lock();
 	Check(restoredActor->GetActorRotation() == 0.f, "Preparing declarations invoked on_create before promotion");
 	restoredWorld.TickInternal(0.f);
@@ -291,16 +291,16 @@ end
 	Check(restoredScript->LastError().empty() && restoredActor->GetActorRotation() == 27.f, "on_create did not see the staged overrides");
 	auto invalidScene = scene;
 	invalidScene["entities"][0]["scripts"][0]["properties"] = { { "missing", 3 }, { "speed", true } };
-	ly::World invalidWorld{ nullptr };
-	Check(ly::SceneSerializer::Load(invalidWorld, invalidScene).warnings.size() == 2, "Unknown/type-mismatched script overrides must warn");
+	vega::World invalidWorld{ nullptr };
+	Check(vega::SceneSerializer::Load(invalidWorld, invalidScene).warnings.size() == 2, "Unknown/type-mismatched script overrides must warn");
 	invalidScene["entities"][0]["scripts"][0]["path"] = "../outside.lua";
-	ly::World invalidPathWorld{ nullptr };
-	Check(!ly::SceneSerializer::Load(invalidPathWorld, invalidScene).warnings.empty(), "Invalid script paths must warn during scene loading");
+	vega::World invalidPathWorld{ nullptr };
+	Check(!vega::SceneSerializer::Load(invalidPathWorld, invalidScene).warnings.empty(), "Invalid script paths must warn during scene loading");
 	// Keep runaway regressions small; every callback receives a fresh allowance.
 	ScriptRuntime::Get().SetHotReload(false);
 	ScriptRuntime::Get().SetInstructionBudget(10000);
-	ly::World limitedWorld{ nullptr };
-	auto limitedActor = limitedWorld.SpawnActor<ly::Actor>().lock();
+	vega::World limitedWorld{ nullptr };
+	auto limitedActor = limitedWorld.SpawnActor<vega::Actor>().lock();
 	limitedWorld.TickInternal(0.f);
 	Write("loop-update.lua", "function on_update(self,dt) while true do end end");
 	auto& loopUpdate = limitedActor->AddComponent<ScriptComponent>("loop-update.lua");

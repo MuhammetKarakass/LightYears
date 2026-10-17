@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	enum class ModuleZoneKind { None, Nose, Wings, Hull, Core, Engine, Sensor, AbilityBay };
 	enum class ModuleSideFeatureViewState { None, Unselected, Locked, Active, Unavailable };

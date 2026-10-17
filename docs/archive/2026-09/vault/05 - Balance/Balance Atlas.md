@@ -20,8 +20,8 @@ source_files:
   - LightYearsGame/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp
 symbols:
   - sas::AttributeMath::SaturatingFraction
-  - ly::ShipProgression::GetXPRequiredForNextLevel
-  - ly::AbilityActionAttributeResolver::ResolveAttributes
+  - vega::ShipProgression::GetXPRequiredForNextLevel
+  - vega::AbilityActionAttributeResolver::ResolveAttributes
   - WeaponProgressionProfile
 related:
   - "[[Derived Attributes]]"

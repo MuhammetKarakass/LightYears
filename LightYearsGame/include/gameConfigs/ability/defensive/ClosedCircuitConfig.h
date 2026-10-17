@@ -7,19 +7,19 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::AbilityActorDefinition ClosedCircuitDeliveryBasic = []
+	inline const vega::AbilityActorDefinition ClosedCircuitDeliveryBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = AbilityData::ClosedCircuit::Actor::Delivery::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::ClosedCircuitDelivery;
-		definition.presentationProfileId = ly::ClosedCircuitPresentationIds::FieldBasic;
+		definition.actorType = vega::AbilityActorType::ClosedCircuitDelivery;
+		definition.presentationProfileId = vega::ClosedCircuitPresentationIds::FieldBasic;
 		return definition;
 	}();
 
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition ClosedCircuit_Basic = []
+	inline const vega::GameAbilityDefinition ClosedCircuit_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::ClosedCircuit::AbilityId::Basic;
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
@@ -29,7 +29,7 @@ namespace AbilityData::Definitions
 		definition.displayName = "Closed Circuit";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 		definition.accentColor = sf::Color{ 80, 220, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::ClosedCircuit;
+		definition.behaviorType = vega::AbilityBehaviorType::ClosedCircuit;
 		return definition;
 	}();
 }

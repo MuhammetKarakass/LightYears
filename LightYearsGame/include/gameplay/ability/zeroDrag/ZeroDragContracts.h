@@ -12,23 +12,23 @@ namespace AbilityData::ZeroDrag
 		inline static constexpr char Basic[] = "Ability.Movement.ZeroDrag.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityMovement };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ZeroDrag };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTagSchema::AbilityMovement };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::ZeroDrag };
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::ZeroDrag::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::ZeroDrag::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::ZeroDrag::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::ZeroDrag::Started
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::ZeroDrag::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::ZeroDrag::Ended
 		};
 	};
 

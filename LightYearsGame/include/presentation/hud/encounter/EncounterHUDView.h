@@ -5,7 +5,7 @@
 #include "widget/StackPanel.h"
 #include "widget/TextWidget.h"
 
-namespace ly
+namespace vega
 {
 	class EncounterHUDView : public Panel
 	{

@@ -3,7 +3,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/arcScythes/ArcScythesPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	// One actor owns both opposing beams. This makes the 0.25-second combat tick
 	// global to the ability and guarantees overlap cannot double-hit one target.

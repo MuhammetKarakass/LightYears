@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -55,7 +55,7 @@ namespace ly
 		SetAbilityCollisionRadius(std::max(0.1f, sas::FindAttributeValue(values, CollisionAttributeIds::Radius, 8.f)));
 		ConfigureCollisionFromOwner();
 		SetVisualScale(mVisualScale);
-		ly::perf::IncBullets();
+		vega::perf::IncBullets();
 
 	}
 
@@ -306,7 +306,7 @@ namespace ly
 				DamageDeliveryType::Projectile,
 				this
 			);
-			LY_GAME_TRACE("Primary weapon projectile damage: %f", GetDamage());
+			VEGA_GAME_TRACE("Primary weapon projectile damage: %f", GetDamage());
 			ReportShotHitOnce();
 		}
 	}
@@ -337,7 +337,7 @@ namespace ly
 			mImpactBehavior->OnProjectileFinished();
 			mImpactBehaviorCompleted = true;
 		}
-		ly::perf::DecBullets();
+		vega::perf::DecBullets();
 		Actor::Destroy();
 	}
 

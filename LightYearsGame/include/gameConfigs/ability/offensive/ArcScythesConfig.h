@@ -8,21 +8,21 @@
 
 namespace AbilityData::ArcScythes
 {
-	inline const ly::AbilityActorDefinition ActorBeamBasic = []
+	inline const vega::AbilityActorDefinition ActorBeamBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Beam::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::ArcScythesBeam;
-		definition.presentationProfileId = ly::ArcScythesPresentationIds::BeamBasic;
+		definition.actorType = vega::AbilityActorType::ArcScythesBeam;
+		definition.presentationProfileId = vega::ArcScythesPresentationIds::BeamBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition ArcScythes_Basic = []
+	inline const vega::GameAbilityDefinition ArcScythes_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::ArcScythes::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Runtime loadouts own the player binding. This is only a valid fallback
@@ -31,16 +31,16 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::ArcScythes
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::ArcScythes
 		};
 		definition.displayName = "Arc Scythes";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 		definition.accentColor = sf::Color{ 90, 230, 255, 255 };
 		definition.actions = {
-			ly::AbilityActionSpec{
+			vega::AbilityActionSpec{
 				sas::AbilityActionPhase::OnActivate,
-				ly::SpawnActorAction{
+				vega::SpawnActorAction{
 					AbilityData::ArcScythes::Actor::Beam::BasicDefinitionId,
 					sas::AbilitySpawnPolicy::AtOwner
 				},
@@ -48,7 +48,7 @@ namespace AbilityData::Definitions
 				1
 			}
 		};
-		definition.behaviorType = ly::AbilityBehaviorType::ArcScythes;
+		definition.behaviorType = vega::AbilityBehaviorType::ArcScythes;
 		return definition;
 	}();
 }

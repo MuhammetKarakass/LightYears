@@ -19,20 +19,20 @@ namespace
 		std::ofstream{ path, std::ios::binary } << text;
 	}
 
-	class AssetProbeActor : public ly::Actor
+	class AssetProbeActor : public vega::Actor
 	{
 	public:
-		explicit AssetProbeActor(ly::World* world) : Actor{ world } {}
+		explicit AssetProbeActor(vega::World* world) : Actor{ world } {}
 		std::string icon;
 	};
 }
 
 int main()
 {
-	ly::EngineContext engineContext;
-	ly::EngineContext::Scope contextScope{ engineContext };
+	vega::EngineContext engineContext;
+	vega::EngineContext::Scope contextScope{ engineContext };
 	using namespace vega;
-	using ly::reflect::AssetKind;
+	using vega::reflect::AssetKind;
 	const auto root = std::filesystem::path{ VEGA_ASSET_FIELD_TEST_ROOT };
 	if (!root.is_absolute() || root.filename() != "asset-field-test") return 1;
 	std::filesystem::remove_all(root);
@@ -48,22 +48,22 @@ int main()
 	Check((ListAssetChoices(root, AssetKind::Script) == std::vector<std::string>{ "scripts/start.lua" }), "Script choices must list only .lua files");
 	Check(ListAssetChoices({}, AssetKind::Texture).empty(), "A missing asset root must offer no choices");
 
-	ly::reflect::RegisterEngineTypes();
-	ly::reflect::Class<AssetProbeActor, ly::Actor>("AssetFieldProbe").Spawnable()
+	vega::reflect::RegisterEngineTypes();
+	vega::reflect::Class<AssetProbeActor, vega::Actor>("AssetFieldProbe").Spawnable()
 		.Property("Icon", [](const AssetProbeActor& a) { return a.icon; }, [](AssetProbeActor& a, const std::string& value) { a.icon = value; })
 		.Asset(AssetKind::Texture)
 		.Property("Preview", [](const AssetProbeActor& a) { return a.icon; }).Asset(AssetKind::Texture);
 
-	ly::World world{ nullptr };
+	vega::World world{ nullptr };
 	auto actor = world.SpawnActor<AssetProbeActor>().lock();
-	actor->AddComponent<ly::SceneEntityComponent>("probe", "Probe");
+	actor->AddComponent<vega::SceneEntityComponent>("probe", "Probe");
 	EditorSelection selection;
 	EditorContext context{ &world, selection };
 	CommandHistory history{ context };
 	const auto target = ResolvePropertyTarget(*actor, {});
 	const auto* icon = target.type ? target.type->FindProperty("Icon") : nullptr;
 	const auto* preview = target.type ? target.type->FindProperty("Preview") : nullptr;
-	Check(icon && icon->assetKind == AssetKind::Texture && icon->kind == ly::reflect::PropertyKind::String, "Probe must expose a Texture asset property");
+	Check(icon && icon->assetKind == AssetKind::Texture && icon->kind == vega::reflect::PropertyKind::String, "Probe must expose a Texture asset property");
 	if (!icon || !preview) return 1;
 
 	// An accepted drop assigns through the undo history, and undo and redo restore the value.

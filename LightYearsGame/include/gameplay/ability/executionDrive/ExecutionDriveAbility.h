@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "effects/GameplayEffectHandle.h"
 
-namespace ly
+namespace vega
 {
 	class SpaceShip;
 

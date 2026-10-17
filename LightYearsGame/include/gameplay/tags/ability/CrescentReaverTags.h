@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	// Family identity is shared by the runtime validator and the ability
 	// contract. Keeping one canonical tag prevents a second spelling of the

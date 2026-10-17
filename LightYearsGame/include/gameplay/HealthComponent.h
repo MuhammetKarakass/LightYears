@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Not ticked automatically (mCanEverTick stays false): the owning actor drives
 	// TickTemporaryOverhealths from its own regeneration step so the per-frame

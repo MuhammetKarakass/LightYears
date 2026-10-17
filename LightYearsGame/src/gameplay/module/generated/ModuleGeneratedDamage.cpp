@@ -6,7 +6,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	DamagePayload MakeModuleGeneratedDamagePayload(int cryoStacks, DamageSourceScalingPolicy scaling, int igniteStacks)
 	{

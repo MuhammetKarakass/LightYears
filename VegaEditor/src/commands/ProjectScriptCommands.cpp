@@ -26,12 +26,12 @@ namespace vega
 			{
 				if (!context.document) throw std::runtime_error("No project asset root");
 				const auto path = context.document->Root() / "vega.project.json";
-				auto project = std::filesystem::exists(path) ? ly::ProjectSettings::Load(path) : ly::ProjectSettings{};
+				auto project = std::filesystem::exists(path) ? vega::ProjectSettings::Load(path) : vega::ProjectSettings{};
 				if (command.operation == "expect-project-startup") success = project.startupScene == command.text;
 				else
 				{
 					project.startupScene = command.text;
-					project = ly::ProjectSettings::Parse(project.ToJson());
+					project = vega::ProjectSettings::Parse(project.ToJson());
 					success = AtomicWriteText(path, project.ToJson().dump(2) + "\n", detail);
 				}
 			}

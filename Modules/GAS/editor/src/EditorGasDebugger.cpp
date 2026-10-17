@@ -49,7 +49,7 @@ namespace vega
 		mNextRefresh = 0;
 	}
 
-	std::shared_ptr<ly::Actor> EditorGasDebugger::Target(EditorContext& context) const
+	std::shared_ptr<vega::Actor> EditorGasDebugger::Target(EditorContext& context) const
 	{
 		if (!context.world || !context.playMode || context.transitioning) return {};
 		auto actor = context.selection.Get();
@@ -69,7 +69,7 @@ namespace vega
 
 	void EditorGasDebugger::Refresh(sas::AbilitySystemComponent& asc)
 	{
-		LY_PROFILE_SCOPE("GAS Snapshot");
+		VEGA_PROFILE_SCOPE("GAS Snapshot");
 		mSnapshot = asc.BuildDebugSnapshot();
 		mPeriods.clear();
 		if (sas::AbilitySystemDebugView::effectPeriod)
@@ -101,7 +101,7 @@ namespace vega
 
 	void EditorGasDebugger::Build(EditorContext& context)
 	{
-		LY_PROFILE_SCOPE("Editor Ability System");
+		VEGA_PROFILE_SCOPE("Editor Ability System");
 		ImGui::SetNextWindowSize({ 720.f, 760.f }, ImGuiCond_FirstUseEver);
 		// Older layouts may predate this panel. Dock only its first appearance;
 		// an authored floating/docked window setting always takes precedence.
@@ -159,7 +159,7 @@ namespace vega
 					ImGui::BeginDisabled(paused);
 					if (ImGui::Button("Debug: apply effect"))
 					{
-						mDefinitions = sas::AbilitySystemDebugView::effectDefinitions ? sas::AbilitySystemDebugView::effectDefinitions() : ly::List<sas::GameplayEffectSpec>{};
+						mDefinitions = sas::AbilitySystemDebugView::effectDefinitions ? sas::AbilitySystemDebugView::effectDefinitions() : vega::List<sas::GameplayEffectSpec>{};
 						ImGui::OpenPopup("Apply effect");
 					}
 					if (ImGui::BeginPopup("Apply effect"))
@@ -225,9 +225,9 @@ namespace vega
 				{
 					ImGui::BeginDisabled(paused);
 					ImGui::InputText("Debug tag", mTag, sizeof(mTag));
-					if (ImGui::SmallButton("Debug add tag") && mTag[0]) asc->AddOwnedTag(ly::GameplayTag{ mTag });
+					if (ImGui::SmallButton("Debug add tag") && mTag[0]) asc->AddOwnedTag(vega::GameplayTag{ mTag });
 					ImGui::SameLine();
-					if (ImGui::SmallButton("Debug remove tag") && mTag[0]) asc->RemoveOwnedTag(ly::GameplayTag{ mTag });
+					if (ImGui::SmallButton("Debug remove tag") && mTag[0]) asc->RemoveOwnedTag(vega::GameplayTag{ mTag });
 					ImGui::EndDisabled();
 					std::function<void(const TagNode&, const std::string&)> draw = [&](const TagNode& node, const std::string& prefix)
 					{
@@ -324,7 +324,7 @@ namespace vega
 			return std::any_of(snapshot.effects.begin(), snapshot.effects.end(), [&](const auto& effect) { return effect.effectId == command.text; }) ==
 			    expected;
 		}
-		else if (command.operation == "expect-tag") { return asc->HasOwnedTag(ly::GameplayTag{command.text}) == expected; }
+		else if (command.operation == "expect-tag") { return asc->HasOwnedTag(vega::GameplayTag{command.text}) == expected; }
 		else if (command.operation == "expect-attribute")
 		{
 			for (const auto& attribute : snapshot.attributes)

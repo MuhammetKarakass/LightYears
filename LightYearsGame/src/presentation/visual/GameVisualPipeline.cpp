@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	bool GameVisualPipeline::Initialize(sf::RenderWindow& window, const std::filesystem::path& assetsDirectory, const std::string& colorScript)
 	{
@@ -18,29 +18,29 @@ namespace ly
 		LoadRoute();
 		if (!sf::Shader::isAvailable())
 		{
-			LY_GAME_ERROR("Visual pipeline disabled: shaders are not available on this system");
+			VEGA_GAME_ERROR("Visual pipeline disabled: shaders are not available on this system");
 			return false;
 		}
 		std::string error;
 		if (!mAssets.Load(assetsDirectory, error))
 		{
-			LY_GAME_ERROR("Visual pipeline disabled: cannot load assets from %s: %s", assetsDirectory.string().c_str(), error.c_str());
+			VEGA_GAME_ERROR("Visual pipeline disabled: cannot load assets from %s: %s", assetsDirectory.string().c_str(), error.c_str());
 			return false;
 		}
 		if (!mAssets.Scripts().SetActive(colorScript))
 		{
-			LY_GAME_WARN("Unknown visual color script \"%s\"; using \"%s\"", colorScript.c_str(), mAssets.Script().Name().c_str());
+			VEGA_GAME_WARN("Unknown visual color script \"%s\"; using \"%s\"", colorScript.c_str(), mAssets.Script().Name().c_str());
 		}
 		mPipeline = std::make_unique<visual::VisualPipeline>(mAssets);
 		if (!mPipeline->Resize(window.getSize()))
 		{
-			LY_GAME_ERROR("Visual pipeline disabled: cannot create the layer textures");
+			VEGA_GAME_ERROR("Visual pipeline disabled: cannot create the layer textures");
 			mPipeline.reset();
 			return false;
 		}
 		LogReport(mAssets.LoadReport());
 		mReady = true;
-		LY_GAME_INFO("Visual pipeline ready (assets %s, world %ux%u)", assetsDirectory.string().c_str(), mPipeline->VirtualSize().x, mPipeline->VirtualSize().y);
+		VEGA_GAME_INFO("Visual pipeline ready (assets %s, world %ux%u)", assetsDirectory.string().c_str(), mPipeline->VirtualSize().x, mPipeline->VirtualSize().y);
 		return true;
 	}
 
@@ -60,12 +60,12 @@ namespace ly
 			mRoute.AppendProceduralStops(RouteProceduralStopCount, RouteProceduralSeed);
 			if (!mRoute.AppendStopsFromFile(base / "content/data/galaxy_centre_tour.json", error))
 			{
-				LY_GAME_WARN("Galactic Centre tour unavailable: %s", error.c_str());
+				VEGA_GAME_WARN("Galactic Centre tour unavailable: %s", error.c_str());
 			}
 		}
 		else
 		{
-			LY_GAME_WARN("Galaxy route unavailable, the backdrop stays at the Sun's position: %s", error.empty() ? "no stops" : error.c_str());
+			VEGA_GAME_WARN("Galaxy route unavailable, the backdrop stays at the Sun's position: %s", error.empty() ? "no stops" : error.c_str());
 		}
 		ApplyRouteStop();
 	}
@@ -80,7 +80,7 @@ namespace ly
 		const std::vector<RouteStop>& stops = mRoute.Stops();
 		if (mRouteStopIndex >= stops.size())
 		{
-			LY_GAME_WARN("Galaxy route has %zu stops; stop %zu does not exist, using the last one", stops.size(), mRouteStopIndex);
+			VEGA_GAME_WARN("Galaxy route has %zu stops; stop %zu does not exist, using the last one", stops.size(), mRouteStopIndex);
 			mRouteStopIndex = stops.size() - 1;
 		}
 		mBackdrop.SetRouteStop(stops[mRouteStopIndex]);
@@ -101,7 +101,7 @@ namespace ly
 	void GameVisualPipeline::StepOrbitSpeed(int step)
 	{
 		mBackdrop.StepOrbitSpeed(step);
-		LY_GAME_INFO("Orbit speed x%g", mBackdrop.OrbitSpeedScale());
+		VEGA_GAME_INFO("Orbit speed x%g", mBackdrop.OrbitSpeedScale());
 	}
 
 	void GameVisualPipeline::CycleRouteStop(int step)
@@ -114,18 +114,18 @@ namespace ly
 		const long long count = static_cast<long long>(stops.size());
 		const long long next = ((static_cast<long long>(mRouteStopIndex) + step) % count + count) % count;
 		SetRouteStopIndex(static_cast<std::size_t>(next));
-		LY_GAME_INFO("Galaxy route stop %zu/%zu: %s", mRouteStopIndex, stops.size(), stops[mRouteStopIndex].name.c_str());
+		VEGA_GAME_INFO("Galaxy route stop %zu/%zu: %s", mRouteStopIndex, stops.size(), stops[mRouteStopIndex].name.c_str());
 	}
 
 	void GameVisualPipeline::LogReport(const visual::ReloadReport& report) const
 	{
 		for (const std::string& line : report.reloaded)
 		{
-			LY_GAME_INFO("Visual asset reloaded: %s", line.c_str());
+			VEGA_GAME_INFO("Visual asset reloaded: %s", line.c_str());
 		}
 		for (const std::string& line : report.errors)
 		{
-			LY_GAME_WARN("Visual asset reload failed (previous version kept): %s", line.c_str());
+			VEGA_GAME_WARN("Visual asset reload failed (previous version kept): %s", line.c_str());
 		}
 	}
 
@@ -157,14 +157,14 @@ namespace ly
 		if (mReady)
 		{
 			mAssets.Scripts().CycleActive();
-			LY_GAME_INFO("Visual color script: %s", mAssets.Script().Name().c_str());
+			VEGA_GAME_INFO("Visual color script: %s", mAssets.Script().Name().c_str());
 		}
 	}
 
 	void GameVisualPipeline::SetEnabled(bool enabled)
 	{
 		mEnabled = enabled;
-		LY_GAME_INFO("Visual pipeline %s", IsActive() ? "ON" : (mReady ? "OFF" : "unavailable (assets failed to load)"));
+		VEGA_GAME_INFO("Visual pipeline %s", IsActive() ? "ON" : (mReady ? "OFF" : "unavailable (assets failed to load)"));
 	}
 
 	void GameVisualPipeline::BeginFrame(const World& world, const sf::View& worldView)
@@ -174,23 +174,23 @@ namespace ly
 			mPipeline->Resize(mWindow->getSize());
 		}
 		{
-			LY_PROFILE_SCOPE("VP.PipelineBegin");
+			VEGA_PROFILE_SCOPE("VP.PipelineBegin");
 			mPipeline->BeginFrame();
 		}
 		// Full-resolution backdrop parallax follows the continuous camera. Pixel ships, sprites and their energy
 		// glows share the snapped view so they stay aligned with each other.
 		const sf::View snappedView = mPipeline->SnapWorldView(worldView);
 		{
-			LY_PROFILE_SCOPE("VP.Backdrop");
+			VEGA_PROFILE_SCOPE("VP.Backdrop");
 			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mSkyAuthoring ? 0.f : mTime);
 		}
 		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
 		{
-			LY_PROFILE_SCOPE("VP.Ships");
+			VEGA_PROFILE_SCOPE("VP.Ships");
 			mShips.Draw(world, snappedView, mAssets, *mPipeline, mTime);
 		}
 		{
-			LY_PROFILE_SCOPE("VP.Lights");
+			VEGA_PROFILE_SCOPE("VP.Lights");
 			mLights.Submit(world, snappedView, mAssets, *mPipeline);
 		}
 	}

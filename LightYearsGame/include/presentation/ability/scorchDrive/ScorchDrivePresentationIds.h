@@ -2,7 +2,7 @@
 
 #include "content/ContentId.h"
 
-namespace ly::ScorchDrivePresentationIds
+namespace vega::ScorchDrivePresentationIds
 {
 	inline const sas::ContentId FireSegmentBasic{
 		"Presentation.Ability.ScorchDrive.FireSegment.Basic"

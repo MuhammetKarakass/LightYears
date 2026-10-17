@@ -43,7 +43,7 @@ uses Pickup; the project accepts the old Powerup spelling as a legacy alias.
 - Game vocabulary: the new `LightYearsGame/include/gameConfigs/CollisionLayers.h`
   and mechanical game include/source/test references to those constants.
 - Scripting: `VegaScript/src/ScriptComponent.cpp`.
-- Tests: new `LightYearsEngine/tests/CollisionLayersTests.cpp` and
+- Tests: new `VegaEngine/tests/CollisionLayersTests.cpp` and
   `tools/CheckCollisionLabels.cmake`, registered in engine CMake; extended
   `VegaEditor/tests/{MultiSelectionTests,GameExporterTests}.cpp`,
   `VegaScript/tests/{RichPropertiesTests,ScriptContextTests}.cpp`, and
@@ -68,7 +68,7 @@ LightYears ships one scene and no prefab files. A generated LightYears prefab
 containing all eight channels additionally checks byte-identical document
 serialization after prefab realization. All generated files live under build.
 
-`LightYearsEngine/tests/reflection-registry.golden.json` changes exactly 16
+`VegaEngine/tests/reflection-registry.golden.json` changes exactly 16
 strings: eight labels on Collision Layer and eight on Collision Mask become
 Layer 0 through Layer 7. No numeric value, property/type order, or other metadata
 changes. The comparison against a dump from the pre-build executable is recorded

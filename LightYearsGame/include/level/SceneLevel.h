@@ -3,7 +3,7 @@
 #include "level/ArenaLevel.h"
 #include <framework/scene/Scene.h>
 
-namespace ly
+namespace vega
 {
 	class SceneLevel : public ArenaLevel
 	{

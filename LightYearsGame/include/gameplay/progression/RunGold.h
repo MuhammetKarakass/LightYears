@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace ly
+namespace vega
 {
 	class RunGold final
 	{

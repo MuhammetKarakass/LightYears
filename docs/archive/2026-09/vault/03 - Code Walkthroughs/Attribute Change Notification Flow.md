@@ -8,7 +8,7 @@ uncommitted_areas:
   - attribute revision consumers and runtime integrations
   - GameplayAttribute and movement integration
 source_files:
-  - LightYearsEngine/include/framework/Delegate.h
+  - VegaEngine/include/framework/Delegate.h
   - SpaceAbilitySystem/include/attributes/AttributeSystem.h
   - SpaceAbilitySystem/src/attributes/AttributeSystem.cpp
   - LightYearsGame/src/gameplay/ship/ShipRuntime.cpp
@@ -19,13 +19,13 @@ symbols:
   - sas::AttributeSystem::Recalculate
   - sas::AttributeSystem::GetRevision
   - sas::AttributeSystem::onAttributeChanged
-  - ly::ShipRuntime::OnOwnerAttributeChanged
-  - ly::SpaceShip::OnRuntimeAttributeChanged
-  - ly::AbilityActionAttributeResolver::ResolveAttributes
-  - ly::FireWeaponActionRuntime::Execute
-  - ly::FireWeaponActionRuntime::Tick
-  - ly::Delegate::BindAction
-  - ly::Delegate::Broadcast
+  - vega::ShipRuntime::OnOwnerAttributeChanged
+  - vega::SpaceShip::OnRuntimeAttributeChanged
+  - vega::AbilityActionAttributeResolver::ResolveAttributes
+  - vega::FireWeaponActionRuntime::Execute
+  - vega::FireWeaponActionRuntime::Tick
+  - vega::Delegate::BindAction
+  - vega::Delegate::Broadcast
 related:
   - "[[Attribute System]]"
   - "[[Attribute Resolution Flow]]"
@@ -100,7 +100,7 @@ Görevi: Revision getter ve üç delegate'i dışarı açar.
 ```
 
 Dosya: `LightYearsGame/src/gameplay/ship/ShipRuntime.cpp`  
-Sınıf veya namespace: `ly::ShipRuntime`  
+Sınıf veya namespace: `vega::ShipRuntime`  
 Fonksiyon: `OnOwnerAttributeChanged`  
 Görevi: Yalnız derived değerleri etkileyen owner stat'lerinde yeniden hesaplar.
 
@@ -112,7 +112,7 @@ Görevi: Yalnız derived değerleri etkileyen owner stat'lerinde yeniden hesapla
 ```
 
 Dosya: `LightYearsGame/src/spaceShip/SpaceShip.cpp`  
-Sınıf veya namespace: `ly::SpaceShip`  
+Sınıf veya namespace: `vega::SpaceShip`  
 Fonksiyon: `BeginPlay`  
 Görevi: Owner ve ship attribute sistemlerine weak-owner delegate binding kurar.
 
@@ -135,8 +135,8 @@ Görevi: Attribute, attachment veya configuration revision değişince resolved 
 			{
 ```
 
-Dosya: `LightYearsEngine/include/framework/Delegate.h`  
-Sınıf veya namespace: `ly::Delegate`  
+Dosya: `VegaEngine/include/framework/Delegate.h`  
+Sınıf veya namespace: `vega::Delegate`  
 Fonksiyon: weak `BindAction` callback'i  
 Görevi: Ölü Object listener'ını çağırmaz ve cleanup için `false` döndürür.
 
@@ -144,8 +144,8 @@ Görevi: Ölü Object listener'ını çağırmaz ve cleanup için `false` dönd�
 					(static_cast<ClassName*>(obj.lock().get())->*callback)(args...);
 ```
 
-Dosya: `LightYearsEngine/include/framework/Delegate.h`  
-Sınıf veya namespace: `ly::Delegate`  
+Dosya: `VegaEngine/include/framework/Delegate.h`  
+Sınıf veya namespace: `vega::Delegate`  
 Fonksiyon: raw-pointer `BindAction`  
 Görevi: Lifetime kontrolü olmadan object pointer'ını çağırır.
 

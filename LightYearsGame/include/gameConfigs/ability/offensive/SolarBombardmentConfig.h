@@ -9,22 +9,22 @@
 
 namespace AbilityData::SolarBombardment
 {
-	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+	inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::SolarBombardmentProjectile;
+		definition.actorType = vega::AbilityActorType::SolarBombardmentProjectile;
 		definition.presentationProfileId =
-			ly::SolarBombardmentPresentationIds::ProjectileBasic;
+			vega::SolarBombardmentPresentationIds::ProjectileBasic;
 		return definition;
 	}();
 }
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition SolarBombardment_Basic = []
+	inline const vega::GameAbilityDefinition SolarBombardment_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::SolarBombardment::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Runtime loadout assignment owns the real input slot. This fallback slot
@@ -33,15 +33,15 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::SolarBombardment
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::SolarBombardment
 		};
 		definition.displayName = "Solar Bombardment";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
 		definition.accentColor = sf::Color{ 255, 125, 35, 255 };
 		// Activation is implemented by the family behavior because it must pass
 		// the cursor-clamped target location into the projectile actor.
-		definition.behaviorType = ly::AbilityBehaviorType::SolarBombardment;
+		definition.behaviorType = vega::AbilityBehaviorType::SolarBombardment;
 		return definition;
 	}();
 }

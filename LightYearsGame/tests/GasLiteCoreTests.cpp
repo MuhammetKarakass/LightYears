@@ -151,7 +151,7 @@
 #include <limits>
 
 int RunGameHUDPlayerRestartTests();
-namespace ly
+namespace vega
 {
 	int RunAbilityLoadoutTransactionTests();
 }
@@ -171,12 +171,12 @@ namespace
 
 	const PrimaryWeaponDefinition& LoadedWeapon(const char* weaponId)
 	{
-		return *ly::content::WeaponContentCatalog::FindById(weaponId);
+		return *vega::content::WeaponContentCatalog::FindById(weaponId);
 	}
 
 	bool IsEffectBehaviorRegisteredForValidation(const sas::GameplayEffectBehaviorKey& behaviorKey)
 	{
-		return ly::GetEffectBehaviorRuntime().IsRegistered(behaviorKey);
+		return vega::GetEffectBehaviorRuntime().IsRegistered(behaviorKey);
 	}
 
 	bool ValidateEffectDefinition(
@@ -184,7 +184,7 @@ namespace
 		std::string* failureReason = nullptr
 	)
 	{
-		return ly::GameplayEffectDefinitionValidator::Validate(
+		return vega::GameplayEffectDefinitionValidator::Validate(
 			definition,
 			IsEffectBehaviorRegisteredForValidation,
 			failureReason
@@ -192,11 +192,11 @@ namespace
 	}
 
 	bool ValidateAbilityDefinition(
-		const ly::GameAbilityDefinition& definition,
+		const vega::GameAbilityDefinition& definition,
 		std::string* failureReason = nullptr
 	)
 	{
-		return ly::GameAbilityDefinitionValidator::Validate(
+		return vega::GameAbilityDefinitionValidator::Validate(
 			definition,
 			ValidateEffectDefinition,
 			failureReason
@@ -204,41 +204,41 @@ namespace
 	}
 
 	bool ValidateAbilityCatalog(
-		const ly::List<const ly::GameAbilityDefinition*>& definitions,
+		const vega::List<const vega::GameAbilityDefinition*>& definitions,
 		std::string* failureReason = nullptr
 	)
 	{
-		return ly::GameAbilityDefinitionValidator::ValidateCatalog(
+		return vega::GameAbilityDefinitionValidator::ValidateCatalog(
 			definitions,
 			ValidateEffectDefinition,
 			failureReason
 		);
 	}
 
-	const ly::AbilityActorDefinition& LoadedAbilityActor(const char* actorDefinitionId)
+	const vega::AbilityActorDefinition& LoadedAbilityActor(const char* actorDefinitionId)
 	{
 		return *AbilityData::FindAbilityActorDefinition(actorDefinitionId);
 	}
 
 	class TestCombatant final
-		: public ly::Actor
-		, public ly::Combatant
-		, public ly::DashMovementController
+		: public vega::Actor
+		, public vega::Combatant
+		, public vega::DashMovementController
 	{
 	public:
-		explicit TestCombatant(ly::World* world = nullptr, float maximumHealth = 100.f)
+		explicit TestCombatant(vega::World* world = nullptr, float maximumHealth = 100.f)
 			: Actor{ world }
-			, mHealth{ AddComponent<ly::HealthComponent>(maximumHealth, maximumHealth) }
+			, mHealth{ AddComponent<vega::HealthComponent>(maximumHealth, maximumHealth) }
 			, mCombatRuntime{ *this }
 		{
-			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::Armor, 0.f);
-			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::AbilityHaste, 0.f, -0.95f);
-			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::MoveSpeedHorizontal, 0.f, -0.95f);
-			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::MoveSpeedVertical, 0.f, -0.95f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(vega::OwnerAttributeIds::Armor, 0.f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(vega::OwnerAttributeIds::AbilityHaste, 0.f, -0.95f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(vega::OwnerAttributeIds::MoveSpeedHorizontal, 0.f, -0.95f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(vega::OwnerAttributeIds::MoveSpeedVertical, 0.f, -0.95f);
 		}
 
-		ly::CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
-		const ly::CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
+		vega::CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
+		const vega::CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
 		float GetHealth() const { return mHealth.GetHealth(); }
 
 		void SetDashMovementInput(const sf::Vector2f& input) { mDashMovementInput = input; }
@@ -261,7 +261,7 @@ namespace
 			return NormalizeDirection(direction) ? direction : sf::Vector2f{ 0.f, 0.f };
 		}
 
-		bool StartDash(const ly::DashRequest& request) override
+		bool StartDash(const vega::DashRequest& request) override
 		{
 			if (request.baseDistance <= 0.f || request.duration <= 0.f)
 			{
@@ -293,7 +293,7 @@ namespace
 			mDashActive = false;
 		}
 
-		void ReceiveDamage(ly::DamageContext context) override
+		void ReceiveDamage(vega::DamageContext context) override
 		{
 			mCombatRuntime.ProcessIncomingDamage(context);
 			mCombatRuntime.ApplyHullDamageMitigation(context);
@@ -319,8 +319,8 @@ namespace
 			return true;
 		}
 
-		ly::HealthComponent& mHealth;
-		ly::CombatRuntime mCombatRuntime;
+		vega::HealthComponent& mHealth;
+		vega::CombatRuntime mCombatRuntime;
 		sf::Vector2f mDashMovementInput{ 0.f, 0.f };
 		sf::Vector2f mDashAimDirection{ 0.f, 0.f };
 		sf::Vector2f mLastDashDirection{ 0.f, 0.f };
@@ -330,20 +330,20 @@ namespace
 		int mDashEndCount = 0;
 	};
 
-	class HeadlessTestPlayerSpaceShip final : public ly::PlayerSpaceShip
+	class HeadlessTestPlayerSpaceShip final : public vega::PlayerSpaceShip
 	{
 	public:
-		HeadlessTestPlayerSpaceShip(ly::World* world, const ShipDefinition& shipDefinition) : PlayerSpaceShip{ world, shipDefinition }
+		HeadlessTestPlayerSpaceShip(vega::World* world, const ShipDefinition& shipDefinition) : PlayerSpaceShip{ world, shipDefinition }
 		{
 		}
 
 		void Tick(float deltaTime) override { SpaceShip::Tick(deltaTime); }
 	};
 
-	class TestClearableProjectile final : public ly::AbilityWorldActor
+	class TestClearableProjectile final : public vega::AbilityWorldActor
 	{
 	public:
-		TestClearableProjectile(ly::World* world, ly::Actor* owner)
+		TestClearableProjectile(vega::World* world, vega::Actor* owner)
 			: AbilityWorldActor{ world, owner }
 		{
 			SetAbilityPhysicsEnabled(false);
@@ -352,10 +352,10 @@ namespace
 		bool IsProjectileActor() const override { return true; }
 	};
 
-	class TestPersistentAbilityActor final : public ly::AbilityWorldActor
+	class TestPersistentAbilityActor final : public vega::AbilityWorldActor
 	{
 	public:
-		TestPersistentAbilityActor(ly::World* world, ly::Actor* owner)
+		TestPersistentAbilityActor(vega::World* world, vega::Actor* owner)
 			: AbilityWorldActor{ world, owner }
 		{
 			SetAbilityPhysicsEnabled(false);
@@ -369,7 +369,7 @@ namespace
 			events.push_back(event.eventTag);
 		}
 
-		ly::List<ly::GameplayTag> events;
+		vega::List<vega::GameplayTag> events;
 	};
 
 	struct PrimaryWeaponScalingSample
@@ -387,14 +387,14 @@ namespace
 		100.f,
 		1.25f,
 		{
-			{ ly::OwnerAttributeIds::AttackPower, 3.f },
-			{ ly::OwnerAttributeIds::AttackSpeed, 2.f },
-			{ ly::OwnerAttributeIds::CriticalChance, 2.f },
-			{ ly::OwnerAttributeIds::MaxHealth, 1.f },
-			{ ly::OwnerAttributeIds::Armor, 1.f },
-			{ ly::OwnerAttributeIds::EnergyPower, 0.5f },
-			{ ly::OwnerAttributeIds::MoveSpeedHorizontal, 0.5f },
-			{ ly::OwnerAttributeIds::MoveSpeedVertical, 0.5f }
+			{ vega::OwnerAttributeIds::AttackPower, 3.f },
+			{ vega::OwnerAttributeIds::AttackSpeed, 2.f },
+			{ vega::OwnerAttributeIds::CriticalChance, 2.f },
+			{ vega::OwnerAttributeIds::MaxHealth, 1.f },
+			{ vega::OwnerAttributeIds::Armor, 1.f },
+			{ vega::OwnerAttributeIds::EnergyPower, 0.5f },
+			{ vega::OwnerAttributeIds::MoveSpeedHorizontal, 0.5f },
+			{ vega::OwnerAttributeIds::MoveSpeedVertical, 0.5f }
 		}
 	};
 
@@ -408,10 +408,10 @@ namespace
 	)
 	{
 		TestCombatant owner;
-		ly::CombatRuntime& runtime = owner.GetCombatRuntime();
+		vega::CombatRuntime& runtime = owner.GetCombatRuntime();
 		runtime.InitializeOwnerAttributes(100.f);
 
-		ly::ShipProgression progression;
+		vega::ShipProgression progression;
 		progression.Configure(FighterProgressionDefinition);
 		progression.BindAttributes(runtime.GetAbilitySystemComponent().GetAttributes());
 		while (progression.GetLevel() < level)
@@ -419,13 +419,13 @@ namespace
 			progression.AddXP(progression.GetXPRequiredForNextLevel());
 		}
 		runtime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackPower, additionalAttackPower }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::AttackPower, additionalAttackPower }
 		);
 		runtime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, additionalAttackSpeed }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::AttackSpeed, additionalAttackSpeed }
 		);
 		runtime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::EnergyPower, additionalEnergyPower }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::EnergyPower, additionalEnergyPower }
 		);
 
 		const sas::AbilityHandle handle = runtime.GetAbilitySystemComponent().GrantAbility(
@@ -437,25 +437,25 @@ namespace
 		}
 		runtime.GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 		runtime.GetAbilitySystemComponent().Tick(0.f);
-		const ly::GameAbility* instance = runtime.GetAbilitySystemComponent().GetAbility(handle);
+		const vega::GameAbility* instance = runtime.GetAbilitySystemComponent().GetAbility(handle);
 		if (!instance || instance->GetPrimaryWeaponRuntimeAttributes().empty())
 		{
 			return false;
 		}
 
 		const sas::GameplayAttributeList& attributes = instance->GetPrimaryWeaponRuntimeAttributes();
-		sample.damage = sas::FindAttributeValue(attributes, ly::CommonAttributeIds::Damage, 0.f);
-		sample.fireRate = sas::FindAttributeValue(attributes, ly::CommonAttributeIds::FireRate, 0.f);
-		sample.attackPower = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackPower);
-		sample.attackSpeed = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackSpeed);
-		sample.energyPower = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::EnergyPower);
-		sample.luck = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::Luck);
+		sample.damage = sas::FindAttributeValue(attributes, vega::CommonAttributeIds::Damage, 0.f);
+		sample.fireRate = sas::FindAttributeValue(attributes, vega::CommonAttributeIds::FireRate, 0.f);
+		sample.attackPower = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(vega::OwnerAttributeIds::AttackPower);
+		sample.attackSpeed = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(vega::OwnerAttributeIds::AttackSpeed);
+		sample.energyPower = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(vega::OwnerAttributeIds::EnergyPower);
+		sample.luck = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(vega::OwnerAttributeIds::Luck);
 		return true;
 	}
 
 	struct ElectricArcShotSample
 	{
-		ly::List<float> targetDamage;
+		vega::List<float> targetDamage;
 	};
 
 	bool FireElectricArcShot(
@@ -465,29 +465,29 @@ namespace
 		bool includeDamageTypes = true
 	)
 	{
-		ly::World world{ nullptr };
-		const ly::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(1000.f).lock();
+		vega::World world{ nullptr };
+		const vega::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(1000.f).lock();
 		if (!owner)
 		{
 			return false;
 		}
 		owner->GetCombatRuntime().InitializeOwnerAttributes(1000.f);
 		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::Luck, luckRating }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::Luck, luckRating }
 		);
-		owner->SetCollisionLayer(ly::GameCollision::Player);
+		owner->SetCollisionLayer(vega::GameCollision::Player);
 
-		ly::List<ly::shared_ptr<TestCombatant>> targets;
+		vega::List<vega::shared_ptr<TestCombatant>> targets;
 		for (int targetIndex = 0; targetIndex < targetCount; ++targetIndex)
 		{
-			const ly::shared_ptr<TestCombatant> target =
+			const vega::shared_ptr<TestCombatant> target =
 				world.SpawnActor<TestCombatant>(1000.f).lock();
 			if (!target)
 			{
 				return false;
 			}
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 			target->SetActorLocation({ static_cast<float>(targetIndex) * 100.f, 100.f });
 			targets.push_back(target);
 		}
@@ -498,55 +498,55 @@ namespace
 		{
 			definition.damageTags.clear();
 		}
-		ly::PrimaryWeaponRuntimeState runtime;
-		if (!ly::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
+		vega::PrimaryWeaponRuntimeState runtime;
+		if (!vega::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
 		{
 			return false;
 		}
-		const ly::PrimaryWeaponExecutionContext context{
+		const vega::PrimaryWeaponExecutionContext context{
 			*owner,
 			definition,
 			definition.attributes,
 			definition.damageTags
 		};
-		ly::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
-		if (!ly::PrimaryWeaponExecutionSystem::FireOnce(context, runtime))
+		vega::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
+		if (!vega::PrimaryWeaponExecutionSystem::FireOnce(context, runtime))
 		{
 			return false;
 		}
-		for (const ly::shared_ptr<TestCombatant>& target : targets)
+		for (const vega::shared_ptr<TestCombatant>& target : targets)
 		{
 			sample.targetDamage.push_back(1000.f - target->GetHealth());
 		}
-		ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 		return true;
 	}
 
 	float MeasureHighLuckElectricBonusChainRate(int shotCount)
 	{
-		ly::World world{ nullptr };
-		const ly::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(1000000.f).lock();
+		vega::World world{ nullptr };
+		const vega::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(1000000.f).lock();
 		if (!owner)
 		{
 			return -1.f;
 		}
 		owner->GetCombatRuntime().InitializeOwnerAttributes(1000000.f);
 		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::Luck, 100000.f }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::Luck, 100000.f }
 		);
-		owner->SetCollisionLayer(ly::GameCollision::Player);
+		owner->SetCollisionLayer(vega::GameCollision::Player);
 
-		ly::List<ly::shared_ptr<TestCombatant>> targets;
+		vega::List<vega::shared_ptr<TestCombatant>> targets;
 		for (int targetIndex = 0; targetIndex < 5; ++targetIndex)
 		{
-			const ly::shared_ptr<TestCombatant> target =
+			const vega::shared_ptr<TestCombatant> target =
 				world.SpawnActor<TestCombatant>(1000000.f).lock();
 			if (!target)
 			{
 				return -1.f;
 			}
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 			target->SetActorLocation({ static_cast<float>(targetIndex) * 100.f, 100.f });
 			targets.push_back(target);
 		}
@@ -554,30 +554,30 @@ namespace
 
 		PrimaryWeaponDefinition definition = LoadedWeapon("Weapon.Arc.ElectricLauncher.Basic");
 		definition.damageTags.clear();
-		ly::PrimaryWeaponRuntimeState runtime;
-		if (!ly::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
+		vega::PrimaryWeaponRuntimeState runtime;
+		if (!vega::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
 		{
 			return -1.f;
 		}
-		const ly::PrimaryWeaponExecutionContext context{
+		const vega::PrimaryWeaponExecutionContext context{
 			*owner,
 			definition,
 			definition.attributes,
 			definition.damageTags
 		};
-		ly::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
 		for (int shotIndex = 0; shotIndex < shotCount; ++shotIndex)
 		{
-			if (!ly::PrimaryWeaponExecutionSystem::FireOnce(context, runtime))
+			if (!vega::PrimaryWeaponExecutionSystem::FireOnce(context, runtime))
 			{
 				return -1.f;
 			}
 		}
-		ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 
 		const float baseDamage = sas::FindAttributeValue(
 			definition.attributes,
-			ly::CommonAttributeIds::Damage,
+			vega::CommonAttributeIds::Damage,
 			0.f
 		);
 		const float falloff = sas::FindAttributeValue(
@@ -596,15 +596,15 @@ namespace
 		TestCombatant owner;
 		owner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
 		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
-		ly::PrimaryWeaponRuntimeState runtime;
+		vega::PrimaryWeaponRuntimeState runtime;
 		const PrimaryWeaponDefinition& definition = LoadedWeapon("Weapon.Beam.ContinuousHeatLaser.Basic");
-		if (!ly::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
+		if (!vega::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
 		{
 			return -1.f;
 		}
-		const ly::PrimaryWeaponExecutionContext context{
+		const vega::PrimaryWeaponExecutionContext context{
 			owner,
 			definition,
 			definition.attributes,
@@ -612,13 +612,13 @@ namespace
 			nullptr,
 			&runtime
 		};
-		ly::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
 		runtime.SetFeatureValue(PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue, startingHeat);
-		ly::PrimaryWeaponExecutionSystem::TickFire(context, runtime, 0.1f);
+		vega::PrimaryWeaponExecutionSystem::TickFire(context, runtime, 0.1f);
 		const float heat = runtime.GetFeatureValue(
 			PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue
 		);
-		ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 		return heat;
 	}
 
@@ -627,15 +627,15 @@ namespace
 		TestCombatant owner;
 		owner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
 		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
-		ly::PrimaryWeaponRuntimeState runtime;
+		vega::PrimaryWeaponRuntimeState runtime;
 		const PrimaryWeaponDefinition& definition = LoadedWeapon("Weapon.Beam.ContinuousHeatLaser.Basic");
-		if (!ly::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
+		if (!vega::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
 		{
 			return -1.f;
 		}
-		const ly::PrimaryWeaponExecutionContext context{
+		const vega::PrimaryWeaponExecutionContext context{
 			owner,
 			definition,
 			definition.attributes,
@@ -643,47 +643,47 @@ namespace
 			nullptr,
 			&runtime
 		};
-		ly::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
 		for (int step = 1; step <= 2000; ++step)
 		{
-			ly::PrimaryWeaponExecutionSystem::TickFire(context, runtime, 0.01f);
-			if (ly::PrimaryWeaponExecutionSystem::ConsumeRequestedCooldown(runtime) > 0.f)
+			vega::PrimaryWeaponExecutionSystem::TickFire(context, runtime, 0.01f);
+			if (vega::PrimaryWeaponExecutionSystem::ConsumeRequestedCooldown(runtime) > 0.f)
 			{
-				ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
+				vega::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 				return static_cast<float>(step) * 0.01f;
 			}
 		}
-		ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 		return -1.f;
 	}
 
 	float MeasureBeamSustainedDps(float attackSpeed, float duration)
 	{
-		ly::World world{ nullptr };
-		const ly::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(100000.f).lock();
-		const ly::shared_ptr<TestCombatant> target = world.SpawnActor<TestCombatant>(100000.f).lock();
+		vega::World world{ nullptr };
+		const vega::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(100000.f).lock();
+		const vega::shared_ptr<TestCombatant> target = world.SpawnActor<TestCombatant>(100000.f).lock();
 		if (!owner || !target || duration <= 0.f)
 		{
 			return -1.f;
 		}
 		owner->GetCombatRuntime().InitializeOwnerAttributes(100000.f);
 		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
+			sas::AttributeModifier{ vega::OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
-		owner->SetCollisionLayer(ly::GameCollision::Player);
+		owner->SetCollisionLayer(vega::GameCollision::Player);
 		owner->SetActorRotation(90.f);
-		target->SetCollisionLayer(ly::GameCollision::Enemy);
-		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		target->SetCollisionLayer(vega::GameCollision::Enemy);
+		target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 		target->SetActorLocation({ 400.f, 0.f });
 		world.TickInternal(0.f);
 
-		ly::PrimaryWeaponRuntimeState runtime;
+		vega::PrimaryWeaponRuntimeState runtime;
 		const PrimaryWeaponDefinition& definition = LoadedWeapon("Weapon.Beam.ContinuousHeatLaser.Basic");
-		if (!ly::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
+		if (!vega::PrimaryWeaponExecutionSystem::InitializeRuntime(definition, runtime).isValid)
 		{
 			return -1.f;
 		}
-		const ly::PrimaryWeaponExecutionContext context{
+		const vega::PrimaryWeaponExecutionContext context{
 			*owner,
 			definition,
 			definition.attributes,
@@ -691,29 +691,29 @@ namespace
 			nullptr,
 			&runtime
 		};
-		ly::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
 		world.TickInternal(0.f);
 		float elapsed = 0.f;
 		while (elapsed < duration)
 		{
 			const float tick = std::min(0.05f, duration - elapsed);
-			ly::PrimaryWeaponExecutionSystem::TickFire(context, runtime, tick);
+			vega::PrimaryWeaponExecutionSystem::TickFire(context, runtime, tick);
 			elapsed += tick;
-			const float cooldown = ly::PrimaryWeaponExecutionSystem::ConsumeRequestedCooldown(runtime);
+			const float cooldown = vega::PrimaryWeaponExecutionSystem::ConsumeRequestedCooldown(runtime);
 			if (cooldown <= 0.f)
 			{
 				continue;
 			}
 
-			ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
+			vega::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 			elapsed += std::min(cooldown, duration - elapsed);
 			if (elapsed < duration)
 			{
-				ly::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
+				vega::PrimaryWeaponExecutionSystem::BeginFire(context, runtime);
 				world.TickInternal(0.f);
 			}
 		}
-		ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
+		vega::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 		return (100000.f - target->GetHealth()) / duration;
 	}
 
@@ -725,8 +725,8 @@ int RunGameHUDPlayerRestartTests();
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
-	using namespace ly;
+	vega::InstallVegaEngineAssets();
+	using namespace vega;
 	if (argc == 2 && std::string{ argv[1] } == "--player-lifetime") return RunPlayerShipLifetimeTests();
 	if (argc == 2 && std::string{ argv[1] } == "--chain-lightning-lifetime") return RunChainLightningLifetimeTests();
 	if (argc == 2 && std::string{ argv[1] } == "--mixed-loadout") return RunEnemyCombatMixedLoadoutTest();
@@ -1410,12 +1410,12 @@ int main(int argc, char** argv)
 	nullPulseOwner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 		sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, 100.f }
 	);
-	nullPulseOwner->SetCollisionLayer(ly::GameCollision::Player);
-	nullPulseOwner->SetCollisionMask(ly::GameCollision::Enemy);
-	nullPulseTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	nullPulseTarget->SetCollisionMask(ly::GameCollision::Player);
-	nullPulseOutsideTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	nullPulseOutsideTarget->SetCollisionMask(ly::GameCollision::Player);
+	nullPulseOwner->SetCollisionLayer(vega::GameCollision::Player);
+	nullPulseOwner->SetCollisionMask(vega::GameCollision::Enemy);
+	nullPulseTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	nullPulseTarget->SetCollisionMask(vega::GameCollision::Player);
+	nullPulseOutsideTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	nullPulseOutsideTarget->SetCollisionMask(vega::GameCollision::Player);
 	nullPulseTarget->SetActorLocation({ 120.f, 0.f });
 	// Keep this assertion target outside the updated 500 radius.
 	nullPulseOutsideTarget->SetActorLocation({ 700.f, 0.f });
@@ -1689,12 +1689,12 @@ int main(int argc, char** argv)
 		return Fail("Directional Barrier projectile interception test actor could not spawn");
 	}
 	directionalBarrierWorld.TickInternal(0.f);
-	directionalBarrierOwner->SetCollisionLayer(ly::GameCollision::Player);
+	directionalBarrierOwner->SetCollisionLayer(vega::GameCollision::Player);
 	directionalBarrierOwner->SetCollisionMask(
-		ly::GameCollision::Enemy | ly::GameCollision::EnemyBullet
+		vega::GameCollision::Enemy | vega::GameCollision::EnemyBullet
 	);
-	incomingBarrierProjectile->SetCollisionLayer(ly::GameCollision::EnemyBullet);
-	incomingBarrierProjectile->SetCollisionMask(ly::GameCollision::Player);
+	incomingBarrierProjectile->SetCollisionLayer(vega::GameCollision::EnemyBullet);
+	incomingBarrierProjectile->SetCollisionMask(vega::GameCollision::Player);
 	incomingBarrierProjectile->SetAbilityCollisionRadius(5.f);
 	incomingBarrierProjectile->SetActorLocation({ 0.f, -90.f });
 	incomingBarrierProjectile->SetVelocity({ 0.f, 200.f });
@@ -1814,7 +1814,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Orbital Drones runtime owner could not be spawned");
 	}
-	orbitalDronesOwner->SetCollisionLayer(ly::GameCollision::Player);
+	orbitalDronesOwner->SetCollisionLayer(vega::GameCollision::Player);
 	orbitalDronesOwner->SetActorLocation({ 100.f, 200.f });
 	for (std::size_t droneIndex = 0; droneIndex < 4; ++droneIndex)
 	{
@@ -3137,10 +3137,10 @@ int main(int argc, char** argv)
 	{
 		return Fail("Continuous beam damage test actors could not be spawned");
 	}
-	continuousBeamSource->SetCollisionLayer(ly::GameCollision::Player);
+	continuousBeamSource->SetCollisionLayer(vega::GameCollision::Player);
 	continuousBeamSource->SetActorRotation(90.f);
-	continuousBeamTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	continuousBeamTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	continuousBeamTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	continuousBeamTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	continuousBeamTarget->SetActorLocation({ 400.f, 0.f });
 	continuousBeamDamageWorld.TickInternal(0.f);
 
@@ -3620,7 +3620,7 @@ int main(int argc, char** argv)
 
 	World timingWorld{ nullptr };
 	Actor timingOwner{ &timingWorld };
-	timingOwner.SetCollisionLayer(ly::GameCollision::Player);
+	timingOwner.SetCollisionLayer(vega::GameCollision::Player);
 	weak_ptr<TestCombatant> timingTargetWeak = timingWorld.SpawnActor<TestCombatant>();
 	shared_ptr<TestCombatant> timingTarget = timingTargetWeak.lock();
 	if (!timingTarget)
@@ -3628,8 +3628,8 @@ int main(int argc, char** argv)
 		return Fail("Sun Beam timing target failed to spawn");
 	}
 	timingTarget->SetActorLocation({ 100.f, 100.f });
-	timingTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	timingTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	timingTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	timingTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 	sas::GameplayAttributeList timingAttributes =
 		LoadedAbilityActor("Actor.Ability.SunBeam.Strike.Basic").attributes;
@@ -3691,7 +3691,7 @@ int main(int argc, char** argv)
 
 	World stressWorld{ nullptr };
 	Actor stressOwner{ &stressWorld };
-	stressOwner.SetCollisionLayer(ly::GameCollision::Player);
+	stressOwner.SetCollisionLayer(vega::GameCollision::Player);
 	List<weak_ptr<AbilityWorldActor>> stressBeams;
 	for (int beamIndex = 0; beamIndex < 32; ++beamIndex)
 	{
@@ -4166,7 +4166,7 @@ int main(int argc, char** argv)
 
 	World sweptProjectileWorld{ nullptr };
 	Actor sweptProjectileOwner{ &sweptProjectileWorld };
-	sweptProjectileOwner.SetCollisionLayer(ly::GameCollision::Player);
+	sweptProjectileOwner.SetCollisionLayer(vega::GameCollision::Player);
 	const shared_ptr<TestCombatant> sweptProjectileTarget =
 		sweptProjectileWorld.SpawnActor<TestCombatant>().lock();
 	if (!sweptProjectileTarget)
@@ -4174,8 +4174,8 @@ int main(int argc, char** argv)
 		return Fail("Swept projectile target could not spawn");
 	}
 	sweptProjectileTarget->SetActorLocation({ 100.f, 0.f });
-	sweptProjectileTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	sweptProjectileTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	sweptProjectileTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	sweptProjectileTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	const sas::GameplayAttributeList sweptProjectileAttributes{
 		sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
 		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 1000.f, 0.f },
@@ -4216,11 +4216,11 @@ int main(int argc, char** argv)
 		World wallWorld{ nullptr };
 		auto owner = wallWorld.SpawnActor<TestCombatant>().lock();
 		auto target = wallWorld.SpawnActor<DummyEnemy>(ShipData::Ship_Enemy_Hexagon).lock();
-		owner->SetCollisionLayer(ly::GameCollision::Player);
+		owner->SetCollisionLayer(vega::GameCollision::Player);
 		owner->GetAbilitySystemComponent().AddOwnedTag(AbilityData::LanceDrive::State::Active);
 		owner->SetActorLocation({ 1000.f, 1000.f });
 		owner->SetActorRotation(0.f);
-		target->SetCollisionLayer(ly::GameCollision::Enemy);
+		target->SetCollisionLayer(vega::GameCollision::Enemy);
 		// The target begins outside the wall and enters its right arm only after
 		// the owner-following wall advances by 40 units.
 		target->SetActorLocation({ 1055.f, 850.f });
@@ -4242,7 +4242,7 @@ int main(int argc, char** argv)
 		}
 	}
 	Actor crystalReflectionOwner{ &crystalReflectionWorld };
-	crystalReflectionOwner.SetCollisionLayer(ly::GameCollision::Player);
+	crystalReflectionOwner.SetCollisionLayer(vega::GameCollision::Player);
 	const shared_ptr<CrystalBarricadeActor> crystalWall =
 		crystalReflectionWorld.SpawnActor<CrystalBarricadeActor>(
 			&crystalReflectionOwner,
@@ -4285,10 +4285,10 @@ int main(int argc, char** argv)
 	{
 		return Fail("Return Protocol test combatants could not spawn");
 	}
-	returnProtocolDefender->SetCollisionLayer(ly::GameCollision::Player);
-	returnProtocolDefender->SetCollisionMask(ly::GameCollision::EnemyBullet);
-	returnProtocolAttacker->SetCollisionLayer(ly::GameCollision::Enemy);
-	returnProtocolAttacker->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	returnProtocolDefender->SetCollisionLayer(vega::GameCollision::Player);
+	returnProtocolDefender->SetCollisionMask(vega::GameCollision::EnemyBullet);
+	returnProtocolAttacker->SetCollisionLayer(vega::GameCollision::Enemy);
+	returnProtocolAttacker->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	returnProtocolAttacker->SetActorLocation({ -100.f, 0.f });
 	const GameAbilityDefinition* returnProtocolDefinition =
 		AbilityData::FindShippedAbilityDefinition(AbilityData::ReturnProtocol::AbilityId::Basic);
@@ -4374,7 +4374,7 @@ int main(int argc, char** argv)
 
 	World electricArcWorld{ nullptr };
 	Actor electricArcOwner{ &electricArcWorld };
-	electricArcOwner.SetCollisionLayer(ly::GameCollision::Player);
+	electricArcOwner.SetCollisionLayer(vega::GameCollision::Player);
 	LightYearsAbilitySystemComponent electricArcAbilities{
 		electricArcOwner
 	};
@@ -4387,8 +4387,8 @@ int main(int argc, char** argv)
 	}
 	for (const shared_ptr<TestCombatant>& target : { firstArcTarget, secondArcTarget, thirdArcTarget })
 	{
-		target->SetCollisionLayer(ly::GameCollision::Enemy);
-		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		target->SetCollisionLayer(vega::GameCollision::Enemy);
+		target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	}
 	firstArcTarget->SetActorLocation({ 0.f, 100.f });
 	secondArcTarget->SetActorLocation({ 100.f, 100.f });
@@ -4457,7 +4457,7 @@ int main(int argc, char** argv)
 
 	World emptyArcWorld{ nullptr };
 	Actor emptyArcOwner{ &emptyArcWorld };
-	emptyArcOwner.SetCollisionLayer(ly::GameCollision::Player);
+	emptyArcOwner.SetCollisionLayer(vega::GameCollision::Player);
 	PrimaryWeaponRuntimeState emptyArcRuntime;
 	if (!PrimaryWeaponExecutionSystem::InitializeRuntime(
 		LoadedWeapon("Weapon.Arc.ElectricLauncher.Basic"),
@@ -4486,7 +4486,7 @@ int main(int argc, char** argv)
 
 	World cryoWaveWorld{ nullptr };
 	Actor cryoWaveOwner{ &cryoWaveWorld };
-	cryoWaveOwner.SetCollisionLayer(ly::GameCollision::Player);
+	cryoWaveOwner.SetCollisionLayer(vega::GameCollision::Player);
 	const shared_ptr<TestCombatant> leftCryoWaveTarget =
 		cryoWaveWorld.SpawnActor<TestCombatant>().lock();
 	const shared_ptr<TestCombatant> rightCryoWaveTarget =
@@ -4498,8 +4498,8 @@ int main(int argc, char** argv)
 	for (const shared_ptr<TestCombatant>& target :
 		{ leftCryoWaveTarget, rightCryoWaveTarget })
 	{
-		target->SetCollisionLayer(ly::GameCollision::Enemy);
-		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		target->SetCollisionLayer(vega::GameCollision::Enemy);
+		target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	}
 	leftCryoWaveTarget->SetActorLocation({ -35.f, -120.f });
 	rightCryoWaveTarget->SetActorLocation({ 35.f, -120.f });
@@ -5004,7 +5004,7 @@ int main(int argc, char** argv)
 		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 			sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, energyPower }
 		);
-		owner.SetCollisionLayer(ly::GameCollision::Player);
+		owner.SetCollisionLayer(vega::GameCollision::Player);
 		owner.SetActorRotation(90.f);
 
 		LightYearsAbilitySystemComponent& abilities = owner.GetCombatRuntime().GetAbilitySystemComponent();
@@ -5063,7 +5063,7 @@ int main(int argc, char** argv)
 
 	World cursorTargetRocketWorld{ nullptr };
 	TestCombatant cursorTargetRocketOwner{ &cursorTargetRocketWorld, 1000.f };
-	cursorTargetRocketOwner.SetCollisionLayer(ly::GameCollision::Player);
+	cursorTargetRocketOwner.SetCollisionLayer(vega::GameCollision::Player);
 	cursorTargetRocketOwner.SetActorLocation({ 0.f, 0.f });
 	cursorTargetRocketOwner.SetActorRotation(90.f);
 	const sf::Vector2f cursorTargetLocation{ 342.f, 0.f };
@@ -5209,8 +5209,8 @@ int main(int argc, char** argv)
 	}
 	for (const shared_ptr<TestCombatant>& target : { directTarget, areaTarget, outsideTarget })
 	{
-		target->SetCollisionLayer(ly::GameCollision::Enemy);
-		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		target->SetCollisionLayer(vega::GameCollision::Enemy);
+		target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	}
 	directTarget->SetActorLocation({ 42.f, 0.f });
 	areaTarget->SetActorLocation({ 92.f, 0.f });
@@ -5261,8 +5261,8 @@ int main(int argc, char** argv)
 	{
 		return Fail("Basic Rocket range-impact target could not spawn");
 	}
-	rangeTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	rangeTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	rangeTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	rangeTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	rangeTarget->SetActorLocation({
 		rocketSettings->spawnDistance + rocketSettings->range,
 		0.f
@@ -5319,7 +5319,7 @@ int main(int argc, char** argv)
 	auto SpawnRailBurst = [&](World& world, TestCombatant& owner)
 	{
 		owner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-		owner.SetCollisionLayer(ly::GameCollision::Player);
+		owner.SetCollisionLayer(vega::GameCollision::Player);
 		owner.SetActorRotation(90.f);
 		LightYearsAbilitySystemComponent& abilities =
 			owner.GetCombatRuntime().GetAbilitySystemComponent();
@@ -5356,8 +5356,8 @@ int main(int argc, char** argv)
 		thirdRailTarget
 	})
 	{
-		target->SetCollisionLayer(ly::GameCollision::Enemy);
-		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		target->SetCollisionLayer(vega::GameCollision::Enemy);
+		target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	}
 	firstRailTarget->SetActorLocation({ railBurstSettings.spawnDistance + 80.f, 0.f });
 	secondRailTarget->SetActorLocation({ railBurstSettings.spawnDistance + 160.f, 0.f });
@@ -5420,7 +5420,7 @@ int main(int argc, char** argv)
 	World astralSurgeWorld{ nullptr };
 	TestCombatant astralSurgeOwner{ &astralSurgeWorld, 1000.f };
 	astralSurgeOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-	astralSurgeOwner.SetCollisionLayer(ly::GameCollision::Player);
+	astralSurgeOwner.SetCollisionLayer(vega::GameCollision::Player);
 	astralSurgeOwner.SetActorRotation(90.f);
 	LightYearsAbilitySystemComponent& astralSurgeAbilities =
 		astralSurgeOwner.GetCombatRuntime().GetAbilitySystemComponent();
@@ -5486,9 +5486,9 @@ int main(int argc, char** argv)
 			return Fail("Energy Spear test actors could not spawn");
 		}
 
-		energySpearOwner->SetCollisionLayer(ly::GameCollision::Player);
-		energySpearTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-		energySpearTarget->SetCollisionMask(ly::GameCollision::Player);
+		energySpearOwner->SetCollisionLayer(vega::GameCollision::Player);
+		energySpearTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+		energySpearTarget->SetCollisionMask(vega::GameCollision::Player);
 		const sf::Vector2f spearDirection{ 0.f, -1.f };
 		energySpearTarget->SetActorLocation(
 			energySpearOwner->GetActorLocation() + spearDirection * 100.f
@@ -5642,10 +5642,10 @@ int main(int argc, char** argv)
 	{
 		return Fail("Crescent Reaver input-path test actors could not spawn");
 	}
-	crescentReaverOwner->SetCollisionLayer(ly::GameCollision::Player);
-	crescentReaverOwner->SetCollisionMask(ly::GameCollision::Enemy);
-	crescentReaverTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	crescentReaverTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	crescentReaverOwner->SetCollisionLayer(vega::GameCollision::Player);
+	crescentReaverOwner->SetCollisionMask(vega::GameCollision::Enemy);
+	crescentReaverTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	crescentReaverTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	crescentReaverTarget->SetActorLocation({ 0.f, -210.f });
 	crescentReaverWorld.TickInternal(0.f);
 	const sas::AbilityHandle crescentReaverHandle =
@@ -5789,11 +5789,11 @@ int main(int argc, char** argv)
 	overdriveOwner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 		sas::AttributeModifier{ OwnerAttributeIds::CriticalChance, 0.2f }
 	);
-	overdriveOwner->SetCollisionLayer(ly::GameCollision::Player);
-	overdriveOwner->SetCollisionMask(ly::GameCollision::Enemy);
+	overdriveOwner->SetCollisionLayer(vega::GameCollision::Player);
+	overdriveOwner->SetCollisionMask(vega::GameCollision::Enemy);
 	overdriveOwner->SetActorLocation({ 0.f, 0.f });
-	overdriveTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-	overdriveTarget->SetCollisionMask(ly::GameCollision::Player | ly::GameCollision::PlayerBullet);
+	overdriveTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+	overdriveTarget->SetCollisionMask(vega::GameCollision::Player | vega::GameCollision::PlayerBullet);
 	overdriveTarget->SetActorLocation({ 300.f, 0.f });
 	overdriveWorld.TickInternal(0.f);
 	const float overdriveHealthBefore = overdriveTarget->GetHealth();
@@ -5983,7 +5983,7 @@ int main(int argc, char** argv)
 		owner.GetCombatRuntime().InitializeOwnerAttributes(resolvedMaxHealth);
 		owner.SetActorLocation({ 0.f, 0.f });
 		owner.SetActorRotation(90.f);
-		owner.SetCollisionLayer(ly::GameCollision::Player);
+		owner.SetCollisionLayer(vega::GameCollision::Player);
 		const sas::AbilityHandle handle = owner.GetAbilitySystemComponent().GrantAbility(*gravityDefinition);
 		if (!handle.IsValid() ||
 			(level > 1 && !owner.GetCombatRuntime().GetAbilitySystemComponent().SetAbilityLevel(handle, level)))
@@ -6089,16 +6089,16 @@ int main(int argc, char** argv)
 	{
 		return Fail("Gravity Anomaly field test actors could not spawn");
 	}
-	gravityCaster->SetCollisionLayer(ly::GameCollision::Player);
-	gravityPlayerTarget->SetCollisionLayer(ly::GameCollision::Player);
-	gravityEnemyTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	gravityCaster->SetCollisionLayer(vega::GameCollision::Player);
+	gravityPlayerTarget->SetCollisionLayer(vega::GameCollision::Player);
+	gravityEnemyTarget->SetCollisionLayer(vega::GameCollision::Enemy);
 	gravityCaster->SetActorLocation({ 20.f, 0.f });
 	gravityPlayerTarget->SetActorLocation({ -30.f, 0.f });
 	gravityEnemyTarget->SetActorLocation({ 40.f, 0.f });
-	gravityProjectileTarget->SetCollisionLayer(ly::GameCollision::PlayerBullet);
+	gravityProjectileTarget->SetCollisionLayer(vega::GameCollision::PlayerBullet);
 	gravityProjectileTarget->SetActorLocation({ 10.f, 0.f });
 	gravityProjectileTarget->SetVelocity({ 7.f, 0.f });
-	gravityPickupTarget->SetCollisionLayer(ly::GameCollision::Powerup);
+	gravityPickupTarget->SetCollisionLayer(vega::GameCollision::Powerup);
 	gravityPickupTarget->SetActorLocation({ -10.f, 0.f });
 	gravityPickupTarget->SetVelocity({ 3.f, 0.f });
 	const shared_ptr<GravityAnomalyFieldActor> gravityField = SpawnGravityField(
@@ -6253,8 +6253,8 @@ int main(int argc, char** argv)
 
 	SpaceShip playerSlowMovement{ nullptr, ShipData::Ship_Player_Fighter };
 	SpaceShip enemySlowMovement{ nullptr, ShipData::Ship_Player_Fighter };
-	playerSlowMovement.SetCollisionLayer(ly::GameCollision::Player);
-	enemySlowMovement.SetCollisionLayer(ly::GameCollision::Enemy);
+	playerSlowMovement.SetCollisionLayer(vega::GameCollision::Player);
+	enemySlowMovement.SetCollisionLayer(vega::GameCollision::Enemy);
 	playerSlowMovement.SetVelocity({ 100.f, 0.f });
 	enemySlowMovement.SetVelocity({ 100.f, 0.f });
 	const sas::GameplayEffectHandle playerSlowHandle = playerSlowMovement.GetAbilitySystemComponent().ApplyGameplayEffect(
@@ -7177,7 +7177,7 @@ int main(int argc, char** argv)
 		TestCombatant echoGravityOwner{ &echoGravityWorld, 1000.f };
 		echoGravityOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
 		echoGravityOwner.SetActorRotation(90.f);
-		echoGravityOwner.SetCollisionLayer(ly::GameCollision::Player);
+		echoGravityOwner.SetCollisionLayer(vega::GameCollision::Player);
 		LightYearsAbilitySystemComponent& echoGravityAbilities =
 			echoGravityOwner.GetAbilitySystemComponent();
 		GameAbilityDefinition echoGravitySourceDefinition = *gravityDefinition;
@@ -7289,7 +7289,7 @@ int main(int argc, char** argv)
 	}
 
 	const float slowAttributeValue = infernoOwner.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-		ly::OwnerAttributeIds::MovementSlow
+		vega::OwnerAttributeIds::MovementSlow
 	);
 	if (!NearlyEqual(slowAttributeValue, 0.35f))
 	{
@@ -7317,7 +7317,7 @@ int main(int argc, char** argv)
 	}
 
 	const float cleanedSlowValue = infernoOwner.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-		ly::OwnerAttributeIds::MovementSlow
+		vega::OwnerAttributeIds::MovementSlow
 	);
 	if (!NearlyEqual(cleanedSlowValue, 0.f))
 	{
@@ -7326,11 +7326,11 @@ int main(int argc, char** argv)
 
 	// 4. World Combat Simulation Test (Damage & Cone Target Filtering & Thermal Ignite Stacks)
 	{
-		ly::World world{ nullptr };
-		const ly::shared_ptr<TestCombatant> shooter = world.SpawnActor<TestCombatant>(100.f).lock();
-		const ly::shared_ptr<TestCombatant> targetInCone = world.SpawnActor<TestCombatant>(100.f).lock();
-		const ly::shared_ptr<TestCombatant> targetOutsideAngle = world.SpawnActor<TestCombatant>(100.f).lock();
-		const ly::shared_ptr<TestCombatant> targetOutsideRange = world.SpawnActor<TestCombatant>(100.f).lock();
+		vega::World world{ nullptr };
+		const vega::shared_ptr<TestCombatant> shooter = world.SpawnActor<TestCombatant>(100.f).lock();
+		const vega::shared_ptr<TestCombatant> targetInCone = world.SpawnActor<TestCombatant>(100.f).lock();
+		const vega::shared_ptr<TestCombatant> targetOutsideAngle = world.SpawnActor<TestCombatant>(100.f).lock();
+		const vega::shared_ptr<TestCombatant> targetOutsideRange = world.SpawnActor<TestCombatant>(100.f).lock();
 
 		if (!shooter || !targetInCone || !targetOutsideAngle || !targetOutsideRange)
 		{
@@ -7339,19 +7339,19 @@ int main(int argc, char** argv)
 
 		shooter->SetActorLocation({ 0.f, 0.f });
 		shooter->SetActorRotation(0.f); // Forward vector is { 0.f, -1.f }
-		shooter->SetCollisionLayer(ly::GameCollision::Player);
+		shooter->SetCollisionLayer(vega::GameCollision::Player);
 
 		targetInCone->SetActorLocation({ 0.f, -200.f }); // Directly in front (dist=200 < 520, angle=0)
-		targetInCone->SetCollisionLayer(ly::GameCollision::Enemy);
-		targetInCone->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		targetInCone->SetCollisionLayer(vega::GameCollision::Enemy);
+		targetInCone->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 		targetOutsideAngle->SetActorLocation({ 200.f, 0.f }); // 90 degrees to the right (angle=90 > 18)
-		targetOutsideAngle->SetCollisionLayer(ly::GameCollision::Enemy);
-		targetOutsideAngle->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		targetOutsideAngle->SetCollisionLayer(vega::GameCollision::Enemy);
+		targetOutsideAngle->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 		targetOutsideRange->SetActorLocation({ 0.f, -600.f }); // Directly in front but out of range (dist=600 > 520)
-		targetOutsideRange->SetCollisionLayer(ly::GameCollision::Enemy);
-		targetOutsideRange->SetCollisionMask(ly::GameCollision::PlayerBullet);
+		targetOutsideRange->SetCollisionLayer(vega::GameCollision::Enemy);
+		targetOutsideRange->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 		world.TickInternal(0.f);
 
@@ -7403,7 +7403,7 @@ int main(int argc, char** argv)
 
 		// Verify 4th hit triggered full 4-stack Ignite Thermal status
 		const bool hasIgniteTag = targetInCone->GetAbilitySystemComponent().GetOwnedTags().HasTag(
-			ly::DamageStatusSchema::Ignite
+			vega::DamageStatusSchema::Ignite
 		);
 		if (!hasIgniteTag)
 		{
@@ -7496,8 +7496,8 @@ int main(int argc, char** argv)
 			return Fail("Relay Prism test owner could not spawn");
 		}
 		relayOwner->GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-		relayOwner->SetCollisionLayer(ly::GameCollision::Player);
-		relayOwner->SetCollisionMask(ly::GameCollision::RelayProjectile);
+		relayOwner->SetCollisionLayer(vega::GameCollision::Player);
+		relayOwner->SetCollisionMask(vega::GameCollision::RelayProjectile);
 		relayOwner->SetActorLocation({ 500.f, 0.f });
 
 		RelayPrismPresentationProfile relayPresentation;
@@ -7576,8 +7576,8 @@ int main(int argc, char** argv)
 				!NearlyEqual(clone->GetLifeTime(), 3.75f) ||
 				clone->GetProjectileRelayLineage().generation != 1 ||
 				!clone->GetProjectileRelayLineage().HasVisited(relay->GetCaptureVolumeId()) ||
-				clone->GetCollisionLayer() != ly::GameCollision::RelayProjectile ||
-				clone->GetCollisionMask() != ly::GameCollision::AllRelayTargets ||
+				clone->GetCollisionLayer() != vega::GameCollision::RelayProjectile ||
+				clone->GetCollisionMask() != vega::GameCollision::AllRelayTargets ||
 				clone->GetDamageTags().size() != 1 ||
 				clone->GetDamageTags().front() != DamageTypeSchema::Kinetic)
 			{
@@ -8069,11 +8069,11 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(ly::GameCollision::Player);
+			owner->SetCollisionLayer(vega::GameCollision::Player);
 
 			target->SetActorLocation({ 500.f, 0.f }); // within search 750
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 			world.TickInternal(0.f);
 
@@ -8137,12 +8137,12 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(ly::GameCollision::Player);
+			owner->SetCollisionLayer(vega::GameCollision::Player);
 
 			// Place target at { 80.f, 0.f } (close to owner so drones arrive rapidly)
 			target->SetActorLocation({ 80.f, 0.f });
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 			world.TickInternal(0.f);
 
@@ -8208,17 +8208,17 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(ly::GameCollision::Player);
+			owner->SetCollisionLayer(vega::GameCollision::Player);
 
 			// Target A (capped, 4 stacks) is closer to owner (150)
 			targetCapped->SetActorLocation({ 150.f, 0.f });
-			targetCapped->SetCollisionLayer(ly::GameCollision::Enemy);
-			targetCapped->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			targetCapped->SetCollisionLayer(vega::GameCollision::Enemy);
+			targetCapped->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 			// Target B (under-cap, 0 stacks) is further (250)
 			targetUnderCap->SetActorLocation({ 250.f, 0.f });
-			targetUnderCap->SetCollisionLayer(ly::GameCollision::Enemy);
-			targetUnderCap->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			targetUnderCap->SetCollisionLayer(vega::GameCollision::Enemy);
+			targetUnderCap->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 			// Apply 4 stacks of Ignite to Target A
 			DamagePayload fourStackPayload;
@@ -8272,11 +8272,11 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(ly::GameCollision::Player);
+			owner->SetCollisionLayer(vega::GameCollision::Player);
 
 			soleTarget->SetActorLocation({ 200.f, 0.f });
-			soleTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			soleTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			soleTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			soleTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 			// Pre-apply 4 stacks of Ignite to sole target
 			DamagePayload fourStackPayload;
@@ -8334,11 +8334,11 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(ly::GameCollision::Player);
+			owner->SetCollisionLayer(vega::GameCollision::Player);
 
 			target->SetActorLocation({ 200.f, 0.f });
-			target->SetCollisionLayer(ly::GameCollision::Enemy);
-			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			target->SetCollisionLayer(vega::GameCollision::Enemy);
+			target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 
 			world.TickInternal(0.f);
 
@@ -9011,10 +9011,10 @@ int main(int argc, char** argv)
 				return Fail("Could not spawn player or enemy for player-owned source test");
 			}
 			player->SetActorLocation({ 0.f, 0.f });
-			player->SetCollisionLayer(ly::GameCollision::Player);
+			player->SetCollisionLayer(vega::GameCollision::Player);
 			enemy->SetActorLocation({ 200.f, 0.f });
-			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
-			enemy->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			enemy->SetCollisionLayer(vega::GameCollision::Enemy);
+			enemy->SetCollisionMask(vega::GameCollision::PlayerBullet);
 			world.TickInternal(0.f);
 
 			player->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability4);

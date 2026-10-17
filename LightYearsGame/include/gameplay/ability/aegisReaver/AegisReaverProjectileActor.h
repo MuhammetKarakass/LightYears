@@ -4,7 +4,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/aegisReaver/AegisReaverPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	class SpaceShip;
 

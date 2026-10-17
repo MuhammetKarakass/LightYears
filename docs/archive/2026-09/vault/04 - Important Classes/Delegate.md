@@ -4,11 +4,11 @@ status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/include/framework/Delegate.h
+  - VegaEngine/include/framework/Delegate.h
 symbols:
-  - ly::Delegate
-  - ly::Delegate::BindAction
-  - ly::Delegate::Broadcast
+  - vega::Delegate
+  - vega::Delegate::BindAction
+  - vega::Delegate::Broadcast
 related:
   - "[[Engine Runtime Services]]"
   - "[[Timer, Delegate and Camera Frame Flow]]"
@@ -17,7 +17,7 @@ related:
 
 # Delegate
 
-`ly::Delegate<Args...>` publisher'ın sahip olduğu callback listesiyle event yayınlar. Callback `bool` döner: `true` listener'ın aktif kaldığını, `false` callback'in Broadcast sırasında silineceğini belirtir.
+`vega::Delegate<Args...>` publisher'ın sahip olduğu callback listesiyle event yayınlar. Callback `bool` döner: `true` listener'ın aktif kaldığını, `false` callback'in Broadcast sırasında silineceğini belirtir.
 
 | Binding | Lifetime davranışı |
 |---|---|

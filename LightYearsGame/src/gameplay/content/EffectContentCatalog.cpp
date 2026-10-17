@@ -4,7 +4,7 @@
 #include "gameplay/content/EffectLoader.h"
 
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{

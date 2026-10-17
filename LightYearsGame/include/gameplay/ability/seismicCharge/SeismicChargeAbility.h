@@ -2,7 +2,7 @@
 
 #include "gameplay/ability/GameAbility.h"
 
-namespace ly
+namespace vega
 {
 	class SeismicChargeAbility final : public GameAbilityBehavior
 	{

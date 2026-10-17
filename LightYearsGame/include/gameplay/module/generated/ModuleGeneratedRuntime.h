@@ -7,7 +7,7 @@
 #include <optional>
 #include <random>
 
-namespace ly
+namespace vega
 {
 	class LightYearsAbilitySystemComponent;
 	class SpaceShip;

@@ -33,7 +33,7 @@ namespace vega::sky
 		virtual void SetSkyAuthoring(bool enabled) = 0;
 		virtual SkyGeometry Geometry(sf::Vector2u output) const = 0;
 		virtual SkyPalette Palette() const = 0;
-		virtual bool RenderSky(sf::RenderTexture&, std::size_t index, const ly::World&, sf::Vector2u size) = 0;
+		virtual bool RenderSky(sf::RenderTexture&, std::size_t index, const vega::World&, sf::Vector2u size) = 0;
 		virtual std::filesystem::path DocumentFile() const { return "deepsky.json"; }
 	};
 }

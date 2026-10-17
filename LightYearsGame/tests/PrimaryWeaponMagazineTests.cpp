@@ -37,7 +37,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{
@@ -54,7 +54,7 @@ namespace ly
 
 		const PrimaryWeaponDefinition& LoadedWeapon(const char* weaponId)
 		{
-			return *ly::content::WeaponContentCatalog::FindById(weaponId);
+			return *vega::content::WeaponContentCatalog::FindById(weaponId);
 		}
 
 		class TestCombatantActor final
@@ -113,8 +113,8 @@ namespace ly
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
-	using namespace ly;
+	vega::InstallVegaEngineAssets();
+	using namespace vega;
 
 	std::cout << "Starting PrimaryWeaponMagazineTests...\n";
 	AssetManager::GetAssetManager().SetAssetRootDirectory(
@@ -967,8 +967,8 @@ int main(int argc, char** argv)
 
 		// 6. Strict JSON Scaling Rule Validation (Package A)
 		{
-			using ly::content::AttributeJsonParser::Json;
-			namespace AJP = ly::content::AttributeJsonParser;
+			using vega::content::AttributeJsonParser::Json;
+			namespace AJP = vega::content::AttributeJsonParser;
 
 			auto expectThrowsWithMessage = [](const std::function<void()>& fn, const std::string& expectedSubstring, const std::string& caseName) -> bool
 			{
@@ -1714,7 +1714,7 @@ int main(int argc, char** argv)
 		{
 			return Fail("Suite H: Fighter scrapCost must be base 40, step 5");
 		}
-		const ly::List<unsigned int> expectedCosts{ 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105 };
+		const vega::List<unsigned int> expectedCosts{ 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105 };
 		for (size_t i = 0; i < expectedCosts.size(); ++i)
 		{
 			if (fighterLaser.progressionProfile.GetScrapCostToReachLevel(static_cast<int>(i) + 2) != expectedCosts[i])

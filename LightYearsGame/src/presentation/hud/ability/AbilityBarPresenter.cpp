@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <string_view>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

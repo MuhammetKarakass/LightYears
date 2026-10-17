@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	// Family identity is the stable bridge between Storm Mark content,
 	// validation and the runtime behavior registry.

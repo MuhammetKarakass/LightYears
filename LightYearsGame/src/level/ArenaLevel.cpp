@@ -8,7 +8,7 @@
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "framework/TimerManager.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

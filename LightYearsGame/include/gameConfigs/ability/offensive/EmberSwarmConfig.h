@@ -6,9 +6,9 @@
 
 namespace AbilityData::Definitions
 {
-	inline const ly::GameAbilityDefinition EmberSwarm_Basic = []
+	inline const vega::GameAbilityDefinition EmberSwarm_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::EmberSwarm::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		// Default runtime ability slot mapping has one owner only: DefaultAbilityLoadout.cpp.
@@ -17,13 +17,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::EmberSwarm
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::EmberSwarm
 		};
 		definition.displayName = "Ember Swarm";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupRed_bolt.png";
 		definition.accentColor = sf::Color{ 255, 120, 30, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::EmberSwarm;
+		definition.behaviorType = vega::AbilityBehaviorType::EmberSwarm;
 		return definition;
 	}();
 }

@@ -3,7 +3,7 @@
 #include "presentation/effects/GameplayEffectVisual.h"
 #include "presentation/effects/shield/ShieldVisualDefinition.h"
 
-namespace ly
+namespace vega
 {
 	class ShieldVisual final : public GameplayEffectVisual
 	{

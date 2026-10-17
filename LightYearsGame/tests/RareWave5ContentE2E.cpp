@@ -990,7 +990,7 @@ namespace rare_wave5_content_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_wave5_content_e2e;
 	if (argc != 2) return 2;
 	Report report;

@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	// Opt-in contract for a delivery projectile that owns a future world
 	// destination (field, capture volume, impact point). AbilityWorldActor

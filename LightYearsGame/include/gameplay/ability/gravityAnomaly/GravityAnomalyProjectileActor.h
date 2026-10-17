@@ -11,7 +11,7 @@
 
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class GravityAnomalyProjectileActor final
 		: public AbilityWorldActor,

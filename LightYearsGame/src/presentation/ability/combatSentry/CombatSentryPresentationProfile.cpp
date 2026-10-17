@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/combatSentry/CombatSentryPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterCombatSentryPresentationProfiles()
 	{

@@ -8,12 +8,12 @@
 
 namespace AbilityData::OverdriveCore
 {
-	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+	inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::OverdriveCoreProjectile;
-		definition.presentationProfileId = ly::OverdriveCorePresentationIds::ProjectileBasic;
+		definition.actorType = vega::AbilityActorType::OverdriveCoreProjectile;
+		definition.presentationProfileId = vega::OverdriveCorePresentationIds::ProjectileBasic;
 		return definition;
 	}();
 }
@@ -22,22 +22,22 @@ namespace AbilityData::Definitions
 {
 	// C++ owns only the executable behavior family and semantic identity. The
 	// shipped numeric values are loaded from abilities.json.
-	inline const ly::GameAbilityDefinition OverdriveCore_Basic = []
+	inline const vega::GameAbilityDefinition OverdriveCore_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::OverdriveCore::AbilityId::Basic;
 		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability4;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
-			ly::GameplayTags::Ability::Family::OverdriveCore
+			vega::GameplayTags::Ability::Offense,
+			vega::GameplayTags::Ability::Family::OverdriveCore
 		};
 		definition.displayName = "Overdrive Core";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
 		definition.accentColor = sf::Color{ 255, 95, 45, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::OverdriveCore;
+		definition.behaviorType = vega::AbilityBehaviorType::OverdriveCore;
 		return definition;
 	}();
 }

@@ -2,6 +2,6 @@
 #include "editor/EditorCommands.h"
 namespace vega
 {
-	bool ParsePropertyValue(const ly::reflect::PropertyInfo&, const std::vector<std::string>&, bool, ly::reflect::PropertyValue&, float&);
-	bool PropertyEquals(const ly::reflect::PropertyValue&, const ly::reflect::PropertyValue&, float);
+	bool ParsePropertyValue(const vega::reflect::PropertyInfo&, const std::vector<std::string>&, bool, vega::reflect::PropertyValue&, float&);
+	bool PropertyEquals(const vega::reflect::PropertyValue&, const vega::reflect::PropertyValue&, float);
 } // namespace vega

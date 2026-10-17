@@ -2,7 +2,7 @@
 
 #include "framework/World.h"
 
-namespace ly
+namespace vega
 {
 	class MainMenuHUD;
 	class MainMenuLevel : public World

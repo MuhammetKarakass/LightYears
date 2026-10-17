@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 
-namespace ly
+namespace vega
 {
 	// Control classification belongs to the target, not to the ability that
 	// applies a control effect. This keeps future abilities from branching on

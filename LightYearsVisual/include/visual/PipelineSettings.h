@@ -2,7 +2,7 @@
 #include "visual/LuminanceTier.h"
 #include "visual/Nebula.h"
 #include <sky/PipelineSettings.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::PlanetSettings;
 	using vega::sky::HostStarSettings;

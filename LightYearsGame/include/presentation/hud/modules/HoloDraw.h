@@ -5,7 +5,7 @@
 #include <cmath>
 #include <vector>
 
-namespace ly::holo
+namespace vega::holo
 {
 	using Vec = sf::Vector2f;
 	using Pts = std::vector<Vec>;

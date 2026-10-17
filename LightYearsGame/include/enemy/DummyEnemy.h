@@ -2,7 +2,7 @@
 
 #include "spaceShip/SpaceShip.h"
 
-namespace ly
+namespace vega
 {
 	class DummyEnemy : public SpaceShip
 	{

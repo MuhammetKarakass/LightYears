@@ -4,7 +4,7 @@
 #include "environment/Asteroid.h"
 
 
-namespace ly
+namespace vega
 {
 	AsteroidSpawner::AsteroidSpawner(World* world, const AsteroidSpawnerConfig& config):
 		mWorld{ world },
@@ -19,7 +19,7 @@ namespace ly
 			return;
 		mIsSpawning = true;
 		SpawnAsteroidInternal();
-		LY_GAME_DEBUG("Asteroid Spawner Started");
+		VEGA_GAME_DEBUG("Asteroid Spawner Started");
 	}
 	
 	void AsteroidSpawner::StopSpawning()

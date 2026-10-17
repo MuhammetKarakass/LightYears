@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	namespace ModuleResolver
 	{

@@ -12,12 +12,12 @@ namespace AbilityData
 	{
 		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
 
-		inline const ly::AbilityActorDefinition ActorProjectileBasic = []
+		inline const vega::AbilityActorDefinition ActorProjectileBasic = []
 		{
-			ly::AbilityActorDefinition definition;
+			vega::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-			definition.actorType = ly::AbilityActorType::RocketProjectile;
-			definition.presentationProfileId = ly::RocketPresentationIds::ProjectileBasic;
+			definition.actorType = vega::AbilityActorType::RocketProjectile;
+			definition.presentationProfileId = vega::RocketPresentationIds::ProjectileBasic;
 			return definition;
 		}();
 
@@ -25,9 +25,9 @@ namespace AbilityData
 
 	namespace Definitions
 	{
-		inline const ly::GameAbilityDefinition Rocket_Basic = []
+		inline const vega::GameAbilityDefinition Rocket_Basic = []
 		{
-			ly::GameAbilityDefinition definition;
+			vega::GameAbilityDefinition definition;
 			definition.abilityId = Rocket::AbilityId::Basic;
 			// Numeric balance, progression and costs are authored in abilities.json.
 			// Ability3 is the default F binding for the projectile loadout.
@@ -36,16 +36,16 @@ namespace AbilityData
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.abilityTags = {
-				ly::GameplayTags::Ability::Offense,
-				ly::GameplayTags::Ability::Family::Rocket
+				vega::GameplayTags::Ability::Offense,
+				vega::GameplayTags::Ability::Family::Rocket
 			};
 			definition.displayName = "Rocket";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
 			definition.accentColor = sf::Color{ 255, 115, 75, 255 };
 			definition.actions = {
-				ly::AbilityActionSpec{
+				vega::AbilityActionSpec{
 					sas::AbilityActionPhase::OnActivate,
-					ly::SpawnActorAction{
+					vega::SpawnActorAction{
 						Rocket::ActorProjectileBasic.actorDefinitionId,
 						sas::AbilitySpawnPolicy::OwnerForward,
 						sas::AbilityDirectionPolicy::MouseWorld
@@ -54,8 +54,8 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.damageTags = { ly::DamageTypeSchema::Kinetic };
-			definition.behaviorType = ly::AbilityBehaviorType::Rocket;
+			definition.damageTags = { vega::DamageTypeSchema::Kinetic };
+			definition.behaviorType = vega::AbilityBehaviorType::Rocket;
 			return definition;
 		}();
 	}

@@ -4,7 +4,7 @@
 #include <framework/World.h>
 #include "environment/Asteroid.h"
 
-namespace ly
+namespace vega
 {
 	VanguardStage::VanguardStage(World* world) :
 		GameStage(world),

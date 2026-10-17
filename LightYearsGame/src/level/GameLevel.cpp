@@ -14,7 +14,7 @@
 #include "presentation/hud/modules/ModuleScreenHUDController.h"
 #include "presentation/hud/notification/NotificationHUDController.h"
 
-namespace ly
+namespace vega
 {
 	GameLevel::GameLevel(Application* owningApp):
 		World(owningApp),

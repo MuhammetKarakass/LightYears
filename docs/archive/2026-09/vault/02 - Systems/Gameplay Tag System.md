@@ -9,7 +9,7 @@ uncommitted_areas:
   - ability, damage, movement and presentation integrations
   - GasLiteCoreTests and LightYearsGame CMake target
 source_files:
-  - LightYearsEngine/include/framework/Core.h
+  - VegaEngine/include/framework/Core.h
   - LightYearsGame/include/gameplay/attributes/AttributeIds.h
   - SpaceAbilitySystem/include/attributes/GameplayAttribute.h
   - LightYearsGame/include/gameConfigs/combat/EffectStructs.h
@@ -19,12 +19,12 @@ source_files:
   - LightYearsGame/include/gameConfigs/ability/control/GravityAnomalyConfig.h
   - LightYearsGame/tests/GasLiteCoreTests.cpp
 symbols:
-  - ly::GameplayTag
-  - ly::GameplayTagHash
-  - ly::GameplayTagContainer
-  - ly::OwnerAttributeIds
-  - ly::ShipAttributeIds
-  - ly::CommonAttributeIds
+  - vega::GameplayTag
+  - vega::GameplayTagHash
+  - vega::GameplayTagContainer
+  - vega::OwnerAttributeIds
+  - vega::ShipAttributeIds
+  - vega::CommonAttributeIds
 related:
   - "[[Gameplay Tag Definition and Lookup Flow]]"
   - "[[Attribute System]]"
@@ -43,7 +43,7 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 
 ## Sistem özeti
 
-Light Years'ın gameplay tag sistemi merkezi bir registry veya sayısal tag tablosu değildir. `ly::GameplayTag`, bir `std::string` taşıyan değer tipidir; hiyerarşi nokta ayracıyla, runtime örnek indeksi ise sondaki `_N` ekiyle yorumlanır. `GameplayTagContainer` tag'leri referans sayacıyla tutar.
+Light Years'ın gameplay tag sistemi merkezi bir registry veya sayısal tag tablosu değildir. `vega::GameplayTag`, bir `std::string` taşıyan değer tipidir; hiyerarşi nokta ayracıyla, runtime örnek indeksi ise sondaki `_N` ekiyle yorumlanır. `GameplayTagContainer` tag'leri referans sayacıyla tutar.
 
 Oyun katmanında `GameplayTagSchema`, domain kökleri ile ortak action-lock tagleri
 üzerinde merkezi bir sözleşme sağlar. Bu sözleşme feature-local leaf tagleri
@@ -74,7 +74,7 @@ leaf taglerini kendi kontratlarında tanımlar.
 
 | Sınıf/veri tipi | Dosya | Sorumluluk | Sahibi | Yaşam süresi |
 |---|---|---|---|---|
-| `GameplayTag` | `LightYearsEngine/include/framework/Core.h` | String kimliği ve eşleşme | Değerin bulunduğu nesne/container | Value lifetime |
+| `GameplayTag` | `VegaEngine/include/framework/Core.h` | String kimliği ve eşleşme | Değerin bulunduğu nesne/container | Value lifetime |
 | `GameplayTagHash` | `Core.h` | Hash adapter | Tip; runtime state yok | Program ömrü |
 | `GameplayTagContainer` | `Core.h` | Counted owned-tag set | `CombatRuntime` | CombatRuntime ömrü |
 | `OwnerAttributeIds` | `AttributeIds.h` | Owner attribute sabitleri | Static inline data | Program ömrü |
@@ -103,7 +103,7 @@ leaf taglerini kendi kontratlarında tanımlar.
 ### Bu sistemin kullandığı sistemler
 
 - C++ standard library: `std::string`, `std::hash`, karakter kontrolü ve container'lar.
-- Tag semantiğinin tamamı `LightYearsEngine/include/framework/Core.h` içindedir.
+- Tag semantiğinin tamamı `VegaEngine/include/framework/Core.h` içindedir.
 
 ### Bu sistemi kullanan sistemler
 
@@ -153,8 +153,8 @@ flowchart LR
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/Core.h`  
-Sınıf veya namespace: `ly::GameplayTag`  
+Dosya: `VegaEngine/include/framework/Core.h`  
+Sınıf veya namespace: `vega::GameplayTag`  
 Fonksiyon: kurucular ve karşılaştırma  
 Görevi: Tag'in gerçek string-backed temsilini tanımlar.
 
@@ -174,8 +174,8 @@ Görevi: Tag'in gerçek string-backed temsilini tanımlar.
         bool operator<(const GameplayTag& other) const { return name < other.name; }
 ```
 
-Dosya: `LightYearsEngine/include/framework/Core.h`  
-Sınıf veya namespace: `ly::GameplayTag`  
+Dosya: `VegaEngine/include/framework/Core.h`  
+Sınıf veya namespace: `vega::GameplayTag`  
 Fonksiyon: `MatchesTag`  
 Görevi: Exact veya nokta sınırındaki parent eşleşmesini çözer.
 
@@ -193,8 +193,8 @@ Görevi: Exact veya nokta sınırındaki parent eşleşmesini çözer.
         }
 ```
 
-Dosya: `LightYearsEngine/include/framework/Core.h`  
-Sınıf veya namespace: `ly::GameplayTagContainer`  
+Dosya: `VegaEngine/include/framework/Core.h`  
+Sınıf veya namespace: `vega::GameplayTagContainer`  
 Fonksiyon: `AddTag`  
 Görevi: Geçerli tag için sahiplik sayacını artırır.
 
@@ -208,8 +208,8 @@ Görevi: Geçerli tag için sahiplik sayacını artırır.
         }
 ```
 
-Dosya: `LightYearsEngine/include/framework/Core.h`  
-Sınıf veya namespace: `ly::GameplayTagContainer`  
+Dosya: `VegaEngine/include/framework/Core.h`  
+Sınıf veya namespace: `vega::GameplayTagContainer`  
 Fonksiyon: `HasTag`  
 Görevi: Container içindeki tag'leri exact veya hiyerarşik olarak sorgular.
 

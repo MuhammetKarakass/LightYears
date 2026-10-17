@@ -2,7 +2,7 @@
 
 #include "effects/GameplayEffectBehaviorKey.h"
 
-namespace ly::EffectBehaviorKeys
+namespace vega::EffectBehaviorKeys
 {
 	// These keys select closed implementation hooks at the JSON/registry
 	// boundary. They are not gameplay tags and do not describe game semantics.

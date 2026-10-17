@@ -17,7 +17,7 @@
 #include <cmath>
 #include <exception>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

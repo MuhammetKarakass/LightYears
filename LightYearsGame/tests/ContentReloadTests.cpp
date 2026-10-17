@@ -16,9 +16,9 @@
 
 int main()
 {
-	ly::EngineContext context;
-	ly::EngineContext::Scope scope{ context };
-	using namespace ly::content;
+	vega::EngineContext context;
+	vega::EngineContext::Scope scope{ context };
+	using namespace vega::content;
 	const auto source = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data";
 	const auto root = std::filesystem::path{ CONTENT_RELOAD_TEST_ROOT };
 	std::filesystem::create_directories(root);
@@ -29,7 +29,7 @@ int main()
 	std::filesystem::create_directories(assets / "content/data");
 	std::filesystem::copy(source, assets / "content/data", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
 	context.Assets().SetAssetRootDirectory(assets.generic_u8string() + "/");
-	check(ly::GameContentBootstrap::Register(), "Bootstrap fixture failed");
+	check(vega::GameContentBootstrap::Register(), "Bootstrap fixture failed");
 	const auto read = [](const auto& path) { nlohmann::json result; std::ifstream{ path } >> result; return result; };
 	const auto fixtureWeapon = read(source / "weapons.json")["weapons"][0]["id"].get<std::string>();
 	const auto fixtureShip = ShipContentCatalog::GetPlayerShipIds().front();
@@ -41,13 +41,13 @@ int main()
 		const auto* shipBefore = ShipContentCatalog::FindById(fixtureShip);
 		const auto revisionBefore = ModuleContentCatalog::GetRevision();
 		std::ofstream{ assets / "content/data" / changed } << candidate;
-		ly::debug::LogCapture capture;
-		ly::GameContentBootstrap::Reload(context, { assets / "content/data" / changed });
+		vega::debug::LogCapture capture;
+		vega::GameContentBootstrap::Reload(context, { assets / "content/data" / changed });
 		check(AbilityContentCatalog::GetDefinitions().front() == abilityBefore && EffectContentCatalog::GetDefinitions().front() == effectBefore &&
 			WeaponContentCatalog::FindById(fixtureWeapon) == weaponBefore && ShipContentCatalog::FindById(fixtureShip) == shipBefore &&
 			ModuleContentCatalog::GetRevision() == revisionBefore, "Rejected dependency edit replaced a catalog");
 		const auto logs = capture.Buffer().Snapshot();
-		check(std::any_of(logs.begin(), logs.end(), [](const auto& row) { return row.level == ly::debug::LogLevel::Error && row.message.find("Content reload rejected") != std::string::npos; }), "Dependency rejection must reach the Console");
+		check(std::any_of(logs.begin(), logs.end(), [](const auto& row) { return row.level == vega::debug::LogLevel::Error && row.message.find("Content reload rejected") != std::string::npos; }), "Dependency rejection must reach the Console");
 		std::filesystem::copy_file(source / changed, assets / "content/data" / changed, std::filesystem::copy_options::overwrite_existing);
 	};
 	auto effectsCandidate = read(source / "effects.json");

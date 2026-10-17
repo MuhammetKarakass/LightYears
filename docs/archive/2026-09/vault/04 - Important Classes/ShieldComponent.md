@@ -8,9 +8,9 @@ source_files:
   - LightYearsGame/src/gameplay/ShieldComponent.cpp
   - LightYearsGame/src/spaceShip/SpaceShip.cpp
 symbols:
-  - ly::ShieldComponent
-  - ly::ShieldComponent::AbsorbDamage
-  - ly::ShieldComponent::Tick
+  - vega::ShieldComponent
+  - vega::ShieldComponent::AbsorbDamage
+  - vega::ShieldComponent::Tick
 related:
   - "[[Shield System]]"
   - "[[Damage and Shield Resolution Flow]]"
@@ -28,7 +28,7 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 
 ## Rol
 
-`ly::ShieldComponent`, ship üzerinde kalıcı current/max shield ve recharge delay state'ini tutan value component'tir. `SpaceShip` bunu owner olarak tutar; temporary barrier gameplay effect'i bu sınıf değildir ve [[Shield System]] içinde ayrı katman olarak açıklanır.
+`vega::ShieldComponent`, ship üzerinde kalıcı current/max shield ve recharge delay state'ini tutan value component'tir. `SpaceShip` bunu owner olarak tutar; temporary barrier gameplay effect'i bu sınıf değildir ve [[Shield System]] içinde ayrı katman olarak açıklanır.
 
 ## Public yüzey
 

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <set>
 
-namespace ly
+namespace vega
 {
 	// Shared by all hits from one ability use or one Primary shot. It owns no actor.
 	struct DamageHitGroup

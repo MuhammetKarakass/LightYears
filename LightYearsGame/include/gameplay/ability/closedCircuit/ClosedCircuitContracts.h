@@ -8,14 +8,14 @@
 namespace AbilityData::ClosedCircuit
 {
 	struct AbilityId { inline static constexpr char Basic[] = "Ability.Defense.ClosedCircuit.Basic"; };
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ClosedCircuit };
-	struct State { inline static const ly::GameplayTag Deploying{ ly::GameplayTags::State::Ability::ClosedCircuit::Deploying }; };
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{ vega::GameplayTags::Ability::Family::ClosedCircuit };
+	struct State { inline static const vega::GameplayTag Deploying{ vega::GameplayTags::State::Ability::ClosedCircuit::Deploying }; };
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{ ly::GameplayTags::Event::Ability::ClosedCircuit::Started };
-		inline static const ly::GameplayTag Deployed{ ly::GameplayTags::Event::Ability::ClosedCircuit::Deployed };
-		inline static const ly::GameplayTag Ended{ ly::GameplayTags::Event::Ability::ClosedCircuit::Ended };
+		inline static const vega::GameplayTag Started{ vega::GameplayTags::Event::Ability::ClosedCircuit::Started };
+		inline static const vega::GameplayTag Deployed{ vega::GameplayTags::Event::Ability::ClosedCircuit::Deployed };
+		inline static const vega::GameplayTag Ended{ vega::GameplayTags::Event::Ability::ClosedCircuit::Ended };
 	};
 	struct Attribute
 	{
@@ -29,7 +29,7 @@ namespace AbilityData::ClosedCircuit
 		inline static constexpr char FormationDuration[] = "formationDuration";
 		inline static constexpr char BarrierRadius[] = "barrierRadius";
 		inline static constexpr char MaximumActiveDuration[] = "maxDuration";
-		inline static const ly::content::NumericSettingContract Contract{
+		inline static const vega::content::NumericSettingContract Contract{
 			{ MaximumDeliveryRange, DeliverySpeed, FormationDuration, BarrierRadius, MaximumActiveDuration },
 			{ MaximumDeliveryRange, DeliverySpeed, FormationDuration, BarrierRadius }
 		};

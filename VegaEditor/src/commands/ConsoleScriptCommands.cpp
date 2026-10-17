@@ -33,15 +33,15 @@ namespace vega
 			{
 				const auto records = context.console->Snapshot();
 				if (command.operation == "expect-no-errors")
-					success = std::none_of(records.begin(), records.end(), [](const auto& r) { return r.level >= ly::debug::LogLevel::Error; });
+					success = std::none_of(records.begin(), records.end(), [](const auto& r) { return r.level >= vega::debug::LogLevel::Error; });
 				else
 					success = std::any_of(records.begin(), records.end(),
 					    [&](const auto& r)
 					    {
-						    const auto level = command.property == "Info" ? ly::debug::LogLevel::Info
-						        : command.property == "Warning"           ? ly::debug::LogLevel::Warning
-						                                                  : ly::debug::LogLevel::Error;
-						    return (r.level == level || (level == ly::debug::LogLevel::Error && r.level == ly::debug::LogLevel::Fatal)) &&
+						    const auto level = command.property == "Info" ? vega::debug::LogLevel::Info
+						        : command.property == "Warning"           ? vega::debug::LogLevel::Warning
+						                                                  : vega::debug::LogLevel::Error;
+						    return (r.level == level || (level == vega::debug::LogLevel::Error && r.level == vega::debug::LogLevel::Fatal)) &&
 						        r.message.find(command.text) != std::string::npos;
 					    });
 			}

@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <string>
 
-namespace ly::content
+namespace vega::content
 {
 	class EnemyCombatProfileCatalog
 	{

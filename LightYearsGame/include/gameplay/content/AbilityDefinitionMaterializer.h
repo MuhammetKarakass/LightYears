@@ -2,7 +2,7 @@
 
 #include "gameplay/content/AbilityLoader.h"
 
-namespace ly::content
+namespace vega::content
 {
 	// Builds the runtime definition skeleton from the C++ behavior base. JSON
 	// parsing deliberately happens elsewhere so balance data cannot leak from the

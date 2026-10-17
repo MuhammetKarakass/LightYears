@@ -6,7 +6,7 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	class VoidGatePortalActor final : public AbilityWorldActor
 	{

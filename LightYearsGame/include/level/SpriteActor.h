@@ -3,7 +3,7 @@
 #include <framework/Actor.h>
 #include <framework/SpriteComponent.h>
 
-namespace ly
+namespace vega
 {
 	class SpriteActor : public Actor
 	{

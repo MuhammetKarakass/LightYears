@@ -4,15 +4,15 @@ status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/src/framework/TimerManager.cpp
-  - LightYearsEngine/src/framework/World.cpp
-  - LightYearsEngine/src/framework/camera/CameraManager.cpp
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/src/framework/TimerManager.cpp
+  - VegaEngine/src/framework/World.cpp
+  - VegaEngine/src/framework/camera/CameraManager.cpp
 symbols:
-  - ly::Application::TickInternal
-  - ly::TimerManager::UpdateTimer
-  - ly::Delegate::Broadcast
-  - ly::CameraManager::Update
+  - vega::Application::TickInternal
+  - vega::TimerManager::UpdateTimer
+  - vega::Delegate::Broadcast
+  - vega::CameraManager::Update
 related:
   - "[[Engine Runtime Services]]"
   - "[[Game Loop]]"

@@ -7,9 +7,9 @@
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition EnergySpear_Basic = []
+	inline const vega::GameAbilityDefinition EnergySpear_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::EnergySpear::AbilityId::Basic;
 		// Q is the shipped default binding. Runtime loadout code may still equip
 		// Energy Spear into any available Ability1-Ability4 slot later.
@@ -17,13 +17,13 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::WhileHeld;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::WhileInputHeld;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Movement,
-			ly::GameplayTags::Ability::Family::EnergySpear
+			vega::GameplayTags::Ability::Movement,
+			vega::GameplayTags::Ability::Family::EnergySpear
 		};
 		definition.displayName = "Energy Spear";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
 		definition.accentColor = sf::Color{ 190, 250, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::EnergySpear;
+		definition.behaviorType = vega::AbilityBehaviorType::EnergySpear;
 		return definition;
 	}();
 }

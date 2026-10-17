@@ -41,7 +41,7 @@ Light Years, savaş mekaniklerinin denendiği kapsamlı bir C++17 prototipi. Kay
 
 1. **Arena restart eksik.** `LightYearsGame/src/level/GameLevel.cpp`, `GameLevel::OnRestartLevel`, PlayerManager'ı sıfırlayıp yalnız pause durumunu kaldırıyor. `LevelOne::OnRestartLevel` ayrıca LoadWorld çağırıyor; ArenaLevel/ArenaTestLevel böyle bir override sağlamıyor. Eski world/actor/HUD kalırken player kaydı siliniyor. Raw Player delegate bağlantıları da `GameLevel::OnActorSpawned` ve `Player::SpawnSpaceShip` içinde mevcut: ömrü bitmiş alıcıya erişim riski var; crash burada çalıştırılarak kanıtlanmadı.
 2. **LevelOne HUD controller güncellemesi atlanıyor.** `LightYearsGame/src/level/LevelOne.cpp`, `LevelOne::Tick` doğrudan `World::Tick` çağırıyor. Controller tick döngüsü `GameLevel::Tick` içinde. Bu nedenle alternatif bölümde ability view model yenilemesi çalışacak diye kabul edilemez.
-3. **Destroy callback yeniden girişi.** `LightYearsEngine/src/framework/Actor.cpp`, `Actor::Destroy`, pending kontrolünden sonra `onActorDestroyed.Broadcast(this)` yapıp ancak ardından `Object::Destroy` çağırıyor. Callback aynı actor'da Destroy çağırırsa guard henüz işaretlenmemiş olur. Bu somut sıralama riski; mevcut oynanışta tetiklendiği doğrulanmadı.
+3. **Destroy callback yeniden girişi.** `VegaEngine/src/framework/Actor.cpp`, `Actor::Destroy`, pending kontrolünden sonra `onActorDestroyed.Broadcast(this)` yapıp ancak ardından `Object::Destroy` çağırıyor. Callback aynı actor'da Destroy çağırırsa guard henüz işaretlenmemiş olur. Bu somut sıralama riski; mevcut oynanışta tetiklendiği doğrulanmadı.
 
 ### Geliştirme engelleri
 

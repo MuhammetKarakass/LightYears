@@ -20,16 +20,16 @@
 
 namespace vega::script
 {
-	using Value = ly::reflect::PropertyValue;
+	using Value = vega::reflect::PropertyValue;
 	using Clock = std::chrono::steady_clock;
 
 	namespace detail
 	{
 		struct ActorHandle
 		{
-			std::weak_ptr<ly::Actor> actor;
+			std::weak_ptr<vega::Actor> actor;
 			std::shared_ptr<bool> destroying = std::make_shared<bool>(false);
-			std::shared_ptr<ly::Actor> Lock() const
+			std::shared_ptr<vega::Actor> Lock() const
 			{
 				auto result = actor.lock();
 				return result && !result->GetIsPendingDestroy() ? result : nullptr;
@@ -38,10 +38,10 @@ namespace vega::script
 		struct ComponentHandle
 		{
 			ActorHandle owner;
-			ly::ComponentIdentity identity;
-			ly::ActorComponent* Resolve(const std::shared_ptr<ly::Actor>& actor) const
+			vega::ComponentIdentity identity;
+			vega::ActorComponent* Resolve(const std::shared_ptr<vega::Actor>& actor) const
 			{
-				return actor ? ly::FindComponentByTypeOccurrence(*actor, identity) : nullptr;
+				return actor ? vega::FindComponentByTypeOccurrence(*actor, identity) : nullptr;
 			}
 		};
 		struct Vector
@@ -56,15 +56,15 @@ namespace vega::script
 		struct SoundHandle
 		{
 			std::uint64_t id = 0;
-			ly::EngineContext* context = nullptr;
+			vega::EngineContext* context = nullptr;
 			void Stop() const { if (context && context->HasAudio()) context->Audio().StopSound(id); }
 			bool Playing() const { return context && context->HasAudio() && context->Audio().IsSoundPlaying(id); }
 		};
 
-		bool Matches(const ly::Actor& actor, const std::string& name);
+		bool Matches(const vega::Actor& actor, const std::string& name);
 		nlohmann::json MessageData(const sol::object& object, unsigned int& entries, unsigned int depth = 0);
 		sol::object MessageObject(sol::state_view lua, const nlohmann::json& data);
-		sol::object ToLua(sol::state_view lua, const Value& value, ly::World* world = nullptr);
+		sol::object ToLua(sol::state_view lua, const Value& value, vega::World* world = nullptr);
 		std::optional<Value> FromLua(const sol::object& object);
 		bool KeyDown(const ActorHandle& handle, const std::string& name);
 		void Bind(sol::state& lua);

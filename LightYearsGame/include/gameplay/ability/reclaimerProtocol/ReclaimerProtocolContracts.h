@@ -13,24 +13,24 @@ namespace AbilityData::ReclaimerProtocol
 			"Ability.Defense.ReclaimerProtocol.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Defense;
-	inline const ly::GameplayTag FamilyTag =
-		ly::GameplayTags::Ability::Family::ReclaimerProtocol;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Defense;
+	inline const vega::GameplayTag FamilyTag =
+		vega::GameplayTags::Ability::Family::ReclaimerProtocol;
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active =
-			ly::GameplayTags::State::Ability::ReclaimerProtocol::Active;
+		inline static const vega::GameplayTag Active =
+			vega::GameplayTags::State::Ability::ReclaimerProtocol::Active;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started =
-			ly::GameplayTags::Event::Ability::ReclaimerProtocol::Started;
-		inline static const ly::GameplayTag RepairKitSpawned =
-			ly::GameplayTags::Event::Ability::ReclaimerProtocol::RepairKitSpawned;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::ReclaimerProtocol::Ended;
+		inline static const vega::GameplayTag Started =
+			vega::GameplayTags::Event::Ability::ReclaimerProtocol::Started;
+		inline static const vega::GameplayTag RepairKitSpawned =
+			vega::GameplayTags::Event::Ability::ReclaimerProtocol::RepairKitSpawned;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::ReclaimerProtocol::Ended;
 	};
 
 	struct Attribute
@@ -45,7 +45,7 @@ namespace AbilityData::ReclaimerProtocol
 		inline static constexpr char MaxHealthReference[] = "maxHealthReference";
 		inline static constexpr char MaxHealthPerStep[] = "maxHealthPerStep";
 		inline static constexpr char HealRatioPerStep[] = "healRatioPerStep";
-		inline static const ly::content::NumericSettingContract Contract{
+		inline static const vega::content::NumericSettingContract Contract{
 			{ MaxHealthReference, MaxHealthPerStep, HealRatioPerStep },
 			{ MaxHealthReference, MaxHealthPerStep, HealRatioPerStep }
 		};

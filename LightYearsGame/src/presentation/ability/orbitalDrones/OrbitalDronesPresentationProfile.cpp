@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/orbitalDrones/OrbitalDronesPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterOrbitalDronesPresentationProfiles()
 	{

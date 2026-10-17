@@ -19,7 +19,7 @@
 
 namespace rare_damage_conditions_e2e
 {
-	using namespace ly;
+	using namespace vega;
 	using namespace common_module_e2e;
 	namespace
 	{
@@ -133,7 +133,7 @@ namespace rare_damage_conditions_e2e
 		{
 			const auto enemy = harness.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			harness.level->TickInternal(0.f);
-			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
+			enemy->SetCollisionLayer(vega::GameCollision::Enemy);
 			enemy->SetCollisionMask(CollisionLayer::None);
 			enemy->SetEnablePhysics(false);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
@@ -313,7 +313,7 @@ namespace rare_damage_conditions_e2e
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_damage_conditions_e2e;
 	if (argc != 2) return 2;
 	Report report;

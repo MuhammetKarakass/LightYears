@@ -10,7 +10,7 @@ namespace sas
 {
 	bool CanApplyGameplayEffect(
 		const GameplayEffectDefinition& definition,
-		const ly::GameplayTagContainer& ownedTags
+		const vega::GameplayTagContainer& ownedTags
 	);
 	void ApplyInstantGameplayEffect(
 		const GameplayEffectSpec& spec,
@@ -30,10 +30,10 @@ namespace sas
 	void GrantGameplayEffectTags(
 		const GameplayEffectDefinition& definition,
 		GameplayEffectRuntimeState& state,
-		ly::GameplayTagContainer& ownedTags
+		vega::GameplayTagContainer& ownedTags
 	);
 	void RemoveGameplayEffectTags(
 		GameplayEffectRuntimeState& state,
-		ly::GameplayTagContainer& ownedTags
+		vega::GameplayTagContainer& ownedTags
 	);
 }

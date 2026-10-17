@@ -53,7 +53,7 @@ Mevcut [reflection testinin](../LightYearsGame/tests/ProjectileReflectionTests.c
 
 ### 6. P2 — L5d registry bulma sıcak yolda O(N) tarama ekliyor
 
-[FindRegistryActor](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionService.cpp), her sorguda [GetActorsByTypeIncludingPending](../LightYearsEngine/include/framework/World.h) çağırıyor. Bu helper tüm aktif/pending actor listesini RTTI ile tarayıp sonuç vektörü oluşturuyor. [Gravity Anomaly projectile](../LightYearsGame/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp) hareket adımında swept reflection yolunu çağırıyor; ilgili P mermi ve N world actor için registry araması O(P×N) olabilir. Registry bulunmayan sahne de tam taranır.
+[FindRegistryActor](../LightYearsGame/src/gameplay/projectile/ProjectileReflectionService.cpp), her sorguda [GetActorsByTypeIncludingPending](../VegaEngine/include/framework/World.h) çağırıyor. Bu helper tüm aktif/pending actor listesini RTTI ile tarayıp sonuç vektörü oluşturuyor. [Gravity Anomaly projectile](../LightYearsGame/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp) hareket adımında swept reflection yolunu çağırıyor; ilgili P mermi ve N world actor için registry araması O(P×N) olabilir. Registry bulunmayan sahne de tam taranır.
 
 World-owned taşıma yapılmış; fakat lookup maliyeti önceki küçük receiver tablosuna erişimden büyümüş. Ölçülmüş frame düşüşü değil, kaynakla doğrulanan ölçeklenme riski. World'e bağlı, ömrü güvenli doğrudan service erişimi veya eşdeğer cache düşünülmeli; process-global raw World haritasına dönülmemeli.
 

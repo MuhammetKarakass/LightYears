@@ -8,13 +8,13 @@
 
 namespace AbilityData::TemporalConvergence
 {
-	inline const ly::AbilityActorDefinition ActorFieldBasic = []
+	inline const vega::AbilityActorDefinition ActorFieldBasic = []
 	{
-		ly::AbilityActorDefinition definition;
+		vega::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Field::BasicDefinitionId;
-		definition.actorType = ly::AbilityActorType::TemporalConvergenceField;
+		definition.actorType = vega::AbilityActorType::TemporalConvergenceField;
 		definition.presentationProfileId =
-			ly::TemporalConvergencePresentationIds::FieldBasic;
+			vega::TemporalConvergencePresentationIds::FieldBasic;
 		return definition;
 	}();
 }
@@ -22,21 +22,21 @@ namespace AbilityData::TemporalConvergence
 namespace AbilityData::Definitions
 {
 	// Numeric balance, progression and costs are authored in abilities.json.
-	inline const ly::GameAbilityDefinition TemporalConvergence_Basic = []
+	inline const vega::GameAbilityDefinition TemporalConvergence_Basic = []
 	{
-		ly::GameAbilityDefinition definition;
+		vega::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::TemporalConvergence::AbilityId::Basic;
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Defense,
-			ly::GameplayTags::Ability::Family::TemporalConvergence
+			vega::GameplayTags::Ability::Defense,
+			vega::GameplayTags::Ability::Family::TemporalConvergence
 		};
 		definition.displayName = "Temporal Convergence";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png";
 		definition.accentColor = sf::Color{ 125, 195, 255, 255 };
-		definition.behaviorType = ly::AbilityBehaviorType::TemporalConvergence;
+		definition.behaviorType = vega::AbilityBehaviorType::TemporalConvergence;
 		return definition;
 	}();
 }

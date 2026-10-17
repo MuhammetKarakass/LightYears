@@ -7,7 +7,7 @@
 #include <set>
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	class GlacialPressureTelegraphActor;
 	class SpaceShip;

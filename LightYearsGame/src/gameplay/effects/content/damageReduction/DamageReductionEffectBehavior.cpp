@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace ly::DamageReductionEffectBehavior
+namespace vega::DamageReductionEffectBehavior
 {
 	static sas::GameplayEffectBehaviorResult ProcessIncomingDamage(
 		sas::ActiveGameplayEffect& effect,

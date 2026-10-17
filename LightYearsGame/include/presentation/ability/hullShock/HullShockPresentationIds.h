@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::HullShockPresentationIds
+namespace vega::HullShockPresentationIds
 {
 	inline constexpr char FocusBasic[] =
 		"Presentation.Ability.HullShock.Focus.Basic";

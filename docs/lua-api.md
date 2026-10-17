@@ -288,7 +288,7 @@ select only frames in the `with` capture whose IDs exceed the last ID in the
 
 Implementation files:
 
-* Engine contact bridge: `LightYearsEngine/include/framework/ActorComponent.h`,
+* Engine contact bridge: `VegaEngine/include/framework/ActorComponent.h`,
   `include/framework/CollisionComponent.h`, `src/framework/CollisionComponent.cpp`
   and `src/framework/PhysicsScene.cpp`.
 * Runtime: `VegaScript/include/script/ScriptComponent.h`, `ScriptRuntime.h`,

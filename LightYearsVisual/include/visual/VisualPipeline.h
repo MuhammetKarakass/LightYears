@@ -2,7 +2,7 @@
 #include "visual/LuminanceTier.h"
 #include "visual/VisualAssets.h"
 #include <sky/VisualPipeline.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::Layer;
 	using vega::sky::GlowParams;

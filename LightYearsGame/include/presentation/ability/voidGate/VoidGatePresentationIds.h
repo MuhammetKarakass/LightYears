@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::VoidGatePresentationIds
+namespace vega::VoidGatePresentationIds
 {
 	inline constexpr char PortalBasic[] =
 		"Presentation.Ability.VoidGate.Portal.Basic";

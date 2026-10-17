@@ -13,7 +13,7 @@
 
 namespace
 {
-	class FunctionComponent : public ly::ActorComponent
+	class FunctionComponent : public vega::ActorComponent
 	{
 		VEGA_CLASS(FunctionComponent)
 	public:
@@ -24,21 +24,21 @@ namespace
 		void FailUnknown() { throw 42; }
 		void Hidden() { pulses = -100; }
 	};
-	VEGA_REFLECT(FunctionComponent, ly::ActorComponent)
+	VEGA_REFLECT(FunctionComponent, vega::ActorComponent)
 	{
 		VEGA_FIELD_READONLY("Pulses", pulses);
 		VEGA_FUNCTION(FunctionComponent, Pulse, "Pulse button");
 		VEGA_FUNCTION(FunctionComponent, Fail, "Throw exception");
 		VEGA_FUNCTION(FunctionComponent, FailUnknown, "Throw unknown exception");
 	}
-	class FunctionActor : public ly::Actor
+	class FunctionActor : public vega::Actor
 	{
 		VEGA_CLASS(FunctionActor)
 	public:
 		using Actor::Actor;
 		void Pulse() { SetActorRotation(GetActorRotation() + 10.f); }
 	};
-	VEGA_REFLECT(FunctionActor, ly::Actor)
+	VEGA_REFLECT(FunctionActor, vega::Actor)
 	{
 		VEGA_FUNCTION(FunctionActor, Pulse, "Actor pulse button");
 	}
@@ -52,7 +52,7 @@ namespace
 	{
 		(void)type;
 	}
-	bool ReflectedFunctions(ly::EngineContext& context, const std::filesystem::path& root)
+	bool ReflectedFunctions(vega::EngineContext& context, const std::filesystem::path& root)
 	{
 		VEGA_REGISTER_IN(FunctionComponent, context.Types());
 		VEGA_REGISTER_IN(FunctionActor, context.Types());
@@ -81,7 +81,7 @@ function on_start(self)
 	rejected(self.actor, 'Pulse', 'no longer alive')
 end
 )";
-		ly::World world{ context };
+		vega::World world{ context };
 		auto actor = world.SpawnActor<DerivedFunctionActor>().lock();
 		auto& component = actor->AddComponent<FunctionComponent>();
 		auto& script = actor->AddComponent<vega::script::ScriptComponent>("functions.lua");
@@ -99,8 +99,8 @@ end
 
 int main()
 {
-	ly::EngineContext first, second;
-	ly::ProjectSettings project;
+	vega::EngineContext first, second;
+	vega::ProjectSettings project;
 	project.collisionLayers = { { 0, "FirstSolid", {} } };
 	project.ApplyCollisionLayers(first);
 	project.collisionLayers = { { 7, "SecondSensor", {} } };
@@ -131,13 +131,13 @@ end
 	firstRuntime.SetHotReload(false);
 	secondRuntime.SetHotReload(true);
 	if (&firstRuntime == &secondRuntime || !secondRuntime.HotReload()) return 1;
-	ly::World firstWorld{ first }, secondWorld{ second };
-	ly::EngineContext::Scope scope{ second };
+	vega::World firstWorld{ first }, secondWorld{ second };
+	vega::EngineContext::Scope scope{ second };
 	// Only first owns the fixtures, while the ambient context is second.
 	if (!ReflectedFunctions(first, root)) return 1;
-	auto one = firstWorld.SpawnActor<ly::Actor>().lock(), two = secondWorld.SpawnActor<ly::Actor>().lock();
-	one->AddComponent<ly::CollisionComponent>();
-	two->AddComponent<ly::CollisionComponent>();
+	auto one = firstWorld.SpawnActor<vega::Actor>().lock(), two = secondWorld.SpawnActor<vega::Actor>().lock();
+	one->AddComponent<vega::CollisionComponent>();
+	two->AddComponent<vega::CollisionComponent>();
 	auto& firstScript = one->AddComponent<vega::script::ScriptComponent>("shared.lua");
 	auto& secondScript = two->AddComponent<vega::script::ScriptComponent>("shared.lua");
 	firstWorld.BeginPlayInternal(); secondWorld.BeginPlayInternal();

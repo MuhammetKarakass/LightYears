@@ -5,7 +5,7 @@
 #include <SFML/Graphics.hpp>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	// Feature-local visual state consumed by the Sun Beam world actor.
 	struct SunBeamColumnVisualState

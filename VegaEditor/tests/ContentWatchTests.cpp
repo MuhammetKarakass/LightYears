@@ -7,7 +7,7 @@
 
 int main()
 {
-	ly::EngineContext engineContext;
+	vega::EngineContext engineContext;
 	using namespace vega;
 	const auto root = std::filesystem::path{ VEGA_CONTENT_WATCH_TEST_ROOT };
 	std::filesystem::create_directories(root / "data");
@@ -50,7 +50,7 @@ int main()
 	std::ofstream{ root / "blocked.json" } << "{}";
 	std::ofstream{ root / "good.json" } << "{}";
 	failStamp = true;
-	ly::debug::LogCapture capture;
+	vega::debug::LogCapture capture;
 	check(errors.Poll().size() == 1, "A bad entry must not hide a readable changed file");
 	check(errors.Poll().empty() && errors.Poll().empty(), "Persistent stamp errors must not repeat successful changes");
 	check(capture.Buffer().Snapshot().size() == 1, "Persistent errors must be logged once");

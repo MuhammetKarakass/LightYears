@@ -1,6 +1,6 @@
 #include "level/ArenaSandboxSetup.h"
 
-namespace ly
+namespace vega
 {
 	ArenaDefinition CreateSandboxArenaDefinition()
 	{

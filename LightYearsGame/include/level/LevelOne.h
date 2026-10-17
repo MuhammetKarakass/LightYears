@@ -4,7 +4,7 @@
 #include "level/GameLevel.h"
 #include "framework/TimerManager.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class PlayerSpaceShip;

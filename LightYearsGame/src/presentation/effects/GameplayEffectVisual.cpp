@@ -1,6 +1,6 @@
 #include "presentation/effects/GameplayEffectVisual.h"
 
-namespace ly
+namespace vega
 {
 	GameplayEffectVisual::GameplayEffectVisual(
 		World* world,

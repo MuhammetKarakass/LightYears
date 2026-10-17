@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ly
+namespace vega
 {
 	ModuleSpeedLanceActor::ModuleSpeedLanceActor(World* world, Actor* source, const ModuleSpeedLancePresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, const sf::Vector2f& direction, float speed, float range, float damage, int firstTargetElectricStacks) : AbilityWorldActor{ world, source }, mProfile{ profile }, mLease{ lease }, mDirection{ direction }, mSpeed{ speed }, mFirstTargetElectricStacks{ firstTargetElectricStacks }
 	{

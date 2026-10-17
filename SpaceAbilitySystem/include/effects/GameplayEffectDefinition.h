@@ -17,12 +17,12 @@ namespace sas
 		GameplayEffectStackingPolicy stackingPolicy = GameplayEffectStackingPolicy::None;
 		float duration = 0.f;
 		int maxStacks = 1;
-		ly::List<ly::GameplayTag> grantedTags;
-		ly::List<AttributeModifier> modifiers;
+		vega::List<vega::GameplayTag> grantedTags;
+		vega::List<AttributeModifier> modifiers;
 		GameplayAttributeList attributes;
 		std::string activeVisualId;
-		ly::List<ly::GameplayTag> applicationRequiredTags;
-		ly::List<ly::GameplayTag> applicationBlockedTags;
+		vega::List<vega::GameplayTag> applicationRequiredTags;
+		vega::List<vega::GameplayTag> applicationBlockedTags;
 		bool sourceScopedApplication = false;
 		// Policy-only definitions receive duration, stacks and magnitudes from the
 		// source-owned GameplayEffectSpec at application time.

@@ -13,11 +13,11 @@ source_files:
   - LightYearsGame/include/gameplay/combat/Combatant.h
   - LightYearsGame/include/spaceShip/SpaceShip.h
 symbols:
-  - ly::CombatRuntime
-  - ly::CombatRuntime::InitializeOwnerAttributes
-  - ly::CombatRuntime::Tick
-  - ly::CombatRuntime::Clear
-  - ly::CombatRuntime::ProcessIncomingDamage
+  - vega::CombatRuntime
+  - vega::CombatRuntime::InitializeOwnerAttributes
+  - vega::CombatRuntime::Tick
+  - vega::CombatRuntime::Clear
+  - vega::CombatRuntime::ProcessIncomingDamage
 related:
   - "[[AttributeSystem]]"
   - "[[GameplayEffectSystem]]"
@@ -33,7 +33,7 @@ related:
 
 ## Rol
 
-`ly::CombatRuntime`, bir combat actor için owner attribute/tag/effect/ability state'ini `mAbilitySystemComponent` üzerinden ve presentation/guard yardımcılarını value member olarak aynı lifetime sınırında birleştiren composition root'tur.
+`vega::CombatRuntime`, bir combat actor için owner attribute/tag/effect/ability state'ini `mAbilitySystemComponent` üzerinden ve presentation/guard yardımcılarını value member olarak aynı lifetime sınırında birleştiren composition root'tur.
 
 ## Sorumluluklar
 
@@ -87,7 +87,7 @@ flowchart LR
 ## Kritik gerçek kod
 
 Dosya: `LightYearsGame/src/gameplay/combat/CombatRuntime.cpp`  
-Sınıf veya namespace: `ly::CombatRuntime`  
+Sınıf veya namespace: `vega::CombatRuntime`  
 Fonksiyon: constructor  
 Görevi: Effect ve ability sistemlerine aynı owner/attribute/tag nesnelerini bağlar.
 
@@ -99,7 +99,7 @@ Görevi: Effect ve ability sistemlerine aynı owner/attribute/tag nesnelerini ba
 ```
 
 Dosya: `LightYearsGame/src/gameplay/combat/CombatRuntime.cpp`  
-Sınıf veya namespace: `ly::CombatRuntime`  
+Sınıf veya namespace: `vega::CombatRuntime`  
 Fonksiyon: `Clear`  
 Görevi: Bağımlılık sırasına uygun cleanup uygular.
 
@@ -110,7 +110,7 @@ Görevi: Bağımlılık sırasına uygun cleanup uygular.
 ```
 
 Dosya: `LightYearsGame/src/gameplay/combat/CombatRuntime.cpp`  
-Sınıf veya namespace: `ly::CombatRuntime`  
+Sınıf veya namespace: `vega::CombatRuntime`  
 Fonksiyon: `ProcessIncomingDamage`  
 Görevi: Incoming effect ve status aşamasını çözer; Armor, hedefin shield/overshield emiliminden sonra çağrılır.
 

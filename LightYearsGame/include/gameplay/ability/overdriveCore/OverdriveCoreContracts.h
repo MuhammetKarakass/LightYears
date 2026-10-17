@@ -16,7 +16,7 @@ namespace AbilityData::OverdriveCore
 		// Overdrive intentionally consumes the shared projectile-count contract.
 		// This is an alias for discoverability, not a second family-local ID.
 		inline static const sas::AttributeId ProjectileCount =
-			ly::CommonAttributeIds::ProjectileCount;
+			vega::CommonAttributeIds::ProjectileCount;
 
 		// These values are ability-owned because they describe Overdrive's
 		// lifecycle and scaling policy, not a reusable projectile actor property.
@@ -56,22 +56,22 @@ namespace AbilityData::OverdriveCore
 
 	struct State
 	{
-		inline static const ly::GameplayTag RocketLaunchActive =
-			ly::GameplayTags::State::Ability::OverdriveCore::RocketLaunch::Active;
-		inline static const ly::GameplayTag AttackSpeedBoostActive =
-			ly::GameplayTags::State::Ability::OverdriveCore::AttackSpeedBoost::Active;
+		inline static const vega::GameplayTag RocketLaunchActive =
+			vega::GameplayTags::State::Ability::OverdriveCore::RocketLaunch::Active;
+		inline static const vega::GameplayTag AttackSpeedBoostActive =
+			vega::GameplayTags::State::Ability::OverdriveCore::AttackSpeedBoost::Active;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag RocketLaunchStarted =
-			ly::GameplayTags::Event::Ability::OverdriveCore::RocketLaunchStarted;
-		inline static const ly::GameplayTag RocketLaunchEnded =
-			ly::GameplayTags::Event::Ability::OverdriveCore::RocketLaunchEnded;
-		inline static const ly::GameplayTag AttackSpeedBoostStarted =
-			ly::GameplayTags::Event::Ability::OverdriveCore::AttackSpeedBoostStarted;
-		inline static const ly::GameplayTag AttackSpeedBoostEnded =
-			ly::GameplayTags::Event::Ability::OverdriveCore::AttackSpeedBoostEnded;
+		inline static const vega::GameplayTag RocketLaunchStarted =
+			vega::GameplayTags::Event::Ability::OverdriveCore::RocketLaunchStarted;
+		inline static const vega::GameplayTag RocketLaunchEnded =
+			vega::GameplayTags::Event::Ability::OverdriveCore::RocketLaunchEnded;
+		inline static const vega::GameplayTag AttackSpeedBoostStarted =
+			vega::GameplayTags::Event::Ability::OverdriveCore::AttackSpeedBoostStarted;
+		inline static const vega::GameplayTag AttackSpeedBoostEnded =
+			vega::GameplayTags::Event::Ability::OverdriveCore::AttackSpeedBoostEnded;
 	};
 
 }

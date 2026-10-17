@@ -141,7 +141,7 @@ namespace sas
 	}
 
 	bool ValidateGameplayEffectDefinitionCatalog(
-		const ly::List<const GameplayEffectDefinition*>& definitions,
+		const vega::List<const GameplayEffectDefinition*>& definitions,
 		std::string* failureReason
 	)
 	{

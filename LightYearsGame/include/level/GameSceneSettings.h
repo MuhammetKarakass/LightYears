@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly
+namespace vega
 {
 	// Shared with presentation so schema labels and backdrop indices stay aligned.
 	inline constexpr int RouteProceduralStopCount = 14;

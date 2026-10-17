@@ -13,10 +13,10 @@ source_files:
   - LightYearsGame/src/player/Player.cpp
   - LightYearsGame/include/gameConfigs/ability/AbilityCatalog.h
 symbols:
-  - ly::AbilityLevelStep
-  - ly::GameAbilityDefinition::levelProgression
+  - vega::AbilityLevelStep
+  - vega::GameAbilityDefinition::levelProgression
   - sas::GameplayAbilityInstance::SetLevel
-  - ly::Player::TryPurchaseAbilityLevel
+  - vega::Player::TryPurchaseAbilityLevel
   - sas::AbilitySystemComponent::SetAbilityLevel
 related:
   - "[[Ability Level Purchase and Respawn Restore Flow]]"

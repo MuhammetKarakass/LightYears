@@ -10,7 +10,7 @@
 
 #include "visual/ReloadReport.h"
 
-namespace ly::visual
+namespace vega::visual
 {
 	// What a ship port shows. The game maps its own ability categories onto this; the library knows nothing else.
 	enum class AbilityCategory

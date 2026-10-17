@@ -3,18 +3,18 @@ type: architecture
 status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 source_files:
-  - LightYearsEngine/include/framework/World.h
-  - LightYearsEngine/src/framework/World.cpp
-  - LightYearsEngine/src/framework/Actor.cpp
-  - LightYearsEngine/src/framework/Object.cpp
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/include/framework/World.h
+  - VegaEngine/src/framework/World.cpp
+  - VegaEngine/src/framework/Actor.cpp
+  - VegaEngine/src/framework/Object.cpp
+  - VegaEngine/src/framework/PhysicsSystem.cpp
 symbols:
-  - ly::World::SpawnActor
-  - ly::World::TickInternal
-  - ly::Actor::BeginPlayInternal
-  - ly::Actor::TickInternal
-  - ly::Actor::Destroy
-  - ly::World::CleanCycle
+  - vega::World::SpawnActor
+  - vega::World::TickInternal
+  - vega::Actor::BeginPlayInternal
+  - vega::Actor::TickInternal
+  - vega::Actor::Destroy
+  - vega::World::CleanCycle
 related:
   - "[[Actor Spawn and Destruction Flow]]"
   - "[[Ownership and Lifetime]]"
@@ -68,20 +68,20 @@ sequenceDiagram
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/include/framework/World.h`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/include/framework/World.h`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `SpawnActor`  
 Görevi: Actor’ı hemen tahsis edip deferred spawn kuyruğuna koymak.
 
 ```cpp
 shared_ptr<ActorType> newActor = std::make_shared<ActorType>(this, args...);
 mPendingActors.push_back(newActor);
-ly::perf::IncActiveActors();
+vega::perf::IncActiveActors();
 return newActor;
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `TickInternal` / yerel `promotePendingActors`  
 Görevi: Kuyruğu ayrı listeye swap ederek spawn sırasında yeni spawn’ların iterasyonu bozmamasını sağlamak.
 
@@ -97,8 +97,8 @@ for (const shared_ptr<Actor>& actor : actorsToSpawn)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/Actor.cpp`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/src/framework/Actor.cpp`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: `BeginPlayInternal`, `TickInternal`  
 Görevi: BeginPlay’in tek seferlik, Tick’in yalnızca canlı actor için olmasını sağlamak.
 
@@ -117,8 +117,8 @@ if (mBeganPlay && !GetIsPendingDestroy())
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/Actor.cpp`  
-Sınıf veya namespace: `ly::Actor`  
+Dosya: `VegaEngine/src/framework/Actor.cpp`  
+Sınıf veya namespace: `vega::Actor`  
 Fonksiyon: `Destroy`  
 Görevi: Fizik katılımını kesmek, actor event’ini yayınlamak ve Object’i pending-destroy yapmak.
 
@@ -133,8 +133,8 @@ onActorDestroyed.Broadcast(this);
 Object::Destroy();
 ```
 
-Dosya: `LightYearsEngine/src/framework/World.cpp`  
-Sınıf veya namespace: `ly::World`  
+Dosya: `VegaEngine/src/framework/World.cpp`  
+Sınıf veya namespace: `vega::World`  
 Fonksiyon: `CleanCycle`  
 Görevi: Pending-destroy actor’ları güçlü sahiplik koleksiyonundan güvenli iterator ile çıkarmak.
 
@@ -144,7 +144,7 @@ for (auto iter = mActors.begin(); iter != mActors.end();)
 	if (iter->get()->GetIsPendingDestroy())
 	{
 		// Decrement global active actor count for monitoring
-		ly::perf::DecActiveActors();
+		vega::perf::DecActiveActors();
 		iter = mActors.erase(iter);
 	}
 	else
@@ -154,8 +154,8 @@ for (auto iter = mActors.begin(); iter != mActors.end();)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/PhysicsSystem.cpp`  
-Sınıf veya namespace: `ly::PhysicsSystem`  
+Dosya: `VegaEngine/src/framework/PhysicsSystem.cpp`  
+Sınıf veya namespace: `vega::PhysicsSystem`  
 Fonksiyon: `ProcessPendingRemoveListeners`  
 Görevi: Actor destruction sırasında kuyruğa alınan Box2D body silmelerini bir sonraki physics step başında uygulamak.
 
@@ -198,9 +198,9 @@ Box2D body removal kuyruğunun collision callback’i sırasında güvenliği ve
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/include/framework/World.h` — spawn template’i ve sahiplik koleksiyonları.
-2. `LightYearsEngine/src/framework/World.cpp` — promotion, tick ve temizleme.
-3. `LightYearsEngine/include/framework/Actor.h` — lifecycle yüzeyi.
-4. `LightYearsEngine/src/framework/Actor.cpp` — guard’lar, destroy ve destructor.
-5. `LightYearsEngine/src/framework/Object.cpp` — pending-destroy temel state’i.
-6. `LightYearsEngine/src/framework/PhysicsSystem.cpp` — deferred body removal.
+1. `VegaEngine/include/framework/World.h` — spawn template’i ve sahiplik koleksiyonları.
+2. `VegaEngine/src/framework/World.cpp` — promotion, tick ve temizleme.
+3. `VegaEngine/include/framework/Actor.h` — lifecycle yüzeyi.
+4. `VegaEngine/src/framework/Actor.cpp` — guard’lar, destroy ve destructor.
+5. `VegaEngine/src/framework/Object.cpp` — pending-destroy temel state’i.
+6. `VegaEngine/src/framework/PhysicsSystem.cpp` — deferred body removal.

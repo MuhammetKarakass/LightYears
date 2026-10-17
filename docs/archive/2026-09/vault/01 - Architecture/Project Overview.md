@@ -27,21 +27,21 @@ Bu ek kaynak incelemesidir; build/test çalıştırılmadı. Aşağıdaki eski �
 ## Nedir?
 
 Light Years, üç build target'lı bir C++17 oyun projesidir:
-`LightYearsEngine` genel runtime/engine araçlarını, statik
+`VegaEngine` genel runtime/engine araçlarını, statik
 `SpaceAbilitySystem` generic gameplay-system çekirdeğini, `LightYearsGame` uzay
 gemisi, level ve gameplay içeriğini sağlar. Engine/oyun kodunun baskın
-namespace'i `ly`, SAS public API namespace'i `sas`tır.
+namespace'i `vega`, SAS public API namespace'i `sas`tır.
 
 ## Teknoloji ve başlangıç
 
-- Kök `CMakeLists.txt`: CMake 3.31.6, C++17, `LightYearsEngine`,
+- Kök `CMakeLists.txt`: CMake 3.31.6, C++17, `VegaEngine`,
   `SpaceAbilitySystem` ve `LightYearsGame` alt dizinleri.
-- `LightYearsEngine/CMakeLists.txt`: SFML 3.1.0 (graphics/audio/system/window) ile Box2D 3.1.1'i FetchContent ile getirir. Audio device invalidation ve bellek/performance incelemesi için [[Audio System]] ve [[Engine Performance and Memory]] notlarına bakın.
-- Giriş noktası: `LightYearsEngine/src/EntryPoint.cpp` içindeki `main`; graph kaydı `LightYears.LightYearsEngine.src.EntryPoint.main`dir. Oyun uygulaması `LightYearsGame/src/gameFramework/GameApplication.cpp` / `GameApplication`dır.
+- `VegaEngine/CMakeLists.txt`: SFML 3.1.0 (graphics/audio/system/window) ile Box2D 3.1.1'i FetchContent ile getirir. Audio device invalidation ve bellek/performance incelemesi için [[Audio System]] ve [[Engine Performance and Memory]] notlarına bakın.
+- Giriş noktası: `VegaEngine/src/EntryPoint.cpp` içindeki `main`; graph kaydı `LightYears.VegaEngine.src.EntryPoint.main`dir. Oyun uygulaması `LightYearsGame/src/gameFramework/GameApplication.cpp` / `GameApplication`dır.
 
 ## Runtime yapısı
 
-`ly::Application` (`LightYearsEngine/include/framework/Application.h`) world yaşam döngüsünü yönetir. `ly::World` (`framework/World.h`) `ly::Object` tabanlıdır; sahne/actor tarafında `ly::Actor` (`framework/Actor.h`) ana tabandır. `ly::GameStage` ile game-stage akışı; `GameLevel` ve seviyeler oyun katmanındadır.
+`vega::Application` (`VegaEngine/include/framework/Application.h`) world yaşam döngüsünü yönetir. `vega::World` (`framework/World.h`) `vega::Object` tabanlıdır; sahne/actor tarafında `vega::Actor` (`framework/Actor.h`) ana tabandır. `vega::GameStage` ile game-stage akışı; `GameLevel` ve seviyeler oyun katmanındadır.
 
 Önemli ortak servisler: `AssetManager`, `TimerManager`, `PhysicsSystem`,
 `AudioManager`, `ShaderManager`, `CameraManager`. Oyun tarafında
@@ -80,7 +80,7 @@ bu belge complete loadout tablosunu kopyalamaz.
 
 GAS-Lite çekirdeği koddan ayrıca doğrulandı:
 
-- `GameplayTag`, `GameplayTagHash` ve counted `GameplayTagContainer`: `LightYearsEngine/include/framework/Core.h`; [[Gameplay Tag System]].
+- `GameplayTag`, `GameplayTagHash` ve counted `GameplayTagContainer`: `VegaEngine/include/framework/Core.h`; [[Gameplay Tag System]].
 - `sas::GameplayAttribute`, `sas::AttributeModifier`, `sas::AttributeSystem` ve
   rating eğrileri: `SpaceAbilitySystem/include/attributes/` ve
   `SpaceAbilitySystem/src/attributes/`; [[Attribute System]].
@@ -101,8 +101,8 @@ GAS-Lite çekirdeği koddan ayrıca doğrulandı:
 
 ## Build ve test
 
-Statik hedefler `LightYearsEngine`, `SpaceAbilitySystem` ve `LightYearsGameplayCore`; çalıştırılabilir hedef
-`LightYearsGame`dir. Test executable'ları `LightYearsEngineLifetimeTests`, `LightYearsGasLiteTests`,
+Statik hedefler `VegaEngine`, `SpaceAbilitySystem` ve `LightYearsGameplayCore`; çalıştırılabilir hedef
+`LightYearsGame`dir. Test executable'ları `VegaEngineLifetimeTests`, `LightYearsGasLiteTests`,
 `LightYearsContentTests` ve koşullu specialized test hedefleridir. CMake'de toplam 8 CTest kaydı vardır;
 bu belge güncellemesinde build/test çalıştırılmadı.
 

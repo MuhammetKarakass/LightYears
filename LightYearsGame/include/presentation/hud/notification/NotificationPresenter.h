@@ -5,7 +5,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	class ChaosStage;
 

@@ -6,7 +6,7 @@
 #include "gameplay/enemy/EnemySpawnContext.h"
 #include "player/Reward.h"
 
-namespace ly
+namespace vega
 {
 	class EnemyActor final : public SpaceShip
 	{

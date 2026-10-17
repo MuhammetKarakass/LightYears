@@ -270,7 +270,7 @@ namespace vega
 			auto& success = execution.success;
 			auto& detail = execution.detail;
 			unsigned int count = 0;
-			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 			{
 				if (auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy() && ActorTypeName(*candidate) == command.text) ++count;
 			}

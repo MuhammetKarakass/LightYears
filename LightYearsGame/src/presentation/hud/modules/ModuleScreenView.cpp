@@ -9,7 +9,7 @@
 #include <cmath>
 #include <SFML/System/String.hpp>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

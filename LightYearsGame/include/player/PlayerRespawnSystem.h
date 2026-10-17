@@ -5,7 +5,7 @@
 #include "framework/Delegate.h"
 #include "framework/TimerManager.h"
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class Object;

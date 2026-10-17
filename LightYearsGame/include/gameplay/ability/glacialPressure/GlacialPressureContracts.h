@@ -15,35 +15,35 @@ namespace AbilityData::GlacialPressure
 			"Ability.Offense.GlacialPressure.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag FamilyTag =
-		ly::GameplayTags::Ability::Family::GlacialPressure;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Offense;
+	inline const vega::GameplayTag FamilyTag =
+		vega::GameplayTags::Ability::Family::GlacialPressure;
 
 	struct State
 	{
-		inline static const ly::GameplayTag Focusing =
-			ly::GameplayTags::State::Ability::GlacialPressure::Focusing;
-		inline static const ly::GameplayTag Pushing =
-			ly::GameplayTags::State::Ability::GlacialPressure::Pushing;
+		inline static const vega::GameplayTag Focusing =
+			vega::GameplayTags::State::Ability::GlacialPressure::Focusing;
+		inline static const vega::GameplayTag Pushing =
+			vega::GameplayTags::State::Ability::GlacialPressure::Pushing;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started =
-			ly::GameplayTags::Event::Ability::GlacialPressure::Started;
-		inline static const ly::GameplayTag Blasted =
-			ly::GameplayTags::Event::Ability::GlacialPressure::Blasted;
-		inline static const ly::GameplayTag Collision =
-			ly::GameplayTags::Event::Ability::GlacialPressure::Collision;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::GlacialPressure::Ended;
+		inline static const vega::GameplayTag Started =
+			vega::GameplayTags::Event::Ability::GlacialPressure::Started;
+		inline static const vega::GameplayTag Blasted =
+			vega::GameplayTags::Event::Ability::GlacialPressure::Blasted;
+		inline static const vega::GameplayTag Collision =
+			vega::GameplayTags::Event::Ability::GlacialPressure::Collision;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::GlacialPressure::Ended;
 	};
 
 	struct Attribute
 	{
 		// Range and the damage type are shared concepts. The ability owns only
 		// its unique balance values and aliases the common range attribute.
-		inline static const sas::AttributeId Range = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Range = vega::CommonAttributeIds::Range;
 		inline static const sas::AttributeId InitialDamage{
 			"Ability.Offense.GlacialPressure.InitialDamage"
 		};

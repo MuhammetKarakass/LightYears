@@ -41,10 +41,10 @@ namespace
 		const char* name;
 	};
 
-	class HeadlessProgressionLevel final : public ly::GameLevel
+	class HeadlessProgressionLevel final : public vega::GameLevel
 	{
 	public:
-		explicit HeadlessProgressionLevel(ly::Application* application)
+		explicit HeadlessProgressionLevel(vega::Application* application)
 			: GameLevel{ application }
 		{
 		}
@@ -58,7 +58,7 @@ namespace
 
 	struct PlayerManagerResetGuard
 	{
-		ly::PlayerManager& manager;
+		vega::PlayerManager& manager;
 		~PlayerManagerResetGuard() { manager.Reset(); }
 	};
 
@@ -82,13 +82,13 @@ namespace
 		}
 	};
 
-	AbilityLevels ReadAbilityLevels(ly::PlayerSpaceShip& ship, AbilityMaxLevels* maximumLevels = nullptr)
+	AbilityLevels ReadAbilityLevels(vega::PlayerSpaceShip& ship, AbilityMaxLevels* maximumLevels = nullptr)
 	{
 		auto& abilities = ship.GetAbilitySystemComponent();
 		AbilityLevels levels;
 		for (const sas::AbilityRuntimeSnapshot& snapshot : abilities.BuildAbilitySnapshots())
 		{
-			const ly::GameAbility* ability = abilities.FindAbility<ly::GameAbility>(snapshot.handle);
+			const vega::GameAbility* ability = abilities.FindAbility<vega::GameAbility>(snapshot.handle);
 			if (!ability || snapshot.abilityId.empty()) continue;
 			levels[snapshot.abilityId] = ability->GetLevel();
 			if (maximumLevels) (*maximumLevels)[snapshot.abilityId] = ability->GetMaxLevel();
@@ -127,7 +127,7 @@ namespace
 
 	void RunProgressionE2E(Report& report)
 	{
-		using namespace ly;
+		using namespace vega;
 		std::string windowTitle = "Player progression E2E";
 		Application application{ sf::Vector2u{ 64u, 64u }, 32u, windowTitle, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
@@ -261,7 +261,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: LightYearsPlayerLevelTestProgressionE2ETests <artifact-path>\n";
@@ -272,10 +272,10 @@ int main(int argc, char** argv)
 	const std::filesystem::path artifactPath{ argv[1] };
 	try
 	{
-		ly::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
-		if (!ly::GameContentBootstrap::Register())
+		if (!vega::GameContentBootstrap::Register())
 		{
 			throw std::runtime_error{ "GameContentBootstrap::Register failed" };
 		}

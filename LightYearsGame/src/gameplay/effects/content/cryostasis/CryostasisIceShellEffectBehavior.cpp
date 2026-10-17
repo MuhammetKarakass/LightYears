@@ -8,7 +8,7 @@
 
 	#include <algorithm>
 
-namespace ly::CryostasisIceShellEffectBehavior
+namespace vega::CryostasisIceShellEffectBehavior
 {
 	sas::GameplayEffectBehaviorResult ProcessIncomingDamage(
 		sas::ActiveGameplayEffect& effect,

@@ -34,7 +34,7 @@ Yeni her parça bu dosyaların desenini izler. Luna işe başlamadan önce bunla
 
 - Luna yalnız kendisine atanan ADIM'ı uygular. Git komutu (commit, stash, restore, checkout) çalıştırmaz. Çalışma ağacındaki ilgisiz dirty değişiklikler korunur.
 - **Satır numaraları bu planın yazıldığı andaki durumu gösterir.** Önceki adımlar dosyayı değiştirmiş olabilir. Luna fonksiyon adıyla konumu doğrular, satır numarasına körü körüne güvenmez.
-- C++17, SFML 3, namespace `ly`, tab girinti, çevredeki kodun adlandırma ve yorum yoğunluğu.
+- C++17, SFML 3, namespace `vega`, tab girinti, çevredeki kodun adlandırma ve yorum yoğunluğu.
 - Yeni game kaynakları `D:\LightYears\LightYearsGame\CMakeLists.txt` içindeki `LIGHT_YEARS_UI_HUD_SOURCES` listesine eklenir (satır ~58). Bu liste hem oyun hedefine hem test kaynaklarına bağlıdır. Silinen dosyalar hem bu listeden hem de oyun ve `LIGHT_YEARS_GAS_LITE_TEST_SOURCES` listelerindeki açık girdilerden çıkarılır.
 - Engine UI kuralları için `D:\LightYears\docs\PROJECT_DOCUMENTATION.md` içindeki "Kurallar ve bilinen tuzaklar" listesine uyulur. Özellikle: layout'suz çocuk parent'ı izlemez; boyutu değişen widget `InvalidateLayout()` çağırır.
 - İlgisiz refactor, denge değişikliği veya biçimlendirme yapılmaz.
@@ -81,7 +81,7 @@ ctest --test-dir build -R "<REGEX>" --output-on-failure --timeout 90
   - Satır 15: `class Actor;` forward declaration yalnız `RemoveBossHealthBar` için kullanılıyorsa silinir. Luna dosyada başka kullanım olup olmadığını kontrol eder.
 - `D:\LightYears\LightYearsGame\src\widget\GameHUD.cpp`: satır 317–363 arasındaki üç fonksiyon gövdesi silinir.
 
-**Önce doğrula:** `CreateBossHealthBar|BossHealthUpdated|RemoveBossHealthBar|mBossHealthBar|mBossNameText` için `D:\LightYears\LightYearsGame` ve `D:\LightYears\LightYearsEngine` altında `src`, `include` ve `tests` klasörlerinde grep yapılır. `GameHUD` dışında sonuç çıkarsa silme yapılmaz ve Sol'a raporlanır.
+**Önce doğrula:** `CreateBossHealthBar|BossHealthUpdated|RemoveBossHealthBar|mBossHealthBar|mBossNameText` için `D:\LightYears\LightYearsGame` ve `D:\LightYears\VegaEngine` altında `src`, `include` ve `tests` klasörlerinde grep yapılır. `GameHUD` dışında sonuç çıkarsa silme yapılmaz ve Sol'a raporlanır.
 
 **Test:** Yeni test yok (silme). Temel regresyon seti koşulur (`LightYearsHUDMigrationTests` hariç).
 
@@ -149,7 +149,7 @@ ctest --test-dir build -R "<REGEX>" --output-on-failure --timeout 90
   - `onChaosTimerUpdated` → `UpdateTimer`
   - `onTotalChaosEnded` → `TimerFinished`
 - Delegate imzaları:
-  - `GameStage::onNotification`: `Delegate<const std::string&, float, float, float, const sf::Vector2f&, float, sf::Color>` (metin, fadeIn, hold, fadeOut, konum, boyut, renk). Tanım: `D:\LightYears\LightYearsEngine\include\gameplay\GameStage.h:21`.
+  - `GameStage::onNotification`: `Delegate<const std::string&, float, float, float, const sf::Vector2f&, float, sf::Color>` (metin, fadeIn, hold, fadeOut, konum, boyut, renk). Tanım: `D:\LightYears\VegaEngine\include\gameplay\GameStage.h:21`.
   - `ChaosStage`: `onTotalChaosStarted(fadeIn, hold, fadeOut)`, `onChaosTimerUpdated(timeLeft)`, `onTotalChaosEnded()`. Tanım: `D:\LightYears\LightYearsGame\include\enemy\ChaosStage.h:20-22`.
 - `GameHUD.cpp` satır 80–94 (`ShowDynamicNotification`): `AddWidget<TextWidget>` → `CenterOrigin`, verilen konum, fade ve lifetime. Tek gerçek çağrı `ChaosStage.cpp:233`: "SURVIVE!", 0.5/1.5/0.5, ekran merkezi, 50 punto, kırmızı.
 - `GameHUD.cpp` satır 287–315 (`ShowTimer`/`UpdateTimer`/`TimerFinished`): üst ortada `"TIME LEFT: " + ceil(t)`, 20 punto, kırmızı, fade in. Merkezi y=0'da olduğu için metnin yarısı ekran dışında kalıyor (eski hata).
@@ -306,10 +306,10 @@ ctest --test-dir build -R "<REGEX>" --output-on-failure --timeout 90
 ## ADIM 7: Menüler (ana menü, pause, game over) + Button hover düzeltmesi
 
 **Önce engine düzeltmesi (zorunlu)**
-- `D:\LightYears\LightYearsEngine\src\widget\Button.cpp` satır 60–79 (`MouseMoved` dalı): basılı tuş yokken **her** fare hareketinde `handled = true` dönüyor. Eski menüler her butonu ayrı ayrı çağırdığı için bu görünmüyordu. Yeni ağaçta ise dispatch ilk `true`'da durur: ilk buton bütün hover event'lerini yutar, diğer butonlar hover rengine geçemez veya hover renginde takılı kalır.
+- `D:\LightYears\VegaEngine\src\widget\Button.cpp` satır 60–79 (`MouseMoved` dalı): basılı tuş yokken **her** fare hareketinde `handled = true` dönüyor. Eski menüler her butonu ayrı ayrı çağırdığı için bu görünmüyordu. Yeni ağaçta ise dispatch ilk `true`'da durur: ilk buton bütün hover event'lerini yutar, diğer butonlar hover rengine geçemez veya hover renginde takılı kalır.
 - **Düzeltme:** `MouseMoved` hover/default rengini günceller ama `handled` değerini **değiştirmez** (hover bir tüketim değildir). Press ve release davranışı aynen kalır.
-- Test için `Button`'a `bool IsHovered() const` eklenir (hover rengindeyse true). Ayrıca `D:\LightYears\LightYearsEngine\tests\UIFoundationTests.cpp`'ye bir test eklenir: aynı parent'ta iki buton; A'nın üstüne gidip sonra B'nin üstüne gidince A hover değil, B hover. Butonun texture ve font yüklemesi asset kökü gerektiriyorsa bu test `HUDMigrationTests --menus` içine konur.
-- **Güvenlik kontrolü:** `World::DispatchEvent` (`D:\LightYears\LightYearsEngine\src\framework\World.cpp` ~550) dönüş değeri oyunu etkiliyor mu? `Application::DispatchEvent` (`Application.cpp:166`) çağıranı incelenir. MouseMoved'ın artık `false` dönmesi oyunda bir yan etki yaratıyorsa Sol'a raporlanır.
+- Test için `Button`'a `bool IsHovered() const` eklenir (hover rengindeyse true). Ayrıca `D:\LightYears\VegaEngine\tests\UIFoundationTests.cpp`'ye bir test eklenir: aynı parent'ta iki buton; A'nın üstüne gidip sonra B'nin üstüne gidince A hover değil, B hover. Butonun texture ve font yüklemesi asset kökü gerektiriyorsa bu test `HUDMigrationTests --menus` içine konur.
+- **Güvenlik kontrolü:** `World::DispatchEvent` (`D:\LightYears\VegaEngine\src\framework\World.cpp` ~550) dönüş değeri oyunu etkiliyor mu? `Application::DispatchEvent` (`Application.cpp:166`) çağıranı incelenir. MouseMoved'ın artık `false` dönmesi oyunda bir yan etki yaratıyorsa Sol'a raporlanır.
 
 **Menü taşıma** (ViewModel yok, sözleşme 8)
 - Ortak yardımcı: `D:\LightYears\LightYearsGame\include\widget\MenuLayout.h` / `src\widget\MenuLayout.cpp`. İçerik:

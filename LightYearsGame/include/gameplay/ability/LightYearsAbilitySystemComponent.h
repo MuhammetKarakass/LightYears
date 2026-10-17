@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 

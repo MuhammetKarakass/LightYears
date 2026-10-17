@@ -116,7 +116,7 @@ int main()
 	}
 
 	sas::AttributeSystem attributes;
-	ly::GameplayTagContainer ownedTags;
+	vega::GameplayTagContainer ownedTags;
 	sas::GameplayEffectSystem runtime{ attributes, ownedTags };
 	Probe probe;
 	InstallProbe(runtime, probe);
@@ -256,7 +256,7 @@ int main()
 	}
 
 	sas::AttributeSystem callbackAttributes;
-	ly::GameplayTagContainer callbackTags;
+	vega::GameplayTagContainer callbackTags;
 	sas::GameplayEffectSystem callbackRuntime{ callbackAttributes, callbackTags };
 	const sas::GameplayEffectDefinition callbackDefinition = MakeDecayEffect(
 		"Effect.Test.CallbackMutation",
@@ -287,7 +287,7 @@ int main()
 	}
 
 	sas::AttributeSystem reapplyAttributes;
-	ly::GameplayTagContainer reapplyTags;
+	vega::GameplayTagContainer reapplyTags;
 	sas::GameplayEffectSystem reapplyRuntime{ reapplyAttributes, reapplyTags };
 	const sas::GameplayEffectHandle replacedDuringTickHandle =
 		reapplyRuntime.ApplyEffect(callbackDefinition);
@@ -319,7 +319,7 @@ int main()
 	}
 
 	sas::AttributeSystem cappedAttributes;
-	ly::GameplayTagContainer cappedTags;
+	vega::GameplayTagContainer cappedTags;
 	sas::GameplayEffectSystem cappedRuntime{ cappedAttributes, cappedTags };
 	sas::GameplayEffectDefinition cappedDefinition;
 	cappedDefinition.effectId = "Effect.Test.CappedReapply";
@@ -367,7 +367,7 @@ int main()
 	}
 
 	sas::AttributeSystem clearAttributes;
-	ly::GameplayTagContainer clearTags;
+	vega::GameplayTagContainer clearTags;
 	sas::GameplayEffectSystem clearRuntime{ clearAttributes, clearTags };
 	const sas::GameplayEffectDefinition clearDefinition = MakeRefreshEffect(
 		"Effect.Test.ClearLifecycle"
@@ -422,7 +422,7 @@ int main()
 	}
 
 	sas::AttributeSystem throwingAttributes;
-	ly::GameplayTagContainer throwingTags;
+	vega::GameplayTagContainer throwingTags;
 	sas::GameplayEffectSystem throwingRuntime{ throwingAttributes, throwingTags };
 	const sas::GameplayEffectHandle throwingHandle =
 		throwingRuntime.ApplyEffect(clearDefinition);
@@ -458,7 +458,7 @@ int main()
 	// Cross-effect removal requested from a callback is deferred until the running operation finishes.
 	{
 		sas::AttributeSystem deferAttributes;
-		ly::GameplayTagContainer deferTags;
+		vega::GameplayTagContainer deferTags;
 		sas::GameplayEffectSystem deferRuntime{ deferAttributes, deferTags };
 		const sas::GameplayEffectHandle effectA = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferA"));
 		const sas::GameplayEffectHandle effectB = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferB"));
@@ -508,7 +508,7 @@ int main()
 	// Clear requested from a callback is applied after the outermost operation and reports Pending meanwhile.
 	{
 		sas::AttributeSystem deferAttributes;
-		ly::GameplayTagContainer deferTags;
+		vega::GameplayTagContainer deferTags;
 		sas::GameplayEffectSystem deferRuntime{ deferAttributes, deferTags };
 		const sas::GameplayEffectHandle effectA = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferClearA"));
 		const sas::GameplayEffectHandle effectB = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferClearB"));
@@ -558,7 +558,7 @@ int main()
 	// A failed removal keeps the effect and the clear requested; the exception propagates and a retry completes.
 	{
 		sas::AttributeSystem retryAttributes;
-		ly::GameplayTagContainer retryTags;
+		vega::GameplayTagContainer retryTags;
 		sas::GameplayEffectSystem retryRuntime{ retryAttributes, retryTags };
 		const sas::GameplayEffectHandle retryHandle = retryRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.ClearRetry"));
 		bool failRemoving = true;

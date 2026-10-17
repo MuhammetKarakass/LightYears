@@ -181,9 +181,9 @@ namespace sas
 					: nullptr;
 		}
 
-		ly::List<AbilityRuntimeSnapshot> BuildAbilitySnapshots() const;
+		vega::List<AbilityRuntimeSnapshot> BuildAbilitySnapshots() const;
 		AbilitySystemDebugSnapshot BuildDebugSnapshot() const;
-		const ly::List<AbilityHandle>& GetPassiveAbilities() const;
+		const vega::List<AbilityHandle>& GetPassiveAbilities() const;
 		std::size_t GetPassiveAbilityCount() const
 		{
 			return GetPassiveAbilities().size();
@@ -253,32 +253,32 @@ namespace sas
 			});
 		}
 
-		ly::Delegate<AbilityHandle> onAbilityGranted;
-		ly::Delegate<AbilityHandle> onAbilityRemoved;
-		ly::Delegate<AbilityHandle> onAbilityChanged;
-		ly::Delegate<AbilityHandle> onAbilityActivated;
-		ly::Delegate<AbilityHandle, AbilityEndReason> onAbilityEnded;
-		ly::Delegate<AbilityHandle, int> onAbilityLevelChanged;
-		ly::Delegate<> onAbilitiesCleared;
-		ly::Delegate<const AbilityEvent&> onGameplayEvent;
+		vega::Delegate<AbilityHandle> onAbilityGranted;
+		vega::Delegate<AbilityHandle> onAbilityRemoved;
+		vega::Delegate<AbilityHandle> onAbilityChanged;
+		vega::Delegate<AbilityHandle> onAbilityActivated;
+		vega::Delegate<AbilityHandle, AbilityEndReason> onAbilityEnded;
+		vega::Delegate<AbilityHandle, int> onAbilityLevelChanged;
+		vega::Delegate<> onAbilitiesCleared;
+		vega::Delegate<const AbilityEvent&> onGameplayEvent;
 
 		AttributeSystem& GetAttributes() { return mAttributes; }
 		const AttributeSystem& GetAttributes() const { return mAttributes; }
 
-		ly::GameplayTagContainer& GetOwnedTags() { return mOwnedTags; }
-		const ly::GameplayTagContainer& GetOwnedTags() const
+		vega::GameplayTagContainer& GetOwnedTags() { return mOwnedTags; }
+		const vega::GameplayTagContainer& GetOwnedTags() const
 		{
 			return mOwnedTags;
 		}
 
-		virtual void AddOwnedTag(const ly::GameplayTag& tag);
-		void RemoveOwnedTag(const ly::GameplayTag& tag);
+		virtual void AddOwnedTag(const vega::GameplayTag& tag);
+		void RemoveOwnedTag(const vega::GameplayTag& tag);
 		bool HasOwnedTag(
-			const ly::GameplayTag& tag,
+			const vega::GameplayTag& tag,
 			bool exactMatch = false
 		) const;
-		bool HasAllOwnedTags(const ly::List<ly::GameplayTag>& tags) const;
-		bool HasAnyOwnedTags(const ly::List<ly::GameplayTag>& tags) const;
+		bool HasAllOwnedTags(const vega::List<vega::GameplayTag>& tags) const;
+		bool HasAnyOwnedTags(const vega::List<vega::GameplayTag>& tags) const;
 
 		void SetEffectRuntimeCallbacks(EffectCallbacks callbacks);
 		GameplayEffectHandle ApplyGameplayEffect(
@@ -302,7 +302,7 @@ namespace sas
 		const ActiveGameplayEffect* FindGameplayEffectById(
 			const std::string& effectId
 		) const;
-		ly::List<GameplayEffectRuntimeSnapshot> BuildGameplayEffectSnapshots()
+		vega::List<GameplayEffectRuntimeSnapshot> BuildGameplayEffectSnapshots()
 			const;
 		bool CanApplyGameplayEffect(
 			const GameplayEffectDefinition& definition
@@ -331,10 +331,10 @@ namespace sas
 			});
 		}
 
-		ly::Delegate<GameplayEffectHandle> onGameplayEffectApplied;
-		ly::Delegate<GameplayEffectHandle> onGameplayEffectRemoved;
-		ly::Delegate<GameplayEffectHandle> onGameplayEffectChanged;
-		ly::Delegate<> onGameplayEffectsChanged;
+		vega::Delegate<GameplayEffectHandle> onGameplayEffectApplied;
+		vega::Delegate<GameplayEffectHandle> onGameplayEffectRemoved;
+		vega::Delegate<GameplayEffectHandle> onGameplayEffectChanged;
+		vega::Delegate<> onGameplayEffectsChanged;
 
 		virtual void Tick(float deltaTime);
 		// Completed when everything was torn down. Pending when the clear was deferred behind an open
@@ -429,7 +429,7 @@ namespace sas
 		const std::type_info* mGameplayEventType = nullptr;
 		std::function<void(const void*)> mGameplayEventHandler;
 		AttributeSystem mAttributes;
-		ly::GameplayTagContainer mOwnedTags;
+		vega::GameplayTagContainer mOwnedTags;
 		GameplayEffectSystem mEffects;
 		EffectCallbacks mEffectBindings;
 		bool mAbilityCooldownTagActive = false;

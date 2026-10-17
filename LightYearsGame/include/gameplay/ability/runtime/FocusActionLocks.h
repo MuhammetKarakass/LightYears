@@ -5,7 +5,7 @@ namespace sas
 	class AbilitySystemComponent;
 }
 
-namespace ly::ability
+namespace vega::ability
 {
 	// A focus window consumes player commands while preserving world-driven
 	// movement and rotation. It is intentionally a fixed bundle: abilities may

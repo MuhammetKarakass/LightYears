@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	unique_ptr<PlayerManager> PlayerManager::playerManager = nullptr;
 

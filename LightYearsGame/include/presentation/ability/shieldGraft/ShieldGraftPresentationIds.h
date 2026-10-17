@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::ShieldGraftPresentationIds
+namespace vega::ShieldGraftPresentationIds
 {
 	inline constexpr char VisualBasic[] = "Presentation.Ability.ShieldGraft.Visual.Basic";
 }

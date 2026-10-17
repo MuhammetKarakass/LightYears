@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	// A resource can temporarily exceed its normal maximum, but the excess must
 	// still be attributable to a source so damage can consume it before its timer

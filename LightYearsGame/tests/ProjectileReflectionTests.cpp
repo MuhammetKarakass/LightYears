@@ -13,19 +13,19 @@
 
 namespace
 {
-	class TestReflectionDefender final : public ly::Actor
+	class TestReflectionDefender final : public vega::Actor
 	{
 	public:
-		explicit TestReflectionDefender(ly::World* world)
+		explicit TestReflectionDefender(vega::World* world)
 			: Actor(world)
 		{
 		}
 	};
 
-	class TestAbilityProjectile final : public ly::AbilityWorldActor
+	class TestAbilityProjectile final : public vega::AbilityWorldActor
 	{
 	public:
-		explicit TestAbilityProjectile(ly::World* world)
+		explicit TestAbilityProjectile(vega::World* world)
 			: AbilityWorldActor(world, nullptr)
 		{
 		}
@@ -33,12 +33,12 @@ namespace
 		bool IsProjectileActor() const override { return true; }
 	};
 
-	class TestReceiver final : public ly::ProjectileReflectionReceiver
+	class TestReceiver final : public vega::ProjectileReflectionReceiver
 	{
 	public:
 		bool TryReflectIncomingProjectile(
-			ly::AbilityWorldActor& projectile,
-			ly::Actor& defender
+			vega::AbilityWorldActor& projectile,
+			vega::Actor& defender
 		) override
 		{
 			lastProjectile = &projectile;
@@ -47,36 +47,36 @@ namespace
 			return true;
 		}
 
-		ly::AbilityWorldActor* lastProjectile = nullptr;
-		ly::Actor* lastDefender = nullptr;
+		vega::AbilityWorldActor* lastProjectile = nullptr;
+		vega::Actor* lastDefender = nullptr;
 		int reflectionCount = 0;
 	};
 
-	class TestProjectile final : public ly::Actor, public ly::ProjectileReflectionParticipant
+	class TestProjectile final : public vega::Actor, public vega::ProjectileReflectionParticipant
 	{
 	public:
 		TestProjectile() : Actor(nullptr) {}
 
 		bool CanBeReflected() const override { return true; }
-		bool TryReflectProjectile(const ly::ProjectileReflectionRequest& request) override
+		bool TryReflectProjectile(const vega::ProjectileReflectionRequest& request) override
 		{
 			lastOwner = &request.newOwner;
 			++reflectionCount;
 			return true;
 		}
 
-		ly::Actor* lastOwner = nullptr;
+		vega::Actor* lastOwner = nullptr;
 		int reflectionCount = 0;
 	};
 
-	class TestSurface final : public ly::Actor, public ly::ProjectileReflectionSurface
+	class TestSurface final : public vega::Actor, public vega::ProjectileReflectionSurface
 	{
 	public:
-		explicit TestSurface(ly::Actor& owner) : Actor(nullptr), mOwner(owner) {}
+		explicit TestSurface(vega::Actor& owner) : Actor(nullptr), mOwner(owner) {}
 
 		bool BuildProjectileReflectionResponse(
-			const ly::Actor&,
-			ly::ProjectileReflectionSurfaceResponse& outResponse
+			const vega::Actor&,
+			vega::ProjectileReflectionSurfaceResponse& outResponse
 		) const override
 		{
 			outResponse = { &mOwner, 1.f, lockDuration, true };
@@ -86,7 +86,7 @@ namespace
 		float lockDuration = 0.1f;
 
 	private:
-		ly::Actor& mOwner;
+		vega::Actor& mOwner;
 	};
 
 	int Fail(const char* message)
@@ -97,20 +97,20 @@ namespace
 
 	bool Reflect(TestProjectile& projectile, TestSurface& surface)
 	{
-		return ly::ProjectileReflectionService::TryReflectFromSurface(
+		return vega::ProjectileReflectionService::TryReflectFromSurface(
 			projectile,
 			surface,
 			{ { 10.f, 20.f }, { -1.f, 0.f } }
 		);
 	}
 
-	int CountRegistryActors(ly::World& world)
+	int CountRegistryActors(vega::World& world)
 	{
 		int count = 0;
-		for (const ly::weak_ptr<ly::ProjectileReflectionRegistryActor>& registryWeak :
-			world.GetActorsByTypeIncludingPending<ly::ProjectileReflectionRegistryActor>())
+		for (const vega::weak_ptr<vega::ProjectileReflectionRegistryActor>& registryWeak :
+			world.GetActorsByTypeIncludingPending<vega::ProjectileReflectionRegistryActor>())
 		{
-			const ly::shared_ptr<ly::ProjectileReflectionRegistryActor> registry =
+			const vega::shared_ptr<vega::ProjectileReflectionRegistryActor> registry =
 				registryWeak.lock();
 			if (registry && !registry->GetIsPendingDestroy())
 			{
@@ -122,19 +122,19 @@ namespace
 
 	bool TestWorldOwnedReceiverRegistry()
 	{
-		ly::World firstWorld{ nullptr };
-		ly::World secondWorld{ nullptr };
-		const ly::shared_ptr<TestReflectionDefender> firstDefender =
+		vega::World firstWorld{ nullptr };
+		vega::World secondWorld{ nullptr };
+		const vega::shared_ptr<TestReflectionDefender> firstDefender =
 			firstWorld.SpawnActor<TestReflectionDefender>().lock();
-		const ly::shared_ptr<TestReflectionDefender> secondDefender =
+		const vega::shared_ptr<TestReflectionDefender> secondDefender =
 			secondWorld.SpawnActor<TestReflectionDefender>().lock();
-		const ly::shared_ptr<TestReflectionDefender> siblingDefender =
+		const vega::shared_ptr<TestReflectionDefender> siblingDefender =
 			firstWorld.SpawnActor<TestReflectionDefender>().lock();
-		const ly::shared_ptr<TestAbilityProjectile> firstProjectile =
+		const vega::shared_ptr<TestAbilityProjectile> firstProjectile =
 			firstWorld.SpawnActor<TestAbilityProjectile>().lock();
-		const ly::shared_ptr<TestAbilityProjectile> secondProjectile =
+		const vega::shared_ptr<TestAbilityProjectile> secondProjectile =
 			secondWorld.SpawnActor<TestAbilityProjectile>().lock();
-		const ly::shared_ptr<TestAbilityProjectile> siblingProjectile =
+		const vega::shared_ptr<TestAbilityProjectile> siblingProjectile =
 			firstWorld.SpawnActor<TestAbilityProjectile>().lock();
 		if (!firstDefender || !secondDefender || !siblingDefender || !firstProjectile ||
 			!secondProjectile || !siblingProjectile)
@@ -146,13 +146,13 @@ namespace
 		TestReceiver firstReceiver;
 		TestReceiver secondReceiver;
 		TestReceiver siblingReceiver;
-		auto firstRegistration = ly::ProjectileReflectionService::RegisterReceiver(
+		auto firstRegistration = vega::ProjectileReflectionService::RegisterReceiver(
 			*firstDefender, firstReceiver
 		);
-		auto secondRegistration = ly::ProjectileReflectionService::RegisterReceiver(
+		auto secondRegistration = vega::ProjectileReflectionService::RegisterReceiver(
 			*secondDefender, secondReceiver
 		);
-		auto siblingRegistration = ly::ProjectileReflectionService::RegisterReceiver(
+		auto siblingRegistration = vega::ProjectileReflectionService::RegisterReceiver(
 			*siblingDefender, siblingReceiver
 		);
 		if (!firstRegistration.IsValid() || !secondRegistration.IsValid() ||
@@ -162,13 +162,13 @@ namespace
 			return false;
 		}
 
-		if (!ly::ProjectileReflectionService::TryReflectProjectile(
+		if (!vega::ProjectileReflectionService::TryReflectProjectile(
 				*firstProjectile, *firstDefender
 			) ||
-			!ly::ProjectileReflectionService::TryReflectProjectile(
+			!vega::ProjectileReflectionService::TryReflectProjectile(
 				*secondProjectile, *secondDefender
 			) ||
-			!ly::ProjectileReflectionService::TryReflectProjectile(
+			!vega::ProjectileReflectionService::TryReflectProjectile(
 				*siblingProjectile, *siblingDefender
 			) ||
 			firstReceiver.reflectionCount != 1 || secondReceiver.reflectionCount != 1 ||
@@ -180,10 +180,10 @@ namespace
 			return false;
 		}
 
-		if (!ly::ProjectileReflectionService::TryReflectProjectileAlongPath(
+		if (!vega::ProjectileReflectionService::TryReflectProjectileAlongPath(
 				*firstProjectile, { -10.f, 0.f }, { 10.f, 0.f }
 			) ||
-			!ly::ProjectileReflectionService::TryReflectProjectileAlongPath(
+			!vega::ProjectileReflectionService::TryReflectProjectileAlongPath(
 				*secondProjectile, { -10.f, 0.f }, { 10.f, 0.f }
 			) ||
 			firstReceiver.reflectionCount != 2 || secondReceiver.reflectionCount != 2 ||
@@ -193,12 +193,12 @@ namespace
 		}
 
 		TestReceiver replacementReceiver;
-		auto replacementRegistration = ly::ProjectileReflectionService::RegisterReceiver(
+		auto replacementRegistration = vega::ProjectileReflectionService::RegisterReceiver(
 			*firstDefender, replacementReceiver
 		);
 		firstRegistration.Reset();
 		if (!replacementRegistration.IsValid() ||
-			!ly::ProjectileReflectionService::TryReflectProjectile(
+			!vega::ProjectileReflectionService::TryReflectProjectile(
 				*firstProjectile, *firstDefender
 			) ||
 			replacementReceiver.reflectionCount != 1 || firstReceiver.reflectionCount != 2)
@@ -207,7 +207,7 @@ namespace
 		}
 
 		replacementRegistration.Reset();
-		return !ly::ProjectileReflectionService::TryReflectProjectile(
+		return !vega::ProjectileReflectionService::TryReflectProjectile(
 			*firstProjectile, *firstDefender
 		);
 	}
@@ -215,11 +215,11 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
-	auto& timers = ly::TimerManager::GetGameTimerManager();
+	vega::InstallVegaEngineAssets();
+	auto& timers = vega::TimerManager::GetGameTimerManager();
 	timers.ClearAllTimers();
 
-	auto owner = std::make_shared<ly::Actor>(nullptr);
+	auto owner = std::make_shared<vega::Actor>(nullptr);
 	auto surface = std::make_shared<TestSurface>(*owner);
 	auto projectile = std::make_shared<TestProjectile>();
 	projectile->SetVelocity({ 1.f, 0.f });

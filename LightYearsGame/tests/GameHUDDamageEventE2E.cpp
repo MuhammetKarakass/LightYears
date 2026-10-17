@@ -27,7 +27,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct GameHUDDamageE2ETestAccess
 	{

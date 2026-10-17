@@ -80,14 +80,14 @@ namespace vega
 		{
 			auto& context = execution.context;
 			auto& success = execution.success;
-			std::shared_ptr<ly::Actor> target;
+			std::shared_ptr<vega::Actor> target;
 			unsigned int id = 0;
 			const auto number = std::from_chars(command.text.data(), command.text.data() + command.text.size(), id);
-			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 			{
 				const auto candidate = weak.lock();
 				if (!candidate || candidate->GetIsPendingDestroy()) continue;
-				const auto* identity = candidate->FindComponent<ly::SceneEntityComponent>();
+				const auto* identity = candidate->FindComponent<vega::SceneEntityComponent>();
 				if ((identity && (identity->name == command.text || identity->guid == command.text)) ||
 				    (number.ec == std::errc{} && number.ptr == command.text.data() + command.text.size() && candidate->GetUniqueID() == id))
 				{
@@ -107,7 +107,7 @@ namespace vega
 			auto& context = execution.context;
 			auto& success = execution.success;
 			context.selection.Clear();
-			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>()) context.selection.Add(weak);
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>()) context.selection.Add(weak);
 			success = true;
 		}
 		void ExecuteCopy(ScriptExecution& execution, const EditorScriptCommand&)
@@ -150,7 +150,7 @@ namespace vega
 			auto& context = execution.context;
 			auto& success = execution.success;
 			unsigned int index = 0;
-			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 			{
 				if (auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy() && ActorTypeName(*candidate) == command.text)
 				{

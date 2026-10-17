@@ -38,12 +38,12 @@ namespace vega
 			auto& history = execution.history;
 			auto& success = execution.success;
 			auto& detail = execution.detail;
-			const auto find = [&](const std::string& name) -> std::shared_ptr<ly::Actor>
+			const auto find = [&](const std::string& name) -> std::shared_ptr<vega::Actor>
 			{
 				if (const auto target = context.ResolveGuid(name)) return target;
-				for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+				for (const auto& weak : context.world->GetActorsByTypeIncludingPending<vega::Actor>())
 					if (const auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy())
-						if (const auto* identity = candidate->FindComponent<ly::SceneEntityComponent>(); identity && identity->name == name) return candidate;
+						if (const auto* identity = candidate->FindComponent<vega::SceneEntityComponent>(); identity && identity->name == name) return candidate;
 				return {};
 			};
 			const auto child = find(command.text), parent = find(command.property);
@@ -58,7 +58,7 @@ namespace vega
 				success = command.property == "none" ? child->GetParent() == nullptr : parent && child->GetParent() == parent.get();
 			else if (command.operation == "unparent" || parent)
 				success = history.Execute(std::make_unique<ReparentActor>(
-				    child->FindComponent<ly::SceneEntityComponent>()->guid, parent ? parent->FindComponent<ly::SceneEntityComponent>()->guid : std::string{}));
+				    child->FindComponent<vega::SceneEntityComponent>()->guid, parent ? parent->FindComponent<vega::SceneEntityComponent>()->guid : std::string{}));
 		}
 	} // namespace
 	void RegisterHierarchyScriptCommands(ScriptCommandRegistry& registry)

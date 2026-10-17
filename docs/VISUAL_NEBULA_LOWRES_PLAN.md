@@ -74,7 +74,7 @@ Bu plan yalnız nebula'yı kapsar. Gerçek oynanış CPU ölçümü (Release'te 
 ---
 
 ## 4. Proje kuralları (Luna görevlerine yazılır)
-Kompakt C++17; mevcut `LightYearsVisual` stili (tab girinti, `ly::visual`, `m` önekli üyeler); RAII; yeni bağımlılık yok; SFML 3 API'si; GLSL `#version 120` kısıtı (yerleşik adlarla çakışma yok); gereksiz soyutlama ve gelecek için ayar eklenmez; yorumlar neden'i anlatır.
+Kompakt C++17; mevcut `LightYearsVisual` stili (tab girinti, `vega::visual`, `m` önekli üyeler); RAII; yeni bağımlılık yok; SFML 3 API'si; GLSL `#version 120` kısıtı (yerleşik adlarla çakışma yok); gereksiz soyutlama ve gelecek için ayar eklenmez; yorumlar neden'i anlatır.
 
 ---
 

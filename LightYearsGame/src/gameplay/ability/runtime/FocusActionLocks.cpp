@@ -3,7 +3,7 @@
 #include "AbilitySystemComponent.h"
 #include "gameplay/tags/GameplayTags.h"
 
-namespace ly::ability
+namespace vega::ability
 {
 	void ApplyFocusActionLocks(
 		sas::AbilitySystemComponent& abilitySystem,

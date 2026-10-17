@@ -368,7 +368,7 @@ namespace rare_wave4_polish_e2e
 	}
 }
 
-void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, ly::Application& application)
+void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, vega::Application& application)
 {
 	using namespace uncommon_p4_e2e;
 	Fixture f{ report, application };
@@ -395,7 +395,7 @@ void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, ly::Application&
 	};
 	const auto target = Enemy(f);
 	target->GetShieldComponent().SetMaxShield(0.f);
-	target->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	target->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	report.Check(ship->GetAbilityLoadout().EquipAbility(AbilityData::InfernoSpray::AbilityId::Basic, sas::AbilitySlot::Ability2), "live loadout equips Inferno Spray for reported ability-hit bugs");
 	ship->GetAbilitySystemComponent().AddOwnedTag(GameplayTags::State::Ability::InfernoSpray::Active);
 	const auto sprayTick = [&](SpaceShip& victim, int thermalStacks = 0)
@@ -455,7 +455,7 @@ void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, ly::Application&
 	report.CheckValue("Opening Hit multiplies only the first projectile hit", second * 1.25f, first, "new target, shipped Rare O5 is 25 percent");
 	const auto sprayFresh = Enemy(f);
 	sprayFresh->GetShieldComponent().SetMaxShield(0.f);
-	sprayFresh->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	sprayFresh->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	const float firstSpray = sprayTick(*sprayFresh);
 	const float secondSpray = sprayTick(*sprayFresh);
 	report.CheckValue("Opening Hit multiplies only the first Inferno Spray tick", secondSpray * 1.25f, firstSpray, "shared first-hit claim and ability source");
@@ -473,7 +473,7 @@ void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, ly::Application&
 	const auto areaHost = install("Module.Offense.EmberAccumulation.Rare", "Module.SideFeature.EmberAccumulation.AreaBlast", 1);
 	const auto areaTarget = Enemy(f);
 	areaTarget->GetShieldComponent().SetMaxShield(0.f);
-	areaTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	areaTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	const auto neighbour = Enemy(f);
 	neighbour->GetShieldComponent().SetMaxShield(0.f);
 	neighbour->SetActorLocation(ship->GetActorLocation() + ship->GetActorForwardDirection() * 200.f + ship->GetActorRightDirection() * 120.f);
@@ -485,7 +485,7 @@ void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, ly::Application&
 	const auto smolderHost = install("Module.Offense.EmberAccumulation.Rare", "Module.SideFeature.EmberAccumulation.SmolderingRemains", 1);
 	const auto smolderTarget = Enemy(f);
 	smolderTarget->GetShieldComponent().SetMaxShield(0.f);
-	smolderTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	smolderTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	for (int tick = 0; tick < 4; ++tick) sprayTick(*smolderTarget, 1);
 	report.Check(ship->GetModuleApplier().GetSmolderFieldCount() > 0, "Ember Smoldering Remains spawns from real Inferno Spray stacks", Json{ { "fields", ship->GetModuleApplier().GetSmolderFieldCount() } });
 	report.Check(player->TryUninstallModule(smolderHost), "real Player removes Ember Smoldering Remains");
@@ -510,7 +510,7 @@ void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, ly::Application&
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	using namespace rare_wave4_polish_e2e;
 	if (argc != 2) return 2;
 	Report report;

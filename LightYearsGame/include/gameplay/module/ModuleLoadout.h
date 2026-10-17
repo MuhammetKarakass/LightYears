@@ -9,7 +9,7 @@
 
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	// One owned module. Origin and rotation are meaningful only while installed.
 	struct ModulePlacement

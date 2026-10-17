@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-namespace ly
+namespace vega
 {
 	VEGA_REFLECT(EnergyComponent, ActorComponent)
 	{

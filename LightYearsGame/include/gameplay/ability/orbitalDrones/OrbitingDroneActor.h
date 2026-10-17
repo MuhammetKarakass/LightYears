@@ -9,7 +9,7 @@
 
 #include <cstddef>
 
-namespace ly
+namespace vega
 {
 	// A single reusable member of an Orbital Drones formation. The ability
 	// behavior owns spawning and lifetime policy; this actor owns orbit motion,

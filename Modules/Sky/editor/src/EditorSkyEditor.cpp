@@ -383,7 +383,7 @@ namespace vega
 		mAfterClose = std::move(continuation); mConfirmClose = true;
 	}
 
-	bool EditorSkyEditor::RenderSky(sf::RenderTexture& target, std::size_t index, const ly::World& world, sf::Vector2u size)
+	bool EditorSkyEditor::RenderSky(sf::RenderTexture& target, std::size_t index, const vega::World& world, sf::Vector2u size)
 	{
 		const auto start = std::chrono::steady_clock::now();
 		const bool result = mPipeline->RenderSky(target, index, world, size);

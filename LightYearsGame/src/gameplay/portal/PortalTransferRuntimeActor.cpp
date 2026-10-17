@@ -3,7 +3,7 @@
 #include "gameplay/portal/PortalTransferService.h"
 #include "PortalTransferRuntimeState.h"
 
-namespace ly
+namespace vega
 {
 	PortalTransferRuntimeActor::PortalTransferRuntimeActor(World* world)
 		: Actor(world),

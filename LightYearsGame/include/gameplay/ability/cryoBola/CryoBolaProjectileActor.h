@@ -3,7 +3,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/cryoBola/CryoBolaPresentationProfile.h"
 
-namespace ly
+namespace vega
 {
 	// A physical, single-hit skill-shot. Its rupture exists only after a valid
 	// combatant hit, making the struck enemy the AoE anchor rather than a point

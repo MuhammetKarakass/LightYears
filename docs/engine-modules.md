@@ -23,7 +23,7 @@ IDs. The old `LightYearsVisual/include/visual` headers forward existing callers
 to this API. `LightYearsAstro` is a compatibility interface target.
 
 `LightYearsVisual` now compiles only ship art and its asset loader. Its
-`ly::visual::VisualAssets` extends the generic loader with `Ships()`. Ship JSON,
+`vega::visual::VisualAssets` extends the generic loader with `Ships()`. Ship JSON,
 ship palettes and LightYears' authored `deepsky.json` stay at their original
 paths. Existing shader paths remain byte-identical compatibility copies;
 `EngineModulesNoGameDependencies` checks them against the module shaders.
@@ -33,7 +33,7 @@ the shipped look. Update both copies deliberately when changing a shared shader.
 `Modules/GAS` supplies the module target, generic content descriptors and editor
 extension. Existing runtime source and include paths under `SpaceAbilitySystem`
 remain intact to avoid disrupting gameplay branches. Its public namespace is
-still `sas`. Engine directories and the engine's `ly` namespace are unchanged.
+still `sas`. Engine code lives under `VegaEngine` in namespace `vega`.
 
 ## Enable a module in a game
 
@@ -55,7 +55,7 @@ script commands. The game installs actor/player/content resolvers through
 `AbilitySystemDebugView`; the module never assumes a player ship or game catalog.
 
 Editor hosts construct `vega::EditorExtensions{ context }`, where the explicit
-`ly::EngineContext` outlives the extensions. The GAS extension uses
+`vega::EngineContext` outlives the extensions. The GAS extension uses
 `extensions.Engine()` to register schemas in that host, independently of the
 ambient compatibility binding.
 

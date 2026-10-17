@@ -4,13 +4,13 @@ status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 verified_worktree_state: dirty
 source_files:
-  - LightYearsEngine/include/framework/TimerManager.h
-  - LightYearsEngine/src/framework/TimerManager.cpp
-  - LightYearsEngine/src/framework/Application.cpp
+  - VegaEngine/include/framework/TimerManager.h
+  - VegaEngine/src/framework/TimerManager.cpp
+  - VegaEngine/src/framework/Application.cpp
 symbols:
-  - ly::TimerManager
-  - ly::Timer
-  - ly::TimerHandle
+  - vega::TimerManager
+  - vega::Timer
+  - vega::TimerHandle
 related:
   - "[[Engine Runtime Services]]"
   - "[[Timer, Delegate and Camera Frame Flow]]"

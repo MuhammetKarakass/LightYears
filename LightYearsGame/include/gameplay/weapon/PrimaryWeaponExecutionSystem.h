@@ -4,7 +4,7 @@
 
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 
-namespace ly
+namespace vega
 {
 	class PrimaryWeaponExecutionSystem
 	{

@@ -5,7 +5,7 @@
 #include "framework/SpriteComponent.h"
 #include "framework/PerfMonitor.h"
 
-namespace ly
+namespace vega
 {
 	void Explosion::SpawnExplosion(World* world, const sf::Vector2f& location, ExplosionType type)
 	{
@@ -136,12 +136,12 @@ namespace ly
 
 	void Explosion::SpawnExplosionWithParams(World* world, const sf::Vector2f& location, const ExplosionParams& params)
 	{
-		LY_PROFILE_SCOPE("VFX.SpawnExplosion");
+		VEGA_PROFILE_SCOPE("VFX.SpawnExplosion");
 		if (!world) return;
 
 		// throttle particle count when many actors are active to avoid spikes
 		int spawnCount = params.particleCount;
-		int activeActors = ly::perf::g_activeActors.load();
+		int activeActors = vega::perf::g_activeActors.load();
 		if (activeActors >400)
 		{
 			spawnCount = std::max(2, spawnCount /10);

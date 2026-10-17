@@ -20,7 +20,7 @@
 #include <cmath>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

@@ -5,7 +5,7 @@
 #include "presentation/ability/lanceDrive/LanceDrivePresentationProfile.h"
 #include "gameplay/targeting/ActorHitCooldowns.h"
 
-namespace ly
+namespace vega
 {
 	class LanceDriveActor final : public AbilityWorldActor
 	{

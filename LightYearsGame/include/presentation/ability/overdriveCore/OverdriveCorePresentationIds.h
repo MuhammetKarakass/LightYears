@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::OverdriveCorePresentationIds
+namespace vega::OverdriveCorePresentationIds
 {
 	inline constexpr char ProjectileBasic[] =
 		"Presentation.Ability.OverdriveCore.Projectile.Basic";

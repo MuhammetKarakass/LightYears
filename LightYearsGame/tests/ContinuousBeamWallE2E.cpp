@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	int RunAbilityContentRegistrationE2E(const char* artifactPath, const std::string& setupError);
 	int RunAbilityLoaderPublicLoadE2E(const char* artifactPath, const std::string& setupError);
@@ -98,7 +98,7 @@ namespace ly
 				: Actor{ world }
 			{
 				SetPhysicsBodyType(PhysicsBodyType::Static);
-				SetCollisionLayer(ly::GameCollision::Environment);
+				SetCollisionLayer(vega::GameCollision::Environment);
 				SetCollisionMask(CollisionLayer::None);
 			}
 
@@ -203,19 +203,19 @@ namespace ly
 			};
 			owner->SetActorLocation(OwnerLocation);
 			owner->SetActorRotation(0.f);
-			owner->SetCollisionLayer(ly::GameCollision::Player);
+			owner->SetCollisionLayer(vega::GameCollision::Player);
 			centerPivot(*frontTarget);
 			frontTarget->SetActorLocation(FrontTargetLocation);
-			frontTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			frontTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			frontTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			frontTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 			centerPivot(*betweenWallsTarget);
 			betweenWallsTarget->SetActorLocation(BetweenWallsTargetLocation);
-			betweenWallsTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			betweenWallsTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			betweenWallsTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			betweenWallsTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 			centerPivot(*rearTarget);
 			rearTarget->SetActorLocation(RearTargetLocation);
-			rearTarget->SetCollisionLayer(ly::GameCollision::Enemy);
-			rearTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
+			rearTarget->SetCollisionLayer(vega::GameCollision::Enemy);
+			rearTarget->SetCollisionMask(vega::GameCollision::PlayerBullet);
 			if (endpointContact)
 			{
 				const float range = sas::FindAttributeValue(weapon.attributes, PrimaryWeaponSchema::Beam::Delivery::Range, 0.f);
@@ -589,8 +589,8 @@ namespace ly
 
 int main(int argc, char** argv)
 {
-	ly::InstallLightYearsEngineAssets();
-	using namespace ly;
+	vega::InstallVegaEngineAssets();
+	using namespace vega;
 	const bool abilityContentRegistrationMode = argc == 3 &&
 		std::string{ argv[1] } == "--ability-content-registration";
 	const bool abilityLoaderPublicLoadMode = argc == 3 &&

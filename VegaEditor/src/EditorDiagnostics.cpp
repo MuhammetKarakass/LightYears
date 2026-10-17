@@ -7,7 +7,7 @@
 
 namespace vega
 {
-	using namespace ly::debug;
+	using namespace vega::debug;
 	namespace
 	{
 		int Group(LogLevel level) { return level >= LogLevel::Error ? 2 : level == LogLevel::Warning ? 1 : 0; }
@@ -120,7 +120,7 @@ namespace vega
 
 	void EditorDiagnostics::BuildConsole()
 	{
-		LY_PROFILE_SCOPE("Editor Console");
+		VEGA_PROFILE_SCOPE("Editor Console");
 		const auto previousRevision = mDisplayedRevision;
 		RefreshConsole();
 		if (mFocusConsole) { ImGui::SetNextWindowFocus(); mFocusConsole = false; }
@@ -191,7 +191,7 @@ namespace vega
 
 	void EditorDiagnostics::BuildProfiler()
 	{
-		LY_PROFILE_SCOPE("Editor Profiler");
+		VEGA_PROFILE_SCOPE("Editor Profiler");
 		if (ImGui::Begin("Profiler", &showProfiler))
 		{
 			bool recording = Profiler::IsEnabled();
@@ -201,7 +201,7 @@ namespace vega
 			{
 				const auto path = std::filesystem::path{ VEGA_BUILD_ROOT } / "Saved" / "profile.json";
 				if (Profiler::CaptureToFile(path, mCaptureStatus)) mCaptureStatus = path.string();
-				else Log::Write(LogLevel::Error, LogChannel::Editor, LY_SOURCE_LOCATION, mCaptureStatus);
+				else Log::Write(LogLevel::Error, LogChannel::Editor, VEGA_SOURCE_LOCATION, mCaptureStatus);
 			}
 			ImGui::SameLine(); ImGui::TextDisabled("%s", Profiler::IsCompiledIn() ? "300 frame window" : "Compiled out");
 			const auto times = Profiler::FrameTimes();

@@ -4,7 +4,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-namespace ly
+namespace vega
 {
 	// This profile deliberately contains only the fold-space look. Gameplay
 	// geometry, damage and duration stay in the ability's runtime attributes.

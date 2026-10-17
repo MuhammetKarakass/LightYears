@@ -25,7 +25,7 @@ namespace
 		} \
 	} while (false)
 
-	bool SameStop(const ly::RouteStop& a, const ly::RouteStop& b)
+	bool SameStop(const vega::RouteStop& a, const vega::RouteStop& b)
 	{
 		if (a.id != b.id || a.name != b.name || a.real != b.real || a.distancePc != b.distancePc)
 		{
@@ -47,8 +47,8 @@ namespace
 		}
 		for (std::size_t index = 0; index < a.planets.size(); ++index)
 		{
-			const ly::RoutePlanet& pa = a.planets[index];
-			const ly::RoutePlanet& pb = b.planets[index];
+			const vega::RoutePlanet& pa = a.planets[index];
+			const vega::RoutePlanet& pb = b.planets[index];
 			if (pa.name != pb.name || pa.eqTempK != pb.eqTempK || pa.semiMajorAU != pb.semiMajorAU)
 			{
 				return false;
@@ -60,11 +60,11 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	const std::filesystem::path root = LIGHT_YEARS_PROJECT_SOURCE_DIR;
 	const std::filesystem::path file = root / "LightYearsGame" / "assets" / "content" / "data" / "galaxy_route.json";
 
-	ly::GalaxyRoute route;
+	vega::GalaxyRoute route;
 	std::string error;
 	const bool loaded = route.LoadFromFile(file, error);
 	CHECK(loaded);
@@ -74,7 +74,7 @@ int main()
 		return 1;
 	}
 
-	const std::vector<ly::RouteStop>& stops = route.Stops();
+	const std::vector<vega::RouteStop>& stops = route.Stops();
 	CHECK(stops.size() >= 10);
 	if (stops.size() < 10)
 	{
@@ -83,7 +83,7 @@ int main()
 	CHECK(stops.front().name == "Sol");
 	CHECK(std::fabs(stops.front().position.radiusKpc - 8.2f) <= 0.05f);
 
-	for (const ly::RouteStop& stop : stops)
+	for (const vega::RouteStop& stop : stops)
 	{
 		CHECK(stop.position.radiusKpc > 0.f && stop.position.radiusKpc < 20.f);
 		if (stop.real)
@@ -94,14 +94,14 @@ int main()
 
 	// Missing file is reported, not thrown.
 	{
-		ly::GalaxyRoute missing;
+		vega::GalaxyRoute missing;
 		std::string missingError;
 		CHECK(!missing.LoadFromFile(root / "does-not-exist-galaxy-route.json", missingError));
 		CHECK(!missingError.empty());
 	}
 
 	// Procedural tail: 12 stops, ending at Sgr A*.
-	ly::GalaxyRoute extended = route;
+	vega::GalaxyRoute extended = route;
 	const std::size_t realCount = stops.size();
 	extended.AppendProceduralStops(12, 7);
 	CHECK(extended.Stops().size() == realCount + 12);
@@ -112,8 +112,8 @@ int main()
 	}
 
 	// Same seed on fresh copies gives identical stops.
-	ly::GalaxyRoute first = route;
-	ly::GalaxyRoute second = route;
+	vega::GalaxyRoute first = route;
+	vega::GalaxyRoute second = route;
 	first.AppendProceduralStops(12, 7);
 	second.AppendProceduralStops(12, 7);
 	CHECK(first.Stops().size() == second.Stops().size());
@@ -127,7 +127,7 @@ int main()
 
 	// Galactic Centre tour: the game appends 14 procedural stops (same seed) before the tour, so Sgr A* ends the route.
 	{
-		ly::GalaxyRoute game = route;
+		vega::GalaxyRoute game = route;
 		game.AppendProceduralStops(14, 7);
 		const std::size_t proceduralEnd = game.Stops().size();
 		CHECK(proceduralEnd == realCount + 14);

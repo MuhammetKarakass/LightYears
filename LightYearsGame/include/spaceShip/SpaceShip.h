@@ -17,7 +17,7 @@
 #include "gameplay/portal/PortalTransferParticipant.h"
 #include "gameConfigs/ship/ShipStructs.h"
 
-namespace ly
+namespace vega
 {
 	class World;
 

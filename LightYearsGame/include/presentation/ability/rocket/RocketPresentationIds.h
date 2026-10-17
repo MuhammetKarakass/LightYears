@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::RocketPresentationIds
+namespace vega::RocketPresentationIds
 {
 	inline constexpr char ProjectileBasic[] =
 		"Presentation.Ability.Rocket.Projectile.Basic";

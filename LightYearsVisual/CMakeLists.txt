@@ -1,7 +1,7 @@
 option(LIGHTYEARS_BUILD_VISUAL_GALLERY "Build the LightYearsVisualGallery viewer" ON)
 
-# Per-frame rendering code: optimized even in Debug builds (see LY_OPTIMIZE_RENDER_IN_DEBUG in the root CMakeLists).
-set(CMAKE_CXX_FLAGS_DEBUG "${LY_DEBUG_FLAGS_RENDER}")
+# Per-frame rendering code: optimized even in Debug builds (see VEGA_OPTIMIZE_RENDER_IN_DEBUG in the root CMakeLists).
+set(CMAKE_CXX_FLAGS_DEBUG "${VEGA_DEBUG_FLAGS_RENDER}")
 
 # Legacy game-art target and paths remain available to other worktrees.
 add_library(LightYearsAstro INTERFACE)
@@ -22,7 +22,7 @@ if(LIGHTYEARS_BUILD_VISUAL_GALLERY)
 	# The gallery reads the source assets directly so edited shaders, palettes and
 	# pipeline.json hot-reload without a rebuild. --assets <dir> overrides this.
 	target_compile_definitions(LightYearsVisualGallery PRIVATE
-		LY_VISUAL_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"
+		VEGA_VISUAL_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"
 	)
 
 	foreach(sfml_runtime_lib sfml-graphics sfml-window sfml-system)

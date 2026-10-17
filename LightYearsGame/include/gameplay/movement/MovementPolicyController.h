@@ -4,7 +4,7 @@
 
 #include <map>
 
-namespace ly::movement
+namespace vega::movement
 {
 	// Resolves generic movement-rule overrides and the transition back to normal
 	// movement. This class has no dependency on abilities, ships, tags, or

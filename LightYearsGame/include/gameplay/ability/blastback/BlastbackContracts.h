@@ -12,31 +12,31 @@ namespace AbilityData::Blastback
 		inline static constexpr char Basic[] = "Ability.Offense.Blastback.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag FamilyTag = ly::GameplayTags::Ability::Family::Blastback;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Offense;
+	inline const vega::GameplayTag FamilyTag = vega::GameplayTags::Ability::Family::Blastback;
 
 	struct State
 	{
-		inline static const ly::GameplayTag Focusing =
-			ly::GameplayTags::State::Ability::Blastback::Focusing;
+		inline static const vega::GameplayTag Focusing =
+			vega::GameplayTags::State::Ability::Blastback::Focusing;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started =
-			ly::GameplayTags::Event::Ability::Blastback::Started;
-		inline static const ly::GameplayTag Blasted =
-			ly::GameplayTags::Event::Ability::Blastback::Blasted;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::Blastback::Ended;
+		inline static const vega::GameplayTag Started =
+			vega::GameplayTags::Event::Ability::Blastback::Started;
+		inline static const vega::GameplayTag Blasted =
+			vega::GameplayTags::Event::Ability::Blastback::Blasted;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::Blastback::Ended;
 	};
 
 	struct Attribute
 	{
 		// Damage and range are cross-family concepts. Everything else below
 		// describes Blastback's two-zone cone and its movement contract.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId Range = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId Range = vega::CommonAttributeIds::Range;
 		inline static const sas::AttributeId InnerRange{
 			"Ability.Offense.Blastback.InnerRange"
 		};

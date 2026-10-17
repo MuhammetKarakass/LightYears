@@ -19,7 +19,7 @@
 #include <unordered_set>
 #include <utility>
 
-namespace ly::content::ability_loader_detail
+namespace vega::content::ability_loader_detail
 {
 	namespace
 	{

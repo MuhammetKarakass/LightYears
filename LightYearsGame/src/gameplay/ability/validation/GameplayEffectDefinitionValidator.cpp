@@ -6,7 +6,7 @@
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

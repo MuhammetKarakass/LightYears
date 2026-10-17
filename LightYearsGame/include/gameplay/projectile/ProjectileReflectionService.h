@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class AbilityWorldActor;

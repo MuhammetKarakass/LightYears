@@ -3,7 +3,7 @@
 #include <framework/Actor.h>
 #include "gameConfigs/ship/ShipStructs.h"
 
-namespace ly
+namespace vega
 {
 	// An authored spawn point, not a player. The editor can draw a marker using
 	// this query without creating a gameplay sprite or collision body.

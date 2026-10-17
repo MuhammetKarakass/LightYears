@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

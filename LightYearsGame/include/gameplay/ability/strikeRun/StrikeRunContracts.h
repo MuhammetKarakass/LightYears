@@ -13,32 +13,32 @@ namespace AbilityData::StrikeRun
 			"Ability.Offense.StrikeRun.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTagSchema::AbilityOffense
+	inline const vega::GameplayTag CategoryTag{
+		vega::GameplayTagSchema::AbilityOffense
 	};
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::StrikeRun
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::StrikeRun
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Targeting{
+		inline static const vega::GameplayTag Targeting{
 			"State.Ability.StrikeRun.Targeting"
 		};
-		inline static const ly::GameplayTag Confirmed{
+		inline static const vega::GameplayTag Confirmed{
 			"State.Ability.StrikeRun.Confirmed"
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
+		inline static const vega::GameplayTag Started{
 			"Event.Ability.StrikeRun.Start"
 		};
-		inline static const ly::GameplayTag DirectionLocked{
+		inline static const vega::GameplayTag DirectionLocked{
 			"Event.Ability.StrikeRun.DirectionLocked"
 		};
-		inline static const ly::GameplayTag Ended{
+		inline static const vega::GameplayTag Ended{
 			"Event.Ability.StrikeRun.End"
 		};
 	};
@@ -48,9 +48,9 @@ namespace AbilityData::StrikeRun
 		// Damage, radius and range remain shared channels. Strike Run's range is
 		// the maximum distance of the selected starting endpoint. The impact line
 		// begins at that endpoint and extends in the confirmed direction.
-		inline static const sas::AttributeId Damage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId ExplosionRadius = ly::CommonAttributeIds::Radius;
-		inline static const sas::AttributeId CenterRange = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Damage = vega::CommonAttributeIds::Damage;
+		inline static const sas::AttributeId ExplosionRadius = vega::CommonAttributeIds::Radius;
+		inline static const sas::AttributeId CenterRange = vega::CommonAttributeIds::Range;
 
 		// These values describe this family's fixed multi-impact delivery and are
 		// intentionally not added to the global projectile attribute namespace.

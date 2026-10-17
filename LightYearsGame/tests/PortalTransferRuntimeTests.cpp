@@ -10,7 +10,7 @@
 
 namespace
 {
-	using namespace ly;
+	using namespace vega;
 	constexpr float Tolerance = 0.001f;
 
 	bool Expect(bool condition, const char* message)
@@ -256,7 +256,7 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
+	vega::InstallVegaEngineAssets();
 	const bool passed = TestRuntimeActorDeduplicationAndWorldIsolation() &&
 		TestTransferAndReentryTiming() &&
 		TestWorldAddressReuseWithRetainedRuntimeActor();

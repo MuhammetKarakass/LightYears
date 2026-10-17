@@ -12,10 +12,10 @@
 
 namespace
 {
-	class TestActor final : public ly::Actor
+	class TestActor final : public vega::Actor
 	{
 	public:
-		explicit TestActor(ly::World* world)
+		explicit TestActor(vega::World* world)
 			: Actor{ world }
 		{
 		}
@@ -35,58 +35,58 @@ namespace
 
 int main()
 {
-	ly::InstallLightYearsEngineAssets();
-	ly::World world{ nullptr };
-	const ly::shared_ptr<TestActor> source = world.SpawnActor<TestActor>().lock();
-	const ly::shared_ptr<TestActor> nearest = world.SpawnActor<TestActor>().lock();
-	const ly::shared_ptr<TestActor> farthest = world.SpawnActor<TestActor>().lock();
-	const ly::shared_ptr<TestActor> outside = world.SpawnActor<TestActor>().lock();
-	const ly::shared_ptr<TestActor> rectangleSide = world.SpawnActor<TestActor>().lock();
+	vega::InstallVegaEngineAssets();
+	vega::World world{ nullptr };
+	const vega::shared_ptr<TestActor> source = world.SpawnActor<TestActor>().lock();
+	const vega::shared_ptr<TestActor> nearest = world.SpawnActor<TestActor>().lock();
+	const vega::shared_ptr<TestActor> farthest = world.SpawnActor<TestActor>().lock();
+	const vega::shared_ptr<TestActor> outside = world.SpawnActor<TestActor>().lock();
+	const vega::shared_ptr<TestActor> rectangleSide = world.SpawnActor<TestActor>().lock();
 	if (!source || !nearest || !farthest || !outside || !rectangleSide)
 	{
 		return Fail("AutoTargeting test actors could not be created");
 	}
 
 	source->SetActorLocation({ 0.f, 0.f });
-	source->SetCollisionLayer(ly::GameCollision::Player);
+	source->SetCollisionLayer(vega::GameCollision::Player);
 	nearest->SetActorLocation({ 100.f, 0.f });
-	nearest->SetCollisionLayer(ly::GameCollision::Enemy);
-	nearest->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	nearest->SetCollisionLayer(vega::GameCollision::Enemy);
+	nearest->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	farthest->SetActorLocation({ 200.f, 0.f });
-	farthest->SetCollisionLayer(ly::GameCollision::Enemy);
-	farthest->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	farthest->SetCollisionLayer(vega::GameCollision::Enemy);
+	farthest->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	outside->SetActorLocation({ 500.f, 0.f });
-	outside->SetCollisionLayer(ly::GameCollision::Enemy);
-	outside->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	outside->SetCollisionLayer(vega::GameCollision::Enemy);
+	outside->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	rectangleSide->SetActorLocation({ 50.f, 60.f });
 	// Keep the geometry-only fixture out of the earlier radius/cone assertions.
 	rectangleSide->SetCollisionLayer(CollisionLayer::None);
-	rectangleSide->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	rectangleSide->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	world.TickInternal(0.f);
-	if (!ly::targeting::IsOpposingTarget(*source, *nearest) ||
-		ly::targeting::IsOpposingTarget(*source, *source))
+	if (!vega::targeting::IsOpposingTarget(*source, *nearest) ||
+		vega::targeting::IsOpposingTarget(*source, *source))
 	{
 		return Fail("Target relation policy did not resolve opposing collision layers");
 	}
 
-	ly::targeting::TargetingQuery nearestQuery;
+	vega::targeting::TargetingQuery nearestQuery;
 	nearestQuery.source = source.get();
 	nearestQuery.origin = source->GetActorLocation();
 	nearestQuery.range = 250.f;
 	nearestQuery.maxTargets = 1;
-	nearestQuery.requiredTargetLayers = ly::GameCollision::Enemy;
-	nearestQuery.requiredCandidateCollisionMask = ly::GameCollision::PlayerBullet;
-	const ly::shared_ptr<ly::Actor> nearestTarget =
-		ly::targeting::AutoTargeting::FindTarget(world, nearestQuery).lock();
+	nearestQuery.requiredTargetLayers = vega::GameCollision::Enemy;
+	nearestQuery.requiredCandidateCollisionMask = vega::GameCollision::PlayerBullet;
+	const vega::shared_ptr<vega::Actor> nearestTarget =
+		vega::targeting::AutoTargeting::FindTarget(world, nearestQuery).lock();
 	if (nearestTarget.get() != nearest.get())
 	{
 		return Fail("AutoTargeting did not select the nearest valid target");
 	}
 
-	ly::targeting::TargetingQuery allTargetsQuery = nearestQuery;
+	vega::targeting::TargetingQuery allTargetsQuery = nearestQuery;
 	allTargetsQuery.maxTargets = 0;
-	const ly::List<ly::targeting::TargetingCandidate> allTargets =
-		ly::targeting::AutoTargeting::FindTargets(world, allTargetsQuery);
+	const vega::List<vega::targeting::TargetingCandidate> allTargets =
+		vega::targeting::AutoTargeting::FindTargets(world, allTargetsQuery);
 	if (allTargets.size() != 2 ||
 		allTargets[0].actor.get() != nearest.get() ||
 		allTargets[1].actor.get() != farthest.get() ||
@@ -95,36 +95,36 @@ int main()
 		return Fail("AutoTargeting did not apply range, filters, or nearest ordering");
 	}
 
-	ly::targeting::TargetingQuery coneQuery = nearestQuery;
+	vega::targeting::TargetingQuery coneQuery = nearestQuery;
 	coneQuery.maxTargets = 0;
-	coneQuery.shape = ly::targeting::TargetingShape::Cone;
+	coneQuery.shape = vega::targeting::TargetingShape::Cone;
 	coneQuery.direction = { 1.f, 0.f };
 	coneQuery.coneHalfAngleRadians = 0.2f;
-	const ly::shared_ptr<TestActor> outsideCone = world.SpawnActor<TestActor>().lock();
+	const vega::shared_ptr<TestActor> outsideCone = world.SpawnActor<TestActor>().lock();
 	if (!outsideCone)
 	{
 		return Fail("AutoTargeting cone test actor could not be created");
 	}
 	outsideCone->SetActorLocation({ 100.f, 100.f });
-	outsideCone->SetCollisionLayer(ly::GameCollision::Enemy);
-	outsideCone->SetCollisionMask(ly::GameCollision::PlayerBullet);
+	outsideCone->SetCollisionLayer(vega::GameCollision::Enemy);
+	outsideCone->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	world.TickInternal(0.f);
-	const ly::List<ly::targeting::TargetingCandidate> coneTargets =
-		ly::targeting::AutoTargeting::FindTargets(world, coneQuery);
+	const vega::List<vega::targeting::TargetingCandidate> coneTargets =
+		vega::targeting::AutoTargeting::FindTargets(world, coneQuery);
 	if (coneTargets.size() != 2 || coneTargets[0].actor.get() != nearest.get())
 	{
 		return Fail("AutoTargeting cone shape accepted a target outside its angle");
 	}
 
-	ly::targeting::TargetingQuery rectangleQuery = nearestQuery;
-	rectangleSide->SetCollisionLayer(ly::GameCollision::Enemy);
+	vega::targeting::TargetingQuery rectangleQuery = nearestQuery;
+	rectangleSide->SetCollisionLayer(vega::GameCollision::Enemy);
 	world.TickInternal(0.f);
-	rectangleQuery.shape = ly::targeting::TargetingShape::Rectangle;
+	rectangleQuery.shape = vega::targeting::TargetingShape::Rectangle;
 	rectangleQuery.direction = { 1.f, 0.f };
 	rectangleQuery.range = 120.f;
 	rectangleQuery.rectangleHalfExtents = { 110.f, 50.f };
-	const ly::List<ly::targeting::TargetingCandidate> rectangleTargets =
-		ly::targeting::AutoTargeting::FindTargets(world, rectangleQuery);
+	const vega::List<vega::targeting::TargetingCandidate> rectangleTargets =
+		vega::targeting::AutoTargeting::FindTargets(world, rectangleQuery);
 	if (rectangleTargets.size() != 1 ||
 		rectangleTargets.front().actor.get() != nearest.get())
 	{
@@ -136,42 +136,42 @@ int main()
 	world.TickInternal(0.f);
 	nearestQuery.excludedTargets.push_back(outsideCone.get());
 
-	ly::targeting::TargetingQuery customSelectionQuery = allTargetsQuery;
+	vega::targeting::TargetingQuery customSelectionQuery = allTargetsQuery;
 	customSelectionQuery.maxTargets = 1;
 	customSelectionQuery.selector = [](
-		ly::List<ly::targeting::TargetingCandidate>& candidates,
+		vega::List<vega::targeting::TargetingCandidate>& candidates,
 		std::size_t
 	)
 	{
 		std::stable_sort(candidates.begin(), candidates.end(), [](
-			const ly::targeting::TargetingCandidate& left,
-			const ly::targeting::TargetingCandidate& right
+			const vega::targeting::TargetingCandidate& left,
+			const vega::targeting::TargetingCandidate& right
 		)
 		{
 			return left.distanceSquared > right.distanceSquared;
 		});
 	};
-	const ly::shared_ptr<ly::Actor> customTarget =
-		ly::targeting::AutoTargeting::FindTarget(world, customSelectionQuery).lock();
+	const vega::shared_ptr<vega::Actor> customTarget =
+		vega::targeting::AutoTargeting::FindTarget(world, customSelectionQuery).lock();
 	if (customTarget.get() != farthest.get())
 	{
 		return Fail("AutoTargeting custom selector was not applied");
 	}
 
-	ly::targeting::TargetLock lock;
+	vega::targeting::TargetLock lock;
 	if (lock.Acquire(world, nearestQuery).lock().get() != nearest.get())
 	{
 		return Fail("AutoTargeting target lock did not acquire its initial target");
 	}
 	nearest->SetActorLocation({ 400.f, 0.f });
-	if (lock.Update(world, nearestQuery, ly::targeting::TargetLockMode::Sticky).lock())
+	if (lock.Update(world, nearestQuery, vega::targeting::TargetLockMode::Sticky).lock())
 	{
 		return Fail("Sticky target lock did not clear an invalid target");
 	}
-	const ly::shared_ptr<ly::Actor> reacquired = lock.Update(
+	const vega::shared_ptr<vega::Actor> reacquired = lock.Update(
 		world,
 		nearestQuery,
-		ly::targeting::TargetLockMode::ReacquireIfInvalid
+		vega::targeting::TargetLockMode::ReacquireIfInvalid
 	).lock();
 	if (reacquired.get() != farthest.get())
 	{

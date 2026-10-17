@@ -11,28 +11,28 @@ namespace AbilityData::ReturnProtocol
 		inline static constexpr char Basic[] = "Ability.Defense.ReturnProtocol.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag FamilyTag{
-		ly::GameplayTags::Ability::Family::ReturnProtocol
+	inline const vega::GameplayTag CategoryTag{ vega::GameplayTags::Ability::Defense };
+	inline const vega::GameplayTag FamilyTag{
+		vega::GameplayTags::Ability::Family::ReturnProtocol
 	};
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active{
-			ly::GameplayTags::State::Ability::ReturnProtocol::Active
+		inline static const vega::GameplayTag Active{
+			vega::GameplayTags::State::Ability::ReturnProtocol::Active
 		};
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started{
-			ly::GameplayTags::Event::Ability::ReturnProtocol::Started
+		inline static const vega::GameplayTag Started{
+			vega::GameplayTags::Event::Ability::ReturnProtocol::Started
 		};
-		inline static const ly::GameplayTag Reflected{
-			ly::GameplayTags::Event::Ability::ReturnProtocol::Reflected
+		inline static const vega::GameplayTag Reflected{
+			vega::GameplayTags::Event::Ability::ReturnProtocol::Reflected
 		};
-		inline static const ly::GameplayTag Ended{
-			ly::GameplayTags::Event::Ability::ReturnProtocol::Ended
+		inline static const vega::GameplayTag Ended{
+			vega::GameplayTags::Event::Ability::ReturnProtocol::Ended
 		};
 	};
 

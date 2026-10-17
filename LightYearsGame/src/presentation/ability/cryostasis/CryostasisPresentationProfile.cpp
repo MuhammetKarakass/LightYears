@@ -3,7 +3,7 @@
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/cryostasis/CryostasisPresentationIds.h"
 
-namespace ly
+namespace vega
 {
 	bool RegisterCryostasisPresentationProfiles()
 	{

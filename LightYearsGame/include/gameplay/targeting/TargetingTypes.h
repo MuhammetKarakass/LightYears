@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <functional>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class World;

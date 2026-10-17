@@ -9,7 +9,7 @@
 #include "visual/VisualAssets.h"
 #include "visual/VisualPipeline.h"
 
-namespace ly::visual
+namespace vega::visual
 {
 	// One ability port as the caller sees it this frame.
 	struct ShipPortState

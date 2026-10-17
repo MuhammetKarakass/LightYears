@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly
+namespace vega
 {
 	// The single cadence for every periodic or continuous damage source: area and
 	// trail fields, beams, cones, infections and status effects such as Ignite.

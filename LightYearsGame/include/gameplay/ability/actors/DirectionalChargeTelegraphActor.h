@@ -6,7 +6,7 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	// Reusable directional charge preview. It follows an optional actor while
 	// its owner may update the aim direction during the charge.

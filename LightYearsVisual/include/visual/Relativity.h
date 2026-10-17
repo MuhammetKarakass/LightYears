@@ -1,6 +1,6 @@
 #pragma once
 #include <sky/Relativity.h>
-namespace ly::visual
+namespace vega::visual
 {
 	namespace relativity = vega::sky::relativity;
 }

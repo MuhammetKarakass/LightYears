@@ -10,7 +10,7 @@
 #include <functional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	struct AbilityScalingChannel
 	{

@@ -28,7 +28,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace ly
+namespace vega
 {
 	class ChainLightningAbilityLifetimeState;
 
@@ -582,7 +582,7 @@ namespace ly
 			targeting::AutoTargeting::FindTargets(*world, initialQuery);
 		if (initialTargets.empty() || !initialTargets.front().actor)
 		{
-			LY_GAME_INFO("Chain Lightning: activation rejected because no initial target was found.");
+			VEGA_GAME_INFO("Chain Lightning: activation rejected because no initial target was found.");
 			return false;
 		}
 
@@ -592,7 +592,7 @@ namespace ly
 			);
 		if (!profile)
 		{
-			LY_GAME_INFO("Chain Lightning: activation rejected because its arc presentation profile is missing.");
+			VEGA_GAME_INFO("Chain Lightning: activation rejected because its arc presentation profile is missing.");
 			return false;
 		}
 
@@ -635,7 +635,7 @@ namespace ly
 		traversal.sourceAbilityId = sas::ContentId{ context.definition.abilityId };
 		traversal.sourceAbilityTags = context.definition.abilityTags;
 		traversal.arcColor = profile->outerColor;
-		LY_GAME_INFO(
+		VEGA_GAME_INFO(
 			"Chain Lightning: started live traversal with %d additional bounce(s); link interval=%.3fs, damage=%.2f.",
 			traversal.remainingBounces,
 			linkTravelTime,

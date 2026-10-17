@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::EnergySpearPresentationIds
+namespace vega::EnergySpearPresentationIds
 {
 	inline constexpr char ChargeBasic[] =
 		"Presentation.Ability.EnergySpear.Charge.Basic";

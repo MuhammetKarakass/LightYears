@@ -6,7 +6,7 @@
 #include <map>
 #include <tuple>
 
-namespace ly
+namespace vega
 {
 	class Player;
 	struct ModuleDefinition;

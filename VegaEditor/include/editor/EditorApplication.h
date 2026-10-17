@@ -21,8 +21,8 @@
 
 namespace vega
 {
-	ly::Application* CreateEditorApplication(std::unique_ptr<GameModule> module);
-	class EditorApplication : public ly::Application
+	vega::Application* CreateEditorApplication(std::unique_ptr<GameModule> module);
+	class EditorApplication : public vega::Application
 	{
 	public:
 		explicit EditorApplication(std::unique_ptr<GameModule> module);
@@ -54,7 +54,7 @@ namespace vega
 		int mBoundsCorner = -1;
 		nlohmann::json mBoundsStart;
 		std::uint64_t mBoundsMergeGroup = 0;
-		void DrawWorldOverlays(sf::RenderTexture& texture, ly::World& world);
+		void DrawWorldOverlays(sf::RenderTexture& texture, vega::World& world);
 		void BuildViewportPanel();
 		void BuildHierarchyPanel();
 		void BuildWorldSettingsPanel();
@@ -65,10 +65,10 @@ namespace vega
 		std::uint64_t mSettingsSchemaRevision = 0;
 		struct SettingRow
 		{
-			ly::SceneSettingField field;
+			vega::SceneSettingField field;
 			nlohmann::json value;
 			std::string preview, warning;
-			std::vector<ly::SceneSettingOption> options;
+			std::vector<vega::SceneSettingOption> options;
 			bool authored = false;
 		};
 		std::map<std::string, std::vector<SettingRow>> mSettingsRows;
@@ -116,9 +116,9 @@ namespace vega
 		bool PrefabDirty() const;
 		void ClosePrefab();
 		void BuildPrefabDialogs();
-		void PrefabPropertyMenu(ly::Actor&, const ReflectedTarget&, const std::string& property);
+		void PrefabPropertyMenu(vega::Actor&, const ReflectedTarget&, const std::string& property);
 		nlohmann::json CaptureScene() const;
-		std::unique_ptr<ly::World> mPrefabWorld;
+		std::unique_ptr<vega::World> mPrefabWorld;
 		EditorSelection mPrefabSelection;
 		EditorContext mPrefabContext{ nullptr, mPrefabSelection };
 		CommandHistory mPrefabHistory{ mPrefabContext };
@@ -137,7 +137,7 @@ namespace vega
 
 		std::filesystem::path mScenePath;
 		bool mProjectDialogRequested = false;
-		ly::ProjectSettings mProjectDraft;
+		vega::ProjectSettings mProjectDraft;
 		int mProjectWindowSize[2]{ 1920, 1080 };
 		int mProjectAutosaveSeconds = 120;
 		std::string mProjectError;
@@ -210,11 +210,11 @@ namespace vega
 		std::uint64_t mPropertyMergeGroup = 0;
 		MultiInspectorCache mMultiInspector;
 		std::optional<std::tuple<unsigned int, std::uint64_t, std::uint64_t>> mInspectorCacheRevision;
-		std::map<std::pair<void*, const ly::reflect::PropertyInfo*>, ly::reflect::PropertyValue> mInspectorValues;
+		std::map<std::pair<void*, const vega::reflect::PropertyInfo*>, vega::reflect::PropertyValue> mInspectorValues;
 		struct ReferencePick
 		{
 			unsigned int actor;
-			std::optional<ly::ComponentIdentity> component;
+			std::optional<vega::ComponentIdentity> component;
 			std::string property;
 			int index = -1;
 		};
@@ -222,9 +222,9 @@ namespace vega
 		struct AuthoringProperty
 		{
 			unsigned int actor;
-			std::optional<ly::ComponentIdentity> component;
-			const ly::reflect::PropertyInfo* property;
-			ly::reflect::PropertyValue value;
+			std::optional<vega::ComponentIdentity> component;
+			const vega::reflect::PropertyInfo* property;
+			vega::reflect::PropertyValue value;
 		};
 		std::vector<AuthoringProperty> mAuthoringProperties;
 		std::optional<std::uint64_t> mAuthoringRevision, mAuthoringSelection;

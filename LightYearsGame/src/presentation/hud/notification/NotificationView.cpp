@@ -1,7 +1,7 @@
 #include "presentation/hud/notification/NotificationView.h"
 #include <utility>
 
-namespace ly
+namespace vega
 {
 	NotificationView::NotificationView(shared_ptr<const NotificationViewModel> viewModel)
 		: Panel{ { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }

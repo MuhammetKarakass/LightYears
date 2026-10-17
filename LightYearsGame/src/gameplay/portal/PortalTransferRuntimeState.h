@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-namespace ly
+namespace vega
 {
 	struct PortalTransferRuntimeState final
 	{

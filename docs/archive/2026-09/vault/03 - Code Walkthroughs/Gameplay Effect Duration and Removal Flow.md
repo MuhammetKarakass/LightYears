@@ -16,7 +16,7 @@ source_files:
   - LightYearsGame/src/gameplay/combat/CombatRuntime.cpp
   - LightYearsGame/tests/GasLiteCoreTests.cpp
 symbols:
-  - ly::CombatRuntime::Tick
+  - vega::CombatRuntime::Tick
   - sas::AbilitySystemComponent::Tick
   - sas::GameplayEffectRuntimeSystem::Tick
   - sas::GameplayEffectRuntimeSystem::RefreshEffectDuration
@@ -71,7 +71,7 @@ flowchart TD
 ## Kritik gerçek kod
 
 Dosya: `LightYearsGame/src/gameplay/combat/CombatRuntime.cpp`  
-Sınıf veya namespace: `ly::CombatRuntime`  
+Sınıf veya namespace: `vega::CombatRuntime`  
 Fonksiyon: `Tick`  
 Görevi: Effect'leri aynı frame içinde ability'lerden önce günceller.
 

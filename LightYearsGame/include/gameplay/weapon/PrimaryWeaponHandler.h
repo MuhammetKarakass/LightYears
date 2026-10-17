@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 

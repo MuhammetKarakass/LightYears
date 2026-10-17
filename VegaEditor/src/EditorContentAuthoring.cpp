@@ -8,7 +8,7 @@ namespace vega
 {
 	namespace
 	{
-		using namespace ly::content;
+		using namespace vega::content;
 		bool Text(const char* label, std::string& text)
 		{
 			return ImGui::InputText(label, text.data(), text.capacity() + 1, ImGuiInputTextFlags_CallbackResize,

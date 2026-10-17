@@ -5,7 +5,7 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 
-namespace ly
+namespace vega
 {
 	// A short-lived, non-colliding world visual for the instant pulse. The
 	// ability owns the gameplay query; this actor only renders its result.

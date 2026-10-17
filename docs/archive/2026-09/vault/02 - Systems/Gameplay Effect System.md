@@ -39,7 +39,7 @@ symbols:
   - sas::ActiveGameplayEffect
   - sas::GameplayEffectHandle
   - sas::GameplayEffectLifecycleOrchestrator
-  - ly::GameplayEffectApplicationContext
+  - vega::GameplayEffectApplicationContext
   - sas::GameplayEffectSystem
 related:
   - "[[GameplayEffectSystem]]"

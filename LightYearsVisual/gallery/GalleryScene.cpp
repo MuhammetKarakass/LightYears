@@ -7,7 +7,7 @@
 #include <random>
 #include <utility>
 
-using namespace ly::visual;
+using namespace vega::visual;
 
 namespace
 {

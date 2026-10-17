@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-namespace ly::ReclaimerProtocolPresentationIds
+namespace vega::ReclaimerProtocolPresentationIds
 {
 	inline constexpr char RepairKitBasic[] =
 		"Presentation.Ability.ReclaimerProtocol.RepairKit.Basic";

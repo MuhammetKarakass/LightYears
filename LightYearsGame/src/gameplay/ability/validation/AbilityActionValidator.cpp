@@ -5,7 +5,7 @@
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 
-namespace ly
+namespace vega
 {
 	bool AbilityActionValidator::Validate(
 		const List<AbilityActionSpec>& actions,

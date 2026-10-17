@@ -15,7 +15,7 @@
 #include <string>
 #include <utility>
 
-namespace ly::content
+namespace vega::content
 {
 	namespace
 	{
@@ -130,9 +130,9 @@ namespace ly::content
 			};
 		}
 
-		ly::List<sas::AttributeModifier> ParseModifiers(const Json& values)
+		vega::List<sas::AttributeModifier> ParseModifiers(const Json& values)
 		{
-			ly::List<sas::AttributeModifier> modifiers;
+			vega::List<sas::AttributeModifier> modifiers;
 			for (const Json& value : values)
 			{
 				modifiers.emplace_back(ParseModifier(value));
@@ -140,9 +140,9 @@ namespace ly::content
 			return modifiers;
 		}
 
-		ly::List<std::string> ParseUpgradeIds(const Json& values)
+		vega::List<std::string> ParseUpgradeIds(const Json& values)
 		{
-			ly::List<std::string> ids;
+			vega::List<std::string> ids;
 			for (const Json& value : values)
 			{
 				ids.emplace_back(value.get<std::string>());
@@ -150,9 +150,9 @@ namespace ly::content
 			return ids;
 		}
 
-		ly::List<GameplayTag> ParseTags(const Json& values)
+		vega::List<GameplayTag> ParseTags(const Json& values)
 		{
-			ly::List<GameplayTag> tags;
+			vega::List<GameplayTag> tags;
 			for (const Json& value : values)
 			{
 				tags.emplace_back(GameplayTag{ value.get<std::string>() });
@@ -199,9 +199,9 @@ namespace ly::content
 			return definition;
 		}
 
-		ly::List<PrimaryWeaponFeatureType> ParseFeatureTypes(const Json& values)
+		vega::List<PrimaryWeaponFeatureType> ParseFeatureTypes(const Json& values)
 		{
-			ly::List<PrimaryWeaponFeatureType> types;
+			vega::List<PrimaryWeaponFeatureType> types;
 			for (const Json& value : values)
 			{
 				types.push_back(ParseFeatureType(value.get<std::string>()));
@@ -264,7 +264,7 @@ namespace ly::content
 		{
 			// Weapon levels are unbounded; any legacy "maxLevel" key is ignored.
 			WeaponProgressionProfile profile;
-			profile.scrapCost = ly::ParseScrapCostFormula(
+			profile.scrapCost = vega::ParseScrapCostFormula(
 				object,
 				ownerLabel.empty() ? std::string("Weapon") : ownerLabel
 			);

@@ -10,7 +10,7 @@
 #include <optional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	class Actor;
 	class PlayerSpaceShip;

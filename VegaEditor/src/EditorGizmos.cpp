@@ -13,7 +13,7 @@ namespace vega
 {
 	bool EditorApplication::BuildBoundsOverlay()
 	{
-		const auto bounds = ly::ReadSceneBounds(mSceneSettings, GetEngineContext().SceneSettings());
+		const auto bounds = vega::ReadSceneBounds(mSceneSettings, GetEngineContext().SceneSettings());
 		if (!bounds || !mContext.world || mPrefabWorld) { mBoundsCorner = -1; return false; }
 		const auto image = mViewportImageRect;
 		const auto main = ImGui::GetMainViewport()->Pos;
@@ -53,7 +53,7 @@ namespace vega
 			{
 				const auto pixel = MapWindowToTexturePixel({ int(mouse.x - main.x), int(mouse.y - main.y) }, image, mViewport.GetSize());
 				const auto point = mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView());
-				const auto start = ly::ReadSceneBounds(nlohmann::json{ { "bounds", mBoundsStart } }, GetEngineContext().SceneSettings()).value();
+				const auto start = vega::ReadSceneBounds(nlohmann::json{ { "bounds", mBoundsStart } }, GetEngineContext().SceneSettings()).value();
 				const sf::Vector2f opposite = start.position + sf::Vector2f{ (mBoundsCorner & 1) ? 0.f : start.size.x, (mBoundsCorner & 2) ? 0.f : start.size.y };
 				const nlohmann::json value{ std::min(point.x, opposite.x), std::min(point.y, opposite.y), std::max(1.f, std::abs(point.x - opposite.x)), std::max(1.f, std::abs(point.y - opposite.y)) };
 				if (value != mSceneSettings.at("bounds")) mHistory.Execute(std::make_unique<SetSceneSettingCommand>("bounds", value, mBoundsMergeGroup));
@@ -87,11 +87,11 @@ namespace vega
 				{
 					if (!target.type) return;
 					for (const auto* property : target.type->AllProperties())
-						if (property->kind == ly::reflect::PropertyKind::ActorRef || property->kind == ly::reflect::PropertyKind::List)
+						if (property->kind == vega::reflect::PropertyKind::ActorRef || property->kind == vega::reflect::PropertyKind::List)
 							mAuthoringProperties.push_back({ actor->GetUniqueID(), target.componentIdentity, property, property->getter(target.object) });
 				};
 				collect(ResolvePropertyTarget(*actor, {}));
-				actor->ForEachComponent([&](ly::ActorComponent& component) { collect(ResolvePropertyTarget(*actor, ly::IdentifyComponent(*actor, component))); });
+				actor->ForEachComponent([&](vega::ActorComponent& component) { collect(ResolvePropertyTarget(*actor, vega::IdentifyComponent(*actor, component))); });
 			}
 			mAuthoringRevision = mContext.sceneRevision; mAuthoringSelection = mSelection.Revision(); mAuthoringWorld = mContext.world->GetUniqueID();
 		}
@@ -112,7 +112,7 @@ namespace vega
 			auto& entry = mAuthoringProperties[row];
 			const auto actor = mContext.Resolve(entry.actor);
 			if (!actor) continue;
-			const auto line = [&](const ly::ActorRef& ref)
+			const auto line = [&](const vega::ActorRef& ref)
 			{
 				const auto target = ref.Resolve(*mContext.world);
 				if (!target) return;
@@ -125,13 +125,13 @@ namespace vega
 						{ a.x + (b.x - a.x) * end / distance, a.y + (b.y - a.y) * end / distance }, IM_COL32(100, 210, 245, 230), 1.5f);
 				}
 			};
-			if (entry.property->kind == ly::reflect::PropertyKind::ActorRef) line(std::get<ly::ActorRef>(entry.value));
+			if (entry.property->kind == vega::reflect::PropertyKind::ActorRef) line(std::get<vega::ActorRef>(entry.value));
 			else
 			{
-				auto& list = std::get<ly::reflect::PropertyList>(entry.value);
+				auto& list = std::get<vega::reflect::PropertyList>(entry.value);
 				for (std::size_t i = 0; i < list.size(); ++i)
 				{
-					if (const auto* ref = std::get_if<ly::ActorRef>(&list[i])) line(*ref);
+					if (const auto* ref = std::get_if<vega::ActorRef>(&list[i])) line(*ref);
 					if (const auto* point = std::get_if<sf::Vector2f>(&list[i]))
 					{
 						const auto p = screen(*point);
@@ -154,7 +154,7 @@ namespace vega
 			{
 				auto& entry = mAuthoringProperties[row];
 				auto value = entry.value;
-				auto& list = std::get<ly::reflect::PropertyList>(value);
+				auto& list = std::get<vega::reflect::PropertyList>(value);
 				if (index >= list.size()) mPointDrag.reset();
 				else
 				{
@@ -303,7 +303,7 @@ namespace vega
 		d->PopClipRect();
 	}
 
-	void EditorApplication::DrawWorldOverlays(sf::RenderTexture& texture, ly::World& world)
+	void EditorApplication::DrawWorldOverlays(sf::RenderTexture& texture, vega::World& world)
 	{
 		const auto previous = texture.getView();
 		const auto view = world.GetWorldView();
@@ -333,8 +333,8 @@ namespace vega
 		}
 		if (mContext.viewSettings.colliders)
 		{
-			std::unordered_set<const ly::Actor*> fallbackActors;
-			for (const auto& weak : world.GetActorsByType<ly::Actor>())
+			std::unordered_set<const vega::Actor*> fallbackActors;
+			for (const auto& weak : world.GetActorsByType<vega::Actor>())
 			{
 				const auto actor = weak.lock();
 				if (!actor || actor->GetIsPendingDestroy() || !actor->HasPhysicsBody()) continue;
@@ -377,7 +377,7 @@ namespace vega
 				struct DrawContext
 				{
 					sf::RenderTexture& target;
-					const std::unordered_set<const ly::Actor*>& actors;
+					const std::unordered_set<const vega::Actor*>& actors;
 					float rate;
 					float thickness;
 				};
@@ -392,7 +392,7 @@ namespace vega
 					{
 						auto& draw = *static_cast<DrawContext*>(data);
 						const auto body = b2Shape_GetBody(id);
-						const auto* actor = static_cast<const ly::Actor*>(b2Body_GetUserData(body));
+						const auto* actor = static_cast<const vega::Actor*>(b2Body_GetUserData(body));
 						if (draw.actors.find(actor) == draw.actors.end()) return true;
 						if (b2Shape_GetType(id) == b2_polygonShape)
 						{

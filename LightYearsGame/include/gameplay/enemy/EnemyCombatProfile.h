@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace ly
+namespace vega
 {
 	enum class EnemyPowerScalingPolicy
 	{

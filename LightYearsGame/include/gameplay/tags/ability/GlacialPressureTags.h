@@ -2,14 +2,14 @@
 
 #include "framework/Core.h"
 
-namespace ly::GameplayTags::Ability::Family
+namespace vega::GameplayTags::Ability::Family
 {
 	inline const GameplayTag GlacialPressure{
 		"Ability.Offense.GlacialPressure"
 	};
 }
 
-namespace ly::GameplayTags::State::Ability::GlacialPressure
+namespace vega::GameplayTags::State::Ability::GlacialPressure
 {
 	inline const GameplayTag Focusing{
 		"State.Ability.GlacialPressure.Focusing"
@@ -19,7 +19,7 @@ namespace ly::GameplayTags::State::Ability::GlacialPressure
 	};
 }
 
-namespace ly::GameplayTags::Event::Ability::GlacialPressure
+namespace vega::GameplayTags::Event::Ability::GlacialPressure
 {
 	inline const GameplayTag Started{
 		"Event.Ability.GlacialPressure.Started"

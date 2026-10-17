@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly
+namespace vega
 {
 	bool RegisterShieldVisuals();
 }

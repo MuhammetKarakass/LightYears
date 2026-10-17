@@ -12,10 +12,10 @@ source_files:
   - LightYearsGame/src/gameplay/effects/LightYearsEffectBehaviorRuntime.cpp
   - LightYearsGame/src/gameplay/effects/content/barrier/BarrierEffectBehavior.cpp
 symbols:
-  - ly::ApplyCombatDamage
-  - ly::CombatRuntime::ProcessIncomingDamage
-  - ly::SpaceShip::ReceiveDamage
-  - ly::CombatRuntime::NotifyDamageResolved
+  - vega::ApplyCombatDamage
+  - vega::CombatRuntime::ProcessIncomingDamage
+  - vega::SpaceShip::ReceiveDamage
+  - vega::CombatRuntime::NotifyDamageResolved
 related:
   - "[[Combat and Damage System]]"
   - "[[Shield System]]"

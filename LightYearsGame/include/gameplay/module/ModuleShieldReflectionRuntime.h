@@ -3,7 +3,7 @@
 #include "abilities/AbilityEvent.h"
 #include "framework/Delegate.h"
 
-namespace ly
+namespace vega
 {
 	class CombatRuntime;
 	class SpaceShip;

@@ -8,9 +8,9 @@ source_files:
   - LightYearsGame/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
   - LightYearsGame/include/gameplay/weapon/PrimaryWeaponHandler.h
 symbols:
-  - ly::PrimaryWeaponExecutionSystem
-  - ly::PrimaryWeaponRuntimeState
-  - ly::PrimaryWeaponExecutionContext
+  - vega::PrimaryWeaponExecutionSystem
+  - vega::PrimaryWeaponRuntimeState
+  - vega::PrimaryWeaponExecutionContext
 related:
   - "[[Weapon System]]"
   - "[[Primary Weapon Fire Lifecycle]]"
@@ -21,7 +21,7 @@ related:
 
 ## Rol
 
-`ly::PrimaryWeaponExecutionSystem`, stateless primary-weapon dispatcher'ıdır. Kendi active weapon container'ı yoktur; caller'ın verdiği `PrimaryWeaponRuntimeState` üzerinde validation, configuration ve handler/feature lifecycle'ını yürütür.
+`vega::PrimaryWeaponExecutionSystem`, stateless primary-weapon dispatcher'ıdır. Kendi active weapon container'ı yoktur; caller'ın verdiği `PrimaryWeaponRuntimeState` üzerinde validation, configuration ve handler/feature lifecycle'ını yürütür.
 
 ## Public yüzey
 

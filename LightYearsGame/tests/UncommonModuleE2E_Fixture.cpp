@@ -121,21 +121,21 @@ namespace uncommon_module_e2e
 			};
 		}
 
-		const ly::ModuleDefinition* FindDefinition(const ly::List<ly::ModuleDefinition>& definitions, const sas::ContentId& id)
+		const vega::ModuleDefinition* FindDefinition(const vega::List<vega::ModuleDefinition>& definitions, const sas::ContentId& id)
 		{
-			for (const ly::ModuleDefinition& definition : definitions) if (definition.moduleId == id) return &definition;
+			for (const vega::ModuleDefinition& definition : definitions) if (definition.moduleId == id) return &definition;
 			return nullptr;
 		}
 
-		const ly::ModuleSideFeatureDefinition* FindFeature(const ly::List<ly::ModuleSideFeatureDefinition>& definitions, const sas::ContentId& id)
+		const vega::ModuleSideFeatureDefinition* FindFeature(const vega::List<vega::ModuleSideFeatureDefinition>& definitions, const sas::ContentId& id)
 		{
-			for (const ly::ModuleSideFeatureDefinition& definition : definitions) if (definition.sideFeatureId == id) return &definition;
+			for (const vega::ModuleSideFeatureDefinition& definition : definitions) if (definition.sideFeatureId == id) return &definition;
 			return nullptr;
 		}
 
-		std::optional<ly::ModulePlacement> FindCandidate(const ly::ModuleRulesContext& rules, const ly::ModuleLoadout& loadout, const ly::ModuleDefinition& module, std::uint32_t instanceId, int variantIndex, const sas::ContentId& sideFeatureId = {})
+		std::optional<vega::ModulePlacement> FindCandidate(const vega::ModuleRulesContext& rules, const vega::ModuleLoadout& loadout, const vega::ModuleDefinition& module, std::uint32_t instanceId, int variantIndex, const sas::ContentId& sideFeatureId = {})
 		{
-			ly::ModulePlacement candidate;
+			vega::ModulePlacement candidate;
 			candidate.instanceId = instanceId;
 			candidate.moduleId = module.moduleId;
 			candidate.variantIndex = variantIndex;
@@ -146,13 +146,13 @@ namespace uncommon_module_e2e
 					{
 						candidate.origin = { x, y };
 						candidate.rotationQuarterTurns = rotation;
-						if (ly::ModulePlacementRules::CanPlace(rules, loadout, candidate) == ly::ModulePlacementFailure::None)
+						if (vega::ModulePlacementRules::CanPlace(rules, loadout, candidate) == vega::ModulePlacementFailure::None)
 							return candidate;
 					}
 			return std::nullopt;
 		}
 
-		float CurrentOwner(const ly::PlayerSpaceShip& ship, const sas::AttributeId& id)
+		float CurrentOwner(const vega::PlayerSpaceShip& ship, const sas::AttributeId& id)
 		{
 			return ship.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(id);
 		}
@@ -162,15 +162,15 @@ namespace uncommon_module_e2e
 			report.CheckValue(name, expected, actual, "live PlayerSpaceShip runtime attribute");
 		}
 
-		void BroadcastAbilityActivated(ly::PlayerSpaceShip& ship)
+		void BroadcastAbilityActivated(vega::PlayerSpaceShip& ship)
 		{
 			sas::AbilityEvent event;
-			event.eventTag = ly::GameplayTags::Event::Ability::Activated;
+			event.eventTag = vega::GameplayTags::Event::Ability::Activated;
 			event.magnitude = 0.f;
 			ship.GetAbilitySystemComponent().onGameplayEvent.Broadcast(event);
 		}
 
-		bool InstallFixture(Report& report, ly::ModuleLoadout& loadout, const ly::ModuleRulesContext& rules, const ly::ModuleDefinition& module, int variantIndex, int moduleLevel, const sas::ContentId& sideFeatureId, ly::PlayerSpaceShip& ship)
+		bool InstallFixture(Report& report, vega::ModuleLoadout& loadout, const vega::ModuleRulesContext& rules, const vega::ModuleDefinition& module, int variantIndex, int moduleLevel, const sas::ContentId& sideFeatureId, vega::PlayerSpaceShip& ship)
 		{
 			const std::uint32_t instanceId = loadout.AddToInventory(rules, module, variantIndex, module.rarity, moduleLevel, sideFeatureId);
 			report.Check(instanceId != 0, "fixture module is accepted by canonical loadout validation");
@@ -178,23 +178,23 @@ namespace uncommon_module_e2e
 			report.Check(candidate.has_value(), "fixture module finds a legal real schematic placement");
 			if (!candidate) return false;
 			report.Check(loadout.Install(rules, instanceId, candidate->origin, candidate->rotationQuarterTurns) ==
-				ly::ModulePlacementFailure::None, "fixture module installs through the canonical loadout");
+				vega::ModulePlacementFailure::None, "fixture module installs through the canonical loadout");
 			report.Check(ship.GetModuleApplier().Apply(loadout, rules), "real ship applier installs temporary JSON fixture rules");
 			return true;
 		}
 
-		void UninstallFixture(Report& report, ly::ModuleLoadout& loadout, const ly::ModuleRulesContext& rules,
-			std::uint32_t instanceId, ly::PlayerSpaceShip& ship)
+		void UninstallFixture(Report& report, vega::ModuleLoadout& loadout, const vega::ModuleRulesContext& rules,
+			std::uint32_t instanceId, vega::PlayerSpaceShip& ship)
 		{
 			report.Check(loadout.Uninstall(instanceId) && ship.GetModuleApplier().Apply(loadout, rules),
 				"temporary fixture uninstall clears actual ship effects");
 		}
 	}
 
-	void RunRuntimeRuleFixtureChecks(Report& report, ly::Player& player, ly::PlayerSpaceShip& ship, common_module_e2e::HeadlessModuleLevel&, const std::filesystem::path& fixtureRoot)
+	void RunRuntimeRuleFixtureChecks(Report& report, vega::Player& player, vega::PlayerSpaceShip& ship, common_module_e2e::HeadlessModuleLevel&, const std::filesystem::path& fixtureRoot)
 	{
-		using namespace ly;
-		using namespace ly::content;
+		using namespace vega;
+		using namespace vega::content;
 		const Json shippedModules = ReadJson(DataPath("modules.json"));
 		Json fixtureModules = shippedModules;
 		fixtureModules.at("modules").push_back(MakeRuntimeModule());

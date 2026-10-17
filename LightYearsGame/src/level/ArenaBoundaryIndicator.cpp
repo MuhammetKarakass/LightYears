@@ -1,7 +1,7 @@
 #include "level/ArenaBoundaryIndicator.h"
 
 
-namespace ly
+namespace vega
 {
 	ArenaBoundaryIndicator::ArenaBoundaryIndicator(World* owningWorld, const ArenaDefinition& arenaDefinition):
 		Actor{ owningWorld },

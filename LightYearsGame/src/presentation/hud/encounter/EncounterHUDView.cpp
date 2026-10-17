@@ -1,6 +1,6 @@
 #include "presentation/hud/encounter/EncounterHUDView.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

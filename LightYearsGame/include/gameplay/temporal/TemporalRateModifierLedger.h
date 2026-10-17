@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace ly::temporal
+namespace vega::temporal
 {
 	using RateModifierSourceId = std::uint64_t;
 

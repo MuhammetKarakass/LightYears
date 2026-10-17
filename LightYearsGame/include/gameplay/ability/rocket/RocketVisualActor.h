@@ -6,7 +6,7 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/ConvexShape.hpp>
 
-namespace ly
+namespace vega
 {
 	class RocketVisualActor final : public Actor
 	{

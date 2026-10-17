@@ -11,18 +11,18 @@ namespace AbilityData::WingSentinels
 		inline static constexpr char Basic[] = "Ability.Offense.WingSentinels.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag FamilyTag = ly::GameplayTags::Ability::Family::WingSentinels;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Offense;
+	inline const vega::GameplayTag FamilyTag = vega::GameplayTags::Ability::Family::WingSentinels;
 
 	struct State
 	{
-		inline static const ly::GameplayTag Active = ly::GameplayTags::State::Ability::WingSentinels::Active;
+		inline static const vega::GameplayTag Active = vega::GameplayTags::State::Ability::WingSentinels::Active;
 	};
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Started = ly::GameplayTags::Event::Ability::WingSentinels::Started;
-		inline static const ly::GameplayTag Ended = ly::GameplayTags::Event::Ability::WingSentinels::Ended;
+		inline static const vega::GameplayTag Started = vega::GameplayTags::Event::Ability::WingSentinels::Started;
+		inline static const vega::GameplayTag Ended = vega::GameplayTags::Event::Ability::WingSentinels::Ended;
 	};
 
 	struct Attribute
@@ -32,7 +32,7 @@ namespace AbilityData::WingSentinels
 		inline static const sas::AttributeId BaseAttackRate{ "Ability.Offense.WingSentinels.BaseAttackRate" };
 		// Both targeting and projectile range are intentionally shared Range;
 		// they have the same balance meaning in this ability family.
-		inline static const sas::AttributeId Range = ly::CommonAttributeIds::Range;
+		inline static const sas::AttributeId Range = vega::CommonAttributeIds::Range;
 	};
 
 	struct Actor

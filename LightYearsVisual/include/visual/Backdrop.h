@@ -5,7 +5,7 @@
 #include "visual/PipelineSettings.h"
 #include "visual/ShaderLibrary.h"
 #include <sky/Backdrop.h>
-namespace ly::visual
+namespace vega::visual
 {
 	using vega::sky::NebulaParams;
 	using vega::sky::DrawGradient;

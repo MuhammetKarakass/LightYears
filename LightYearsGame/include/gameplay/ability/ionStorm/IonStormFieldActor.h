@@ -7,7 +7,7 @@
 
 #include <SFML/Graphics/VertexArray.hpp>
 
-namespace ly
+namespace vega
 {
 	class IonStormFieldActor final : public AbilityWorldActor
 	{

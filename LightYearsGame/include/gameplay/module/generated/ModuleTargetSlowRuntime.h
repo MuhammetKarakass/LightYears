@@ -4,7 +4,7 @@
 #include "abilities/AbilityEvent.h"
 #include "effects/GameplayEffectHandle.h"
 
-namespace ly
+namespace vega
 {
 	class LightYearsAbilitySystemComponent;
 	class SpaceShip;

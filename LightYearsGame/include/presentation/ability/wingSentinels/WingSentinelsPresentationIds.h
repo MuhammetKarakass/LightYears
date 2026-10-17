@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ly::WingSentinelsPresentationIds
+namespace vega::WingSentinelsPresentationIds
 {
 	inline constexpr char Basic[] = "Presentation.Ability.WingSentinels.Drone.Basic";
 }

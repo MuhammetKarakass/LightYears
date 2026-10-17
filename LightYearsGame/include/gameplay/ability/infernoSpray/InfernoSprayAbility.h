@@ -3,7 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "effects/ActiveGameplayEffect.h"
 
-namespace ly
+namespace vega
 {
 	class InfernoSprayAbility final : public GameAbilityBehavior
 	{

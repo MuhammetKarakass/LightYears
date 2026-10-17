@@ -11,16 +11,16 @@ namespace AbilityData::CombatSentry
 		inline static constexpr char Basic[] = "Ability.Offense.CombatSentry.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag FamilyTag =
-		ly::GameplayTags::Ability::Family::CombatSentry;
+	inline const vega::GameplayTag CategoryTag = vega::GameplayTags::Ability::Offense;
+	inline const vega::GameplayTag FamilyTag =
+		vega::GameplayTags::Ability::Family::CombatSentry;
 
 	struct Event
 	{
-		inline static const ly::GameplayTag Spawned =
-			ly::GameplayTags::Event::Ability::CombatSentry::Spawned;
-		inline static const ly::GameplayTag Ended =
-			ly::GameplayTags::Event::Ability::CombatSentry::Ended;
+		inline static const vega::GameplayTag Spawned =
+			vega::GameplayTags::Event::Ability::CombatSentry::Spawned;
+		inline static const vega::GameplayTag Ended =
+			vega::GameplayTags::Event::Ability::CombatSentry::Ended;
 	};
 
 	struct Actor

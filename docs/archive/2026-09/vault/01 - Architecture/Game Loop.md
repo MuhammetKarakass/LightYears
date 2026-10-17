@@ -3,18 +3,18 @@ type: architecture
 status: implemented
 last_verified_commit: b2e24c11d157c64b89bd1cf47c1390bf72784056
 source_files:
-  - LightYearsEngine/src/EntryPoint.cpp
+  - VegaEngine/src/EntryPoint.cpp
   - LightYearsGame/src/gameFramework/GameApplication.cpp
-  - LightYearsEngine/src/framework/Application.cpp
-  - LightYearsEngine/src/framework/World.cpp
-  - LightYearsEngine/src/framework/PhysicsSystem.cpp
+  - VegaEngine/src/framework/Application.cpp
+  - VegaEngine/src/framework/World.cpp
+  - VegaEngine/src/framework/PhysicsSystem.cpp
 symbols:
   - main
   - GetApplication
-  - ly::Application::Run
-  - ly::Application::TickInternal
-  - ly::World::TickInternal
-  - ly::PhysicsSystem::Step
+  - vega::Application::Run
+  - vega::Application::TickInternal
+  - vega::World::TickInternal
+  - vega::PhysicsSystem::Step
 related:
   - "[[Application Startup Flow]]"
   - "[[Frame Update Flow]]"
@@ -52,13 +52,13 @@ Input event’leri frame başında World/HUD’a gönderilir. Ardından actor/wo
 
 ## Kritik gerçek kod
 
-Dosya: `LightYearsEngine/src/EntryPoint.cpp`  
+Dosya: `VegaEngine/src/EntryPoint.cpp`  
 Sınıf veya namespace: global  
 Fonksiyon: `main`  
 Görevi: Uygulamayı sahiplenen `unique_ptr` oluşturmak ve loop’u başlatmak.
 
 ```cpp
-std::unique_ptr<ly::Application> app{ GetApplication() };
+std::unique_ptr<vega::Application> app{ GetApplication() };
 if (!app)
 {
 	std::cerr << "Failed to create application." << std::endl;
@@ -70,8 +70,8 @@ app.reset();
 std::quick_exit(0);
 ```
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `Run`  
 Görevi: Delta time üretmek, event’leri işlemek, update ve render sırasını yürütmek.
 
@@ -119,8 +119,8 @@ while (mWindow.isOpen() && !mShouldQuit)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `TickInternal`  
 Görevi: Application, World, timer, physics, audio, temizlik ve world geçişini sıraya koymak. World değiştirme bölümü bu parçada çıkarılmıştır.
 
@@ -145,8 +145,8 @@ if (!isPaused)
 AudioManager::GetAudioManager().Update(deltaTime);
 ```
 
-Dosya: `LightYearsEngine/src/framework/PhysicsSystem.cpp`  
-Sınıf veya namespace: `ly::PhysicsSystem`  
+Dosya: `VegaEngine/src/framework/PhysicsSystem.cpp`  
+Sınıf veya namespace: `vega::PhysicsSystem`  
 Fonksiyon: `Step`  
 Görevi: Bekleyen body silmelerini uygulamak, Box2D adımını ve collision event’lerini çalıştırmak.
 
@@ -160,8 +160,8 @@ if (mPhysicsWorld.index1 != 0)
 }
 ```
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `RenderInternal`  
 Görevi: Frame buffer’ını temizlemek, world’ü çizmek ve frame’i sunmak.
 
@@ -171,8 +171,8 @@ Render();
 mWindow.display();
 ```
 
-Dosya: `LightYearsEngine/src/framework/Application.cpp`  
-Sınıf veya namespace: `ly::Application`  
+Dosya: `VegaEngine/src/framework/Application.cpp`  
+Sınıf veya namespace: `vega::Application`  
 Fonksiyon: `ShutdownApplication`  
 Görevi: Normal kapanışta servisleri ve world’leri belirli sırayla bırakmak.
 
@@ -218,9 +218,9 @@ Gerçek pencere event’leri, render sunumu, Box2D contact sırası ve platforma
 
 ## Kod Okuma Sırası
 
-1. `LightYearsEngine/src/EntryPoint.cpp` — gerçek executable başlangıcı.
+1. `VegaEngine/src/EntryPoint.cpp` — gerçek executable başlangıcı.
 2. `LightYearsGame/src/gameFramework/GameApplication.cpp` — somut uygulama ve ilk world.
-3. `LightYearsEngine/src/framework/Application.cpp` — ana loop ve frame sırası.
-4. `LightYearsEngine/src/framework/World.cpp` — actor/world update sırası.
-5. `LightYearsEngine/src/framework/PhysicsSystem.cpp` — collision adımının frame’e bağlandığı yer.
+3. `VegaEngine/src/framework/Application.cpp` — ana loop ve frame sırası.
+4. `VegaEngine/src/framework/World.cpp` — actor/world update sırası.
+5. `VegaEngine/src/framework/PhysicsSystem.cpp` — collision adımının frame’e bağlandığı yer.
 

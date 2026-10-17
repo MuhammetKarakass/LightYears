@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
-namespace ly
+namespace vega
 {
 	enum class ArenaBoundaryVisualType
 	{

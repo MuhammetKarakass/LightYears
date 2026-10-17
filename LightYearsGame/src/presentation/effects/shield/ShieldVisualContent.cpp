@@ -5,7 +5,7 @@
 #include "presentation/effects/shield/ShieldVisual.h"
 #include "presentation/effects/shield/ShieldVisualIds.h"
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

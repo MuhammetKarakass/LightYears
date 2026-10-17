@@ -15,13 +15,13 @@ namespace
 #endif
 		return fallback;
 	}
-	class BlankApplication final : public ly::Application
+	class BlankApplication final : public vega::Application
 	{
 	public:
-		BlankApplication(const std::filesystem::path& root, const ly::ProjectSettings& project)
+		BlankApplication(const std::filesystem::path& root, const vega::ProjectSettings& project)
 			: Application{ { project.windowWidth, project.windowHeight }, 32, project.name, sf::Style::Default }
 		{
-			ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Info);
+			vega::debug::Log::SetMinimumLevel(vega::debug::LogLevel::Info);
 			project.ApplyCollisionLayers(GetEngineContext());
 			mModule.ConfigureProject(root / "vega.project.json");
 			RegisterGameModule(mModule, false);
@@ -31,7 +31,7 @@ namespace
 			nlohmann::json document;
 			input >> document;
 			LoadWorld(mModule.CreateLevel(*this, document, false));
-			ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Scene, {},
+			vega::debug::Log::Write(vega::debug::LogLevel::Info, vega::debug::LogChannel::Scene, {},
 				"Blank startup scene: " + scene);
 			mCapture = Option("--visual-capture");
 			mFrames = std::max(1, std::stoi(Option("--capture-frames", "120")));
@@ -59,7 +59,7 @@ namespace
 	};
 }
 
-ly::Application* GetApplication()
+vega::Application* GetApplication()
 {
 	// Packaged assets resolve beside the executable, independent of the launch directory.
 	std::filesystem::path executable;
@@ -67,6 +67,6 @@ ly::Application* GetApplication()
 	executable = std::filesystem::absolute(__argv[0]).parent_path();
 #endif
 	const std::filesystem::path root = Option("--asset-root", (executable / "assets").string());
-	const auto project = ly::ProjectSettings::Load(root / "vega.project.json");
+	const auto project = vega::ProjectSettings::Load(root / "vega.project.json");
 	return new BlankApplication(root, project);
 }

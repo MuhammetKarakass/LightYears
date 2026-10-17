@@ -39,7 +39,7 @@ namespace sas
 		void ResetToBaseValue() { currentValue = baseValue; }
 	};
 
-	using GameplayAttributeList = ly::List<GameplayAttribute>;
+	using GameplayAttributeList = vega::List<GameplayAttribute>;
 
 	inline GameplayAttribute* FindAttribute(
 		GameplayAttributeList& attributes,

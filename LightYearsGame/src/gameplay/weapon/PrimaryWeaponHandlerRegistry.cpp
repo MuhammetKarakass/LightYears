@@ -4,7 +4,7 @@
 
 #include <cstdlib>
 
-namespace ly
+namespace vega
 {
 	namespace
 	{

@@ -6,7 +6,7 @@
 #include <functional>
 #include <string>
 
-namespace ly
+namespace vega
 {
 	// Action validation depends on LightYears registries (weapon, actor, effect)
 	// but has no component state. Keeping it separate prevents GameAbility
