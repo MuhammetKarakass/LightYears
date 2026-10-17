@@ -1,6 +1,8 @@
-#include "gameplay/projectile/ProjectileReflectionRegistryActor.h"
+#include "gameplay/projectile/ProjectileReflectionRegistry.h"
 
 #include "framework/MathUtility.h"
+#include "framework/World.h"
+#include "framework/WorldServices.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"
 
@@ -10,11 +12,7 @@ namespace vega
 {
 	namespace
 	{
-		float DistanceSquaredToSegment(
-			const sf::Vector2f& point,
-			const sf::Vector2f& start,
-			const sf::Vector2f& end
-		)
+		float DistanceSquaredToSegment(const sf::Vector2f& point, const sf::Vector2f& start, const sf::Vector2f& end)
 		{
 			const sf::Vector2f segment = end - start;
 			const float segmentLengthSquared =
@@ -26,32 +24,32 @@ namespace vega
 			}
 
 			const sf::Vector2f pointOffset = point - start;
-			const float fraction = std::clamp(
-				(pointOffset.x * segment.x + pointOffset.y * segment.y) /
-					segmentLengthSquared,
-				0.f,
-				1.f
-			);
+			const float fraction = std::clamp((pointOffset.x * segment.x + pointOffset.y * segment.y) / segmentLengthSquared, 0.f, 1.f);
 			const sf::Vector2f offset = point - (start + segment * fraction);
 			return offset.x * offset.x + offset.y * offset.y;
 		}
 	}
 
-	ProjectileReflectionRegistryActor::ProjectileReflectionRegistryActor(World* world)
-		: Actor(world)
+	ProjectileReflectionRegistry::ProjectileReflectionRegistry(World* world)
+		: mWorld(world)
 	{
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
 	}
 
-	uint64_t ProjectileReflectionRegistryActor::RegisterReceiver(
-		Actor& defender,
-		ProjectileReflectionReceiver& receiver
-	)
+	ProjectileReflectionRegistry* ProjectileReflectionRegistry::GetOrCreate(World& world)
+	{
+		try { return &world.Services().GetOrCreate<ProjectileReflectionRegistry>(&world); }
+		catch (const std::logic_error&)
+		{
+			// Services close before actor teardown; destructor-time registration returns empty.
+			return nullptr;
+		}
+	}
+
+	uint64_t ProjectileReflectionRegistry::RegisterReceiver(Actor& defender, ProjectileReflectionReceiver& receiver)
 	{
 		const unsigned int defenderId = defender.GetUniqueID();
 		if (defenderId == 0u || defender.GetIsPendingDestroy() ||
-			!GetWorld() || defender.GetWorld() != GetWorld())
+			!mWorld || defender.GetWorld() != mWorld)
 		{
 			return 0u;
 		}
@@ -70,34 +68,33 @@ namespace vega
 		{
 			++mNextGeneration;
 		}
-		mEntries[defenderId] = Entry{ liveDefender, &receiver, mNextGeneration };
+		mState->entries[defenderId] = ProjectileReflectionRegistryState::Entry{ liveDefender, &receiver, mNextGeneration };
 		return mNextGeneration;
 	}
 
-	void ProjectileReflectionRegistryActor::UnregisterReceiver(
-		unsigned int defenderId,
-		uint64_t generation
-	)
+	void ProjectileReflectionRegistryState::UnregisterReceiver(unsigned int defenderId, uint64_t generation)
 	{
-		const auto entry = mEntries.find(defenderId);
-		if (entry != mEntries.end() && entry->second.generation == generation)
+		const auto entry = entries.find(defenderId);
+		if (entry != entries.end() && entry->second.generation == generation)
 		{
-			mEntries.erase(entry);
+			entries.erase(entry);
 		}
 	}
 
-	bool ProjectileReflectionRegistryActor::TryReflectProjectile(
-		AbilityWorldActor& projectile,
-		Actor& defender
-	)
+	void ProjectileReflectionRegistry::UnregisterReceiver(unsigned int defenderId, uint64_t generation)
 	{
-		if (GetIsPendingDestroy() || !GetWorld() || projectile.GetWorld() != GetWorld() ||
-			defender.GetWorld() != GetWorld() || projectile.GetIsPendingDestroy() || defender.GetIsPendingDestroy())
+		mState->UnregisterReceiver(defenderId, generation);
+	}
+
+	bool ProjectileReflectionRegistry::TryReflectProjectile(AbilityWorldActor& projectile, Actor& defender)
+	{
+		if (!mWorld || projectile.GetWorld() != mWorld ||
+			defender.GetWorld() != mWorld || projectile.GetIsPendingDestroy() || defender.GetIsPendingDestroy())
 		{
 			return false;
 		}
-		const auto entry = mEntries.find(defender.GetUniqueID());
-		if (entry == mEntries.end())
+		const auto entry = mState->entries.find(defender.GetUniqueID());
+		if (entry == mState->entries.end())
 		{
 			return false;
 		}
@@ -107,21 +104,17 @@ namespace vega
 			entry->second.receiver->TryReflectIncomingProjectile(projectile, defender);
 	}
 
-	bool ProjectileReflectionRegistryActor::TryReflectProjectileAlongPath(
-		AbilityWorldActor& projectile,
-		const sf::Vector2f& start,
-		const sf::Vector2f& end
-	)
+	bool ProjectileReflectionRegistry::TryReflectProjectileAlongPath(AbilityWorldActor& projectile, const sf::Vector2f& start, const sf::Vector2f& end)
 	{
-		if (GetIsPendingDestroy() || !GetWorld() || projectile.GetWorld() != GetWorld() ||
+		if (!mWorld || projectile.GetWorld() != mWorld ||
 			projectile.GetIsPendingDestroy()) return false;
-		for (auto entry = mEntries.begin(); entry != mEntries.end();)
+		for (auto entry = mState->entries.begin(); entry != mState->entries.end();)
 		{
 			const shared_ptr<Actor> defender = entry->second.defender.lock();
 			ProjectileReflectionReceiver* receiver = entry->second.receiver;
 			if (!defender || !receiver || defender->GetIsPendingDestroy())
 			{
-				entry = mEntries.erase(entry);
+				entry = mState->entries.erase(entry);
 				continue;
 			}
 

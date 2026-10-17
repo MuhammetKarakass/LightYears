@@ -1,9 +1,10 @@
 #include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "framework/World.h"
+#include "framework/WorldServices.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/closedCircuit/ClosedCircuitFieldActor.h"
-#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.h"
+#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistry.h"
 #include "presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.h"
 
 #include <cmath>
@@ -216,17 +217,17 @@ namespace
 		World world{ nullptr };
 		World otherWorld{ nullptr };
 		ClosedCircuitPresentationProfile profile{};
-		const shared_ptr<ClosedCircuitFieldRegistryActor> registry =
-			ClosedCircuitFieldRegistryActor::GetOrCreate(world);
+		ClosedCircuitFieldRegistry* const registry =
+			ClosedCircuitFieldRegistry::GetOrCreate(world);
 		if (!Expect(static_cast<bool>(registry), "Could not create the world-owned Closed Circuit registry"))
 		{
 			return false;
 		}
-		const shared_ptr<ClosedCircuitFieldRegistryActor> repeatedRegistry =
-			ClosedCircuitFieldRegistryActor::GetOrCreate(world);
+		ClosedCircuitFieldRegistry* const repeatedRegistry =
+			ClosedCircuitFieldRegistry::GetOrCreate(world);
 		if (!Expect(repeatedRegistry == registry,
-			"A pending world registry was not reused by a second same-frame lookup") ||
-			!Expect(world.GetActorsByTypeIncludingPending<ClosedCircuitFieldRegistryActor>().size() == 1u,
+			"A world service was not reused by a second same-frame lookup") ||
+			!Expect(world.Services().Find<ClosedCircuitFieldRegistry>() == registry && world.Services().Count() == 1u,
 				"More than one Closed Circuit registry was created in one world"))
 		{
 			return false;
@@ -264,8 +265,8 @@ namespace
 		const shared_ptr<TestOwner> otherOwner = otherWorld.SpawnActor<TestOwner>().lock();
 		const shared_ptr<ClosedCircuitFieldActor> otherField =
 			otherWorld.SpawnActor<ClosedCircuitFieldActor>(otherOwner.get(), profile).lock();
-		const shared_ptr<ClosedCircuitFieldRegistryActor> otherRegistry =
-			ClosedCircuitFieldRegistryActor::GetOrCreate(otherWorld);
+		ClosedCircuitFieldRegistry* const otherRegistry =
+			ClosedCircuitFieldRegistry::GetOrCreate(otherWorld);
 		if (!Expect(otherOwner && otherField && otherRegistry,
 			"Could not create the isolated second-world registry and actors"))
 		{
@@ -273,7 +274,7 @@ namespace
 		}
 		ConfigureField(*otherField, 100.f, 100.f);
 		if (!Expect(otherRegistry != registry,
-				"Two worlds shared the same Closed Circuit registry actor") ||
+				"Two worlds shared the same Closed Circuit registry service") ||
 			!Expect(otherRegistry->FindActiveField(*otherOwner) == otherField,
 				"The second world could not find its own active field") ||
 			!Expect(!registry->FindActiveField(*otherOwner),
@@ -289,25 +290,26 @@ namespace
 
 	bool TestRegistryWorldTeardownWithRetainedField()
 	{
-		weak_ptr<ClosedCircuitFieldRegistryActor> registryWeak;
+		ClosedCircuitFieldRegistry::Registration retainedRegistration;
 		shared_ptr<ClosedCircuitFieldActor> retainedField;
 		{
 			World world{ nullptr };
 			ClosedCircuitPresentationProfile profile{};
 			const shared_ptr<TestOwner> owner = world.SpawnActor<TestOwner>().lock();
 			retainedField = world.SpawnActor<ClosedCircuitFieldActor>(owner.get(), profile).lock();
-			const shared_ptr<ClosedCircuitFieldRegistryActor> registry =
-				ClosedCircuitFieldRegistryActor::GetOrCreate(world);
+			ClosedCircuitFieldRegistry* const registry =
+				ClosedCircuitFieldRegistry::GetOrCreate(world);
 			if (!Expect(owner && retainedField && registry,
 				"Could not create teardown test actors"))
 			{
 				return false;
 			}
 			ConfigureField(*retainedField, 100.f, 100.f);
-			registryWeak = registry;
+			retainedRegistration = registry->RegisterField(*owner, retainedField);
+			if (!Expect(retainedRegistration.IsValid(), "Teardown registration was not live")) return false;
 		}
 
-		if (!Expect(registryWeak.expired(),
+		if (!Expect(!retainedRegistration.IsValid(),
 			"The registry outlived its World after the World released its actors"))
 		{
 			return false;
@@ -358,6 +360,30 @@ namespace
 		return Expect(field->GetIsPendingDestroy(),
 			"Two 10-damage projectiles did not consume the barrier's 15 durability exactly once each");
 	}
+	bool TestRegistryRemovalAndRecreation()
+	{
+		World world{ nullptr };
+		ClosedCircuitPresentationProfile profile{};
+		auto owner = world.SpawnActor<TestOwner>().lock();
+		auto actor = world.SpawnActor<ClosedCircuitFieldActor>(owner.get(), profile).lock();
+		auto* registry = ClosedCircuitFieldRegistry::GetOrCreate(world);
+		if (!Expect(owner && actor && registry, "Could not create service removal test actors")) return false;
+		auto oldRegistration = registry->RegisterField(*owner, actor);
+		if (!Expect(oldRegistration.IsValid(), "Original service registration was invalid") ||
+			!Expect(world.Services().Remove<ClosedCircuitFieldRegistry>(), "Service removal failed") ||
+			!Expect(!oldRegistration.IsValid(), "Removed service retained live registration state") ||
+			!Expect(!world.Services().Find<ClosedCircuitFieldRegistry>(), "Removed service was still discoverable")) return false;
+		auto* recreated = ClosedCircuitFieldRegistry::GetOrCreate(world);
+		auto currentRegistration = recreated->RegisterField(*owner, actor);
+		oldRegistration.Reset();
+		if (!Expect(currentRegistration.IsValid() && recreated->FindActiveField(*owner) == actor,
+			"A stale token removed the recreated service's registration")) return false;
+		auto movedRegistration = std::move(currentRegistration);
+		if (!Expect(!currentRegistration.IsValid() && movedRegistration.IsValid(), "Moving a token lost registration ownership")) return false;
+		movedRegistration.Reset();
+		return Expect(!recreated->FindActiveField(*owner), "Reset did not remove the recreated registration");
+	}
+
 }
 
 int main()
@@ -367,7 +393,8 @@ int main()
 		!TestInterceptionGuardsAndDurability() ||
 		!TestWorldOwnedRegistryAndReplacement() ||
 		!TestRegistryWorldTeardownWithRetainedField() ||
-		!TestWorldProjectileTickUsesInterceptionService())
+		!TestWorldProjectileTickUsesInterceptionService() ||
+		!TestRegistryRemovalAndRecreation())
 	{
 		return 1;
 	}

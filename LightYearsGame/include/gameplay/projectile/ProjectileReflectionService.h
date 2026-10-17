@@ -11,7 +11,8 @@ namespace vega
 {
 	class Actor;
 	class AbilityWorldActor;
-	class ProjectileReflectionRegistryActor;
+	class ProjectileReflectionRegistry;
+	class ProjectileReflectionRegistryState;
 	class World;
 
 	// Active counter abilities implement this policy. The projectile system only
@@ -21,10 +22,7 @@ namespace vega
 	{
 	public:
 		virtual ~ProjectileReflectionReceiver() = default;
-		virtual bool TryReflectIncomingProjectile(
-			AbilityWorldActor& projectile,
-			Actor& defender
-		) = 0;
+		virtual bool TryReflectIncomingProjectile(AbilityWorldActor& projectile, Actor& defender) = 0;
 	};
 
 	class ProjectileReflectionService
@@ -51,13 +49,9 @@ namespace vega
 
 		private:
 			friend class ProjectileReflectionService;
-			Registration(
-				std::weak_ptr<ProjectileReflectionRegistryActor> registry,
-				unsigned int defenderId,
-				uint64_t generation
-			);
+			Registration(std::weak_ptr<ProjectileReflectionRegistryState> state, unsigned int defenderId, uint64_t generation);
 
-			std::weak_ptr<ProjectileReflectionRegistryActor> mRegistry;
+			std::weak_ptr<ProjectileReflectionRegistryState> mState;
 			unsigned int mDefenderId = 0u;
 			// A newer registration for the same defender bumps the generation, so an
 			// older token can never erase the newer entry.
@@ -66,42 +60,22 @@ namespace vega
 
 		// Replaces any existing registration for the defender and returns its handle.
 		// An invalid handle means the receiver could not be registered.
-		static Registration RegisterReceiver(
-			Actor& defender,
-			ProjectileReflectionReceiver& receiver
-		);
-		static bool TryReflectProjectile(
-			AbilityWorldActor& projectile,
-			Actor& defender
-		);
+		static Registration RegisterReceiver(Actor& defender, ProjectileReflectionReceiver& receiver);
+		static bool TryReflectProjectile(AbilityWorldActor& projectile, Actor& defender);
 		// Non-physics delivery projectiles use this swept query while travelling.
 		// It extends the same active receiver window to target-point deliveries.
-		static bool TryReflectProjectileAlongPath(
-			AbilityWorldActor& projectile,
-			const sf::Vector2f& start,
-			const sf::Vector2f& end
-		);
+		static bool TryReflectProjectileAlongPath(AbilityWorldActor& projectile, const sf::Vector2f& start, const sf::Vector2f& end);
 
 		// Reflection from world geometry is intentionally independent from an
 		// active defender receiver. The caller supplies the real swept-contact
 		// normal so the outgoing angle obeys physical reflection.
-		static bool TryReflectFromSurface(
-			Actor& projectile,
-			Actor& surface,
-			const ProjectileReflectionSurfaceHit& hit
-		);
+		static bool TryReflectFromSurface(Actor& projectile, Actor& surface, const ProjectileReflectionSurfaceHit& hit);
 
 		// Physics overlap callbacks do not carry the swept contact normal. Derive
 		// the contacted face from the oriented surface and incoming trajectory so
 		// slow projectiles and fast swept projectiles share the same reflection
 		// policy.
-		static bool TryReflectFromSurfaceOverlap(
-			Actor& projectile,
-			Actor& surface
-		);
+		static bool TryReflectFromSurfaceOverlap(Actor& projectile, Actor& surface);
 
-	private:
-		static std::shared_ptr<ProjectileReflectionRegistryActor> FindRegistryActor(World& world);
-		static std::shared_ptr<ProjectileReflectionRegistryActor> FindOrCreateRegistryActor(World& world);
 	};
 }

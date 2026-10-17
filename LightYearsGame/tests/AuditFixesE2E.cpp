@@ -2,6 +2,7 @@
 #include "framework/Application.h"
 #include "framework/PhysicsScene.h"
 #include "framework/World.h"
+#include "framework/WorldServices.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/content/GameAbilityActions.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
@@ -17,7 +18,7 @@
 #include "gameplay/damage/DamageContext.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"
-#include "gameplay/projectile/ProjectileReflectionRegistryActor.h"
+#include "gameplay/projectile/ProjectileReflectionRegistry.h"
 #include "gameplay/movement/MovementCollisionService.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameplay/weapon/visuals/ContinuousBeamVisualActor.h"
@@ -938,14 +939,14 @@ namespace vega
 			check("returnProtocolEquipped", loadout.EquipAbility(AbilityData::ReturnProtocol::AbilityId::Basic, sas::AbilitySlot::Ability1));
 			system.SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
 			system.Tick(0.01f);
-			auto registry = world.FindServiceActor<ProjectileReflectionRegistryActor>();
+			auto registry = world.Services().Find<ProjectileReflectionRegistry>();
 			check("reflectionRegistryRegistered", registry != nullptr);
 			auto foreign = otherWorld.SpawnActor<RocketProjectileActor>(targets.front().get(), RocketPresentationProfile{}, std::nullopt).lock();
 			check("crossWorldRejected", !ProjectileReflectionService::TryReflectProjectile(*foreign, *owner));
 			auto rocket = world.SpawnActor<RocketProjectileActor>(targets.front().get(), RocketPresentationProfile{}, std::nullopt).lock();
 			check("sameWorldReflects", ProjectileReflectionService::TryReflectProjectile(*rocket, *owner) && rocket->GetOwnerActor() == owner.get());
-			check("sameRegistryReused", world.FindServiceActor<ProjectileReflectionRegistryActor>() == registry);
-			check("emptyWorldLookup", !otherWorld.FindServiceActor<ProjectileReflectionRegistryActor>());
+			check("sameRegistryReused", world.Services().Find<ProjectileReflectionRegistry>() == registry);
+			check("emptyWorldLookup", !otherWorld.Services().Find<ProjectileReflectionRegistry>());
 
 			// Exact endpoint geometry, using the beam's static sweep policy.
 			auto wall = world.SpawnActor<EndpointWall>().lock();

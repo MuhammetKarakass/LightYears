@@ -1,7 +1,7 @@
 #pragma once
 
 #include "framework/Actor.h"
-#include "gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.h"
+#include "gameplay/ability/nanoPlague/NanoPlagueControllerRegistry.h"
 #include "gameplay/damage/DamageContext.h"
 #include "presentation/ability/nanoPlague/NanoPlaguePresentationProfile.h"
 #include <cstdint>
@@ -96,7 +96,7 @@ namespace vega
 		std::uint64_t ResolveSpreadTargetCount() const;
 
 		weak_ptr<Actor> mOwner;
-		NanoPlagueControllerRegistryActor::Registration mRegistryRegistration;
+		NanoPlagueControllerRegistry::Registration mRegistryRegistration;
 		NanoPlaguePresentationProfile mProfile;
 		Settings mSettings;
 		// Monotonic id order preserves tick ordering; erase/find are O(log N).

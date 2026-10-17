@@ -2,8 +2,9 @@
 
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "framework/World.h"
+#include "framework/WorldServices.h"
 #include "gameplay/projectile/ProjectileReflectionParticipant.h"
-#include "gameplay/projectile/ProjectileReflectionRegistryActor.h"
+#include "gameplay/projectile/ProjectileReflectionRegistry.h"
 #include "framework/MathUtility.h"
 #include "framework/TimerManager.h"
 
@@ -54,12 +55,8 @@ namespace vega
 		}
 	}
 
-	ProjectileReflectionService::Registration::Registration(
-		std::weak_ptr<ProjectileReflectionRegistryActor> registry,
-		unsigned int defenderId,
-		uint64_t generation
-	)
-		: mRegistry(std::move(registry))
+	ProjectileReflectionService::Registration::Registration(std::weak_ptr<ProjectileReflectionRegistryState> state, unsigned int defenderId, uint64_t generation)
+		: mState(std::move(state))
 		, mDefenderId(defenderId)
 		, mGeneration(generation)
 	{
@@ -71,25 +68,24 @@ namespace vega
 	}
 
 	ProjectileReflectionService::Registration::Registration(Registration&& other) noexcept
-		: mRegistry(std::move(other.mRegistry))
+		: mState(std::move(other.mState))
 		, mDefenderId(other.mDefenderId)
 		, mGeneration(other.mGeneration)
 	{
-		other.mRegistry.reset();
+		other.mState.reset();
 		other.mDefenderId = 0u;
 		other.mGeneration = 0u;
 	}
 
-	ProjectileReflectionService::Registration&
-	ProjectileReflectionService::Registration::operator=(Registration&& other) noexcept
+	ProjectileReflectionService::Registration& ProjectileReflectionService::Registration::operator=(Registration&& other) noexcept
 	{
 		if (this != &other)
 		{
 			Reset();
-			mRegistry = std::move(other.mRegistry);
+			mState = std::move(other.mState);
 			mDefenderId = other.mDefenderId;
 			mGeneration = other.mGeneration;
-			other.mRegistry.reset();
+			other.mState.reset();
 			other.mDefenderId = 0u;
 			other.mGeneration = 0u;
 		}
@@ -103,19 +99,16 @@ namespace vega
 			return;
 		}
 
-		if (const std::shared_ptr<ProjectileReflectionRegistryActor> registry = mRegistry.lock())
+		if (const std::shared_ptr<ProjectileReflectionRegistryState> state = mState.lock())
 		{
-			registry->UnregisterReceiver(mDefenderId, mGeneration);
+			state->UnregisterReceiver(mDefenderId, mGeneration);
 		}
-		mRegistry.reset();
+		mState.reset();
 		mDefenderId = 0u;
 		mGeneration = 0u;
 	}
 
-	ProjectileReflectionService::Registration ProjectileReflectionService::RegisterReceiver(
-		Actor& defender,
-		ProjectileReflectionReceiver& receiver
-	)
+	ProjectileReflectionService::Registration ProjectileReflectionService::RegisterReceiver(Actor& defender, ProjectileReflectionReceiver& receiver)
 	{
 		World* const world = defender.GetWorld();
 		const unsigned int defenderId = defender.GetUniqueID();
@@ -124,8 +117,8 @@ namespace vega
 			return Registration{};
 		}
 
-		const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
-			FindOrCreateRegistryActor(*world);
+		ProjectileReflectionRegistry* const registry =
+			ProjectileReflectionRegistry::GetOrCreate(*world);
 		if (!registry)
 		{
 			return Registration{};
@@ -134,13 +127,10 @@ namespace vega
 		const uint64_t generation = registry->RegisterReceiver(defender, receiver);
 		return generation == 0u
 			? Registration{}
-			: Registration{ registry, defenderId, generation };
+			: Registration{ registry->mState, defenderId, generation };
 	}
 
-	bool ProjectileReflectionService::TryReflectProjectile(
-		AbilityWorldActor& projectile,
-		Actor& defender
-	)
+	bool ProjectileReflectionService::TryReflectProjectile(AbilityWorldActor& projectile, Actor& defender)
 	{
 		World* const world = defender.GetWorld();
 		if (!world || projectile.GetWorld() != world ||
@@ -149,16 +139,12 @@ namespace vega
 			return false;
 		}
 
-		const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
-			FindRegistryActor(*world);
+		ProjectileReflectionRegistry* const registry =
+			world->Services().Find<ProjectileReflectionRegistry>();
 		return registry && registry->TryReflectProjectile(projectile, defender);
 	}
 
-	bool ProjectileReflectionService::TryReflectProjectileAlongPath(
-		AbilityWorldActor& projectile,
-		const sf::Vector2f& start,
-		const sf::Vector2f& end
-	)
+	bool ProjectileReflectionService::TryReflectProjectileAlongPath(AbilityWorldActor& projectile, const sf::Vector2f& start, const sf::Vector2f& end)
 	{
 		World* const world = projectile.GetWorld();
 		if (!world || projectile.GetIsPendingDestroy())
@@ -166,8 +152,8 @@ namespace vega
 			return false;
 		}
 
-		const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
-			FindRegistryActor(*world);
+		ProjectileReflectionRegistry* const registry =
+			world->Services().Find<ProjectileReflectionRegistry>();
 		return registry && registry->TryReflectProjectileAlongPath(projectile, start, end);
 	}
 
@@ -268,22 +254,4 @@ namespace vega
 		);
 	}
 
-	std::shared_ptr<ProjectileReflectionRegistryActor>
-	ProjectileReflectionService::FindRegistryActor(World& world)
-	{
-		return world.FindServiceActor<ProjectileReflectionRegistryActor>();
-	}
-
-	std::shared_ptr<ProjectileReflectionRegistryActor>
-	ProjectileReflectionService::FindOrCreateRegistryActor(World& world)
-	{
-		if (const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
-			FindRegistryActor(world))
-		{
-			return registry;
-		}
-		auto registry = world.SpawnActor<ProjectileReflectionRegistryActor>().lock();
-		if (!world.RegisterServiceActor(registry)) return {};
-		return registry;
-	}
 }

@@ -55,8 +55,8 @@ namespace vega
 		const shared_ptr<Actor> managedOwner = ownerWeak.lock();
 		if (!managedOwner || managedOwner.get() != &owner) return {};
 
-		const shared_ptr<NanoPlagueControllerRegistryActor> registry =
-			NanoPlagueControllerRegistryActor::GetOrCreate(world);
+		NanoPlagueControllerRegistry* const registry =
+			NanoPlagueControllerRegistry::GetOrCreate(world);
 		if (!registry) return {};
 		if (const shared_ptr<NanoPlagueControllerActor> existing =
 			registry->FindActiveController(owner))

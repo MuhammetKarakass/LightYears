@@ -1,9 +1,10 @@
 #include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "framework/World.h"
+#include "framework/WorldServices.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueControllerActor.h"
-#include "gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.h"
+#include "gameplay/ability/nanoPlague/NanoPlagueControllerRegistry.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
 
@@ -80,17 +81,18 @@ namespace
 			NanoPlagueControllerActor::FindOrCreate(firstWorld, *firstOwner, profile);
 		const shared_ptr<NanoPlagueControllerActor> secondController =
 			NanoPlagueControllerActor::FindOrCreate(secondWorld, *secondOwner, profile);
-		const auto firstRegistries =
-			firstWorld.GetActorsByTypeIncludingPending<NanoPlagueControllerRegistryActor>();
-		const auto secondRegistries =
-			secondWorld.GetActorsByTypeIncludingPending<NanoPlagueControllerRegistryActor>();
+		const auto firstRegistry =
+			firstWorld.Services().Find<NanoPlagueControllerRegistry>();
+		const auto secondRegistry =
+			secondWorld.Services().Find<NanoPlagueControllerRegistry>();
 		return Expect(firstController && secondController, "Could not create Nano Plague controllers") &&
 			Expect(repeatedController == firstController,
 				"Repeated casts for one owner created separate controllers") &&
 			Expect(firstController != secondController,
 				"Controllers were shared across different worlds") &&
-			Expect(firstRegistries.size() == 1u && secondRegistries.size() == 1u &&
-				firstRegistries.front().lock() != secondRegistries.front().lock(),
+			Expect(firstRegistry && secondRegistry && firstRegistry != secondRegistry &&
+				NanoPlagueControllerRegistry::GetOrCreate(firstWorld) == firstRegistry &&
+				firstWorld.Services().Count() == 1u && secondWorld.Services().Count() == 1u,
 				"Nano Plague registries were not isolated per world");
 	}
 
@@ -109,7 +111,7 @@ namespace
 			NanoPlagueControllerActor::FindOrCreate(world, *foreignOwner, profile);
 		return Expect(!unmanagedController, "An unmanaged stack owner received a controller") &&
 			Expect(!foreignController, "An owner from another world received a controller") &&
-			Expect(world.GetActorsByTypeIncludingPending<NanoPlagueControllerRegistryActor>().empty(),
+			Expect(!world.Services().Find<NanoPlagueControllerRegistry>(),
 				"Invalid owners caused a world registry to be created");
 	}
 
@@ -122,8 +124,8 @@ namespace
 
 		const shared_ptr<NanoPlagueControllerActor> first =
 			NanoPlagueControllerActor::FindOrCreate(world, *owner, profile);
-		const shared_ptr<NanoPlagueControllerRegistryActor> registry =
-			NanoPlagueControllerRegistryActor::GetOrCreate(world);
+		NanoPlagueControllerRegistry* const registry =
+			NanoPlagueControllerRegistry::GetOrCreate(world);
 		const shared_ptr<NanoPlagueControllerActor> replacement =
 			world.SpawnActor<NanoPlagueControllerActor>(owner.get(), profile).lock();
 		if (!Expect(first && registry && replacement,
@@ -224,7 +226,7 @@ namespace
 
 	bool TestWorldTeardownWithRetainedController()
 	{
-		weak_ptr<NanoPlagueControllerRegistryActor> registryWeak;
+		NanoPlagueControllerRegistry::Registration retainedRegistration;
 		shared_ptr<NanoPlagueControllerActor> retainedController;
 		shared_ptr<TestCombatant> retainedTarget;
 		{
@@ -234,18 +236,19 @@ namespace
 			if (!Expect(static_cast<bool>(owner), "Could not spawn the teardown test owner")) return false;
 			retainedTarget = world.SpawnActor<TestCombatant>().lock();
 			retainedController = NanoPlagueControllerActor::FindOrCreate(world, *owner, profile);
-			const shared_ptr<NanoPlagueControllerRegistryActor> registry =
-				NanoPlagueControllerRegistryActor::GetOrCreate(world);
+			NanoPlagueControllerRegistry* const registry =
+				NanoPlagueControllerRegistry::GetOrCreate(world);
 			if (!Expect(owner && retainedTarget && retainedController && registry,
 				"Could not spawn world-teardown test actors")) return false;
 
 			NanoPlagueControllerActor::Settings settings;
 			if (!Expect(retainedController->ApplyOrRefreshInfection(*retainedTarget, 0, settings),
 				"Could not apply the teardown test infection")) return false;
-			registryWeak = registry;
+			retainedRegistration = registry->RegisterController(*owner, retainedController);
+			if (!Expect(retainedRegistration.IsValid(), "Teardown registration was not live")) return false;
 		}
 
-		if (!Expect(registryWeak.expired(), "World teardown left the Nano Plague registry alive") ||
+		if (!Expect(!retainedRegistration.IsValid(), "World teardown left the Nano Plague registry alive") ||
 			!Expect(HasNanoPlague(*retainedTarget),
 				"Retained controller cleaned its aura before its own destruction")) return false;
 
@@ -253,6 +256,30 @@ namespace
 		return Expect(!HasNanoPlague(*retainedTarget),
 			"Retained-target aura survived controller destruction after World teardown");
 	}
+	bool TestRegistryRemovalAndRecreation()
+	{
+		World world{ nullptr };
+		NanoPlaguePresentationProfile profile{};
+		auto owner = world.SpawnActor<TestCombatant>().lock();
+		auto actor = world.SpawnActor<NanoPlagueControllerActor>(owner.get(), profile).lock();
+		auto* registry = NanoPlagueControllerRegistry::GetOrCreate(world);
+		if (!Expect(owner && actor && registry, "Could not create service removal test actors")) return false;
+		auto oldRegistration = registry->RegisterController(*owner, actor);
+		if (!Expect(oldRegistration.IsValid(), "Original service registration was invalid") ||
+			!Expect(world.Services().Remove<NanoPlagueControllerRegistry>(), "Service removal failed") ||
+			!Expect(!oldRegistration.IsValid(), "Removed service retained live registration state") ||
+			!Expect(!world.Services().Find<NanoPlagueControllerRegistry>(), "Removed service was still discoverable")) return false;
+		auto* recreated = NanoPlagueControllerRegistry::GetOrCreate(world);
+		auto currentRegistration = recreated->RegisterController(*owner, actor);
+		oldRegistration.Reset();
+		if (!Expect(currentRegistration.IsValid() && recreated->FindActiveController(*owner) == actor,
+			"A stale token removed the recreated service's registration")) return false;
+		auto movedRegistration = std::move(currentRegistration);
+		if (!Expect(!currentRegistration.IsValid() && movedRegistration.IsValid(), "Moving a token lost registration ownership")) return false;
+		movedRegistration.Reset();
+		return Expect(!recreated->FindActiveController(*owner), "Reset did not remove the recreated registration");
+	}
+
 }
 
 int main()
@@ -263,7 +290,8 @@ int main()
 		!TestRegistrationReplacementKeepsNewestGeneration() ||
 		!TestInfectionRefreshAndDeathSpread() ||
 		!TestOwnerDestructionStopsDamageAndClearsInfection() ||
-		!TestWorldTeardownWithRetainedController())
+		!TestWorldTeardownWithRetainedController() ||
+		!TestRegistryRemovalAndRecreation())
 	{
 		return 1;
 	}

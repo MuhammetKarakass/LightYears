@@ -5,7 +5,7 @@
 #include "framework/World.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
-#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.h"
+#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistry.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
@@ -102,15 +102,15 @@ namespace vega
 			return;
 		}
 
-		const shared_ptr<ClosedCircuitFieldRegistryActor> registry =
-			ClosedCircuitFieldRegistryActor::GetOrCreate(*world);
+		ClosedCircuitFieldRegistry* const registry =
+			ClosedCircuitFieldRegistry::GetOrCreate(*world);
 		if (!registry)
 		{
 			Destroy();
 			return;
 		}
 
-		ClosedCircuitFieldRegistryActor::Registration registration =
+		ClosedCircuitFieldRegistry::Registration registration =
 			registry->RegisterField(*owner, self);
 		if (!registration.IsValid())
 		{

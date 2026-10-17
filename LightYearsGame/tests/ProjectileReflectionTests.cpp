@@ -2,9 +2,12 @@
 #include "framework/Actor.h"
 #include "framework/TimerManager.h"
 #include "framework/World.h"
+#include "framework/WorldServices.h"
+#include "gameplay/ability/nanoPlague/NanoPlagueControllerRegistry.h"
+#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/projectile/ProjectileReflectionParticipant.h"
-#include "gameplay/projectile/ProjectileReflectionRegistryActor.h"
+#include "gameplay/projectile/ProjectileReflectionRegistry.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"
 #include "gameplay/projectile/ProjectileReflectionSurface.h"
 
@@ -104,20 +107,9 @@ namespace
 		);
 	}
 
-	int CountRegistryActors(vega::World& world)
+	int CountRegistries(vega::World& world)
 	{
-		int count = 0;
-		for (const vega::weak_ptr<vega::ProjectileReflectionRegistryActor>& registryWeak :
-			world.GetActorsByTypeIncludingPending<vega::ProjectileReflectionRegistryActor>())
-		{
-			const vega::shared_ptr<vega::ProjectileReflectionRegistryActor> registry =
-				registryWeak.lock();
-			if (registry && !registry->GetIsPendingDestroy())
-			{
-				++count;
-			}
-		}
-		return count;
+		return world.Services().Find<vega::ProjectileReflectionRegistry>() ? 1 : 0;
 	}
 
 	bool TestWorldOwnedReceiverRegistry()
@@ -157,7 +149,7 @@ namespace
 		);
 		if (!firstRegistration.IsValid() || !secondRegistration.IsValid() ||
 			!siblingRegistration.IsValid() ||
-			CountRegistryActors(firstWorld) != 1 || CountRegistryActors(secondWorld) != 1)
+			CountRegistries(firstWorld) != 1 || CountRegistries(secondWorld) != 1)
 		{
 			return false;
 		}
@@ -211,6 +203,61 @@ namespace
 			*firstProjectile, *firstDefender
 		);
 	}
+	// This probe is owned only by World, and checks access while World's destructor is running.
+	class RegistryTeardownProbe final : public vega::Actor
+	{
+	public:
+		RegistryTeardownProbe(vega::World* world, bool* checked) : Actor(world), mWorld(*world), mChecked(*checked) {}
+		~RegistryTeardownProbe() override
+		{
+			mChecked = !mWorld.Services().Find<vega::ProjectileReflectionRegistry>() &&
+				!mWorld.Services().Find<vega::NanoPlagueControllerRegistry>() &&
+				!mWorld.Services().Find<vega::ClosedCircuitFieldRegistry>() &&
+				!vega::ProjectileReflectionRegistry::GetOrCreate(mWorld) &&
+				!vega::NanoPlagueControllerRegistry::GetOrCreate(mWorld) &&
+				!vega::ClosedCircuitFieldRegistry::GetOrCreate(mWorld);
+		}
+
+	private:
+		vega::World& mWorld;
+		bool& mChecked;
+	};
+
+	bool TestRegistryRemovalAndWorldTeardown()
+	{
+		vega::ProjectileReflectionService::Registration retainedRegistration;
+		vega::shared_ptr<TestReflectionDefender> retainedDefender;
+		TestReceiver receiver;
+		bool teardownChecked = false;
+		{
+			vega::World world{ nullptr };
+			retainedDefender = world.SpawnActor<TestReflectionDefender>().lock();
+			auto projectile = world.SpawnActor<TestAbilityProjectile>().lock();
+			if (!retainedDefender || !projectile) return false;
+			auto oldRegistration = vega::ProjectileReflectionService::RegisterReceiver(*retainedDefender, receiver);
+			if (!oldRegistration.IsValid() || !world.Services().Remove<vega::ProjectileReflectionRegistry>() ||
+				world.Services().Find<vega::ProjectileReflectionRegistry>()) return false;
+			retainedRegistration = vega::ProjectileReflectionService::RegisterReceiver(*retainedDefender, receiver);
+			oldRegistration.Reset();
+			if (!retainedRegistration.IsValid() ||
+				!vega::ProjectileReflectionService::TryReflectProjectile(*projectile, *retainedDefender)) return false;
+			if (!vega::NanoPlagueControllerRegistry::GetOrCreate(world) ||
+				!vega::ClosedCircuitFieldRegistry::GetOrCreate(world)) return false;
+			world.SpawnActor<RegistryTeardownProbe>(&teardownChecked);
+			world.TickInternal(0.f);
+		}
+		retainedRegistration.Reset(); // No World or service exists at this point.
+		if (!teardownChecked || retainedDefender->GetWorld()) return false;
+		auto rejected = vega::ProjectileReflectionService::RegisterReceiver(*retainedDefender, receiver);
+		if (rejected.IsValid()) return false;
+		bool emptyTeardownChecked = false;
+		{
+			vega::World emptyWorld{ nullptr };
+			emptyWorld.SpawnActor<RegistryTeardownProbe>(&emptyTeardownChecked);
+		}
+		return emptyTeardownChecked;
+	}
+
 }
 
 int main()
@@ -260,6 +307,10 @@ int main()
 	if (!TestWorldOwnedReceiverRegistry())
 	{
 		return Fail("World-owned reflection receiver registration failed isolation or cleanup checks");
+	}
+	if (!TestRegistryRemovalAndWorldTeardown())
+	{
+		return Fail("Reflection registry removal, recreation or World teardown checks failed");
 	}
 
 	auto destroyedProjectile = std::make_shared<TestProjectile>();

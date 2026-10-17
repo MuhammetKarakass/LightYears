@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gameplay/ability/actors/AbilityWorldActor.h"
-#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.h"
+#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistry.h"
 #include "gameplay/projectile/ProjectileInterceptionBoundary.h"
 #include "presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.h"
 
@@ -24,7 +24,7 @@ namespace vega
 		void ActivateField();
 
 		ClosedCircuitPresentationProfile mProfile;
-		ClosedCircuitFieldRegistryActor::Registration mRegistration;
+		ClosedCircuitFieldRegistry::Registration mRegistration;
 		Phase mPhase = Phase::Delivery;
 		sf::Vector2f mTarget{};
 		float mDeliverySpeed = 280.f;
