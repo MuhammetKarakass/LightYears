@@ -264,6 +264,25 @@ namespace vega::script
 			const bool ok = property->SetValue(object, *value, &error);
 			return { ok, std::move(error) };
 		}
+		void CallFunction(void* object, const ly::reflect::TypeInfo* type, const std::string& name)
+		{
+			if (!object) throw std::runtime_error("Cannot call reflected function '" + name + "': target is no longer alive");
+			const auto* function = type ? type->FindFunction(name) : nullptr;
+			if (!function || !function->invoke) throw std::runtime_error("Unknown reflected function '" + name + "'");
+			try
+			{
+				// callableInPlay controls editor buttons; Lua already executes in the playing world.
+				function->invoke(object);
+			}
+			catch (const std::exception& error)
+			{
+				throw std::runtime_error("Reflected function '" + name + "' failed: " + error.what());
+			}
+			catch (...)
+			{
+				throw std::runtime_error("Reflected function '" + name + "' failed: unknown C++ exception");
+			}
+		}
 		bool KeyDown(const ActorHandle& handle, const std::string& name)
 		{
 			const auto actor = handle.Lock();
@@ -288,6 +307,12 @@ namespace vega::script
 				"cancel", &TimerHandle::Cancel,
 				"is_active", [](const TimerHandle& h) { const auto active = h.active.lock(); return active && *active; });
 			lua.new_usertype<ComponentHandle>("ComponentHandle", sol::no_constructor,
+				"call", [](const ComponentHandle& handle, const std::string& name)
+				{
+					const auto actor = handle.owner.Lock();
+					auto* component = handle.Resolve(actor);
+					CallFunction(component, component ? actor->GetEngineContext().Types().FindMostDerived(*component) : nullptr, name);
+				},
 				"get", [](const ComponentHandle& handle, const std::string& name, sol::this_state state)
 				{
 					const auto actor = handle.owner.Lock();
@@ -301,6 +326,11 @@ namespace vega::script
 					return WriteProperty(component, component ? component->GetOwner().GetEngineContext().Types().FindMostDerived(*component) : nullptr, name, value);
 				});
 			lua.new_usertype<ActorHandle>("ActorHandle", sol::no_constructor,
+				"call", [](const ActorHandle& handle, const std::string& name)
+				{
+					const auto actor = handle.Lock();
+					CallFunction(actor.get(), actor ? actor->GetEngineContext().Types().FindMostDerived(*actor) : nullptr, name);
+				},
 				"parent", [](const ActorHandle& h, sol::this_state s)
 				{
 					const auto actor = h.Lock();

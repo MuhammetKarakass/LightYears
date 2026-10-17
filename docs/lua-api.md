@@ -87,10 +87,20 @@ The shipped game resolves PlayerManager's current spaceship.
 | `:distance_to(other)` | Origin distance; infinity if either actor is dead. |
 | `:destroy()` | Destroy once; subsequent operations observe a dead handle. |
 | `:get(name)`, `:set(name,value)` | Reflection getter/setter; set returns success and error text. |
+| `:call(name)` | Invoke a registered zero-argument reflected function; returns no values. |
 | `:component(type)` | First matching reflected component (including a registered base), or nil. |
 | `:send(name[, data])` | Queue a copied message on every running script on the target; returns whether any accepted it. |
 
-Components expose `:get(name)` and `:set(name,value)`. Property names are the
+Actors and components expose `:call("Pulse")` for functions registered with
+`VEGA_FUNCTION` (or its `type.Function` builder), including inherited functions.
+Use the registered identifier (the C++ method token), not the Inspector label.
+Only registered functions are callable. Lua calls ignore the editor's
+`CallableInPlay` flag because scripts already run in Play. An unknown name,
+dead target, or C++ exception raises a Lua error containing the function name;
+use `pcall(function() component:call("Pulse") end)` to handle it in the script.
+Calls resolve reflection through the target's owning EngineContext.
+
+Components also expose `:get(name)` and `:set(name,value)`. Property names are the
 registered display names, including spaces, such as `"Max Health"`. Numbers for
 integer/enum/flag setters must be integral and in range. Missing reads return nil;
 invalid writes return false and a reason. Read-only setters refuse writes.

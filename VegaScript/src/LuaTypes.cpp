@@ -110,6 +110,8 @@ function ComponentHandle:get(name) end
 ---@return boolean success
 ---@return string error
 function ComponentHandle:set(name, value) end
+---@param name string Registered reflected function identifier; raises a Lua error on failure.
+function ComponentHandle:call(name) end
 
 ---@class ActorHandle
 ActorHandle = {}
@@ -163,6 +165,8 @@ function ActorHandle:get(name) end
 ---@return boolean success
 ---@return string error
 function ActorHandle:set(name, value) end
+---@param name string Registered reflected function identifier; raises a Lua error on failure.
+function ActorHandle:call(name) end
 ---@param type string
 ---@return ComponentHandle?
 function ActorHandle:component(type) end

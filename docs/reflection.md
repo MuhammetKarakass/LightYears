@@ -133,6 +133,12 @@ invoker in the type's `TypeInfo`. `TypeInfo::FindFunction(name)` and
 functions. The method token is the name scripts use; it is not a scene key, but keep
 it stable so authored scripts keep working.
 
+Lua actor and component handles invoke these registered functions with
+`:call("Method")`, including inherited functions. This uses the target's owning
+EngineContext registry and returns no values. The editor-only `CallableInPlay`
+gate does not apply to Lua. Unknown names, dead targets and C++ exceptions become
+Lua errors containing the function name. See the [Lua API](lua-api.md).
+
 The Inspector draws one button per function after the properties of each section that
 declares any, with the tooltip and an error line on failure, like a refused property
 write. It also reports the failure on the Console panel. Buttons run in Edit mode by

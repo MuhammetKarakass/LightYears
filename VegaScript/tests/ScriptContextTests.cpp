@@ -3,11 +3,99 @@
 #include "framework/Actor.h"
 #include "framework/ProjectSettings.h"
 #include "framework/CollisionComponent.h"
+#include "framework/reflection/Reflection.h"
 #include "script/ScriptRuntime.h"
 #include "script/ScriptComponent.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
+
+namespace
+{
+	class FunctionComponent : public ly::ActorComponent
+	{
+		VEGA_CLASS(FunctionComponent)
+	public:
+		using ActorComponent::ActorComponent;
+		int pulses = 0;
+		void Pulse() { ++pulses; }
+		void Fail() { throw std::runtime_error("fixture failure"); }
+		void FailUnknown() { throw 42; }
+		void Hidden() { pulses = -100; }
+	};
+	VEGA_REFLECT(FunctionComponent, ly::ActorComponent)
+	{
+		VEGA_FIELD_READONLY("Pulses", pulses);
+		VEGA_FUNCTION(FunctionComponent, Pulse, "Pulse button");
+		VEGA_FUNCTION(FunctionComponent, Fail, "Throw exception");
+		VEGA_FUNCTION(FunctionComponent, FailUnknown, "Throw unknown exception");
+	}
+	class FunctionActor : public ly::Actor
+	{
+		VEGA_CLASS(FunctionActor)
+	public:
+		using Actor::Actor;
+		void Pulse() { SetActorRotation(GetActorRotation() + 10.f); }
+	};
+	VEGA_REFLECT(FunctionActor, ly::Actor)
+	{
+		VEGA_FUNCTION(FunctionActor, Pulse, "Actor pulse button");
+	}
+	class DerivedFunctionActor : public FunctionActor
+	{
+		VEGA_CLASS(DerivedFunctionActor)
+	public:
+		using FunctionActor::FunctionActor;
+	};
+	VEGA_REFLECT(DerivedFunctionActor, FunctionActor)
+	{
+		(void)type;
+	}
+	bool ReflectedFunctions(ly::EngineContext& context, const std::filesystem::path& root)
+	{
+		VEGA_REGISTER_IN(FunctionComponent, context.Types());
+		VEGA_REGISTER_IN(FunctionActor, context.Types());
+		VEGA_REGISTER_IN(DerivedFunctionActor, context.Types());
+		std::ofstream{ root / "first/functions.lua" } << R"(
+function on_start(self)
+	local component = self.actor:component('FunctionComponent')
+	component:call('Pulse')
+	assert(component:get('Pulses') == 1)
+	self.actor:call('Pulse')
+	assert(self.actor:rotation() == 10)
+	local function rejected(target, name, reason)
+		local ok, message = pcall(function() target:call(name) end)
+		assert(not ok and string.find(message, name, 1, true))
+		assert(string.find(message, reason, 1, true))
+	end
+	rejected(component, 'Missing', 'Unknown reflected function')
+	rejected(component, 'Hidden', 'Unknown reflected function')
+	rejected(component, 'Pulse button', 'Unknown reflected function')
+	rejected(self.actor, 'Missing', 'Unknown reflected function')
+	rejected(component, 'Fail', 'fixture failure')
+	rejected(component, 'FailUnknown', 'unknown C++ exception')
+	component:call('Pulse')
+	self.actor:destroy()
+	rejected(component, 'Pulse', 'no longer alive')
+	rejected(self.actor, 'Pulse', 'no longer alive')
+end
+)";
+		ly::World world{ context };
+		auto actor = world.SpawnActor<DerivedFunctionActor>().lock();
+		auto& component = actor->AddComponent<FunctionComponent>();
+		auto& script = actor->AddComponent<vega::script::ScriptComponent>("functions.lua");
+		world.BeginPlayInternal();
+		// Pending spawns begin their components when the world first ticks.
+		world.TickInternal(0.f);
+		if (!script.LastError().empty() || component.pulses != 2 || actor->GetActorRotation() != 10.f || !actor->GetIsPendingDestroy())
+		{
+			std::cerr << "Reflected Lua calls failed: " << script.LastError() << '\n';
+			return false;
+		}
+		return true;
+	}
+}
 
 int main()
 {
@@ -45,6 +133,8 @@ end
 	if (&firstRuntime == &secondRuntime || !secondRuntime.HotReload()) return 1;
 	ly::World firstWorld{ first }, secondWorld{ second };
 	ly::EngineContext::Scope scope{ second };
+	// Only first owns the fixtures, while the ambient context is second.
+	if (!ReflectedFunctions(first, root)) return 1;
 	auto one = firstWorld.SpawnActor<ly::Actor>().lock(), two = secondWorld.SpawnActor<ly::Actor>().lock();
 	one->AddComponent<ly::CollisionComponent>();
 	two->AddComponent<ly::CollisionComponent>();
