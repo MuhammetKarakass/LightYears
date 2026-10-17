@@ -151,6 +151,19 @@ namespace vega
 	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<ly::ComponentIdentity> componentIdentity);
 	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName);
 
+	// A leaf inside a reflected struct: "Name.Field" for a struct property, "Name[i].Field" for an element of a struct list.
+	// Edits still write the whole top-level property through SetPropertyCommand, so validation and undo see one value.
+	struct StructLeafPath
+	{
+		const ly::reflect::PropertyInfo* property = nullptr;
+		std::optional<std::size_t> index;
+		const ly::reflect::PropertyInfo* leaf = nullptr;
+		std::string field;
+	};
+	bool ResolveStructLeafPath(const ReflectedTarget& target, const std::string& path, StructLeafPath& resolved, std::string& error);
+	// Points at the stored value of the addressed field inside a copy of the top-level value; nullptr with error on failure.
+	ly::reflect::LeafValue* FindStructLeaf(const StructLeafPath& path, ly::reflect::PropertyValue& value, std::string& error);
+
 	class SetSceneSettingCommand final : public EditorCommand
 	{
 	public:

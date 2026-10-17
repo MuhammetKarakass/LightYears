@@ -24,6 +24,8 @@ namespace vega
 		std::string property;
 		std::vector<std::string> values;
 		unsigned int number = 0;
+		// Destination index of list-move.
+		unsigned int destination = 0;
 		sf::Vector2f location{};
 		sf::Vector2f rectangleEnd{};
 		float degrees = 0.f;

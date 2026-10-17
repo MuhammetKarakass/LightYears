@@ -3,6 +3,7 @@
 #include <framework/scene/SceneSettings.h>
 #include <framework/World.h>
 #include <script/ScriptComponent.h>
+#include <charconv>
 #include <cmath>
 #include <unordered_set>
 
@@ -115,6 +116,92 @@ namespace vega
 
 		});
 		return result;
+	}
+
+	bool ResolveStructLeafPath(const ReflectedTarget& target, const std::string& path, StructLeafPath& resolved, std::string& error)
+	{
+		// The first bracket or dot decides the form: "Name[i].Field" or "Name.Field". Anything else is not a struct path.
+		const auto open = path.find('[');
+		const auto dot = path.find('.');
+		std::string name;
+		std::string field;
+		std::optional<std::size_t> index;
+		if (open != std::string::npos && (dot == std::string::npos || open < dot))
+		{
+			const auto close = path.find(']', open);
+			if (close == std::string::npos || close + 1 >= path.size() || path[close + 1] != '.')
+			{
+				error = "Expected Name[i].Field";
+				return false;
+			}
+			const auto digits = path.substr(open + 1, close - open - 1);
+			std::size_t number = 0;
+			const auto parsed = std::from_chars(digits.data(), digits.data() + digits.size(), number);
+			if (digits.empty() || parsed.ec != std::errc{} || parsed.ptr != digits.data() + digits.size())
+			{
+				error = "List index must be a zero-based integer";
+				return false;
+			}
+			index = number;
+			name = path.substr(0, open);
+			field = path.substr(close + 2);
+		}
+		else if (dot != std::string::npos)
+		{
+			name = path.substr(0, dot);
+			field = path.substr(dot + 1);
+		}
+		else
+		{
+			error = "Expected Name.Field or Name[i].Field";
+			return false;
+		}
+		if (name.empty() || field.empty() || field.find_first_of(".[]") != std::string::npos)
+		{
+			error = "Invalid struct field path";
+			return false;
+		}
+		const auto* property = target.type ? target.type->FindProperty(name) : nullptr;
+		if (!property || !property->structInfo)
+		{
+			error = "Unknown struct property: " + name;
+			return false;
+		}
+		if (index ? property->kind != ly::reflect::PropertyKind::List || property->elementKind != ly::reflect::PropertyKind::Struct
+			: property->kind != ly::reflect::PropertyKind::Struct)
+		{
+			error = index ? name + " is not a list of structs" : name + " is a list of structs; address an element as " + name + "[i].Field";
+			return false;
+		}
+		const auto* leaf = property->structInfo->FindProperty(field);
+		if (!leaf || !leaf->setter)
+		{
+			error = "Unknown struct field: " + field;
+			return false;
+		}
+		resolved = StructLeafPath{ property, index, leaf, field };
+		return true;
+	}
+
+	ly::reflect::LeafValue* FindStructLeaf(const StructLeafPath& path, ly::reflect::PropertyValue& value, std::string& error)
+	{
+		if (!path.property) return nullptr;
+		ly::reflect::StructValue* fields = nullptr;
+		if (path.index)
+		{
+			auto& list = std::get<ly::reflect::PropertyList>(value);
+			if (*path.index >= list.size())
+			{
+				error = "List index out of range (zero-based)";
+				return nullptr;
+			}
+			fields = &std::get<ly::reflect::StructValue>(list[*path.index]);
+		}
+		else fields = &std::get<ly::reflect::StructValue>(value);
+		for (auto& entry : *fields)
+			if (entry.first == path.field) return &entry.second;
+		error = "Struct field is missing: " + path.field;
+		return nullptr;
 	}
 
 	SetPropertyCommand::SetPropertyCommand(unsigned int id, std::optional<ly::ComponentIdentity> componentIdentity,

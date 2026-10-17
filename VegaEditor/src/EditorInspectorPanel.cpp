@@ -22,10 +22,17 @@ namespace vega
 	namespace
 	{
 		struct PropertyGesture { bool activated = false; bool continuous = false; };
+		// headerMenu draws right after a struct or struct-list header, the item a revert menu must anchor to.
 		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed = false,
-			EditorContext* context = nullptr, const std::function<void(int)>& pick = {}, PropertyGesture* gesture = nullptr, const std::filesystem::path& assetRoot = {});
+			EditorContext* context = nullptr, const std::function<void(int)>& pick = {}, PropertyGesture* gesture = nullptr, const std::filesystem::path& assetRoot = {},
+			const std::function<void()>& headerMenu = {});
+		bool DrawStructFields(const ly::reflect::PropertyInfo& property, ly::reflect::StructValue& fields, EditorContext* context,
+			PropertyGesture* gesture, const std::filesystem::path& assetRoot);
+		bool DrawStructElements(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyList& list, EditorContext* context,
+			PropertyGesture* gesture, const std::filesystem::path& assetRoot);
 		bool DrawPropertyBody(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
-			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot)
+			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot,
+			const std::function<void()>& headerMenu)
 		{
 			using ly::reflect::PropertyKind;
 			const char* label = property.name.c_str();
@@ -69,21 +76,48 @@ namespace vega
 			}
 			case PropertyKind::Struct:
 			{
-				// Struct editing comes later; until then a struct is a read-only summary line.
+				// Without a registered struct there are no field descriptors, so only the summary can be shown.
+				if (!property.structInfo)
+				{
+					if (mixed) ImGui::Text("%s: \xe2\x80\x94", label);
+					else ImGui::Text("%s: %s {%zu fields}", label, property.structType.c_str(), std::get<ly::reflect::StructValue>(value).size());
+					return false;
+				}
+				ImGui::PushID(label);
+				bool changed = false;
 				if (mixed) ImGui::Text("%s: \xe2\x80\x94", label);
-				else ImGui::Text("%s: %s {%zu fields}", label, property.structType.c_str(), std::get<ly::reflect::StructValue>(value).size());
-				return false;
+				else
+				{
+					const bool open = ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen);
+					if (headerMenu) headerMenu();
+					if (open)
+					{
+						changed = DrawStructFields(property, std::get<ly::reflect::StructValue>(value), context, gesture, assetRoot);
+						ImGui::TreePop();
+					}
+				}
+				ImGui::PopID();
+				return changed;
 			}
 			case PropertyKind::List:
 			{
 				ImGui::PushID(label);
 				if (property.elementKind == PropertyKind::Struct)
 				{
-					// Struct lists are summarised too; Add/Remove and element editing come with the struct editor.
+					bool changed = false;
 					if (mixed) ImGui::Text("%s: \xe2\x80\x94", label);
-					else ImGui::Text("%s: %zu \xc3\x97 %s", label, std::get<ly::reflect::PropertyList>(value).size(), property.structType.c_str());
+					else
+					{
+						const bool open = ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen);
+						if (headerMenu) headerMenu();
+						if (open)
+						{
+							changed = DrawStructElements(property, std::get<ly::reflect::PropertyList>(value), context, gesture, assetRoot);
+							ImGui::TreePop();
+						}
+					}
 					ImGui::PopID();
-					return false;
+					return changed;
 				}
 				if (mixed) { ImGui::Text("%s: \xe2\x80\x94", label); ImGui::PopID(); return false; }
 				auto& list = std::get<ly::reflect::PropertyList>(value);
@@ -191,19 +225,93 @@ namespace vega
 			return false;
 		}
 		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
-			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot)
+			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot,
+			const std::function<void()>& headerMenu)
 		{
-			const bool changed = DrawPropertyBody(property, value, mixed, context, pick, gesture, assetRoot);
+			const bool changed = DrawPropertyBody(property, value, mixed, context, pick, gesture, assetRoot, headerMenu);
 			// Asset edits are discrete: a picker choice or a drop is one undo step, never a merged drag.
 			if (property.assetKind != ly::reflect::AssetKind::None)
 			{
 				if (gesture) *gesture = {};
 				return changed;
 			}
-			if (gesture && property.kind != ly::reflect::PropertyKind::List && (changed || ImGui::IsItemActivated()))
+			// Struct gestures come from their fields, so the last widget of the header must not overwrite them.
+			if (gesture && property.kind != ly::reflect::PropertyKind::List && property.kind != ly::reflect::PropertyKind::Struct &&
+				(changed || ImGui::IsItemActivated()))
 			{
 				gesture->activated = ImGui::IsItemActivated();
 				gesture->continuous = property.kind != ly::reflect::PropertyKind::ActorRef && (ImGui::IsItemActive() || ImGui::IsItemDeactivated());
+			}
+			return changed;
+		}
+		// Names a list element by its first non-empty text field, such as a prefab path, else by its struct type.
+		std::string StructSummary(const ly::reflect::PropertyInfo& property, const ly::reflect::StructValue& fields)
+		{
+			for (const auto& entry : fields)
+				if (const auto* text = std::get_if<std::string>(&entry.second); text && !text->empty()) return *text;
+			return property.structType;
+		}
+		// Each field is drawn from its own descriptor, so ranges, labels, asset kinds, type filters and tooltips
+		// match top-level properties. Field values are copies: the caller stores the whole struct once a field changes.
+		bool DrawStructFields(const ly::reflect::PropertyInfo& property, ly::reflect::StructValue& fields, EditorContext* context,
+			PropertyGesture* gesture, const std::filesystem::path& assetRoot)
+		{
+			bool changed = false;
+			if (!property.structInfo) return false;
+			for (const auto& field : property.structInfo->properties)
+			{
+				// Read-only fields are absent from a struct value, so they are not drawn.
+				const auto entry = std::find_if(fields.begin(), fields.end(), [&](const auto& item) { return item.first == field.name; });
+				if (entry == fields.end()) continue;
+				ImGui::PushID(field.name.c_str());
+				auto fieldValue = ly::reflect::ToPropertyValue(entry->second);
+				// A field's own gesture decides merging; the struct keeps the activation and the last change's continuity.
+				PropertyGesture local;
+				const bool fieldChanged = DrawProperty(field, fieldValue, false, context, {}, &local, assetRoot);
+				if (!field.tooltip.empty()) ImGui::SetItemTooltip("%s", field.tooltip.c_str());
+				ImGui::PopID();
+				if (gesture && local.activated) gesture->activated = true;
+				if (fieldChanged)
+				{
+					entry->second = ly::reflect::ToLeaf(fieldValue);
+					changed = true;
+					if (gesture) gesture->continuous = local.continuous;
+				}
+			}
+			return changed;
+		}
+		// One sub-tree per element. Remove, Up and Down edit the list; the loop ends after a structural edit
+		// because the element indices it holds are then stale.
+		bool DrawStructElements(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyList& list, EditorContext* context,
+			PropertyGesture* gesture, const std::filesystem::path& assetRoot)
+		{
+			bool changed = false;
+			for (std::size_t i = 0; i < list.size(); ++i)
+			{
+				ImGui::PushID(static_cast<int>(i));
+				auto item = ly::reflect::ToValue(list[i]);
+				auto& fields = std::get<ly::reflect::StructValue>(item);
+				bool structural = false;
+				if (ImGui::TreeNodeEx("element", ImGuiTreeNodeFlags_DefaultOpen, "[%zu]  %s", i, StructSummary(property, fields).c_str()))
+				{
+					if (DrawStructFields(property, fields, context, gesture, assetRoot)) { list[i] = ly::reflect::ToScalar(item); changed = true; }
+					structural = ListRowActions(list, i);
+					ImGui::TreePop();
+				}
+				ImGui::PopID();
+				if (structural)
+				{
+					changed = true;
+					if (gesture) *gesture = {};
+					break;
+				}
+			}
+			if (ImGui::SmallButton("Add") && list.size() < 4096 && property.structInfo && property.structInfo->makeDefault)
+			{
+				// Adding is discrete: it never merges with a drag, and it starts from the struct field defaults.
+				if (gesture) *gesture = {};
+				list.emplace_back(property.structInfo->makeDefault());
+				changed = true;
 			}
 			return changed;
 		}
@@ -419,10 +527,14 @@ namespace vega
 								const bool overridden = !mPrefabWorld && PrefabPropertyOverridden(context, *actor, target, property->name);
 								if (overridden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
 								PropertyGesture gesture;
+								// Struct and struct-list headers anchor the revert menu, because their last widget is a field, not the property.
+								const bool anchorsHeader = property->kind == ly::reflect::PropertyKind::Struct ||
+									(property->kind == ly::reflect::PropertyKind::List && property->elementKind == ly::reflect::PropertyKind::Struct);
+								const std::function<void()> headerMenu = [&] { PrefabPropertyMenu(*actor, target, property->name); };
 								const bool changed = DrawProperty(*property, value, false, &context, [&](int index)
 								{
 									mReferencePick = ReferencePick{ actor->GetUniqueID(), target.componentIdentity, property->name, index };
-								}, &gesture, assetRoot);
+								}, &gesture, assetRoot, headerMenu);
 								if (overridden) ImGui::PopStyleColor();
 								if (gesture.activated) mPropertyMergeGroup = history.BeginMergeGroup();
 								if (changed && property->setter)
@@ -431,7 +543,7 @@ namespace vega
 										property->name, std::move(value), gesture.continuous ? mPropertyMergeGroup : 0, context.relativeTransforms));
 								}
 								ImGui::EndDisabled();
-								PrefabPropertyMenu(*actor, target, property->name);
+								if (!anchorsHeader) PrefabPropertyMenu(*actor, target, property->name);
 								if (!property->tooltip.empty()) ImGui::SetItemTooltip("%s", property->tooltip.c_str());
 								if (!context.propertyError.empty() && context.propertyErrorActor == actor->GetUniqueID() &&
 									context.propertyErrorComponent == target.componentIdentity && context.propertyErrorName == property->name)

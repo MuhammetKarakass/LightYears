@@ -5,6 +5,7 @@
 #include <framework/scene/SceneEntityComponent.h>
 #include <cmath>
 #include "ScriptPropertyValues.h"
+#include <algorithm>
 
 namespace vega
 {
@@ -18,7 +19,7 @@ namespace vega
 			EditorScriptCommand command;
 			command.operation = arguments.tokens[0];
 			const auto bad = []() { return EditorScriptParseResult{{}, "Invalid arguments"}; };
-			if (tokens.size() < 4 || tokens[1].empty() || tokens[2].empty()) return bad();
+			if (tokens.size() < (verb == "list-add-default" ? 3u : 4u) || tokens[1].empty() || tokens[2].empty()) return bad();
 			command.text = tokens[1];
 			command.property = tokens[2];
 			if (verb == "set-ref" || verb == "expect-ref")
@@ -29,6 +30,14 @@ namespace vega
 			else if (verb == "list-remove" || verb == "expect-list-size")
 			{
 				if (tokens.size() != 4 || !integer(3, command.number)) return bad();
+			}
+			else if (verb == "list-add-default")
+			{
+				if (tokens.size() != 3) return bad();
+			}
+			else if (verb == "list-move")
+			{
+				if (tokens.size() != 5 || !integer(3, command.number) || !integer(4, command.destination)) return bad();
 			}
 			else
 			{
@@ -193,21 +202,42 @@ namespace vega
 					detail = "size " + std::to_string(list.size());
 					return;
 				}
-				if (command.operation != "list-add" && command.number >= list.size())
+				if (command.operation != "list-add" && command.operation != "list-add-default" && command.number >= list.size())
 				{
 					detail = "List index out of range (zero-based)";
 					return;
 				}
 				if (command.operation == "list-remove") list.erase(list.begin() + command.number);
+				else if (command.operation == "list-move")
+				{
+					if (command.destination >= list.size()) { detail = "List index out of range (zero-based)"; return; }
+					const auto from = list.begin() + command.number;
+					const auto to = list.begin() + command.destination;
+					// The rotation pivot depends on direction so that only the moved element changes position.
+					if (from < to) std::rotate(from, from + 1, to + 1);
+					else std::rotate(to, from, from + 1);
+				}
 				else
 				{
 					ly::reflect::PropertyValue item;
-					if (!parse(property->Element(), item))
+					const bool structElement = property->elementKind == ly::reflect::PropertyKind::Struct;
+					if (command.operation == "list-add-default")
+					{
+						// A new struct element starts from the field defaults, so no value is parsed.
+						if (!structElement || !property->structInfo || !property->structInfo->makeDefault) { detail = "Expected a list of structs"; return; }
+						item = property->structInfo->makeDefault();
+					}
+					else if (structElement)
+					{
+						detail = "Struct elements are added with list-add-default and edited with Name[i].Field";
+						return;
+					}
+					else if (!parse(property->Element(), item))
 					{
 						detail = "Invalid list element";
 						return;
 					}
-					if (command.operation == "list-add") list.push_back(ly::reflect::ToScalar(item));
+					if (command.operation == "list-add" || command.operation == "list-add-default") list.push_back(ly::reflect::ToScalar(item));
 					else list[command.number] = ly::reflect::ToScalar(item);
 				}
 			}
@@ -284,6 +314,28 @@ namespace vega
 			ly::reflect::PropertyValue value;
 			float tolerance = command.tolerance;
 			const bool expect = command.operation == "expect-prop";
+			if (!property && actor && target.object && command.property.find_first_of(".[") != std::string::npos)
+			{
+				// A struct field is written as its whole top-level value, so validation and undo match a whole-property edit.
+				StructLeafPath path;
+				if (!ResolveStructLeafPath(target, command.property, path, detail)) return;
+				auto whole = path.property->getter(target.object);
+				ly::reflect::PropertyValue parsed;
+				if (!ParsePropertyValue(*path.leaf, command.values, expect, parsed, tolerance)) { detail = "Invalid property value or tolerance"; return; }
+				auto* stored = FindStructLeaf(path, whole, detail);
+				if (!stored) return;
+				if (expect)
+				{
+					success = PropertyEquals(ly::reflect::ToPropertyValue(*stored), parsed, tolerance);
+					detail = success ? "Property matched" : "Property value differs";
+					return;
+				}
+				*stored = ly::reflect::ToLeaf(parsed);
+				success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity, path.property->name, whole));
+				detail = success ? "Property set" : context.propertyError;
+				if (!success) mPendingPropertyError = detail;
+				return;
+			}
 			if (!property) detail = "Unknown target or property: " + command.text + " / " + command.property;
 			else if (!ParsePropertyValue(*property, command.values, expect, value, tolerance)) detail = "Invalid property value or tolerance";
 			else if (expect)
@@ -368,6 +420,11 @@ namespace vega
 		    ScriptMode::Any, DecodeSetRef, ExecuteSetRef});
 		registry.Add({"list-add", Schema("target:text property:text value:value..."), "Append a reflected list element using its descriptor type.",
 		    ScriptMode::Any, DecodeSetRef, ExecuteSetRef});
+		registry.Add({"list-add-default", Schema("target:text property:text"),
+		    "Append a struct list element that starts from its field defaults; edit its fields with Name[i].Field.", ScriptMode::Any, DecodeSetRef,
+		    ExecuteSetRef});
+		registry.Add({"list-move", Schema("target:text property:text from:uint to:uint"), "Move a reflected list element to another zero-based index.",
+		    ScriptMode::Any, DecodeSetRef, ExecuteSetRef});
 		registry.Add({"list-set", Schema("target:text property:text index:uint value:value..."), "Set a reflected list element at a zero-based index.",
 		    ScriptMode::Any, DecodeSetRef, ExecuteSetRef});
 		registry.Add({"list-remove", Schema("target:text property:text index:uint"), "Remove a reflected list element at a zero-based index.", ScriptMode::Any,
@@ -384,10 +441,12 @@ namespace vega
 		    ScriptMode::Any, DecodeAddComponent, ExecuteExpectComponent});
 		registry.Add({"expect-prop-error", Schema("message:text"), "Consume an immediately preceding failed property write containing the supplied message.",
 		    ScriptMode::Any, DecodeExpectPropError, ExecuteExpectPropError});
-		registry.Add({"set-prop", Schema("target:text property:text value:value..."), "Set a reflected property using its descriptor type.", ScriptMode::Any,
+		registry.Add({"set-prop", Schema("target:text property:text value:value..."),
+		    "Set a reflected property using its descriptor type; Name.Field and Name[i].Field address struct fields.", ScriptMode::Any,
 		    DecodeSetProp, ExecuteSetProp});
 		registry.Add({"expect-prop", Schema("target:text property:text value:value..."),
-		    "Assert a reflected property, optionally followed by nonnegative tolerance.", ScriptMode::Any, DecodeSetProp, ExecuteSetProp});
+		    "Assert a reflected property, optionally followed by nonnegative tolerance; struct fields use Name.Field or Name[i].Field.",
+		    ScriptMode::Any, DecodeSetProp, ExecuteSetProp});
 		registry.Add({"move", Schema("x:real y:real"), "Set the selected actor location.", ScriptMode::Any, DecodeMove, ExecuteMove});
 		registry.Add({"expect-location", Schema("x:real y:real [tolerance:real]"), "Assert the selected actor location with optional nonnegative tolerance.",
 		    ScriptMode::Any, DecodeMove, ExecuteExpectLocation});

@@ -8,11 +8,13 @@ Reflected connections and lists:
 * `list-remove <Target> "<Property>" <index>`
 * `list-set <Target> "<Property>" <index> <value>`
 * `expect-list-size <Target> "<Property>" N`
+* `list-move <Target> "<Property>" <from> <to>`
+* `set-prop <Target> "<Property>.<Field>" <value>` (also `"<Property>[i].<Field>"` for a struct list element; `expect-prop` takes the same paths)
 
 Target is `Actor` or a component type on the selection, or a scene actor name/GUID.
 OtherTarget is a scene actor name/GUID. List indices are zero-based. Values use
 set-prop scalar syntax: Vec2 `x y`, Color `r g b a`, enum integer, quoted strings;
-ActorRef elements use a name/GUID or `none`. Each mutation is one undo step.
+ActorRef elements use a name/GUID or `none`. A struct element is appended with `list-add-default`, which starts from its field defaults. Each mutation is one undo step.
 `Templates/Blank/Tests/properties.vegascript` exercises the Lua patrol/target demo,
 save/reopen, and prefab/copy connections in `VegaEditorRichProperties`.
 

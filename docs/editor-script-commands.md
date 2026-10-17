@@ -232,7 +232,7 @@ Assert the project startup scene path. Mode: Any.
 
 ## `expect-prop target:text property:text value:value...`
 
-Assert a reflected property, optionally followed by nonnegative tolerance. Mode: Any.
+Assert a reflected property, optionally followed by nonnegative tolerance; struct fields use Name.Field or Name[i].Field. Mode: Any.
 
 ## `expect-prop-error message:text`
 
@@ -353,6 +353,14 @@ Set a JSON pointer to a non-null scalar value. Mode: Any.
 ## `list-add target:text property:text value:value...`
 
 Append a reflected list element using its descriptor type. Mode: Any.
+
+## `list-add-default target:text property:text`
+
+Append a struct list element that starts from its field defaults; edit its fields with Name[i].Field. Mode: Any.
+
+## `list-move target:text property:text from:uint to:uint`
+
+Move a reflected list element to another zero-based index. Mode: Any.
 
 ## `list-remove target:text property:text index:uint`
 
@@ -508,7 +516,7 @@ Set the project startup scene path. Mode: Any.
 
 ## `set-prop target:text property:text value:value...`
 
-Set a reflected property using its descriptor type. Mode: Any.
+Set a reflected property using its descriptor type; Name.Field and Name[i].Field address struct fields. Mode: Any.
 
 ## `set-prop-all property:text value:value...`
 

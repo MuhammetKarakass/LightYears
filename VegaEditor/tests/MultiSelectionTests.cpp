@@ -6,8 +6,10 @@
 #include <framework/SpriteComponent.h>
 #include <framework/CollisionComponent.h>
 #include <framework/ProjectSettings.h>
+#include <algorithm>
 #include <iostream>
 #include <cmath>
+#include <stdexcept>
 
 namespace
 {
@@ -19,6 +21,22 @@ namespace
 		int value = 0;
 		std::vector<sf::Vector2f> points;
 		ly::ActorRef target;
+	};
+	// A reflected struct used by the struct Inspector and editor-script paths; members are public for assertions.
+	struct StructWave
+	{
+		VEGA_STRUCT(StructWave)
+		std::string prefab;
+		int count = 1;
+		float delay = 0.f;
+		bool armed = false;
+	};
+	class StructHost : public ly::Actor
+	{
+	public:
+		using Actor::Actor;
+		StructWave boss;
+		std::vector<StructWave> waves;
 	};
 	class SharedComponent : public ly::ActorComponent
 	{
@@ -260,6 +278,122 @@ namespace
 			Check(first->target.Resolve(world) == second && second->target.Resolve(world) == first, "Cross-root copied references must link the copied set");
 		}
 	}
+	// Struct fields and struct lists go through the same whole-value SetPropertyCommand as other properties.
+	void TestStructProperties()
+	{
+		using namespace vega;
+		using ly::reflect::PropertyList;
+		using ly::reflect::StructValue;
+		ly::World world{ nullptr };
+		EditorSelection selection;
+		EditorContext context{ &world, selection };
+		CommandHistory history{ context };
+		auto a = world.SpawnActor<StructHost>().lock(), b = world.SpawnActor<StructHost>().lock();
+		a->AddComponent<ly::SceneEntityComponent>("struct-a", "A");
+		b->AddComponent<ly::SceneEntityComponent>("struct-b", "B");
+		const auto target = ResolvePropertyTarget(*a, {});
+		std::string error;
+		// Writes one leaf through a path the way the editor script does, returning whether the command ran.
+		const auto writeLeaf = [&](const std::string& text, ly::reflect::LeafValue leaf)
+		{
+			StructLeafPath path;
+			if (!ResolveStructLeafPath(target, text, path, error)) return false;
+			auto whole = path.property->getter(target.object);
+			auto* stored = FindStructLeaf(path, whole, error);
+			if (!stored) return false;
+			*stored = std::move(leaf);
+			return history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, path.property->name, whole));
+		};
+
+		// Descriptor defaults are what a new list element starts from.
+		const auto* waveType = context.Engine().Types().Find("StructWave");
+		Check(waveType && waveType->makeDefault, "Registered struct must provide field defaults");
+		const auto defaults = waveType && waveType->makeDefault ? waveType->makeDefault() : StructValue{};
+		Check(defaults.size() == 4 && std::get<int>(defaults[1].second) == 1 && std::get<std::string>(defaults[0].second).empty(),
+			"Defaults must follow field initialisers");
+
+		// Struct field: one edit is one undo step, and the field Range clamps the written value.
+		Check(writeLeaf("Boss.Count", 7) && a->boss.count == 7 && history.UndoCount() == 1, "Struct field edit must write the struct");
+		Check(writeLeaf("Boss.Count", 99) && a->boss.count == 50, "Struct field write must apply the field Range");
+		Check(history.Undo() && a->boss.count == 7 && history.Undo() && a->boss.count == 1, "Undo must restore each struct field value");
+		Check(history.Redo() && a->boss.count == 7, "Redo must reapply the struct field value");
+		history.Clear();
+		Check(!writeLeaf("Boss.Missing", 1) && !error.empty(), "Unknown struct field must be refused");
+		StructLeafPath unused;
+		Check(!ResolveStructLeafPath(target, "Waves.Count", unused, error), "A struct list needs an index in a path");
+		Check(!ResolveStructLeafPath(target, "Boss[0].Count", unused, error), "A struct property takes no index");
+		Check(!ResolveStructLeafPath(target, "Boss.Count.Extra", unused, error), "Nested paths are refused in v1");
+		Check(!writeLeaf("Waves[0].Count", 2) && error.find("out of range") != std::string::npos, "Element writes need an existing element");
+
+		// A drag is several frames in one merge group: they become one undo step.
+		const auto group = history.BeginMergeGroup();
+		for (int count : { 2, 3, 4 })
+		{
+			StructLeafPath path;
+			std::string drag;
+			if (!ResolveStructLeafPath(target, "Boss.Count", path, drag)) break;
+			auto whole = path.property->getter(target.object);
+			if (auto* stored = FindStructLeaf(path, whole, drag)) *stored = count;
+			history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, "Boss", whole, group));
+		}
+		Check(a->boss.count == 4 && history.UndoCount() == 1, "Struct drag frames must merge into one undo step");
+		Check(history.Undo() && a->boss.count == 7, "Merged struct drag must undo to the value before the gesture");
+		history.Clear();
+
+		// List: add from defaults, edit element fields, reorder, remove. Each step is one undoable command.
+		const auto addElement = [&]()
+		{
+			auto whole = target.type->FindProperty("Waves")->getter(target.object);
+			std::get<PropertyList>(whole).emplace_back(waveType->makeDefault());
+			return history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, "Waves", whole));
+		};
+		Check(addElement() && a->waves.size() == 1 && a->waves[0].count == 1, "Add must append a default element");
+		Check(addElement() && writeLeaf("Waves[1].Count", 4), "Element field edit must write the list");
+		Check(addElement() && writeLeaf("Waves[2].Prefab", std::string{ "x.prefab.json" }), "Element string field edit must write the list");
+		Check(a->waves.size() == 3 && a->waves[1].count == 4 && a->waves[2].prefab == "x.prefab.json" && a->waves[0].count == 1,
+			"List edits must keep each element");
+		{
+			// Move element 0 to index 2, as list-move does: the rest shift toward the front.
+			auto whole = target.type->FindProperty("Waves")->getter(target.object);
+			auto& list = std::get<PropertyList>(whole);
+			std::rotate(list.begin(), list.begin() + 1, list.begin() + 3);
+			Check(history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, "Waves", whole)), "Reorder must be one edit");
+		}
+		Check(a->waves[0].count == 4 && a->waves[1].prefab == "x.prefab.json" && a->waves[2].count == 1, "Reorder must move the element to its destination");
+		{
+			auto whole = target.type->FindProperty("Waves")->getter(target.object);
+			auto& list = std::get<PropertyList>(whole);
+			list.erase(list.begin());
+			Check(history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, "Waves", whole)) && a->waves.size() == 2,
+				"Remove must be one edit");
+		}
+		Check(a->waves[0].prefab == "x.prefab.json", "Remove must keep the remaining order");
+		// Seven commands: three adds, two field edits, a reorder and a remove. Undo walks back through them.
+		const std::size_t undoneSizes[] = { 3, 3, 3, 2, 2, 1, 0 };
+		for (const auto size : undoneSizes)
+			Check(history.Undo() && a->waves.size() == size, "Each struct list edit must undo to its previous list");
+		Check(a->waves.empty(), "Undoing every list edit must restore an empty list");
+		const std::size_t redoneSizes[] = { 1, 2, 2, 3, 3, 3, 2 };
+		for (const auto size : redoneSizes)
+			Check(history.Redo() && a->waves.size() == size, "Each struct list edit must redo to its next list");
+		Check(a->waves[0].prefab == "x.prefab.json" && a->waves[1].prefab.empty(), "Redo must restore the reordered and trimmed list");
+		history.Clear();
+
+		// Multi-select: differing structs show mixed, and a common edit writes the whole struct to each selected actor.
+		selection.Add(a);
+		selection.Add(b);
+		MultiInspectorCache cache;
+		const auto find = [&]() -> CommonProperty
+		{
+			for (const auto& row : cache.Get(context)) if (row.property->name == "Boss") return row;
+			throw std::runtime_error("Missing struct inspector row");
+		};
+		Check(find().mixed, "Different structs must mark the struct property mixed");
+		const StructValue shared{ { "Prefab", std::string{ "pair.prefab.json" } }, { "Count", 5 }, { "Delay", 0.f }, { "Armed", true } };
+		Check(SetCommonProperty(context, history, find(), shared) && a->boss.count == 5 && b->boss.count == 5 &&
+			a->boss.prefab == "pair.prefab.json" && b->boss.armed, "Common struct edit must write the whole value to every selected actor");
+		Check(!find().mixed && history.UndoCount() == 1, "Common struct edit must be one undo step");
+	}
 
 }
 
@@ -278,6 +412,14 @@ int main()
 	ly::reflect::Class<MultiActor, ly::Actor>("MultiActor")
 		.Property("Points", [](const MultiActor& a) { return a.points; }, [](MultiActor& a, const std::vector<sf::Vector2f>& v) { a.points = v; })
 		.Property("Target", [](const MultiActor& a) { return a.target; }, [](MultiActor& a, const ly::ActorRef& v) { a.target = v; });
+	ly::reflect::Class<StructWave>("StructWave")
+		.Field("Prefab", &StructWave::prefab)
+		.Field("Count", &StructWave::count).Range(1.f, 50.f)
+		.Field("Delay", &StructWave::delay).Range(0.f, 60.f)
+		.Field("Armed", &StructWave::armed);
+	ly::reflect::Class<StructHost, ly::Actor>("StructHost").Spawnable()
+		.Property("Boss", [](const StructHost& host) { return host.boss; }, [](StructHost& host, const StructWave& value) { host.boss = value; })
+		.Property("Waves", [](const StructHost& host) { return host.waves; }, [](StructHost& host, const std::vector<StructWave>& value) { host.waves = value; });
 	ly::reflect::Class<SharedComponent, ly::ActorComponent>("SharedComponent")
 		.Property("Strength", [](const SharedComponent& component) { return component.strength; }, [](SharedComponent& component, int value) { component.strength = value; });
 	ly::reflect::Class<FirstComponent, SharedComponent>("FirstComponent").Addable();
@@ -286,5 +428,6 @@ int main()
 	TestCollisionInspector();
 	TestSelectionInvalidation();
 	TestRichProperties();
+	TestStructProperties();
 	return failures ? 1 : 0;
 }

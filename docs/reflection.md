@@ -298,7 +298,7 @@ value drags and Vec2 viewport point drags merge per gesture. Mixed lists show a
 single em dash. Vec2 points use world coordinates. Property/overlay caches refresh
 on scene/selection revisions, without per-frame JSON. Viewport handles operate
 in scene Edit mode; prefab isolation offers the picker dropdown. Struct values and
-lists of structs show a read-only summary until the struct editor lands; see [Structs](#structs).
+lists of structs are edited field by field with the same controls; see [Structs](#structs).
 
 ```json
 {"Target":{"guid":"door-guid"},"Patrol":[[100,200],[300,200]],"Spawn List":[{"guid":"enemy-a"},{"guid":""}]}
@@ -365,12 +365,32 @@ element is a struct table. `actor:set` accepts the same shapes. Missing keys kee
 defaults. A value of the wrong type makes `set` return `false` with an error, as for any
 other property.
 
+**Inspector.** A struct is a tree node labelled with the property name, with one widget per
+field. Each widget is drawn from the field's own descriptor, so ranges, enum labels, asset
+pickers, `RequiredType` filters and tooltips behave as they do on a top-level property. A list
+of structs is a tree node with one sub-tree per element, labelled `[i]  <summary>`, where the
+summary is the element's first non-empty text field (such as its prefab) or else its struct
+type. Each element has Remove, Up and Down controls, and the list has Add, which starts from
+the field defaults and is capped at 4,096 elements. Every edit is one undoable
+`SetPropertyCommand` carrying the whole struct or list, so a field drag merges like any drag
+while adds, removes, reorders and asset picks are discrete undo steps. With several actors
+selected, a struct or list that differs shows a single em dash, and a common edit writes the
+whole value to each actor. Override colour and Revert/Apply to Prefab use the property name,
+so a struct or list is one override unit; the menu opens from the struct or list header.
+
+**Editor scripts.** `set-prop` and `expect-prop` address a field as `Name.Field` for a struct
+property or `Name[i].Field` for an element of a struct list. `list-add-default` appends a struct
+element with the field defaults, `list-move target property from to` reorders a list, and
+`list-remove` deletes an element. Each write goes through the same undoable path as the Inspector, and the
+field's Range and labels apply. See [editor script commands](editor-script-commands.md).
+
 **Limits in v1.** Fields are leaves only: bool, int, float, Vector2f, Color, string, an enum
 as int, or ActorRef. A struct holding a struct or a list is refused at registration. A struct
 value holds writable fields only. An ActorRef field keeps its `RequiredType` check when
 values are written and its dangling-reference warning on load. The viewport draws reference
-lines only for top-level references and list elements. The Inspector shows a summary line
-(`Boss: WaveEntry {3 fields}`, `Waves: 4 × WaveEntry`) until the struct editor lands.
+lines only for top-level references and list elements, and its Pick in viewport button is not
+offered for a field inside a struct; the combo box still lists and filters actors. Script
+paths cannot set an ActorRef field, and they reach one level only: `Name.Field` or `Name[i].Field`.
 
 The registry golden writes `structType` only on struct-typed entries. A struct property
 has kind `Struct` (10), and its `elementKind` is `Struct` for a list of structs.

@@ -145,6 +145,8 @@ namespace ly::reflect
 		std::function<ActorComponent&(Actor&)> addComponent;
 		bool removable = false;
 		std::vector<std::string> requiredComponents;
+		// Reflected structs only: the field values of a default-constructed struct. Editors use it for a new list element.
+		std::function<StructValue()> makeDefault;
 		bool RequiresComponent(const std::string& component) const
 		{
 			for (const auto& required : requiredComponents) if (required == component) return true;
@@ -234,6 +236,9 @@ namespace ly::reflect
 			: mType{ registry.Register(typeid(T), name, BaseType(registry), RootKind(),
 				[](const void* object) { return object && dynamic_cast<const T*>(static_cast<const Root*>(object)); }) }, mRegistry{ &registry }
 		{
+			// A new list element starts from the same defaults as a freshly constructed struct.
+			if constexpr (IsReflectedStruct<T>::value && std::is_default_constructible_v<T>)
+				mType.makeDefault = [owner = &registry] { return StructToValue<T>(*owner, T{}); };
 		}
 
 		template<typename Getter>
