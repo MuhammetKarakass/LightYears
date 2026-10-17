@@ -67,9 +67,24 @@ namespace vega
 				ImGui::PopID();
 				return changed;
 			}
+			case PropertyKind::Struct:
+			{
+				// Struct editing comes later; until then a struct is a read-only summary line.
+				if (mixed) ImGui::Text("%s: \xe2\x80\x94", label);
+				else ImGui::Text("%s: %s {%zu fields}", label, property.structType.c_str(), std::get<ly::reflect::StructValue>(value).size());
+				return false;
+			}
 			case PropertyKind::List:
 			{
 				ImGui::PushID(label);
+				if (property.elementKind == PropertyKind::Struct)
+				{
+					// Struct lists are summarised too; Add/Remove and element editing come with the struct editor.
+					if (mixed) ImGui::Text("%s: \xe2\x80\x94", label);
+					else ImGui::Text("%s: %zu \xc3\x97 %s", label, std::get<ly::reflect::PropertyList>(value).size(), property.structType.c_str());
+					ImGui::PopID();
+					return false;
+				}
 				if (mixed) { ImGui::Text("%s: \xe2\x80\x94", label); ImGui::PopID(); return false; }
 				auto& list = std::get<ly::reflect::PropertyList>(value);
 				bool changed = false;

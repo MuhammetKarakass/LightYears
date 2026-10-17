@@ -77,6 +77,15 @@ namespace ly
 				for (const auto& item : std::get<PropertyList>(value)) list.push_back(Encode(property.Element(), ToValue(item)));
 				return list;
 			}
+			if (property.kind == PropertyKind::Struct)
+			{
+				// Each field keeps its own leaf encoding, so an enum field is saved as its label.
+				Json fields = Json::object();
+				for (const auto& entry : std::get<StructValue>(value))
+					if (const auto* field = property.structInfo ? property.structInfo->FindProperty(entry.first) : nullptr)
+						fields[entry.first] = Encode(*field, ToPropertyValue(entry.second));
+				return fields;
+			}
 			if (property.kind == PropertyKind::Flags)
 			{
 				Json labels = Json::array();
@@ -96,7 +105,7 @@ namespace ly
 				if constexpr (std::is_same_v<T, sf::Vector2f>) return Json::array({ item.x, item.y });
 				else if constexpr (std::is_same_v<T, sf::Color>) return Json::array({ item.r, item.g, item.b, item.a });
 				else if constexpr (std::is_same_v<T, ly::ActorRef>) return Json{ { "guid", item.Guid() } };
-				else if constexpr (std::is_same_v<T, PropertyList>) return nullptr;
+				else if constexpr (std::is_same_v<T, PropertyList> || std::is_same_v<T, StructValue>) return nullptr;
 				else return item;
 			}, value);
 		}
@@ -124,9 +133,27 @@ namespace ly
 			case PropertyKind::List:
 			{
 				if (!value.is_array() || value.size() > 4096) throw std::runtime_error("Expected array with at most 4096 elements");
+				const auto element = property.Element();
 				PropertyList list;
-				for (const auto& item : value) list.push_back(ToScalar(Decode(property.Element(), item, warnings)));
+				for (std::size_t index = 0; index < value.size(); ++index)
+				{
+					try { list.push_back(ToScalar(Decode(element, value[index], warnings))); }
+					catch (const std::runtime_error& error) { throw std::runtime_error("[" + std::to_string(index) + "]: " + error.what()); }
+				}
 				return list;
+			}
+			case PropertyKind::Struct:
+			{
+				if (!value.is_object() || !property.structInfo) throw std::runtime_error("Expected struct object");
+				StructValue fields;
+				// Declaration order makes equal values save identically; unknown keys are ignored.
+				for (const auto& field : property.structInfo->properties)
+				{
+					if (!field.setter || !value.contains(field.name)) continue;
+					try { fields.emplace_back(field.name, ToLeaf(Decode(field, value.at(field.name), warnings))); }
+					catch (const std::runtime_error& error) { throw std::runtime_error(field.name + ": " + error.what()); }
+				}
+				return fields;
 			}
 			case PropertyKind::Bool: return value.get<bool>();
 			case PropertyKind::Int: return Integer(value, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());

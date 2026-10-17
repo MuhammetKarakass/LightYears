@@ -126,6 +126,13 @@ namespace vega::script
 					for (std::size_t i = 0; i < item.size(); ++i) list[i + 1] = ToLua(lua, ly::reflect::ToValue(item[i]), world);
 					return sol::make_object(lua, list);
 				}
+				else if constexpr (std::is_same_v<T, ly::reflect::StructValue>)
+				{
+					// Fields are keyed by their reflected names, so Lua sees the same keys as the Inspector.
+					sol::table fields = lua.create_table();
+					for (const auto& field : item) fields[field.first] = ToLua(lua, ly::reflect::ToPropertyValue(field.second), world);
+					return sol::make_object(lua, fields);
+				}
 				else return sol::make_object(lua, item);
 			}, value);
 		}
@@ -170,6 +177,23 @@ namespace vega::script
 				const auto actor = input.as<ActorHandle>().Lock();
 				if (!actor || actor->GetWorld() != world) return {};
 				return ly::ActorRef{ *actor };
+			}
+			if (property.kind == PropertyKind::Struct)
+			{
+				// Missing fields keep the struct's defaults and unknown keys are ignored, as in scene loads.
+				if (input.get_type() != sol::type::table || !property.structInfo) return {};
+				const auto table = input.as<sol::table>();
+				ly::reflect::StructValue fields;
+				for (const auto& field : property.structInfo->properties)
+				{
+					if (!field.setter) continue;
+					const auto entry = table.raw_get<sol::object>(field.name);
+					if (entry == sol::nil) continue;
+					const auto converted = FromPropertyLua(field, entry, world);
+					if (!converted) return {};
+					fields.emplace_back(field.name, ly::reflect::ToLeaf(*converted));
+				}
+				return fields;
 			}
 			if (property.kind == PropertyKind::List)
 			{
@@ -527,7 +551,7 @@ namespace vega::script
 					using T = std::decay_t<decltype(v)>;
 					if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ v.x, v.y });
 					else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
-					else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList>) return nullptr;
+					else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList> || std::is_same_v<T, ly::reflect::StructValue>) return nullptr;
 					else if constexpr (std::is_same_v<T, float>)
 					{
 						// Scene enum/flag/int readers distinguish integral JSON values.

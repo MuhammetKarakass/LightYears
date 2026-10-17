@@ -26,7 +26,7 @@ an independent Other root outside actor-component discovery.
 drag speed, tooltip, category, and enum/flag labels. Erased pointers must point
 to the registered root (Actor or ActorComponent), allowing pointer adjustment
 even under multiple inheritance. `PropertyValue` holds bool, int, float,
-Vector2f, Color, string, ActorRef, or PropertyList; enums and flags travel as int. `SetValue` checks
+Vector2f, Color, string, ActorRef, StructValue, or PropertyList; enums and flags travel as int. `SetValue` checks
 the value kind, finite numbers, declared enum labels/flag bits, and catches
 setter exceptions. Read-only properties have no setter. Ranges describe UI
 controls; property setters enforce domain rules, including clamping. Fields have no
@@ -50,6 +50,8 @@ function. Its braces form the body of `Describe(Builder& type)`.
 | `VEGA_CLASS(Type)` | Declare the hidden friend used to connect a class to its reflection block, and let that block bind private members. Put it first in the class body. |
 | `VEGA_REFLECT(Type, Base)` | Describe a class and its registered base. |
 | `VEGA_REFLECT_ROOT(Type)` | Describe a class with no reflection base. |
+| `VEGA_STRUCT(Type)` | Mark a plain struct as reflected, so it can be a property value or list element. Put it first in the struct body. See [Structs](#structs). |
+| `VEGA_REFLECT_STRUCT(Type)` | Describe a struct; its fields use `VEGA_FIELD`. Register the struct before its users. |
 | `VEGA_REGISTER(Type)` | Register a type through argument-dependent lookup (ADL). Include its header and register bases first. Explicit references retain static-library objects that the linker could otherwise discard. |
 | `VEGA_PROPERTY("Name", Getter, Setter)` | Call `o.Getter()` and `o.Setter(v)` through lambdas; overloaded/default-argument setters work normally. |
 | `VEGA_READONLY("Name", Getter)` | Register a getter without a setter. |
@@ -280,8 +282,8 @@ VEGA_ACTOR_REF("Target", GetTarget, SetTarget).RequiredType("BlankPlayer");
 VEGA_LIST("Patrol", GetPatrol, SetPatrol).Speed(1.f);
 ```
 
-`PropertyKind::ActorRef` and `PropertyKind::List` extend the existing kind IDs
-without changing them. `PropertyList` holds non-list `ScalarValue` elements.
+`PropertyKind::ActorRef`, `PropertyKind::List` and `PropertyKind::Struct` extend the existing kind IDs
+without changing them. `PropertyList` holds `ScalarValue` elements, which are scalars or structs.
 Supported vector elements are bool, int, float, Vector2f, Color, string, enum and
 ActorRef. Lists are homogeneous, limited to 4,096 elements, and validated in full
 before calling the setter. Wrong kinds, non-finite numbers and unlabelled enum
@@ -295,8 +297,8 @@ have Add, Remove, Up and Down controls. Structural edits use one undo command;
 value drags and Vec2 viewport point drags merge per gesture. Mixed lists show a
 single em dash. Vec2 points use world coordinates. Property/overlay caches refresh
 on scene/selection revisions, without per-frame JSON. Viewport handles operate
-in scene Edit mode; prefab isolation offers the picker dropdown. Plain reflected
-structs and nested lists are deferred to keep the variant/persistence schema small.
+in scene Edit mode; prefab isolation offers the picker dropdown. Struct values and
+lists of structs show a read-only summary until the struct editor lands; see [Structs](#structs).
 
 ```json
 {"Target":{"guid":"door-guid"},"Patrol":[[100,200],[300,200]],"Spawn List":[{"guid":"enemy-a"},{"guid":""}]}
@@ -306,6 +308,72 @@ The registry golden now records `elementKind` (null on scalar properties) and
 `requiredType` (empty when unrestricted). Asset-typed properties also record
 `"asset"` (for example `"Texture"`); other entries have no such key. Existing order, kind IDs, labels and
 other metadata remain identical.
+
+## Structs
+
+A plain struct is described once and then used as a property value, alone or as
+`std::vector` elements, as Unreal's `USTRUCT` is used in a `UPROPERTY`. Mark it with
+`VEGA_STRUCT(Type)` first in its body, describe it with `VEGA_REFLECT_STRUCT(Type)`, and
+register it before any class that uses it:
+
+```cpp
+// include/level/WaveEntry.h
+struct WaveEntry
+{
+	VEGA_STRUCT(WaveEntry)
+	std::string prefab;
+	int count = 1;
+	float delay = 0.f;
+};
+
+// src/level/WaveEntry.cpp
+VEGA_REFLECT_STRUCT(WaveEntry)
+{
+	VEGA_FIELD("Prefab", prefab).Asset(ly::reflect::AssetKind::Prefab);
+	VEGA_FIELD("Count", count).Range(1.f, 50.f);
+	VEGA_FIELD("Delay", delay).Range(0.f, 60.f);
+}
+
+// Its actor's VEGA_REFLECT block; WaveEntry is registered first, like a base.
+VEGA_FIELD("Waves", mWaves);   // std::vector<WaveEntry> mWaves
+```
+
+`VEGA_STRUCT` is the struct form of `VEGA_CLASS`. It declares the hidden friend that
+`Class` finds through ADL to recognise a struct, so a plain struct without it is refused
+as a property. `VEGA_REFLECT_STRUCT` is `VEGA_REFLECT_ROOT`. Fields use the same
+`VEGA_FIELD` lines, so `Range`, enum labels, asset kinds and `RequiredType` apply inside a
+struct. A class that uses a struct which is not registered yet throws `std::logic_error` at
+registration, as an unregistered base does.
+
+**Scene and prefab JSON.** A struct is an object keyed by reflected field names, and a list
+of structs is an array of those objects. Each field keeps its normal leaf encoding, so an
+enum field is a label and an actor field is `{"guid": ...}`:
+
+```json
+{ "Boss": { "Prefab": "enemy.prefab.json", "Count": 3, "Delay": 1.5 },
+  "Waves": [ { "Prefab": "a.prefab.json", "Count": 2, "Delay": 0.5 }, { "Prefab": "", "Count": 7, "Delay": 0.0 } ] }
+```
+
+Loading ignores unknown keys and keeps the struct default for missing keys. Saving writes
+only writable fields. A struct property and a list property are each one prefab override
+unit: changing any field of a struct overrides the whole struct, and changing any element
+overrides the whole list, as lists already do.
+
+**Lua.** `actor:get("Boss")` returns a table such as `{ Prefab = "...", Count = 3, Delay = 1.5 }`.
+`actor:get("Waves")` returns the list table `{ n = 2, [1] = {...}, [2] = {...} }`, where each
+element is a struct table. `actor:set` accepts the same shapes. Missing keys keep their
+defaults. A value of the wrong type makes `set` return `false` with an error, as for any
+other property.
+
+**Limits in v1.** Fields are leaves only: bool, int, float, Vector2f, Color, string, an enum
+as int, or ActorRef. A struct holding a struct or a list is refused at registration. A struct
+value holds writable fields only. An ActorRef field keeps its `RequiredType` check when
+values are written and its dangling-reference warning on load. The viewport draws reference
+lines only for top-level references and list elements. The Inspector shows a summary line
+(`Boss: WaveEntry {3 fields}`, `Waves: 4 × WaveEntry`) until the struct editor lands.
+
+The registry golden writes `structType` only on struct-typed entries. A struct property
+has kind `Struct` (10), and its `elementKind` is `Struct` for a list of structs.
 
 ## Compatibility checks
 

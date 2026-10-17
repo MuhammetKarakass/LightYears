@@ -28,6 +28,7 @@ namespace vega::script
 			case PropertyKind::Color: return "table";
 			case PropertyKind::ActorRef: return "ActorHandle|nil";
 			case PropertyKind::List: return "table";
+			case PropertyKind::Struct: return "table";
 			default: return "number";
 			}
 		}

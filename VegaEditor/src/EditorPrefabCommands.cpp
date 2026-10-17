@@ -126,17 +126,15 @@ namespace vega
 				{
 					if (!property->setter) continue;
 					auto value = property->getter(target.object);
-					const auto update = [&](ly::ActorRef& ref)
+					bool referenced = false;
+					// Struct fields hold references too, so the visitor covers them as well as list elements.
+					ly::reflect::ForEachActorRef(*property, value, [&](ly::ActorRef& ref, const std::string&)
 					{
+						referenced = true;
 						const auto found = publish.find(ref.Guid());
 						if (found != publish.end()) ref = ly::ActorRef{found->second};
-					};
-					if (auto* ref = std::get_if<ly::ActorRef>(&value)) update(*ref);
-					else if (auto* list = std::get_if<ly::reflect::PropertyList>(&value))
-					{
-						for (auto& item : *list) if (auto* ref = std::get_if<ly::ActorRef>(&item)) update(*ref);
-					}
-					else continue;
+					});
+					if (!referenced) continue;
 					property->SetValue(target.object, value);
 				}
 			};

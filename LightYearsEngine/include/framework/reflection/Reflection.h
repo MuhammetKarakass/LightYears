@@ -5,6 +5,7 @@
 #include "framework/World.h"
 #include "framework/ActorRef.h"
 #include "framework/reflection/AssetKind.h"
+#include "framework/reflection/ReflectionDeclare.h"
 #include <functional>
 #include <memory>
 #include <map>
@@ -21,10 +22,14 @@ namespace ly { class Actor; class ActorComponent; }
 
 namespace ly::reflect
 {
-	using ScalarValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string, ly::ActorRef>;
+	// Struct fields are leaves in v1: a struct cannot hold another struct or a list.
+	using LeafValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string, ly::ActorRef>;
+	// Ordered field name -> value. Missing fields keep the struct's default; unknown names are ignored.
+	using StructValue = std::vector<std::pair<std::string, LeafValue>>;
+	using ScalarValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string, ly::ActorRef, StructValue>;
 	using PropertyList = std::vector<ScalarValue>;
-	using PropertyValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string, ly::ActorRef, PropertyList>;
-	enum class PropertyKind { Bool, Int, Float, Vector2, Color, String, Enum, Flags, ActorRef, List };
+	using PropertyValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string, ly::ActorRef, StructValue, PropertyList>;
+	enum class PropertyKind { Bool, Int, Float, Vector2, Color, String, Enum, Flags, ActorRef, List, Struct };
 	template<typename T> struct ListTraits { static constexpr bool value = false; };
 	template<typename T> struct ListTraits<std::vector<T>> { static constexpr bool value = true; using Element = T; };
 	inline PropertyValue ToValue(const ScalarValue& value)
@@ -39,6 +44,20 @@ namespace ly::reflect
 			else return item;
 		}, value);
 	}
+	// A struct field is a leaf, so its conversion can never see a struct or a list.
+	inline PropertyValue ToPropertyValue(const LeafValue& value)
+	{
+		return std::visit([](const auto& item) -> PropertyValue { return item; }, value);
+	}
+	inline LeafValue ToLeaf(const PropertyValue& value)
+	{
+		return std::visit([](const auto& item) -> LeafValue
+		{
+			using T = std::decay_t<decltype(item)>;
+			if constexpr (std::is_same_v<T, StructValue> || std::is_same_v<T, PropertyList>) throw std::logic_error("Struct fields must be leaf values");
+			else return item;
+		}, value);
+	}
 	// The first six kinds describe the variant alternatives; enums and flags use int.
 	static_assert(static_cast<std::size_t>(PropertyKind::Bool) == 0 && std::is_same_v<std::variant_alternative_t<0, PropertyValue>, bool>);
 	static_assert(static_cast<std::size_t>(PropertyKind::Int) == 1 && std::is_same_v<std::variant_alternative_t<1, PropertyValue>, int>);
@@ -46,11 +65,15 @@ namespace ly::reflect
 	static_assert(static_cast<std::size_t>(PropertyKind::Vector2) == 3 && std::is_same_v<std::variant_alternative_t<3, PropertyValue>, sf::Vector2f>);
 	static_assert(static_cast<std::size_t>(PropertyKind::Color) == 4 && std::is_same_v<std::variant_alternative_t<4, PropertyValue>, sf::Color>);
 	static_assert(static_cast<std::size_t>(PropertyKind::String) == 5 && std::is_same_v<std::variant_alternative_t<5, PropertyValue>, std::string>);
+	static_assert(std::is_same_v<std::variant_alternative_t<7, PropertyValue>, StructValue> && std::is_same_v<std::variant_alternative_t<8, PropertyValue>, PropertyList>);
+	static_assert(static_cast<std::size_t>(PropertyKind::Struct) == 10);
 	inline PropertyKind KindOf(const PropertyValue& value)
 	{
-		return value.index() == 6 ? PropertyKind::ActorRef : value.index() == 7 ? PropertyKind::List : static_cast<PropertyKind>(value.index());
+		return value.index() == 6 ? PropertyKind::ActorRef : value.index() == 7 ? PropertyKind::Struct :
+			value.index() == 8 ? PropertyKind::List : static_cast<PropertyKind>(value.index());
 	}
 	using EnumLabels = std::vector<std::pair<int, std::string>>;
+	struct TypeInfo;
 
 	struct PropertyInfo
 	{
@@ -72,6 +95,10 @@ namespace ly::reflect
 		std::string category;
 		PropertyKind elementKind = PropertyKind::Bool;
 		std::string requiredType;
+		// Registered struct of a Struct property or of list elements. The name is for tools and the
+		// golden; structInfo supplies the field rules that validation applies to each struct value.
+		std::string structType;
+		const TypeInfo* structInfo = nullptr;
 		// Editor metadata only: a String property whose value is an asset path of this kind.
 		AssetKind assetKind = AssetKind::None;
 		PropertyInfo Element() const
@@ -88,6 +115,15 @@ namespace ly::reflect
 		// inherited properties. This preserves pointer adjustment with multiple inheritance.
 		bool SetValue(void* objectOfRoot, const PropertyValue& value, std::string* error = nullptr) const;
 	};
+	// Visits every actor reference in value, including references inside structs and lists, with the
+	// requiredType that applies to it. The visitor may rewrite the reference it receives.
+	void ForEachActorRef(const PropertyInfo& property, PropertyValue& value,
+		const std::function<void(ly::ActorRef&, const std::string&)>& visit);
+	// Reads each writable field of a registered struct in declaration order.
+	StructValue ReadStruct(const TypeInfo& type, const void* object);
+	// Applies the known writable fields to object, which must be a default-constructed struct, so fields
+	// absent from value keep their default. Field errors are thrown as "Field: reason".
+	void WriteStruct(const TypeInfo& type, void* object, const StructValue& value);
 
 	enum class TypeRoot { Actor, Component, Other };
 	struct ConstructorComponentInventory
@@ -164,6 +200,30 @@ namespace ly::reflect
 		std::vector<std::pair<std::type_index, std::unique_ptr<TypeInfo>>> mTypes;
 	};
 
+	// VEGA_STRUCT declares the hidden friend VegaStructTag; ADL on TypeTag<T> finds it only for reflected structs.
+	template<typename T, typename = void> struct IsReflectedStruct : std::false_type {};
+	template<typename T> struct IsReflectedStruct<T, std::void_t<decltype(VegaStructTag(TypeTag<T>{}))>> : std::true_type {};
+	// Struct conversions look up the struct's TypeInfo at call time through the owner's registry.
+	template<typename V> const TypeInfo& RegisteredStruct(const TypeRegistry& registry)
+	{
+		const auto* info = registry.Find(typeid(V));
+		if (!info) throw std::logic_error(std::string{ "Register struct types before their users: " } + typeid(V).name());
+		return *info;
+	}
+	template<typename V> StructValue StructToValue(const TypeRegistry& registry, const V& item)
+	{
+		return ReadStruct(RegisteredStruct<V>(registry), &item);
+	}
+	template<typename V> V StructFromValue(const TypeRegistry& registry, const StructValue& value)
+	{
+		V item{};
+		WriteStruct(RegisteredStruct<V>(registry), &item, value);
+		return item;
+	}
+	// The element type of a list, or the type itself for a scalar.
+	template<typename V, bool = ListTraits<V>::value> struct ItemOf { using type = V; };
+	template<typename V> struct ItemOf<V, true> { using type = typename ListTraits<V>::Element; };
+
 	template<typename T, typename Base = void>
 	class Class
 	{
@@ -172,7 +232,7 @@ namespace ly::reflect
 	public:
 		explicit Class(const std::string& name, TypeRegistry& registry = CurrentTypeRegistry())
 			: mType{ registry.Register(typeid(T), name, BaseType(registry), RootKind(),
-				[](const void* object) { return object && dynamic_cast<const T*>(static_cast<const Root*>(object)); }) }
+				[](const void* object) { return object && dynamic_cast<const T*>(static_cast<const Root*>(object)); }) }, mRegistry{ &registry }
 		{
 		}
 
@@ -196,7 +256,17 @@ namespace ly::reflect
 			if constexpr (std::is_base_of_v<Actor, T> || std::is_base_of_v<ActorComponent, T>)
 				property.world = [](const void* object) { return dynamic_cast<const T*>(static_cast<const Root*>(object))->GetWorld(); };
 			if constexpr (ListTraits<Value>::value) property.elementKind = Kind<typename ListTraits<Value>::Element>();
-			property.getter = [getter](const void* object) -> PropertyValue
+			// A registered struct must be registered before any property that uses it, as with bases.
+			if constexpr (IsReflectedStruct<typename ItemOf<Value>::type>::value)
+			{
+				property.structInfo = &RegisteredStruct<typename ItemOf<Value>::type>(*mRegistry);
+				property.structType = property.structInfo->name;
+			}
+			// v1 keeps struct fields to leaves; the error names the property so the broken field is easy to find.
+			if constexpr (IsReflectedStruct<T>::value)
+				if (property.kind == PropertyKind::Struct || property.kind == PropertyKind::List)
+					throw std::logic_error("Struct field must be a leaf value: " + name);
+			property.getter = [getter, registry = mRegistry](const void* object) -> PropertyValue
 			{
 				const T& instance = *dynamic_cast<const T*>(static_cast<const Root*>(object));
 				if constexpr (std::is_enum_v<Value>) return static_cast<int>(std::invoke(getter, instance));
@@ -207,10 +277,12 @@ namespace ly::reflect
 					{
 						using E = typename ListTraits<Value>::Element;
 						if constexpr (std::is_enum_v<E>) list.emplace_back(static_cast<int>(item));
+						else if constexpr (IsReflectedStruct<E>::value) list.emplace_back(StructToValue<E>(*registry, item));
 						else list.emplace_back(static_cast<E>(item));
 					}
 					return list;
 				}
+				else if constexpr (IsReflectedStruct<Value>::value) return StructToValue<Value>(*registry, std::invoke(getter, instance));
 				else return std::invoke(getter, instance);
 			};
 			mType.properties.push_back(std::move(property));
@@ -223,7 +295,7 @@ namespace ly::reflect
 		{
 			using Value = std::decay_t<std::invoke_result_t<Getter, const T&>>;
 			Property(name, getter);
-			Current().setter = [setter](void* object, const PropertyValue& value)
+			Current().setter = [setter, registry = mRegistry](void* object, const PropertyValue& value)
 			{
 				T& instance = *dynamic_cast<T*>(static_cast<Root*>(object));
 				if constexpr (std::is_enum_v<Value>) std::invoke(setter, instance, static_cast<Value>(std::get<int>(value)));
@@ -234,10 +306,12 @@ namespace ly::reflect
 					for (const auto& item : std::get<PropertyList>(value))
 					{
 						if constexpr (std::is_enum_v<E>) list.push_back(static_cast<E>(std::get<int>(item)));
+						else if constexpr (IsReflectedStruct<E>::value) list.push_back(StructFromValue<E>(*registry, std::get<StructValue>(item)));
 						else list.push_back(std::get<E>(item));
 					}
 					std::invoke(setter, instance, list);
 				}
+				else if constexpr (IsReflectedStruct<Value>::value) std::invoke(setter, instance, StructFromValue<Value>(*registry, std::get<StructValue>(value)));
 				else std::invoke(setter, instance, std::get<Value>(value));
 			};
 			return *this;
@@ -342,6 +416,7 @@ namespace ly::reflect
 		{
 			if constexpr (std::is_enum_v<V>) return PropertyKind::Enum;
 			else if constexpr (ListTraits<V>::value) return PropertyKind::List;
+			else if constexpr (IsReflectedStruct<V>::value) return PropertyKind::Struct;
 			else if constexpr (std::is_same_v<V, ly::ActorRef>) return PropertyKind::ActorRef;
 			else if constexpr (std::is_same_v<V, bool>) return PropertyKind::Bool;
 			else if constexpr (std::is_same_v<V, int>) return PropertyKind::Int;
@@ -352,6 +427,8 @@ namespace ly::reflect
 		}
 		PropertyInfo& Current() { return mType.properties.at(mProperty); }
 		TypeInfo& mType;
+		// Owner of the types this builder describes; struct lookups use it when values are converted.
+		TypeRegistry* mRegistry = nullptr;
 		std::string mDefaultCategory;
 		std::size_t mProperty = 0;
 	};

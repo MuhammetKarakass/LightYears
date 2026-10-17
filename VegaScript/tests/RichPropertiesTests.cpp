@@ -27,6 +27,17 @@ namespace
 		if (!condition) { ++failures; std::cerr << message << '\n'; }
 	}
 	enum class Mode { A = 1, B = 3 };
+	struct RichWave
+	{
+		VEGA_STRUCT(RichWave)
+		std::string prefab;
+		int count = 1;
+	};
+	VEGA_REFLECT_STRUCT(RichWave)
+	{
+		VEGA_FIELD("Prefab", prefab);
+		VEGA_FIELD("Count", count).Range(1.f, 50.f);
+	}
 	class RichActor : public Actor
 	{
 		VEGA_CLASS(RichActor)
@@ -41,6 +52,7 @@ namespace
 		std::vector<sf::Color> colors;
 		std::vector<std::string> strings;
 		std::vector<Mode> modes;
+		std::vector<RichWave> waves;
 		ActorRef GetTarget() const { return target; }
 		void SetTarget(const ActorRef& value) { target = value; }
 	};
@@ -56,6 +68,7 @@ namespace
 		type.Property("Colors", [](const Self& a) { return a.colors; }, [](Self& a, const std::vector<sf::Color>& v) { a.colors = v; });
 		type.Property("Strings", [](const Self& a) { return a.strings; }, [](Self& a, const std::vector<std::string>& v) { a.strings = v; });
 		type.Property("Modes", [](const Self& a) { return a.modes; }, [](Self& a, const std::vector<Mode>& v) { a.modes = v; }).Labels({ { 1, "A" }, { 3, "B" } });
+		VEGA_FIELD("Waves", waves);
 	}
 	Json Scene(Json entities)
 	{
@@ -182,6 +195,13 @@ function on_start(self)
 	local refs=a:get('Refs'); refs[2]=nil
 	assert(a:set('Refs',refs)); refs=a:get('Refs')
 	assert(refs.n==2 and refs[1]:id()==b:id() and refs[2]==nil)
+	assert(a:get('Waves').n == 0)
+	assert(a:set('Waves', {{Prefab='a.prefab.json', Count=3}, {Count=7}}))
+	local waves = a:get('Waves')
+	assert(waves.n == 2 and waves[1].Prefab == 'a.prefab.json' and waves[2].Count == 7)
+	waves[2].Count = 99
+	assert(a:set('Waves', waves) and a:get('Waves')[2].Count == 50)
+	assert(not a:set('Waves', {{Count='x'}}) and a:get('Waves')[2].Count == 50)
 	b:destroy()
 	assert(a:get('Refs')[1]==nil)
 end
@@ -191,6 +211,7 @@ end
 		world.TickInternal(0.01f);
 		Check(script.LastError().empty(), script.LastError().c_str());
 		Check(Find(world, "a")->points.size() == 2, "Lua must write Vec2 list through reflected setter");
+	Check(Find(world, "a")->waves.size() == 2 && Find(world, "a")->waves[1].count == 50, "Lua must write struct lists through reflected fields");
 	}
 }
 
@@ -207,6 +228,7 @@ int main(int argc, char** argv)
 	vega::script::SetScriptRoot(root);
 	ly::PrefabLibrary::Get().SetRoot(root);
 	vega::script::RegisterScriptTypes();
+	VEGA_REGISTER(RichWave);
 	VEGA_REGISTER(RichActor);
 	if (argc > 1 && std::string{ argv[1] } == "lua") Lua(root);
 	else { Serialization(); Prefabs(root); }

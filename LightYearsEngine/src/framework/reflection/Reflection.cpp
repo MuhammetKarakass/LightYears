@@ -77,10 +77,27 @@ namespace ly::reflect
 		if (KindOf(value) != valueKind) return fail("Incompatible property value");
 		if (kind == PropertyKind::List)
 		{
-			if (std::get<PropertyList>(value).size() > 4096) return fail("List exceeds 4096 elements");
-			const auto element = Element();
-			for (const auto& item : std::get<PropertyList>(value))
-				if (!element.ValidateValue(ToValue(item), error)) return false;
+			const auto& items = std::get<PropertyList>(value);
+			if (items.size() > 4096) return fail("List exceeds 4096 elements");
+			auto element = Element();
+			for (std::size_t index = 0; index < items.size(); ++index)
+			{
+				// Struct errors name the element, e.g. Waves[2].Count.
+				if (elementKind == PropertyKind::Struct) element.name = name + "[" + std::to_string(index) + "]";
+				if (!element.ValidateValue(ToValue(items[index]), error)) return false;
+			}
+		}
+		if (kind == PropertyKind::Struct)
+		{
+			if (!structInfo) return fail("Struct type is not registered");
+			for (const auto& entry : std::get<StructValue>(value))
+			{
+				const auto* field = structInfo->FindProperty(entry.first);
+				// Unknown and read-only names are skipped, as WriteStruct skips them.
+				if (!field || !field->setter) continue;
+				std::string reason;
+				if (!field->ValidateValue(ToPropertyValue(entry.second), &reason)) return fail(name + "." + entry.first + ": " + reason);
+			}
 		}
 		if (const auto* number = std::get_if<float>(&value); number && !std::isfinite(*number)) return fail("Expected finite number");
 		if (const auto* vector = std::get_if<sf::Vector2f>(&value);
@@ -120,19 +137,21 @@ namespace ly::reflect
 			std::get<int>(stored) = static_cast<int>(std::min(std::max<double>(std::get<int>(stored), low), high));
 		}
 		const auto* ownerWorld = world ? world(object) : nullptr;
-		if (ownerWorld && !requiredType.empty())
+		if (ownerWorld)
 		{
-			const auto accepts = [&](const ly::ActorRef& ref)
+			const auto accepts = [&](const ly::ActorRef& ref, const std::string& type)
 			{
 				const auto actor = ref.Resolve(*const_cast<World*>(ownerWorld));
-				const auto* filter = ownerWorld->GetEngineContext().Types().Find(requiredType);
+				const auto* filter = ownerWorld->GetEngineContext().Types().Find(type);
 				return !actor || (filter && filter->root == TypeRoot::Actor && filter->isInstance(actor.get()));
 			};
-			bool accepted = true;
-			if (kind == PropertyKind::ActorRef) accepted = accepts(std::get<ly::ActorRef>(value));
-			if (kind == PropertyKind::List && elementKind == PropertyKind::ActorRef)
-				for (const auto& item : std::get<PropertyList>(value)) accepted = accepts(std::get<ly::ActorRef>(item)) && accepted;
-			if (!accepted) { if (error) *error = "Actor reference requires " + requiredType; return false; }
+			// Each reference is checked against its own requiredType, which may be a struct field's.
+			std::string required;
+			ForEachActorRef(*this, stored, [&](ly::ActorRef& ref, const std::string& type)
+			{
+				if (required.empty() && !type.empty() && !accepts(ref, type)) required = type;
+			});
+			if (!required.empty()) { if (error) *error = "Actor reference requires " + required; return false; }
 		}
 		try
 		{
@@ -145,26 +164,69 @@ namespace ly::reflect
 
 	bool PropertyInfo::ResolveReferences(void* object, World& world, std::string* error) const
 	{
-		if (!setter || (kind != PropertyKind::ActorRef && !(kind == PropertyKind::List && elementKind == PropertyKind::ActorRef))) return true;
+		const bool holdsRefs = kind == PropertyKind::ActorRef || kind == PropertyKind::Struct ||
+			(kind == PropertyKind::List && (elementKind == PropertyKind::ActorRef || elementKind == PropertyKind::Struct));
+		if (!setter || !holdsRefs) return true;
 		auto value = getter(object);
 		bool valid = true;
-		const auto bind = [&](ly::ActorRef& ref)
+		ForEachActorRef(*this, value, [&](ly::ActorRef& ref, const std::string& type)
 		{
 			if (ref.Guid().empty()) return;
 			const auto actor = ref.Resolve(world);
 			if (!actor) { valid = false; if (error) *error = "Dangling actor reference: " + ref.Guid(); return; }
-			const auto* filter = requiredType.empty() ? nullptr : world.GetEngineContext().Types().Find(requiredType);
-			if (!requiredType.empty() && (!filter || filter->root != TypeRoot::Actor || !filter->isInstance(actor.get())))
+			const auto* filter = type.empty() ? nullptr : world.GetEngineContext().Types().Find(type);
+			if (!type.empty() && (!filter || filter->root != TypeRoot::Actor || !filter->isInstance(actor.get())))
 			{
 				valid = false;
-				if (error) *error = "Actor reference requires " + requiredType;
+				if (error) *error = "Actor reference requires " + type;
 				ref = ly::ActorRef{};
 			}
-		};
-		if (kind == PropertyKind::ActorRef) bind(std::get<ly::ActorRef>(value));
-		else for (auto& item : std::get<PropertyList>(value)) bind(std::get<ly::ActorRef>(item));
+		});
 		setter(object, value);
 		return valid;
+	}
+
+	namespace
+	{
+		void VisitStructRefs(const TypeInfo* info, StructValue& fields, const std::function<void(ly::ActorRef&, const std::string&)>& visit)
+		{
+			for (auto& entry : fields)
+				if (const auto* field = info ? info->FindProperty(entry.first) : nullptr; field && field->kind == PropertyKind::ActorRef)
+					visit(std::get<ly::ActorRef>(entry.second), field->requiredType);
+		}
+	}
+
+	void ForEachActorRef(const PropertyInfo& property, PropertyValue& value,
+		const std::function<void(ly::ActorRef&, const std::string&)>& visit)
+	{
+		if (property.kind == PropertyKind::ActorRef) visit(std::get<ly::ActorRef>(value), property.requiredType);
+		else if (property.kind == PropertyKind::Struct) VisitStructRefs(property.structInfo, std::get<StructValue>(value), visit);
+		else if (property.kind == PropertyKind::List)
+			for (auto& item : std::get<PropertyList>(value))
+			{
+				if (property.elementKind == PropertyKind::ActorRef) visit(std::get<ly::ActorRef>(item), property.requiredType);
+				else if (property.elementKind == PropertyKind::Struct) VisitStructRefs(property.structInfo, std::get<StructValue>(item), visit);
+			}
+	}
+
+	StructValue ReadStruct(const TypeInfo& type, const void* object)
+	{
+		StructValue result;
+		for (const auto& field : type.properties)
+			if (field.getter && field.setter) result.emplace_back(field.name, ToLeaf(field.getter(object)));
+		return result;
+	}
+
+	void WriteStruct(const TypeInfo& type, void* object, const StructValue& value)
+	{
+		for (const auto& entry : value)
+		{
+			const auto* field = type.FindProperty(entry.first);
+			// Unknown and read-only names are ignored so that files written by other versions still load.
+			if (!field || !field->setter) continue;
+			std::string error;
+			if (!field->SetValue(object, ToPropertyValue(entry.second), &error)) throw std::runtime_error(entry.first + ": " + error);
+		}
 	}
 
 	std::vector<const PropertyInfo*> TypeInfo::AllProperties() const

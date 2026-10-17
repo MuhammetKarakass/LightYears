@@ -29,6 +29,8 @@
 	void VegaReflection_##Type::Describe(Builder& type)
 
 #define VEGA_REFLECT_ROOT(Type) VEGA_REFLECT(Type, void)
+// A struct's fields use the same VEGA_FIELD lines; register it before any class that uses it.
+#define VEGA_REFLECT_STRUCT(Type) VEGA_REFLECT_ROOT(Type)
 #define VEGA_REGISTER(Type) VegaReflect(::ly::reflect::TypeTag<Type>{})
 #define VEGA_REGISTER_IN(Type, Registry) VegaReflect(::ly::reflect::TypeTag<Type>{}, Registry)
 

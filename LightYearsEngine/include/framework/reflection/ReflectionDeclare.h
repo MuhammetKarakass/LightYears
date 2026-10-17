@@ -9,6 +9,10 @@ namespace ly::reflect
 	struct TypeTag
 	{
 	};
+	// Return type of the hidden friend VEGA_STRUCT declares. The friend is never called; its presence marks a struct.
+	struct StructTag
+	{
+	};
 }
 
 // Marks a class as reflected, like Unreal's GENERATED_BODY(). Put it first in the class body
@@ -21,3 +25,9 @@ namespace ly::reflect
 	friend void VegaReflect(::ly::reflect::TypeTag<Type>); \
 	friend void VegaReflect(::ly::reflect::TypeTag<Type>, ::ly::reflect::TypeRegistry&); \
 	friend struct VegaReflection_##Type;
+
+// Marks a plain struct as reflected, the struct counterpart of VEGA_CLASS. Put it first in the struct body.
+// It declares the hidden friend that Class<T> detects by ADL, so an undeclared struct is never treated as one.
+#define VEGA_STRUCT(Type) \
+	VEGA_CLASS(Type) \
+	friend ::ly::reflect::StructTag VegaStructTag(::ly::reflect::TypeTag<Type>);

@@ -28,6 +28,8 @@ namespace
 				};
 				// Only asset-typed properties carry the key, so unrelated golden entries keep their shape.
 				if (property.assetKind != ly::reflect::AssetKind::None) entry["asset"] = ly::reflect::AssetKindName(property.assetKind);
+				// Struct-typed entries name their struct; no current engine property has one, so the golden is unchanged.
+				if (!property.structType.empty()) entry["structType"] = property.structType;
 				properties.push_back(std::move(entry));
 			}
 			types.push_back({

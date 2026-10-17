@@ -361,7 +361,7 @@ namespace vega::script
 						using T = std::decay_t<decltype(value)>;
 						if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ value.x, value.y });
 						else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
-						else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList>) return nullptr;
+						else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList> || std::is_same_v<T, ly::reflect::StructValue>) return nullptr;
 						else return value;
 					}, entry.second);
 				return nlohmann::json{ { "path", component.ScriptPath() }, { "properties", std::move(properties) } };
