@@ -17,6 +17,16 @@ set(IMGUI_DIR "${imgui_SOURCE_DIR}")
 set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "Use the existing SFML targets" FORCE)
 FetchContent_MakeAvailable(imgui-sfml)
 
+set(VEGA_EDITOR_COMMAND_SOURCES
+	src/EditorCommands.cpp
+	src/EditorContext.cpp
+	src/EditorPropertyCommands.cpp
+	src/EditorEntityCommands.cpp
+	src/EditorComponentCommands.cpp
+	src/EditorPrefabCommands.cpp
+	src/EditorSelectionCommands.cpp
+)
+
 set(VEGA_EDITOR_CORE_SOURCES
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
@@ -36,7 +46,11 @@ set(VEGA_EDITOR_CORE_SOURCES
 	src/GizmoMath.cpp
 	src/EditorCamera.cpp
 	src/EditorPanels.cpp
-	src/EditorCommands.cpp
+	src/EditorHierarchyPanel.cpp
+	src/EditorInspectorPanel.cpp
+	src/EditorViewportPanel.cpp
+	src/EditorExportDialog.cpp
+	${VEGA_EDITOR_COMMAND_SOURCES}
 	src/EditorScript.cpp
 	src/EditorScriptParser.cpp
 	src/ScriptCommandRegistry.cpp
@@ -148,7 +162,7 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 	add_test(NAME VegaEditorNoGameIncludes COMMAND ${CMAKE_COMMAND}
 		-DSOURCE_ROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/NoGameIncludes.cmake)
 	add_executable(VegaEditorSkyDocumentTests tests/SkyDocumentTests.cpp ${CMAKE_SOURCE_DIR}/Modules/Sky/editor/src/SkyDocument.cpp src/JsonDocument.cpp src/JsonCommands.cpp
-		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+		${VEGA_EDITOR_COMMAND_SOURCES} src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorSkyDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(VegaEditorSkyDocumentTests PRIVATE VegaSkyEditor)
 	target_compile_definitions(VegaEditorSkyDocumentTests PRIVATE
@@ -166,7 +180,7 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 		-P ${CMAKE_CURRENT_BINARY_DIR}/RunSkyEditorTest.cmake)
 	set_tests_properties(VegaEditorSkyEditor PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 180)
 	add_executable(VegaEditorContentWorkspaceTests tests/ContentWorkspaceTests.cpp
-		src/ContentWorkspace.cpp src/JsonDocument.cpp src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+		src/ContentWorkspace.cpp src/JsonDocument.cpp ${VEGA_EDITOR_COMMAND_SOURCES} src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorContentWorkspaceTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(VegaEditorContentWorkspaceTests PRIVATE VegaScript)
 	target_compile_definitions(VegaEditorContentWorkspaceTests PRIVATE VEGA_CONTENT_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/content-workspace-tests")
@@ -193,7 +207,7 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunMultiSelectTest.cmake)
 	set_tests_properties(VegaEditorMultiSelect PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)
 	add_executable(VegaEditorMultiSelectionTests tests/MultiSelectionTests.cpp
-		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+		${VEGA_EDITOR_COMMAND_SOURCES} src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorMultiSelectionTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(VegaEditorMultiSelectionTests PRIVATE VegaScript)
 	ly_enable_warnings(VegaEditorMultiSelectionTests)
@@ -291,7 +305,7 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 
 	add_executable(VegaEditorCommandTests
 		tests/EditorCommandTests.cpp
-		src/EditorCommands.cpp
+		${VEGA_EDITOR_COMMAND_SOURCES}
 		src/EditorCamera.cpp
 		src/EditorSelection.cpp
 	)
@@ -348,7 +362,7 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 	)
 	add_executable(VegaEditorJsonDocumentTests
 		tests/JsonDocumentTests.cpp src/JsonDocument.cpp src/JsonCommands.cpp
-		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+		${VEGA_EDITOR_COMMAND_SOURCES} src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorJsonDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(VegaEditorJsonDocumentTests PRIVATE VegaScript nlohmann_json::nlohmann_json)
 	target_compile_definitions(VegaEditorJsonDocumentTests PRIVATE

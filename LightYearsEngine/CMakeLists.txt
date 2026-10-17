@@ -42,6 +42,9 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/WorldRenderPipeline.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/RenderViewport.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/World.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/WorldSpatialQueries.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/WorldRendering.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/WorldCamera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/RenderViewport.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SimulationTime.h
@@ -51,6 +54,7 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Actor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Actor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/ActorTransform.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/ActorComponent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/ActorComponent.cpp

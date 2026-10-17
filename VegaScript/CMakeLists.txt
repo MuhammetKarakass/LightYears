@@ -17,7 +17,11 @@ target_include_directories(lua_static PUBLIC "${lua_SOURCE_DIR}/src")
 add_library(vega_sol2 INTERFACE)
 target_include_directories(vega_sol2 SYSTEM INTERFACE "${sol2_SOURCE_DIR}/include")
 target_compile_definitions(vega_sol2 INTERFACE $<$<CONFIG:Debug>:SOL_ALL_SAFETIES_ON=1>)
-add_library(VegaScript STATIC src/ScriptComponent.cpp src/LuaTypes.cpp)
+add_library(VegaScript STATIC
+	src/ScriptComponent.cpp
+	src/ScriptRuntime.cpp
+	src/ScriptBindings.cpp
+	src/LuaTypes.cpp)
 target_include_directories(VegaScript PUBLIC include)
 target_link_libraries(VegaScript PUBLIC LightYearsEngine PRIVATE lua_static vega_sol2)
 target_compile_definitions(VegaScript PRIVATE $<$<CONFIG:Release>:VEGA_SCRIPT_RELEASE=1>)
