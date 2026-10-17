@@ -38,6 +38,7 @@ namespace vega
          mArenaBoundarySystem{},
          mPlayerRespawnDefinition{},
          mPlayerRespawnSystem{},
+         mCameraRigActor{},
          mCameraFollowShip{},
 		 mWasCameraFollowShipDashing{ false }
      {
@@ -142,45 +143,74 @@ namespace vega
 
      void ArenaLevel::InitializeArenaCamera()
      {
-         SetCameraSettings(CreateCameraSettings());
-
-         if (mHasArenaDefinition)
+         if (mCameraRigActor.expired())
          {
-             SetCameraWorldBounds(mArenaDefinition.legalBounds);
+             mCameraRigActor = SpawnActor<Actor>();
+             if (shared_ptr<Actor> rig = mCameraRigActor.lock())
+             {
+                 rig->AddComponent<CameraComponent>();
+             }
          }
+
+         if (CameraComponent* camera = ResolveArenaCamera())
+         {
+             camera->SetSettings(CreateCameraSettings());
+
+             if (mHasArenaDefinition)
+             {
+                 camera->SetWorldBounds(mArenaDefinition.legalBounds);
+             }
+         }
+     }
+
+     CameraComponent* ArenaLevel::ResolveArenaCamera() const
+     {
+         shared_ptr<Actor> rig = mCameraRigActor.lock();
+         if (!rig || rig->GetIsPendingDestroy())
+         {
+             return nullptr;
+         }
+         return rig->FindComponent<CameraComponent>();
      }
 
      void ArenaLevel::UpdateArenaCameraInputs()
      {
+         CameraComponent* camera = ResolveArenaCamera();
+         if (!camera)
+         {
+             mWasCameraFollowShipDashing = false;
+             return;
+         }
+
          auto ship = mCameraFollowShip.lock();
 		if (!ship || ship->GetIsPendingDestroy())
 		{
-			ClearCameraExternalVelocity();
-			SetCameraPreserveFollowTargetOffset(false);
-			SetCameraAdditionalZoomOut(0.f);
-			SetCameraRelativeAdditionalZoomOut(0.f);
-			ClearCameraLookAheadWorldPosition();
+			camera->ClearExternalVelocity();
+			camera->SetPreserveFollowTargetOffset(false);
+			camera->SetAdditionalZoomOut(0.f);
+			camera->SetRelativeAdditionalZoomOut(0.f);
+			camera->ClearLookAheadWorldPosition();
 			mWasCameraFollowShipDashing = false;
              return;
          }
 
 		const bool isDashing = ship->GetMovementComponent().IsMovementBurstActive();
-		SetCameraPreserveFollowTargetOffset(isDashing || mWasCameraFollowShipDashing);
+		camera->SetPreserveFollowTargetOffset(isDashing || mWasCameraFollowShipDashing);
 
 		// Dash velocity is a short displacement impulse, not sustained travel speed.
 		// Preserve the last normal velocity so speed zoom and movement look-ahead do
 		// not pulse out and back during the dash.
 		if (!isDashing)
 		{
-			SetCameraExternalVelocity(ship->GetVelocity());
+			camera->SetExternalVelocity(ship->GetVelocity());
 		}
-		SetCameraAdditionalZoomOut(ship->GetAfterburnerCameraZoomOut());
-		SetCameraRelativeAdditionalZoomOut(
+		camera->SetAdditionalZoomOut(ship->GetAfterburnerCameraZoomOut());
+		camera->SetRelativeAdditionalZoomOut(
 			(isDashing || mWasCameraFollowShipDashing)
 				? ResolveDashCameraZoomOutRatio(*ship)
 				: 0.f
 		);
-		SetCameraLookAheadWorldPosition(GetMouseWorldPosition());
+		camera->SetLookAheadWorldPosition(GetMouseWorldPosition());
 		mWasCameraFollowShipDashing = isDashing;
      }
      
@@ -275,27 +305,38 @@ namespace vega
      {
          mCameraFollowShip = playerShip;
 		 mWasCameraFollowShipDashing = false;
-		 SetCameraPreserveFollowTargetOffset(false);
-		 SetCameraRelativeAdditionalZoomOut(0.f);
+
+         CameraComponent* camera = ResolveArenaCamera();
+         if (camera)
+         {
+             camera->SetPreserveFollowTargetOffset(false);
+             camera->SetRelativeAdditionalZoomOut(0.f);
+         }
 
          if (auto ship = playerShip.lock())
          {
              ship->SetMovementMode(ShipMovementMode::ThrustDrift);
          }
 
-         SetViewTarget(playerShip);
+         if (camera)
+         {
+             camera->SetFollowTarget(playerShip);
+         }
          SetArenaTrackedActor(playerShip);
      }
      void ArenaLevel::OnPlayerShipDestroyed(Actor* destroyedActor)
      {
          mCameraFollowShip.reset();
 		 mWasCameraFollowShipDashing = false;
-         ClearViewTarget();
-		 ClearCameraExternalVelocity();
-		 SetCameraPreserveFollowTargetOffset(false);
-		 SetCameraAdditionalZoomOut(0.f);
-		 SetCameraRelativeAdditionalZoomOut(0.f);
-         ClearCameraLookAheadWorldPosition();
+         if (CameraComponent* camera = ResolveArenaCamera())
+         {
+             camera->ClearFollowTarget();
+             camera->ClearExternalVelocity();
+             camera->SetPreserveFollowTargetOffset(false);
+             camera->SetAdditionalZoomOut(0.f);
+             camera->SetRelativeAdditionalZoomOut(0.f);
+             camera->ClearLookAheadWorldPosition();
+         }
          SetArenaTrackedActor(weak_ptr<Actor>());
          OnArenaBoundaryWarningCleared();
      }

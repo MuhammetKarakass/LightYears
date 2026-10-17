@@ -2,6 +2,7 @@
 
 #include "VFX/Explosion.h"
 #include "framework/World.h"
+#include "framework/camera/CameraComponent.h"
 
 #include <algorithm>
 #include <cmath>
@@ -113,11 +114,14 @@ namespace vega
 		Explosion::SpawnExplosion(GetWorld(), worldLocation, explosion);
 		if (World* world = GetWorld())
 		{
-			world->PlayCameraShake(
-				mDefinition.screenShakeAmplitude,
-				mDefinition.screenShakeDuration,
-				mDefinition.screenShakeFrequency
-			);
+			if (CameraComponent* camera = world->GetActiveCamera())
+			{
+				camera->PlayShake(
+					mDefinition.screenShakeAmplitude,
+					mDefinition.screenShakeDuration,
+					mDefinition.screenShakeFrequency
+				);
+			}
 		}
 	}
 

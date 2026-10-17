@@ -3,6 +3,7 @@
 #include "gameplay/ability/sunBeam/SunBeamStrikeActor.h"
 
 #include "framework/World.h"
+#include "framework/camera/CameraComponent.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
@@ -244,11 +245,14 @@ namespace vega
 		if (World* world = GetWorld())
 		{
 			const SunBeamVisualDefinition& definition = GetSunBeamVisualDefinition();
-			world->PlayCameraShake(
-				definition.screenShakeAmplitude,
-				definition.screenShakeDuration,
-				definition.screenShakeFrequency
-			);
+			if (CameraComponent* camera = world->GetActiveCamera())
+			{
+				camera->PlayShake(
+					definition.screenShakeAmplitude,
+					definition.screenShakeDuration,
+					definition.screenShakeFrequency
+				);
+			}
 		}
 
 		if (mImpactVisualDuration <= 0.f)

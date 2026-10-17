@@ -121,7 +121,7 @@
 #include "gameplay/ability/dash/DashContracts.h"
 #include "framework/Actor.h"
 #include "framework/World.h"
-#include "framework/camera/CameraManager.h"
+#include "framework/camera/CameraComponent.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
@@ -3443,8 +3443,15 @@ int main(int argc, char** argv)
 		return Fail("Sun Beam is not rendered above world actors");
 	}
 
-	CameraManager cameraManager;
 	const sf::View defaultView{ sf::FloatRect{ { 0.f, 0.f }, { 800.f, 600.f } } };
+	World cameraShakeWorld{ nullptr };
+	const shared_ptr<Actor> cameraShakeActor = cameraShakeWorld.SpawnActor<Actor>().lock();
+	if (!cameraShakeActor)
+	{
+		return Fail("Camera shake test actor could not be spawned");
+	}
+	cameraShakeActor->SetActorLocation(defaultView.getCenter());
+	CameraComponent& cameraManager = cameraShakeActor->AddComponent<CameraComponent>();
 	cameraManager.PlayShake(5.f, 0.1f, 40.f);
 	const sf::Vector2f shakenCenter = cameraManager.GetView(defaultView).getCenter();
 	if (NearlyEqual(shakenCenter.x, defaultView.getCenter().x) &&
@@ -3469,7 +3476,12 @@ int main(int argc, char** argv)
 	}
 	cameraFollowTarget->SetActorLocation({ 100.f, 120.f });
 
-	CameraManager followOffsetCamera;
+	const auto spawnTestCamera = [](World& world) -> CameraComponent&
+	{
+		return world.SpawnActor<Actor>().lock()->AddComponent<CameraComponent>();
+	};
+
+	CameraComponent& followOffsetCamera = spawnTestCamera(cameraFollowWorld);
 	followOffsetCamera.SetFollowTarget(cameraFollowTargetWeak);
 	followOffsetCamera.Update(0.016f, defaultView);
 	const sf::Vector2f offsetBeforeDash =
@@ -3488,7 +3500,7 @@ int main(int argc, char** argv)
 		return Fail("Camera did not preserve its follow-target offset during Dash displacement");
 	}
 
-	CameraManager slowDashCamera;
+	CameraComponent& slowDashCamera = spawnTestCamera(cameraFollowWorld);
 	slowDashCamera.SetFollowTarget(cameraFollowTargetWeak);
 	slowDashCamera.Update(0.016f, defaultView);
 	const float slowZoomBeforeDash =
@@ -3518,7 +3530,7 @@ int main(int argc, char** argv)
 		return Fail("Dash camera zoom was not additive relative to the existing slow-speed zoom");
 	}
 
-	CameraManager fastDashCamera;
+	CameraComponent& fastDashCamera = spawnTestCamera(cameraFollowWorld);
 	fastDashCamera.SetFollowTarget(cameraFollowTargetWeak);
 	const CameraSettings fastDashCameraSettings = fastDashCamera.GetSettings();
 	fastDashCamera.SetExternalVelocity({ fastDashCameraSettings.speedForMaxZoomOut, 0.f });
@@ -3551,7 +3563,7 @@ int main(int argc, char** argv)
 		return Fail("Dash camera zoom did not recover smoothly into the normal camera system");
 	}
 
-	CameraManager continuousDashZoomCamera;
+	CameraComponent& continuousDashZoomCamera = spawnTestCamera(cameraFollowWorld);
 	continuousDashZoomCamera.SetFollowTarget(cameraFollowTargetWeak);
 	continuousDashZoomCamera.Update(0.016f, defaultView);
 	continuousDashZoomCamera.SetRelativeAdditionalZoomOut(testDashZoomOutRatio);
@@ -3591,7 +3603,7 @@ int main(int argc, char** argv)
 
 	CameraSettings boundedDashSettings;
 	boundedDashSettings.worldBoundsPadding = 0.f;
-	CameraManager boundedDashCamera;
+	CameraComponent& boundedDashCamera = spawnTestCamera(cameraFollowWorld);
 	boundedDashCamera.SetSettings(boundedDashSettings);
 	boundedDashCamera.SetWorldBounds(sf::FloatRect{ { 0.f, 0.f }, { 3000.f, 1500.f } });
 	boundedDashCamera.SetFollowTarget(cameraFollowTargetWeak);

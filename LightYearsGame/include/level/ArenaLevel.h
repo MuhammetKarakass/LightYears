@@ -5,7 +5,7 @@
 #include "level/ArenaBoundarySystem.h"
 #include "framework/TimerManager.h"
 #include "framework/Delegate.h"
-#include "framework/camera/CameraManager.h"
+#include "framework/camera/CameraComponent.h"
 #include "player/PlayerRespawnDefinition.h"
 #include "player/PlayerRespawnSystem.h"
 
@@ -42,6 +42,7 @@ namespace vega
 	private:
 		void InitializeArena();
 		void InitializeArenaCamera();
+		CameraComponent* ResolveArenaCamera() const;
 		void UpdateArenaCameraInputs();
 		void SpawnArenaBoundaryIndicator();
 		void InitializeArenaBoundarySystem();
@@ -67,6 +68,7 @@ namespace vega
 
 		PlayerRespawnDefinition mPlayerRespawnDefinition;
 		PlayerRespawnSystem mPlayerRespawnSystem;
+		weak_ptr<Actor> mCameraRigActor;
 		weak_ptr<PlayerSpaceShip> mCameraFollowShip;
 		bool mWasCameraFollowShipDashing = false;
 	};
