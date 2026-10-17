@@ -29,7 +29,8 @@ even under multiple inheritance. `PropertyValue` holds bool, int, float,
 Vector2f, Color, string, ActorRef, or PropertyList; enums and flags travel as int. `SetValue` checks
 the value kind, finite numbers, declared enum labels/flag bits, and catches
 setter exceptions. Read-only properties have no setter. Ranges describe UI
-controls; setters enforce domain rules, including clamping.
+controls; property setters enforce domain rules, including clamping. Fields have no
+setter, so `SetValue` clamps their numeric values to Range.
 
 **Property names are scene keys and must not be renamed.** Registered type names,
 component names, and enum/flag labels also appear in authored files. Rename a
@@ -46,7 +47,7 @@ function. Its braces form the body of `Describe(Builder& type)`.
 
 | Macro | Meaning |
 | --- | --- |
-| `VEGA_CLASS(Type)` | Declare the hidden friend used to connect a class to its reflection block. Put it first in the class body. |
+| `VEGA_CLASS(Type)` | Declare the hidden friend used to connect a class to its reflection block, and let that block bind private members. Put it first in the class body. |
 | `VEGA_REFLECT(Type, Base)` | Describe a class and its registered base. |
 | `VEGA_REFLECT_ROOT(Type)` | Describe a class with no reflection base. |
 | `VEGA_REGISTER(Type)` | Register a type through argument-dependent lookup (ADL). Include its header and register bases first. Explicit references retain static-library objects that the linker could otherwise discard. |
@@ -54,6 +55,9 @@ function. Its braces form the body of `Describe(Builder& type)`.
 | `VEGA_READONLY("Name", Getter)` | Register a getter without a setter. |
 | `VEGA_ACTOR_REF("Target", Getter, Setter)` | Register an `ly::ActorRef`. Append `.RequiredType("Door")` to filter types, including subclasses. |
 | `VEGA_LIST("Patrol", Getter, Setter)` | Register a `std::vector<T>`. Element metadata is inferred; enum lists support `.Labels(...)`. |
+| `VEGA_FIELD("Name", Member)` | Bind a data member directly; no getter or setter is written. Chain `.Range(...)` to clamp numeric values. |
+| `VEGA_FIELD_NOTIFY("Name", Member, OnChanged)` | As `VEGA_FIELD`, and call the member function `OnChanged` after each stored write. |
+| `VEGA_FIELD_READONLY("Name", Member)` | Bind a data member with no setter. |
 | `VEGA_CATEGORY("Group")` | Set the default category for subsequent properties, including direct `type.Property` calls. |
 | `VEGA_SPAWNABLE()` | Use the `World*` constructor through `World::SpawnActor<Self>()`. |
 | `VEGA_SPAWNABLE(factory)` | Supply a `shared_ptr<Actor>(World&)` factory for constructor arguments. |
@@ -68,6 +72,28 @@ without changing following properties. A new default affects new properties
 only. Use `type.Property(...)` for custom lambdas, such as texture loading with
 error handling, and the fluent builder for policies such as
 `type.Removable(false)`.
+
+## Fields
+
+`VEGA_FIELD(Name, Member)` binds a data member of the described class, private
+members included, so plain data needs no getter or setter pair. Use it for flags,
+sizes, labels, asset names and lists. Use `VEGA_PROPERTY` when the setter must
+enforce a rule or the value is computed, such as normalising input or refusing a
+change. `VEGA_FIELD_READONLY` exposes data without a setter. Members must be
+declared by the described class; a base-class member needs a property with its
+own accessors.
+
+`VEGA_FIELD_NOTIFY(Name, Member, OnChanged)` calls a member function after each
+stored write, as Unreal's PostEditChangeProperty does. Use it for side effects
+such as reloading a texture or rebuilding a shape. The hook runs once per
+successful write, after the new value is stored; refused writes do not run it.
+`type.Field(Name, &Self::Member, hook)` also accepts a callable invocable as
+`hook(Self&)`.
+
+Range clamps fields: an Int or Float field with `.Range(min, max)` stores the
+clamped value on every write from the Inspector, scene loads and Lua. The bounds
+are read at write time, so `.Range` may follow the field. Vectors and
+`VEGA_PROPERTY` setters are unaffected.
 
 ## Add a new class
 
@@ -87,7 +113,6 @@ property metadata, playing a role similar to `UPROPERTY` declarations.
 // include/level/ExampleBeacon.h
 #pragma once
 #include <framework/Actor.h>
-#include <algorithm>
 
 namespace ly
 {
@@ -96,8 +121,6 @@ namespace ly
 		VEGA_CLASS(ExampleBeacon)
 	public:
 		explicit ExampleBeacon(World* world);
-		float GetBrightness() const { return mBrightness; }
-		void SetBrightness(float value) { mBrightness = std::clamp(value, 0.f, 1.f); }
 		bool IsLit() const { return mBrightness > 0.f; }
 	private:
 		float mBrightness = 0.5f;
@@ -123,7 +146,7 @@ namespace ly
 		VEGA_SPAWNABLE();
 		VEGA_REQUIRES(SpriteComponent);
 		VEGA_CATEGORY("Beacon");
-		VEGA_PROPERTY("Brightness", GetBrightness, SetBrightness).Range(0.f, 1.f).Speed(0.01f);
+		VEGA_FIELD("Brightness", mBrightness).Range(0.f, 1.f).Speed(0.01f);
 		VEGA_READONLY("Lit", IsLit);
 	}
 }
@@ -142,8 +165,8 @@ block-scope declaration to global scope.
 The Hierarchy Create menu now includes ExampleBeacon. The Inspector shows
 inherited Actor fields, a Beacon category with editable Brightness and read-only
 Lit, and the SpriteComponent section with inherited Active and sprite fields.
-Required SpriteComponent removal is disabled. Editing Brightness calls its
-setter, just as serialization and Lua do.
+Required SpriteComponent removal is disabled. Editing Brightness writes its field
+clamped to Range, just as serialization and Lua do.
 
 A sparse scene input can contain:
 
@@ -192,8 +215,8 @@ end
 `actor:component(...)` returns the first matching component, including a match
 through a reflected base. Handles resolve the actor and component again on
 access. Unknown reads return nil; writes return success and an error string,
-including read-only or incompatible-value errors. Reflection always uses the
-setter. Lua enum/flag values use integers; scene JSON uses labels.
+including read-only or incompatible-value errors. Reflection always writes through the
+registered setter or field. Lua enum/flag values use integers; scene JSON uses labels.
 
 ## Actor references and lists
 

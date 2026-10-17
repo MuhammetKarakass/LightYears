@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <charconv>
+#include <limits>
 
 namespace ly::reflect
 {
@@ -107,6 +108,17 @@ namespace ly::reflect
 			return false;
 		}
 		if (!ValidateValue(value, error)) return false;
+		// Fields have no setter that enforces Range, so the bounds apply to the stored copy.
+		PropertyValue stored = value;
+		if (clampToRange && min && max && kind == PropertyKind::Float)
+			std::get<float>(stored) = std::min(std::max(std::get<float>(stored), *min), *max);
+		else if (clampToRange && min && max && kind == PropertyKind::Int)
+		{
+			// Integer bounds round inward so a clamped value always lies inside the declared range.
+			const double low = std::max<double>(std::ceil(*min), std::numeric_limits<int>::min());
+			const double high = std::min<double>(std::floor(*max), std::numeric_limits<int>::max());
+			std::get<int>(stored) = static_cast<int>(std::min(std::max<double>(std::get<int>(stored), low), high));
+		}
 		const auto* ownerWorld = world ? world(object) : nullptr;
 		if (ownerWorld && !requiredType.empty())
 		{
@@ -124,7 +136,7 @@ namespace ly::reflect
 		}
 		try
 		{
-			setter(object, value);
+			setter(object, stored);
 		}
 		catch (const std::exception& failure) { if (error) *error = failure.what(); return false; }
 		catch (...) { if (error) *error = "Unknown property setter error"; return false; }

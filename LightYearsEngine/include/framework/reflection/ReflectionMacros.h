@@ -40,6 +40,11 @@
 	type.Property(Name, [](const Self& o) { return o.Getter(); })
 #define VEGA_ACTOR_REF(Name, Getter, Setter) VEGA_PROPERTY(Name, Getter, Setter)
 #define VEGA_LIST(Name, Getter, Setter) VEGA_PROPERTY(Name, Getter, Setter)
+// Fields bind a private or public data member directly, so no accessor pair is written.
+// Chain .Range() to clamp numeric values on write; NOTIFY runs its hook after each stored write.
+#define VEGA_FIELD(Name, Member) type.Field(Name, &Self::Member)
+#define VEGA_FIELD_NOTIFY(Name, Member, OnChanged) type.Field(Name, &Self::Member, &Self::OnChanged)
+#define VEGA_FIELD_READONLY(Name, Member) type.FieldReadOnly(Name, &Self::Member)
 #define VEGA_CATEGORY(Name) type.DefaultCategory(Name)
 #define VEGA_SPAWNABLE(...) type.Spawnable(__VA_ARGS__)
 #define VEGA_ADDABLE(...) \

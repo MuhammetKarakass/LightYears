@@ -60,6 +60,8 @@ namespace ly::reflect
 		std::function<World*(const void*)> world;
 		std::optional<float> min;
 		std::optional<float> max;
+		// Set by fields, which have no setter to enforce Range; read at write time so Range may follow Field.
+		bool clampToRange = false;
 		float speed = 1.f;
 		std::string tooltip;
 		EnumLabels enumLabels;
@@ -238,6 +240,33 @@ namespace ly::reflect
 			return *this;
 		}
 
+		// A field binds a data member directly; its generated setter has no domain rules, so SetValue
+		// clamps numeric values to Range when the flag is set.
+		template<typename V>
+		Class& Field(const std::string& name, V T::*member)
+		{
+			Property(name, [member](const T& instance) -> V { return instance.*member; },
+				[member](T& instance, const V& value) { instance.*member = value; });
+			Current().clampToRange = true;
+			return *this;
+		}
+		// The hook runs after the value is stored, once per successful write.
+		template<typename V, typename Hook>
+		Class& Field(const std::string& name, V T::*member, Hook onChanged)
+		{
+			// Wrapped in std::function because the setter is invoked through a const reference.
+			std::function<void(T&)> notify = [onChanged](T& instance) mutable { std::invoke(onChanged, instance); };
+			Property(name, [member](const T& instance) -> V { return instance.*member; },
+				[member, notify](T& instance, const V& value) { instance.*member = value; notify(instance); });
+			Current().clampToRange = true;
+			return *this;
+		}
+		template<typename V>
+		Class& FieldReadOnly(const std::string& name, V T::*member)
+		{
+			Property(name, [member](const T& instance) -> V { return instance.*member; });
+			return *this;
+		}
 		Class& Range(float min, float max) { Current().min = min; Current().max = max; return *this; }
 		Class& Spawnable(std::function<std::shared_ptr<Actor>(World&)> factory)
 		{
