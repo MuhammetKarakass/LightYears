@@ -236,6 +236,9 @@ if(BUILD_TESTING)
 		LIBS VegaEngine)
 	vega_add_game_test_case(LightYearsActorHitCooldown LightYearsActorHitCooldownTests NO_WORKDIR)
 
+	vega_add_game_test(LightYearsTimedPresentationActorTests GAME SOURCES ${VEGA_TESTS_DIR}/TimedPresentationActorTests.cpp)
+	vega_add_game_test_case(LightYearsTimedPresentationActor LightYearsTimedPresentationActorTests NO_WORKDIR)
+
 	vega_add_game_test(LightYearsProjectileReflectionTests GAME_WHOLE SOURCES ${VEGA_TESTS_DIR}/ProjectileReflectionTests.cpp)
 	vega_add_game_test_case(LightYearsProjectileReflection LightYearsProjectileReflectionTests)
 

@@ -1,65 +1,22 @@
 #include "gameplay/ability/nullPulse/NullPulseVisualActor.h"
 
+#include "presentation/ability/common/PresentationColor.h"
+
 #include <algorithm>
-#include <cmath>
-#include <cstdint>
 
 namespace vega
 {
-	namespace
-	{
-		float Saturate(float value)
-		{
-			return std::clamp(value, 0.f, 1.f);
-		}
-
-		sf::Color WithAlpha(const sf::Color& color, float multiplier)
-		{
-			sf::Color result = color;
-			result.a = static_cast<std::uint8_t>(std::clamp(
-				static_cast<float>(color.a) * Saturate(multiplier),
-				0.f,
-				255.f
-			));
-			return result;
-		}
-	}
-
-	NullPulseVisualActor::NullPulseVisualActor(
-		World* world,
-		const sf::Vector2f& worldLocation,
-		float radius,
-		const NullPulsePresentationProfile& profile
-	)
-		: Actor(world),
+	NullPulseVisualActor::NullPulseVisualActor(World* world, const sf::Vector2f& worldLocation, float radius, const NullPulsePresentationProfile& profile)
+		: TimedPresentationActor(world, worldLocation, profile.pulseDuration, RenderLayer::WorldVfx),
 		mProfile(profile),
 		mPulseRing(1.f, 64),
 		mCore(1.f, 48),
 		mRadius(std::max(1.f, radius))
 	{
-		SetActorLocation(worldLocation);
-		SetRenderLayer(RenderLayer::WorldVfx);
-		SetCollisionLayer(vega::CollisionLayer::None);
-		SetCollisionMask(vega::CollisionLayer::None);
-		SetEnablePhysics(false);
-
 		mPulseRing.setOrigin({ 1.f, 1.f });
 		mPulseRing.setFillColor(sf::Color::Transparent);
 		mCore.setOrigin({ 1.f, 1.f });
 		UpdateVisuals();
-	}
-
-	void NullPulseVisualActor::Tick(float deltaTime)
-	{
-		mAge += std::max(0.f, deltaTime);
-		if (mAge >= std::max(0.f, mProfile.pulseDuration))
-		{
-			Destroy();
-			return;
-		}
-
-		UpdateVisuals();
-		Actor::Tick(deltaTime);
 	}
 
 	void NullPulseVisualActor::Render(sf::RenderTarget& window)
@@ -81,7 +38,7 @@ namespace vega
 	void NullPulseVisualActor::UpdateVisuals()
 	{
 		const float duration = std::max(0.001f, mProfile.pulseDuration);
-		const float progress = Saturate(mAge / duration);
+		const float progress = Saturate(GetAge() / duration);
 		const float fade = 1.f - progress;
 		const float radius = std::max(1.f, mRadius);
 		const float ringRadius = std::max(1.f, radius * (0.18f + 0.82f * progress));
