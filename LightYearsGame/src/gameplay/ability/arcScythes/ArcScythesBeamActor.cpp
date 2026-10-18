@@ -204,8 +204,8 @@ namespace vega
 		SetRenderLayer(RenderLayer::WorldFront);
 		// These are continuous query beams, not physical projectile bodies.
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void ArcScythesBeamActor::ConfigureFromAttributes(

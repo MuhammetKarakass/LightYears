@@ -220,7 +220,7 @@ namespace vega
 		mCollisionMaskSnapshotHasEnemyLayer =
 			(currentCollisionMask & enemyLayer) != 0;
 		mHasCollisionMaskSnapshot = true;
-		ship->SetCollisionMask(static_cast<CollisionLayer>(
+		ship->SetCollisionMask(static_cast<vega::CollisionLayer>(
 			currentCollisionMask & static_cast<std::uint32_t>(~enemyLayer)
 		));
 		mActive = true;
@@ -285,7 +285,7 @@ namespace vega
 				{
 					collisionMask &= static_cast<std::uint32_t>(~enemyLayer);
 				}
-				ship->SetCollisionMask(static_cast<CollisionLayer>(collisionMask));
+				ship->SetCollisionMask(static_cast<vega::CollisionLayer>(collisionMask));
 				mHasCollisionMaskSnapshot = false;
 				mCollisionMaskSnapshotHasEnemyLayer = false;
 			}

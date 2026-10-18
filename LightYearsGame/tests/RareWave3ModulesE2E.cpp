@@ -243,7 +243,7 @@ namespace rare_wave3_e2e
 			const auto dummy = level.SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			level.TickInternal(0.f);
 			dummy->SetCollisionLayer(vega::GameCollision::Enemy);
-			dummy->SetCollisionMask(CollisionLayer::None);
+			dummy->SetCollisionMask(vega::CollisionLayer::None);
 			dummy->SetEnablePhysics(false);
 			dummy->SetActorLocation(ship.GetActorLocation() + sf::Vector2f{ 0.f, 2000.f });
 			dummy->GetShieldComponent().ChangeShield(-10000.f);

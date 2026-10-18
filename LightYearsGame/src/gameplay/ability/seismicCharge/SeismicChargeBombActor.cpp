@@ -190,8 +190,8 @@ namespace vega
 		// The bomb is a deterministic delivery marker, never a physical obstacle
 		// or a targetable projectile. Its damage comes only from the shockwave band.
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void SeismicChargeBombActor::ConfigureFromAttributes(

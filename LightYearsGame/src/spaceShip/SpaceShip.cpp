@@ -37,7 +37,7 @@ namespace vega
 		mInvulnerability{ false },
 		mExplosionType{ (ExplosionType)shipDef.explosionType }
 	{
-		SetCollisionLayer(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
 		mCombatRuntime.InitializeOwnerAttributes(shipDef.health);
 		mShipRuntime.InitializeFromShipDefinition(shipDef);
 		if (!shipDef.primaryWeaponId.empty())
@@ -137,8 +137,8 @@ namespace vega
 		mPortalVelocity = GetVelocity();
 		SetRenderEnabled(false);
 		SetVelocity({});
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 	}
 

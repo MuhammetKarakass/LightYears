@@ -841,7 +841,7 @@ namespace vega
 			World world{ &application };
 			World otherWorld{ &application };
 			const ShipDefinition definition{ "SpaceShooterRedux/PNG/Enemies/enemyRed5.png", 100.f, {}, 0.f, 0, 0, {}, {} };
-			auto spawn = [&](float x, CollisionLayer layer)
+			auto spawn = [&](float x, vega::CollisionLayer layer)
 			{
 				auto ship = world.SpawnActor<SpaceShip>(definition).lock();
 				ship->SetActorLocation({ x, 0.f });

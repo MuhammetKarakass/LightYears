@@ -41,8 +41,8 @@ namespace vega
 		, mRecoilLockDuration{ std::max(0.01f, recoilLockDuration) }
 	{
 		SetRenderLayer(RenderLayer::GroundDecal);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 		SetActorLocation(origin);
 		BuildGeometry(1.f);

@@ -250,7 +250,7 @@ namespace rare_static_damage_rules_e2e
 			f.level->TickInternal(0.f);
 			f.report.Check(enemy != nullptr, "Static damage E2E spawns a real enemy SpaceShip");
 			enemy->SetCollisionLayer(vega::GameCollision::Enemy);
-			enemy->SetCollisionMask(CollisionLayer::None);
+			enemy->SetCollisionMask(vega::CollisionLayer::None);
 			enemy->SetEnablePhysics(false);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
 			enemy->GetShieldComponent().ChangeShield(-10000.f);

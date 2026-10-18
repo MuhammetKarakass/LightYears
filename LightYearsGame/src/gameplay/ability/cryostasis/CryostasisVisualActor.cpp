@@ -27,8 +27,8 @@ namespace vega
 		mField{ 1.f, 80 }, mShell{ 1.f, 48 }, mShellOutline{ 1.f, 48 }
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 		mField.setFillColor(sf::Color::Transparent);
 		mShellOutline.setFillColor(sf::Color::Transparent);

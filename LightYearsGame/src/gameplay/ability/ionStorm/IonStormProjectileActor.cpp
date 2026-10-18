@@ -167,8 +167,8 @@ namespace vega
 	{
 		SetRenderLayer(RenderLayer::WorldFront);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		mGlow.setOrigin({ mGlow.getRadius(), mGlow.getRadius() });
 		mCore.setOrigin({ mCore.getRadius(), mCore.getRadius() });
 	}
@@ -242,8 +242,8 @@ namespace vega
 		}
 		};
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		ResolveTargetLocation();
 		mTravelDistance = 0.f;
 		mHasSpawnedField = false;

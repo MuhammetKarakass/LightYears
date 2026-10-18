@@ -10,10 +10,7 @@ namespace vega::targeting
 	// Target relation answers who *can* be targeted. This policy only ranks valid
 	// candidates: enemy-controlled mechanics protect the player by preferring it
 	// over a friendly summon, then retain the normal nearest-target behavior.
-	inline int GetCombatTargetPriority(
-		CollisionLayer sourceLayer,
-		const Actor& candidate
-	)
+	inline int GetCombatTargetPriority(vega::CollisionLayer sourceLayer, const Actor& candidate)
 	{
 		if (sourceLayer == GameCollision::Enemy)
 		{
@@ -29,9 +26,7 @@ namespace vega::targeting
 		return 0;
 	}
 
-	inline CandidateComparator MakeCombatTargetPriorityComparator(
-		CollisionLayer sourceLayer
-	)
+	inline CandidateComparator MakeCombatTargetPriorityComparator(vega::CollisionLayer sourceLayer)
 	{
 		return [sourceLayer](
 			const TargetingCandidate& left,

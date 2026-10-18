@@ -536,13 +536,13 @@ namespace vega
 			)
 		);
 
-		const CollisionLayer opposingLayer =
+		const vega::CollisionLayer opposingLayer =
 			context.owner.GetCollisionLayer() == GameCollision::Player
 			? GameCollision::Enemy
 			: context.owner.GetCollisionLayer() == GameCollision::Enemy
 				? GameCollision::Player
-				: CollisionLayer::None;
-		if (opposingLayer == CollisionLayer::None || initialRange <= 0.f || bounceRange <= 0.f)
+				: vega::CollisionLayer::None;
+		if (opposingLayer == vega::CollisionLayer::None || initialRange <= 0.f || bounceRange <= 0.f)
 		{
 			return false;
 		}

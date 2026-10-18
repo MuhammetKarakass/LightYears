@@ -19,7 +19,8 @@ namespace vega
 {
 	void RegisterGameTypes()
 	{
-		reflect::RegisterEngineTypes();
+		auto& context = EngineContext::Current();
+		reflect::RegisterEngineTypes(context.Types());
 		static bool registered = false;
 		if (registered) return;
 		registered = true;
@@ -34,7 +35,7 @@ namespace vega
 			const auto* ship = content::ShipContentCatalog::FindById(id);
 			if (!ship) throw std::runtime_error("Unknown dummy ship: " + id);
 			return world.SpawnActor<DummyEnemy>(*ship).lock();
-		});
+		}, context);
 		VEGA_REGISTER(HealthComponent);
 		VEGA_REGISTER(ShieldComponent);
 		VEGA_REGISTER(EnergyComponent);

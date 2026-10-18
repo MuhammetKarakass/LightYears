@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 	vega::EngineContext engineContext;
 	vega::EngineContext::Scope contextScope{ engineContext };
 	vega::RegisterGameTypes();
-	vega::script::RegisterScriptTypes();
+	vega::script::RegisterScriptTypes(engineContext);
 	const auto actual = DumpRegistry(engineContext);
 	// Explicit capture is used once before a registration refactor; ordinary tests never rewrite the oracle.
 	if (argc == 3 && std::string{ argv[1] } == "--dump")
@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 	}
 	// Repeated module registration must preserve order, descriptors and custom hooks.
 	vega::RegisterGameTypes();
-	vega::script::RegisterScriptTypes();
+	vega::script::RegisterScriptTypes(engineContext);
 	if (DumpRegistry(engineContext) != actual) return 1;
 	std::cout << "Full reflection registry matches pre-macro golden (" << actual.size() << " types)\n";
 	return 0;

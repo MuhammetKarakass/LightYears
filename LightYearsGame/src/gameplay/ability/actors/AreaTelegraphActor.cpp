@@ -22,8 +22,8 @@ namespace vega
 	{
 		SetActorLocation(params.targetActor ? params.targetActor->GetActorLocation() : params.location);
 		SetRenderLayer(RenderLayer::GroundDecal);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 
 		const float effectiveRadius = std::max(1.f, params.radius);
 		mFill.setOrigin({ effectiveRadius, effectiveRadius });

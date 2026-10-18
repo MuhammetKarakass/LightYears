@@ -28,8 +28,8 @@ namespace vega
 		, mRemainingLifetime(ConeBlastLifetime)
 	{
 		SetRenderLayer(RenderLayer::WorldFront);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		mFan.resize(ConeArcSegments + 2);
 		RebuildGeometry();
 	}

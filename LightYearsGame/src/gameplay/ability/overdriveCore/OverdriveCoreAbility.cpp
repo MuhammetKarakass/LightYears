@@ -92,7 +92,7 @@ namespace vega
 			return sas::FindAttributeValue(actor.attributes, attributeId, 0.f);
 		}
 
-		CollisionLayer ResolveTargetLayer(const Actor& owner)
+		vega::CollisionLayer ResolveTargetLayer(const Actor& owner)
 		{
 			if (owner.GetCollisionLayer() == GameCollision::Player)
 			{
@@ -102,7 +102,7 @@ namespace vega
 			{
 				return GameCollision::Player;
 			}
-			return CollisionLayer::None;
+			return vega::CollisionLayer::None;
 		}
 
 		bool IsFinitePositive(float value)

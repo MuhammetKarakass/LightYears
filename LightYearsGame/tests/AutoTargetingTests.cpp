@@ -60,7 +60,7 @@ int main()
 	outside->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	rectangleSide->SetActorLocation({ 50.f, 60.f });
 	// Keep the geometry-only fixture out of the earlier radius/cone assertions.
-	rectangleSide->SetCollisionLayer(CollisionLayer::None);
+	rectangleSide->SetCollisionLayer(vega::CollisionLayer::None);
 	rectangleSide->SetCollisionMask(vega::GameCollision::PlayerBullet);
 	world.TickInternal(0.f);
 	if (!vega::targeting::IsOpposingTarget(*source, *nearest) ||
@@ -132,7 +132,7 @@ int main()
 	}
 	// Restore the fixture so the remaining target-lock assertions keep their
 	// original nearest-target setup.
-	rectangleSide->SetCollisionLayer(CollisionLayer::None);
+	rectangleSide->SetCollisionLayer(vega::CollisionLayer::None);
 	world.TickInternal(0.f);
 	nearestQuery.excludedTargets.push_back(outsideCone.get());
 

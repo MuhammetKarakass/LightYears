@@ -32,8 +32,8 @@ namespace vega
 		mProfile{ profile }
 	{
 		SetRenderLayer(RenderLayer::GroundDecal);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 		if (mOwner)
 		{

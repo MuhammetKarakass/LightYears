@@ -67,8 +67,8 @@ namespace vega
 		SetActorLocation(mStartLocation);
 		SetActorRotation(RadiansToDegrees(std::atan2(mDirection.y, mDirection.x)) + 90.f);
 		SetRenderLayer(RenderLayer::WorldFront);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		// SpawnActor promotes pending actors on the next world tick. Register now
 		// so the old immediate suppression behavior remains true during that gap.
 		RegisterContactDamageGuard();

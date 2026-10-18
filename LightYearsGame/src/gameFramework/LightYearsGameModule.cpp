@@ -123,8 +123,8 @@ namespace vega
 			}
 			return definitions;
 		};
-		vega::script::SetScriptRoot(ResourceRoot(!editor));
-		vega::script::RegisterScriptTypes();
+		vega::script::ScriptRuntime::Get(application.GetEngineContext()).SetRoot(ResourceRoot(!editor));
+		vega::script::RegisterScriptTypes(application.GetEngineContext());
 		vega::script::ScriptRuntime::Get(application.GetEngineContext()).SetPlayerResolver([](World&) -> std::weak_ptr<Actor>
 		{
 			const auto* player = PlayerManager::GetPlayerManager().GetPlayer();

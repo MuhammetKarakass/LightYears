@@ -93,7 +93,7 @@ namespace vega
 			{
 				return;
 			}
-			const CollisionLayer layer = actor.GetCollisionLayer();
+			const vega::CollisionLayer layer = actor.GetCollisionLayer();
 			// The player ship's engine and port lights belong to ShipVisualPresenter, not to this scan.
 			if (layer == GameCollision::Player)
 			{

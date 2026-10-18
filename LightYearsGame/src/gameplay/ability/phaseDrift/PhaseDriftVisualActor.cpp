@@ -32,8 +32,8 @@ namespace vega
 		mOutline{ 1.f, 64 }
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 		mAura.setFillColor(sf::Color::Transparent);
 		mOutline.setFillColor(sf::Color::Transparent);

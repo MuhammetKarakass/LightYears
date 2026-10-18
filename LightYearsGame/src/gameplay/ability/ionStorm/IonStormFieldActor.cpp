@@ -158,8 +158,8 @@ namespace vega
 	{
 		SetRenderLayer(RenderLayer::GroundDecal);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void IonStormFieldActor::ConfigureFromAttributes(
@@ -220,8 +220,8 @@ namespace vega
 		mVisualAge = 0.f;
 		SetLifeTime(mDuration);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void IonStormFieldActor::Tick(float deltaTime)
@@ -262,8 +262,8 @@ namespace vega
 	void IonStormFieldActor::ApplyDamageTick(Actor& owner)
 	{
 		World* world = GetWorld();
-		const CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(owner);
-		if (!world || opposingLayer == CollisionLayer::None || GetDamage() <= 0.f)
+		const vega::CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(owner);
+		if (!world || opposingLayer == vega::CollisionLayer::None || GetDamage() <= 0.f)
 		{
 			return;
 		}

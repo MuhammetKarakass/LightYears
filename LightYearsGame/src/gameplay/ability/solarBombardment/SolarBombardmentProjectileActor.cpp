@@ -202,8 +202,8 @@ namespace vega
 		// The projectile is a delivery marker; it must never damage or block via
 		// contact while travelling. Damage is resolved once at the target point.
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		ConfigureVisualGeometry();
 	}
 
@@ -259,8 +259,8 @@ namespace vega
 		));
 
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		ResolveTargetLocation();
 		mStartLocation = GetActorLocation();
 		mTargetDistance = GetVectorLength(mResolvedTargetLocation - mStartLocation);

@@ -42,8 +42,8 @@ namespace vega
 	bool EnemyBehaviorRuntime::IsTargetValid(const Actor& source, const shared_ptr<Actor>& target) const
 	{
 		if (!mProfile || !target || target->GetIsPendingDestroy() || dynamic_cast<const Combatant*>(target.get()) == nullptr || !source.CanCollideWith(target.get())) return false;
-		const CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
-		if (opposingLayer == CollisionLayer::None || (target->GetCollisionLayer() & opposingLayer) == CollisionLayer::None) return false;
+		const vega::CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
+		if (opposingLayer == vega::CollisionLayer::None || (target->GetCollisionLayer() & opposingLayer) == vega::CollisionLayer::None) return false;
 		if (const SpaceShip* ship = dynamic_cast<const SpaceShip*>(target.get()); ship && ship->GetHealthComponent().GetHealth() <= 0.f) return false;
 		const sf::Vector2f delta = target->GetActorLocation() - source.GetActorLocation();
 		return std::isfinite(delta.x) && std::isfinite(delta.y) && GetVectorLength(delta) <= mProfile->targetSearchRange;

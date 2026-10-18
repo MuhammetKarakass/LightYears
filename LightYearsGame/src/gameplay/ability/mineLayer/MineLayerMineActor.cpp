@@ -168,15 +168,15 @@ namespace vega
 		// A mine is a gameplay query volume, not a moving physics projectile. The
 		// trigger and explosion radii are evaluated through reusable AutoTargeting.
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void MineLayerMineActor::BeginPlay()
 	{
 		AbilityWorldActor::BeginPlay();
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void MineLayerMineActor::BeginPortalTransit()
@@ -317,10 +317,10 @@ namespace vega
 		List<shared_ptr<Actor>> targets;
 		World* world = GetWorld();
 		Actor* owner = GetOwnerActor();
-		const CollisionLayer opposingLayer = owner
+		const vega::CollisionLayer opposingLayer = owner
 			? targeting::ResolveOpposingLayer(*owner)
-			: CollisionLayer::None;
-		if (!world || !owner || opposingLayer == CollisionLayer::None || radius <= 0.f)
+			: vega::CollisionLayer::None;
+		if (!world || !owner || opposingLayer == vega::CollisionLayer::None || radius <= 0.f)
 		{
 			return targets;
 		}
@@ -409,8 +409,8 @@ namespace vega
 		}
 		mTriggered = true;
 		mExplosionAge = 0.f;
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 
 		const List<shared_ptr<Actor>> targets = FindTargets(mExplosionRadius);
 		for (const shared_ptr<Actor>& target : targets)

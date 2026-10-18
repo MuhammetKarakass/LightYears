@@ -9,8 +9,8 @@ namespace vega
 		: Actor(world),
 		mRuntimeState(std::make_unique<PortalTransferRuntimeState>())
 	{
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetTickWhenPaused(true);
 	}
 

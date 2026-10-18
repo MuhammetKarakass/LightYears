@@ -43,8 +43,8 @@ namespace vega
 					return false;
 				}
 
-				CollisionLayer expectedTargetLayer = CollisionLayer::None;
-				CollisionLayer virtualProjectileLayer = CollisionLayer::None;
+				vega::CollisionLayer expectedTargetLayer = vega::CollisionLayer::None;
+				vega::CollisionLayer virtualProjectileLayer = vega::CollisionLayer::None;
 				switch (context.owner.GetCollisionLayer())
 				{
 				case GameCollision::Player:
@@ -74,7 +74,7 @@ namespace vega
 				world->SpawnActor<ConeBlastVisualActor>(
 					origin, forward, range, halfAngle,
 					context.definition.presentationDefinition.pointLightDef.color);
-				if (range <= 0.f || halfAngle <= 0.f || expectedTargetLayer == CollisionLayer::None)
+				if (range <= 0.f || halfAngle <= 0.f || expectedTargetLayer == vega::CollisionLayer::None)
 				{
 					return true;
 				}

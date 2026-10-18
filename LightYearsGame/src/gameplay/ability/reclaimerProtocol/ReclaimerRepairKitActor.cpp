@@ -205,8 +205,8 @@ namespace vega
 		mIsCollected = true;
 		mFlashTimeRemaining = mPresentationProfile.flashDuration;
 		SetEnablePhysics(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void ReclaimerRepairKitActor::Render(sf::RenderTarget& window)

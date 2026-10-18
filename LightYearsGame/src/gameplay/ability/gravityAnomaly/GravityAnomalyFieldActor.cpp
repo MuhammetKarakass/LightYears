@@ -112,8 +112,8 @@ namespace vega
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		mInnerRing.setFillColor(sf::Color::Transparent);
 		mOuterRing.setFillColor(sf::Color::Transparent);
 		mBoundary.setFillColor(sf::Color::Transparent);
@@ -151,8 +151,8 @@ namespace vega
 		));
 		SetLifeTime(mDuration);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		mRuntimeContext = std::make_shared<GravityAnomalyRuntimeContext>();
 		mRuntimeContext->center = GetActorLocation();
 		mRuntimeContext->resolvedRadius = mRadius;

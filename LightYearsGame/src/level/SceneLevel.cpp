@@ -62,7 +62,7 @@ namespace vega
 	ArenaDefinition SceneLevel::CreateArenaDefinition() const
 	{
 		auto definition = CreateSandboxArenaDefinition();
-		if (const auto bounds = ReadSceneBounds(mScene.value("settings", nlohmann::json::object())))
+		if (const auto bounds = ReadSceneBounds(mScene.value("settings", nlohmann::json::object()), GetEngineContext().SceneSettings()))
 		{
 			definition.legalBounds = *bounds;
 			definition.size = bounds->size;

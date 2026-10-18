@@ -77,7 +77,7 @@ namespace uncommon_p4_e2e
 		const auto enemy = f.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 		f.level->TickInternal(0.f);
 		enemy->SetCollisionLayer(vega::GameCollision::Enemy);
-		enemy->SetCollisionMask(CollisionLayer::None);
+		enemy->SetCollisionMask(vega::CollisionLayer::None);
 		enemy->SetEnablePhysics(false);
 		enemy->SetActorLocation(f.ship->GetActorLocation() + sf::Vector2f{ distance, 0.f });
 		enemy->GetShieldComponent().ChangeShield(-10000.f);

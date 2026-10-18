@@ -40,8 +40,8 @@ namespace vega
 		  mInnerGlow(1.f, 40)
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 
 		mContractingRing.setFillColor(sf::Color::Transparent);

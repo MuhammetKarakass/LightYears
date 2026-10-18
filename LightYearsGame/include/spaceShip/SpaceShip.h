@@ -159,8 +159,8 @@ namespace vega
 		bool mInvulnerability;
 		bool mPortalTransit = false;
 		bool mPortalPhysicsWasEnabled = false;
-		CollisionLayer mPortalCollisionLayer = CollisionLayer::None;
-		CollisionLayer mPortalCollisionMask = CollisionLayer::None;
+		vega::CollisionLayer mPortalCollisionLayer = vega::CollisionLayer::None;
+		vega::CollisionLayer mPortalCollisionMask = vega::CollisionLayer::None;
 		sf::Vector2f mPortalVelocity{};
 
 		ExplosionType mExplosionType;

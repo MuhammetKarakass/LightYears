@@ -134,7 +134,7 @@ namespace rare_damage_conditions_e2e
 			const auto enemy = harness.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			harness.level->TickInternal(0.f);
 			enemy->SetCollisionLayer(vega::GameCollision::Enemy);
-			enemy->SetCollisionMask(CollisionLayer::None);
+			enemy->SetCollisionMask(vega::CollisionLayer::None);
 			enemy->SetEnablePhysics(false);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
 			enemy->GetShieldComponent().ChangeShield(-10000.f);

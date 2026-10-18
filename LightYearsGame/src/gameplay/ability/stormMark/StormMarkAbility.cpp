@@ -55,7 +55,7 @@ namespace vega
 				(requirePositive ? rules.front().coefficient > 0.f : rules.front().coefficient >= 0.f);
 		}
 
-		CollisionLayer GetOpposingLayer(const Actor& owner)
+		vega::CollisionLayer GetOpposingLayer(const Actor& owner)
 		{
 			if (owner.GetCollisionLayer() == GameCollision::Player)
 			{
@@ -65,7 +65,7 @@ namespace vega
 			{
 				return GameCollision::Player;
 			}
-			return CollisionLayer::None;
+			return vega::CollisionLayer::None;
 		}
 
 		// Shared by the activation gate and the delayed strikes so both agree on what a
@@ -76,7 +76,7 @@ namespace vega
 			const sf::Vector2f& origin,
 			float searchRadius,
 			int targetLimit,
-			CollisionLayer opposingLayer
+			vega::CollisionLayer opposingLayer
 		)
 		{
 			targeting::TargetingQuery query;
@@ -313,8 +313,8 @@ namespace vega
 		// Pressing the mark with nothing markable in range must not spend the cooldown.
 		// Returning false leaves the ability instance untouched, so no charge or cooldown
 		// is consumed and the player can press again once a target arrives.
-		const CollisionLayer opposingLayer = GetOpposingLayer(context.owner);
-		if (opposingLayer == CollisionLayer::None ||
+		const vega::CollisionLayer opposingLayer = GetOpposingLayer(context.owner);
+		if (opposingLayer == vega::CollisionLayer::None ||
 			FindMarkTargets(
 				*world,
 				context.owner,
@@ -375,8 +375,8 @@ namespace vega
 					return;
 				}
 
-				const CollisionLayer opposingLayer = GetOpposingLayer(*owner);
-				if (opposingLayer == CollisionLayer::None)
+				const vega::CollisionLayer opposingLayer = GetOpposingLayer(*owner);
+				if (opposingLayer == vega::CollisionLayer::None)
 				{
 					return;
 				}

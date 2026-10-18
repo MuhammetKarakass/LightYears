@@ -34,8 +34,8 @@ namespace vega
 		, mDamageTags(damageTags)
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void ScorchDriveTrailCoordinatorActor::AddSegment(
@@ -133,8 +133,8 @@ namespace vega
 			return;
 		}
 
-		const CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(*owner);
-		if (opposingLayer == CollisionLayer::None)
+		const vega::CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(*owner);
+		if (opposingLayer == vega::CollisionLayer::None)
 		{
 			return;
 		}

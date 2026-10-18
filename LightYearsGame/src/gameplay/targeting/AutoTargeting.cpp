@@ -100,13 +100,13 @@ namespace vega
 					return false;
 				}
 
-				if (query.requiredTargetLayers != CollisionLayer::None &&
+				if (query.requiredTargetLayers != vega::CollisionLayer::None &&
 					!HasCollisionLayer(candidate.GetCollisionLayer(), query.requiredTargetLayers))
 				{
 					return false;
 				}
 
-				if (query.requiredCandidateCollisionMask != CollisionLayer::None &&
+				if (query.requiredCandidateCollisionMask != vega::CollisionLayer::None &&
 					!HasCollisionLayer(candidate.GetCollisionMask(), query.requiredCandidateCollisionMask))
 				{
 					return false;

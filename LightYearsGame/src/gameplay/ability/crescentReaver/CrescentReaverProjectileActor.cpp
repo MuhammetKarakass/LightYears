@@ -589,8 +589,8 @@ namespace vega
 		// damage or being captured by Relay Prism a second time.
 		SetAbilityPhysicsEnabled(false);
 		SetAbilityCollisionRadius(0.f);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void CrescentReaverProjectileActor::OnActorBeginOverlap(Actor* otherActor)

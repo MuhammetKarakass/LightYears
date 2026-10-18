@@ -149,8 +149,8 @@ namespace vega
 		// is explicit, while collision physics stays disabled so ordinary ship and
 		// weapon overlaps cannot consume the Prism itself.
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetRenderLayer(RenderLayer::WorldFront);
 		mGlow.setOrigin({ mGlow.getRadius(), mGlow.getRadius() });
 		mCore.setOrigin({ mCore.getRadius(), mCore.getRadius() });
@@ -319,8 +319,8 @@ namespace vega
 		}
 		SetVelocity(mHasReachedTarget ? sf::Vector2f{} : mLaunchVelocity);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void RelayPrismActor::ConfigureFromAbilityValues(

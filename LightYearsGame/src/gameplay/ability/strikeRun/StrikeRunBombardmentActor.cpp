@@ -175,8 +175,8 @@ namespace vega
 		// This actor is a fixed impact scheduler and visual delivery craft. It is
 		// intentionally non-physical, so it cannot block ships or be reflected.
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		mStrikeCraft.setPointCount(3);
 		mStrikeCraft.setPoint(0, { 70.f, 0.f });
 		mStrikeCraft.setPoint(1, { -35.f, 20.f });

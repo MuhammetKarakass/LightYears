@@ -292,8 +292,8 @@ namespace vega
 		mPortalVelocity = GetVelocity();
 		SetRenderEnabled(false);
 		SetVelocity({});
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 	}
 
@@ -440,8 +440,8 @@ namespace vega
 		Actor* ownerActor = owner ? owner.get() : mUnmanagedOwner;
 		if (!ownerActor)
 		{
-			SetCollisionLayer(CollisionLayer::None);
-			SetCollisionMask(CollisionLayer::None);
+			SetCollisionLayer(vega::CollisionLayer::None);
+			SetCollisionMask(vega::CollisionLayer::None);
 			return;
 		}
 
@@ -466,8 +466,8 @@ namespace vega
 			);
 			break;
 		default:
-			SetCollisionLayer(CollisionLayer::None);
-			SetCollisionMask(CollisionLayer::None);
+			SetCollisionLayer(vega::CollisionLayer::None);
+			SetCollisionMask(vega::CollisionLayer::None);
 			break;
 		}
 	}

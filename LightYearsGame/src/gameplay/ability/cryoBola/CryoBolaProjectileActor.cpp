@@ -391,8 +391,8 @@ namespace vega
 		mRuptureAge = 0.f;
 		SetVelocity({});
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetActorLocation(primaryTarget.GetActorLocation());
 		ApplyRupture(primaryTarget);
 	}

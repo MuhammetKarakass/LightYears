@@ -105,8 +105,8 @@ namespace vega
 		mGlow(mPortalRadius * 0.96f, 64)
 	{
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetRenderLayer(RenderLayer::GroundDecal);
 		ConfigureGeometry();
 	}
@@ -126,8 +126,8 @@ namespace vega
 		);
 		ConfigureGeometry();
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void VoidGatePortalActor::ConfigureGeometry()

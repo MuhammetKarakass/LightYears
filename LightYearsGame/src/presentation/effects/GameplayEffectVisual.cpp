@@ -13,8 +13,8 @@ namespace vega
 			: shared_ptr<Actor>{})
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void GameplayEffectVisual::Tick(float deltaTime)

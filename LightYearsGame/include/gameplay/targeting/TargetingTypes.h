@@ -84,8 +84,8 @@ namespace vega
 
 			// These are optional broad-phase filters. More specific rules belong in
 			// filter or selector policies supplied by the caller.
-			CollisionLayer requiredTargetLayers = CollisionLayer::None;
-			CollisionLayer requiredCandidateCollisionMask = CollisionLayer::None;
+			vega::CollisionLayer requiredTargetLayers = vega::CollisionLayer::None;
+			vega::CollisionLayer requiredCandidateCollisionMask = vega::CollisionLayer::None;
 			bool requireCollisionCompatibility = false;
 			bool excludeSource = true;
 			List<const Actor*> excludedTargets;

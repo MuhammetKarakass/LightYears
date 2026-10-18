@@ -53,8 +53,8 @@ int main()
 	using Json = nlohmann::json;
 	const auto root = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets";
 	vega::EngineContext::Current().Assets().SetAssetRootDirectory(root.generic_string() + "/");
-	vega::script::SetScriptRoot(root);
-	vega::script::RegisterScriptTypes();
+	vega::script::ScriptRuntime::Get(engineContext).SetRoot(root);
+	vega::script::RegisterScriptTypes(engineContext);
 	RegisterGameTypes();
 	Check(GameContentBootstrap::Register(), "Game content bootstrap failed");
 	ProjectSettings::Load(root / "vega.project.json").ApplyCollisionLayers(engineContext);
@@ -89,7 +89,7 @@ int main()
 		fixture->AddComponent<SceneEntityComponent>("labels", "Labels");
 		auto& collision = fixture->AddComponent<CollisionComponent>();
 		collision.SetCollisionLayer(vega::GameCollision::Player);
-		collision.SetCollisionMask(static_cast<CollisionLayer>(255));
+		collision.SetCollisionMask(static_cast<vega::CollisionLayer>(255));
 		const auto encoded = SceneSerializer::Save(labelled);
 		bool found = false;
 		for (const auto& component : encoded["entities"][0]["components"])

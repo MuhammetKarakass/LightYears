@@ -5,18 +5,18 @@
 
 namespace vega::GameCollision
 {
-	inline constexpr CollisionLayer Player = CollisionLayer::Layer0;
-	inline constexpr CollisionLayer PlayerBullet = CollisionLayer::Layer1;
-	inline constexpr CollisionLayer Enemy = CollisionLayer::Layer2;
-	inline constexpr CollisionLayer EnemyBullet = CollisionLayer::Layer3;
-	inline constexpr CollisionLayer Powerup = CollisionLayer::Layer4;
-	inline constexpr CollisionLayer Environment = CollisionLayer::Layer5;
-	inline constexpr CollisionLayer RelayProjectile = CollisionLayer::Layer6;
-	inline constexpr CollisionLayer FriendlySummon = CollisionLayer::Layer7;
-	inline constexpr CollisionLayer AllPlayers = static_cast<CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(PlayerBullet));
-	inline constexpr CollisionLayer AllEnemies = static_cast<CollisionLayer>(static_cast<std::uint32_t>(Enemy) | static_cast<std::uint32_t>(EnemyBullet));
-	inline constexpr CollisionLayer AllBullets = static_cast<CollisionLayer>(static_cast<std::uint32_t>(PlayerBullet) | static_cast<std::uint32_t>(EnemyBullet));
-	inline constexpr CollisionLayer AllShips = static_cast<CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(Enemy) | static_cast<std::uint32_t>(FriendlySummon));
-	inline constexpr CollisionLayer AllFriendlyCombatants = static_cast<CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(FriendlySummon));
-	inline constexpr CollisionLayer AllRelayTargets = static_cast<CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(Enemy) | static_cast<std::uint32_t>(FriendlySummon));
+	inline constexpr vega::CollisionLayer Player = vega::CollisionLayer::Layer0;
+	inline constexpr vega::CollisionLayer PlayerBullet = vega::CollisionLayer::Layer1;
+	inline constexpr vega::CollisionLayer Enemy = vega::CollisionLayer::Layer2;
+	inline constexpr vega::CollisionLayer EnemyBullet = vega::CollisionLayer::Layer3;
+	inline constexpr vega::CollisionLayer Powerup = vega::CollisionLayer::Layer4;
+	inline constexpr vega::CollisionLayer Environment = vega::CollisionLayer::Layer5;
+	inline constexpr vega::CollisionLayer RelayProjectile = vega::CollisionLayer::Layer6;
+	inline constexpr vega::CollisionLayer FriendlySummon = vega::CollisionLayer::Layer7;
+	inline constexpr vega::CollisionLayer AllPlayers = static_cast<vega::CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(PlayerBullet));
+	inline constexpr vega::CollisionLayer AllEnemies = static_cast<vega::CollisionLayer>(static_cast<std::uint32_t>(Enemy) | static_cast<std::uint32_t>(EnemyBullet));
+	inline constexpr vega::CollisionLayer AllBullets = static_cast<vega::CollisionLayer>(static_cast<std::uint32_t>(PlayerBullet) | static_cast<std::uint32_t>(EnemyBullet));
+	inline constexpr vega::CollisionLayer AllShips = static_cast<vega::CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(Enemy) | static_cast<std::uint32_t>(FriendlySummon));
+	inline constexpr vega::CollisionLayer AllFriendlyCombatants = static_cast<vega::CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(FriendlySummon));
+	inline constexpr vega::CollisionLayer AllRelayTargets = static_cast<vega::CollisionLayer>(static_cast<std::uint32_t>(Player) | static_cast<std::uint32_t>(Enemy) | static_cast<std::uint32_t>(FriendlySummon));
 }

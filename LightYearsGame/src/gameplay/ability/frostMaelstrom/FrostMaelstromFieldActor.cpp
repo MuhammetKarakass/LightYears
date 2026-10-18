@@ -143,8 +143,8 @@ namespace vega
 	{
 		SetRenderLayer(RenderLayer::GroundDecal);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		ConfigureGeometry();
 	}
 
@@ -179,8 +179,8 @@ namespace vega
 		));
 		SetLifeTime(mDuration);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void FrostMaelstromFieldActor::ConfigureFromAbilityValues(
@@ -292,7 +292,7 @@ namespace vega
 	{
 		const Combatant* combatant = dynamic_cast<const Combatant*>(&target);
 		return combatant && !target.GetIsPendingDestroy() &&
-			target.GetCollisionLayer() != CollisionLayer::None;
+			target.GetCollisionLayer() != vega::CollisionLayer::None;
 	}
 
 	void FrostMaelstromFieldActor::RemoveControl(

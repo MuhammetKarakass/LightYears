@@ -147,8 +147,8 @@ namespace vega
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void FoldspaceArenaActor::ConfigureFromAttributes(
@@ -186,8 +186,8 @@ namespace vega
 			mWrapInwardOffset
 		));
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 	}
 
 	void FoldspaceArenaActor::ConfigureFromAbilityValues(

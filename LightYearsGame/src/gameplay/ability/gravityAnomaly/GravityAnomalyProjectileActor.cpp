@@ -129,8 +129,8 @@ namespace vega
 	{
 		SetRenderLayer(RenderLayer::WorldFront);
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		mGlow.setOrigin({ mGlow.getRadius(), mGlow.getRadius() });
 		mCore.setOrigin({ mCore.getRadius(), mCore.getRadius() });
 	}
@@ -183,8 +183,8 @@ namespace vega
 		sas::GameplayAttribute{ AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration, mInsideEffectDuration, 0.f }
 		};
 		SetAbilityPhysicsEnabled(false);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		ResolveTargetLocation();
 		mTravelDistance = 0.f;
 		mHasSpawnedField = false;

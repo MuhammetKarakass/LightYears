@@ -68,8 +68,8 @@
 	)
 	{
 		List<shared_ptr<Actor>> result;
-		const CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
-		if (opposingLayer == CollisionLayer::None)
+		const vega::CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
+		if (opposingLayer == vega::CollisionLayer::None)
 		{
 			return result;
 		}
@@ -116,8 +116,8 @@
 		}
 
 		const float safeThreshold = std::clamp(directionThreshold, -1.f, 1.f);
-		const CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
-		if (opposingLayer == CollisionLayer::None)
+		const vega::CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
+		if (opposingLayer == vega::CollisionLayer::None)
 		{
 			return {};
 		}

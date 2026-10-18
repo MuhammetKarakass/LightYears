@@ -36,8 +36,8 @@ namespace vega
 			const GameplayTag& eventTag
 		) const;
 		weak_ptr<PhaseDriftVisualActor> mVisualActor;
-		CollisionLayer mOriginalCollisionLayer = CollisionLayer::None;
-		CollisionLayer mOriginalCollisionMask = CollisionLayer::None;
+		vega::CollisionLayer mOriginalCollisionLayer = vega::CollisionLayer::None;
+		vega::CollisionLayer mOriginalCollisionMask = vega::CollisionLayer::None;
 		float mResolvedDuration = 0.f;
 		bool mCollisionSnapshotValid = false;
 		bool mActive = false;

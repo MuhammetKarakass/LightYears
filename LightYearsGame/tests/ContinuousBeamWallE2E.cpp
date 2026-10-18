@@ -99,7 +99,7 @@ namespace vega
 			{
 				SetPhysicsBodyType(PhysicsBodyType::Static);
 				SetCollisionLayer(vega::GameCollision::Environment);
-				SetCollisionMask(CollisionLayer::None);
+				SetCollisionMask(vega::CollisionLayer::None);
 			}
 
 			sf::Vector2f GetPhysicsCollisionBoxHalfExtents() const override

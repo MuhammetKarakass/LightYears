@@ -66,8 +66,8 @@ namespace vega
 
 		SetActorLocation(params.targetActor ? params.targetActor->GetActorLocation() : params.location);
 		SetRenderLayer(RenderLayer::GroundDecal);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		UpdateVisuals();
 	}
 

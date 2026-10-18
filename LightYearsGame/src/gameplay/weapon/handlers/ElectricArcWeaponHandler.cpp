@@ -50,8 +50,8 @@ namespace vega
 				return;
 			}
 
-			CollisionLayer expectedTargetLayer = CollisionLayer::None;
-			CollisionLayer virtualProjectileLayer = CollisionLayer::None;
+			vega::CollisionLayer expectedTargetLayer = vega::CollisionLayer::None;
+			vega::CollisionLayer virtualProjectileLayer = vega::CollisionLayer::None;
 			switch (context.owner.GetCollisionLayer())
 			{
 			case GameCollision::Player:
@@ -89,7 +89,7 @@ namespace vega
 					// The range filter above still decides who is reachable from the
 					// muzzle; the cursor only picks among those candidates.
 					const sf::Vector2f cursor = *preferNearCursor;
-					const CollisionLayer sourceLayer = context.owner.GetCollisionLayer();
+					const vega::CollisionLayer sourceLayer = context.owner.GetCollisionLayer();
 					query.comparator = [cursor, sourceLayer](
 						const targeting::TargetingCandidate& left,
 						const targeting::TargetingCandidate& right

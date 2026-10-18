@@ -161,8 +161,8 @@ namespace vega
 			mRemainingDuration = std::max(0.f, mRemainingDuration - safeDeltaTime);
 			if (mRemainingDuration <= 0.f)
 			{
-				SetCollisionLayer(CollisionLayer::None);
-				SetCollisionMask(CollisionLayer::None);
+				SetCollisionLayer(vega::CollisionLayer::None);
+				SetCollisionMask(vega::CollisionLayer::None);
 				SetEnablePhysics(false);
 				mBreakTimeRemaining = mProfile.breakVisualDuration;
 			}

@@ -51,8 +51,8 @@ namespace vega
 		mImpactRing(1.f, 64)
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
 		SetEnablePhysics(false);
 
 		const float glowRadius = std::max(1.f, mDefinition.flightGlowRadius);
