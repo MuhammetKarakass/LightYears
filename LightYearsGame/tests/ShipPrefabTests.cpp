@@ -103,17 +103,37 @@ int main(int argc, char** argv)
 	using namespace vega;
 	EngineContext context;
 	EngineContext::Scope scope{ context };
-	if (argc == 3 && std::string{ argv[1] } == "--reject-expanded-root")
+	if (argc == 4 && std::string{ argv[1] } == "--accept-sparse-root")
 	{
 		const std::filesystem::path root{ argv[2] };
+		const bool expectedRender = Json::parse(argv[3]).get<bool>();
 		Json document;
 		std::ifstream{ root / "prefabs/ships/player/fighter.prefab.json" } >> document;
+		Check(document.value("properties", Json::object()) == Json{ { "Ship", DefaultPlayerShipId }, { "Render Enabled", expectedRender } }, "Saved prefab contains exactly Ship and intentional Render Enabled override", document);
+		Check(!document.contains("components"), "Saved prefab contains no constructor component snapshots");
 		std::string reason;
 		const bool valid = ValidateShipPrefab(context, root, "prefabs/ships/player/fighter.prefab.json", DefaultPlayerShipId, &reason);
-		std::ofstream{ root / "fighter-authoring-limit.json" } << Json{ { "expandedDocument", document }, { "gameAccepted", valid }, { "reason", reason } }.dump(2) << '\n';
-		if (valid || !document.contains("components") || document["components"].empty()) return 1;
-		std::cout << "Engine authoring expanded constructor snapshots; game safely refused: " << reason << '\n';
-		return 0;
+		Check(valid, "Game validator accepts editor-authored prefab", reason);
+		InstallVegaEngineAssets();
+		context.Assets().SetAssetRootDirectory(root.generic_string() + "/");
+		RegisterGameTypes();
+		const bool bootstrapped = GameContentBootstrap::Register();
+		Check(bootstrapped, "Editor asset copy passes game content bootstrap");
+		if (valid && bootstrapped)
+		{
+			World directWorld{ context }, prefabWorld{ context };
+			const auto direct = directWorld.SpawnActor<PlayerSpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
+			const auto prefab = SpawnShipPrefab(prefabWorld, "prefabs/ships/player/fighter.prefab.json", DefaultPlayerShipId, &reason).lock();
+			Check(prefab != nullptr, "Game spawner accepts editor-authored prefab", reason);
+			if (prefab)
+			{
+				Compare(*direct, *prefab, "Editor-authored");
+				Check(prefab->IsRenderEnabled() == expectedRender, "Game spawn preserves intentional Render Enabled override");
+			}
+		}
+		std::ofstream{ root / (expectedRender ? "fighter-authoring-check-true.json" : "fighter-authoring-check-false.json") } << Json{ { "document", document }, { "gameAccepted", valid }, { "reason", reason }, { "checks", checks }, { "failures", failures } }.dump(2) << '\n';
+		std::cout << "Sparse Fighter authoring: " << failures << " failures\n";
+		return failures ? 1 : 0;
 	}
 	InstallVegaEngineAssets();
 	const auto source = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets";

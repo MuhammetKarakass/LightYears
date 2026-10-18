@@ -2,6 +2,18 @@
 
 Date: 2026-10-18. Read-only engine inspected: Vega `7ea0f2c`.
 
+**Implemented in Vega e3bce0c; adopted by LightYears.** Vega now exposes writable
+actor `.Construction()` metadata and authors type prefabs as sparse deltas against
+a fresh property-aware construction base, retaining construction selectors. Apply,
+Apply All, scratch Save Prefab and Create Prefab from Class share this contract;
+the editor invalidates resolved caches around content reload. LightYears marks
+PlayerSpaceShip's Ship as construction data while retaining its property-aware
+factory and idempotent/refusing setter. The Fighter acceptance scenario now checks
+Ship plus intentional Render Enabled only, no component snapshots, successful game
+validation/spawn, and catalog values through Revert/reopen/refresh. The validator
+remains strict. The sections below preserve the original request and reproduction
+against Vega 7ea0f2c as historical context.
+
 ## Problem and game boundary
 
 LightYears' Fighter prefab deliberately contains only `base.type=PlayerSpaceShip`
@@ -47,7 +59,7 @@ snapshots. Reopen, Revert and refresh preserve catalog values; changing a
 construction selector reconstructs or reports its refusal clearly. Catalog reload
 must invalidate constructor realization caches or reconstruct the base freshly.
 
-## Game-side reproduction
+## Original game-side reproduction (Vega 7ea0f2c)
 
 `VegaEditorFighterPrefab` operates on a disposable asset copy. It places Fighter,
 executes Revert/Apply, saves/reopens the scene and saves the scratch prefab. Its

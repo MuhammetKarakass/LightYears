@@ -2,8 +2,8 @@
 
 Stage 1 implements `Ship.Player.Fighter.Basic` as `PlayerSpaceShip` plus
 `prefabs/ships/player/fighter.prefab.json`. Only Fighter's catalog entry has an
-optional `prefabPath`; other player ships retain direct construction. Engine
-sources and APIs are unchanged.
+optional `prefabPath`; other player ships retain direct construction. Sparse
+editor authoring uses Vega e3bce0c's construction-property contract.
 
 ## Ownership and construction
 
@@ -15,7 +15,7 @@ usable; definitions without a catalog ID have an empty reflected `Ship` and are
 not catalog-backed prefab construction inputs.
 
 `PlayerSpaceShip` adds one reflected property, **Ship** (string, category Player,
-getter and setter). Existing fields remain Speed, Use Screen Clamp, In Combat
+getter and setter, marked `.Construction()`). Existing fields remain Speed, Use Screen Clamp, In Combat
 (read-only), and Combat Window Remaining (read-only), plus inherited properties.
 The property-aware scene factory validates the player catalog ID and passes its
 definition to the existing constructor before properties are applied. The class
@@ -39,9 +39,12 @@ Catalog validation reads authored prefab/variant chains through the engine's
 resolved base type is exactly PlayerSpaceShip and the inherited/overridden Ship
 equals the catalog record ID, without constructing scratch actors during catalog
 bootstrap. Stage 1 permits only `Ship` and boolean `Render Enabled` properties;
-component snapshots, scripts, children, other ship IDs and other overrides are rejected. Generic
-editor authoring can still create broader documents; such documents are rejected
-by the game catalog/spawner. This deliberately narrow pilot does not prescribe
+component snapshots, scripts, children, other ship IDs and other overrides are rejected.
+Apply and scratch Save Prefab write sparse deltas against a freshly constructed
+property-aware base, always retaining Ship and any intentional Render Enabled
+override. Equal constructor component values are omitted. Generic editor edits
+outside this narrow contract remain rejected by the game catalog/spawner.
+This deliberately narrow pilot does not prescribe
 the later enemy or ship-family authoring contract.
 
 Runtime uses a fresh, root-bound `PrefabLibrary::Resolve`, checks its result and
@@ -69,10 +72,17 @@ written under `build/e2e-artifacts/ship-prefab/`.
 `VegaEditorFighterPrefab` places the shipped Fighter, saves/reopens its scene,
 executes Apply/Revert on Render Enabled, then edits/saves the prefab in the scratch
 Inspector and reopens the scene again. The runner recreates only a dedicated
-build-tree asset copy. It does not edit shipped source assets. Vega 7ea0f2c expands
-type prefab constructor snapshots during Apply/Save; the scenario's postcheck
-records that copied document and proves the game validator refuses it. Passing
-this characterization does **not** mean sparse Apply/Save authoring is supported.
-That part of Stage 1 remains blocked on the [engine request](engine-requests/ship-prefab-sparse-authoring.md).
-Placement, sparse scene save/reopen and Revert are supported. Automated editor
-success does not establish manual visual acceptance.
+build-tree asset copy. It does not edit shipped source assets. The scenario
+retains Render Enabled=false through Apply and scratch Save, verifies catalog
+values through Revert, reopen and reload-prefabs refresh, and checks Ship mutation
+refusal. The postcheck requires exactly Ship and the visibility override, no
+component snapshots, and acceptance by both the game validator and spawner; it
+compares the spawned ship with direct catalog construction. A postcheck-only
+wrong visibility expectation must fail. See the implemented
+[engine request](engine-requests/ship-prefab-sparse-authoring.md).
+Placement, sparse Apply/Save, scene save/reopen, Revert and refresh are supported.
+Construction diff bases are fresh; resolved prefab caches must be reloaded after
+catalog changes (the editor content watcher does this around its reload hook).
+Existing expanded assets remain explicit overrides and are still rejected by the
+game; loading alone does not migrate them. Automated editor success does not
+establish manual visual acceptance.

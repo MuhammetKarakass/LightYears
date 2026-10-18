@@ -10,6 +10,13 @@ expect-prop Actor Ship Ship.Player.Fighter.Basic
 expect-component HealthComponent present
 expect-component MovementComponent present
 expect-component PlayerMovementComponent present
+expect-prop HealthComponent "Max Health" 250
+expect-prop MovementComponent "Legacy Speed" 350 350
+expect-prop ShieldComponent "Max Shield" 0
+expect-prop EnergyComponent "Max Energy" 0
+set-prop HealthComponent "Max Health" 999
+revert-prefab-prop HealthComponent "Max Health"
+expect-prop HealthComponent "Max Health" 250
 expect-prop Actor "Render Enabled" true
 set-prop Actor "Render Enabled" false
 expect-overridden Actor "Render Enabled" true
@@ -27,17 +34,34 @@ expect-prefab prefabs/ships/player/fighter.prefab.json
 expect-prop Actor Ship Ship.Player.Fighter.Basic
 expect-prop Actor "Render Enabled" false
 expect-overridden Actor "Render Enabled" false
+expect-prop HealthComponent "Max Health" 250
+expect-prop MovementComponent "Legacy Speed" 350 350
+expect-prop ShieldComponent "Max Shield" 0
+expect-prop EnergyComponent "Max Energy" 0
 open-prefab prefabs/ships/player/fighter.prefab.json
 expect-prop Actor Ship Ship.Player.Fighter.Basic
 set-prop Actor "Render Enabled" true
+set-prop Actor "Render Enabled" false
 save-prefab
 close-prefab
 select-name "Fighter editor test"
-expect-prop Actor "Render Enabled" true
+expect-prop Actor "Render Enabled" false
+reload-prefabs
+select-name "Fighter editor test"
+expect-prop Actor Ship Ship.Player.Fighter.Basic
+expect-prop Actor "Render Enabled" false
+expect-prop HealthComponent "Max Health" 250
+expect-prop MovementComponent "Legacy Speed" 350 350
+expect-prop ShieldComponent "Max Shield" 0
+expect-prop EnergyComponent "Max Energy" 0
 save-scene @VEGA_FIGHTER_PREFAB_SCENE@
 open-scene @VEGA_FIGHTER_PREFAB_SCENE@
 wait 2
 select-name "Fighter editor test"
 expect-prop Actor Ship Ship.Player.Fighter.Basic
-expect-prop Actor "Render Enabled" true
+expect-prop Actor "Render Enabled" false
+expect-prop HealthComponent "Max Health" 250
+expect-prop MovementComponent "Legacy Speed" 350 350
+expect-prop ShieldComponent "Max Shield" 0
+expect-prop EnergyComponent "Max Energy" 0
 quit

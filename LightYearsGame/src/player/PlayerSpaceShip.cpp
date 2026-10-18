@@ -24,7 +24,7 @@ namespace vega
 		});
 		VEGA_REQUIRES(PlayerMovementComponent);
 		VEGA_CATEGORY("Player");
-		VEGA_PROPERTY("Ship", GetShip, SetShip).Tooltip("Construction only: changing Ship is refused; place a prefab with the desired catalog Ship instead.");
+		VEGA_PROPERTY("Ship", GetShip, SetShip).Tooltip("Construction only: changing Ship is refused; place a prefab with the desired catalog Ship instead.").Construction();
 		VEGA_PROPERTY("Speed", GetSpeed, SetSpeed).Range(0.f, 100000.f);
 		VEGA_PROPERTY("Use Screen Clamp", GetUseScreenClamp, SetUseScreenClamp);
 		VEGA_READONLY("In Combat", IsInCombat);

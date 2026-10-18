@@ -1771,6 +1771,7 @@
     "properties": [
       {
         "category": "Player",
+        "construction": true,
         "elementKind": null,
         "hasSetter": true,
         "kind": 5,

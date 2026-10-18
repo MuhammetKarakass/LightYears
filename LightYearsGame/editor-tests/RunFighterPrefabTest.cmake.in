@@ -1,17 +1,22 @@
 # This fixed build-tree directory is disposable; source assets are read-only.
 set(root "@CMAKE_CURRENT_BINARY_DIR@/fighter-prefab-test-assets")
-file(REMOVE_RECURSE "${root}")
-file(MAKE_DIRECTORY "${root}")
-file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
-execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
-    "@CMAKE_CURRENT_BINARY_DIR@/scripts/fighter-prefab.vegascript" RESULT_VARIABLE result)
-if(NOT result EQUAL 0)
-    message(FATAL_ERROR "VegaEditorFighterPrefab failed: ${result}")
+if(NOT VEGA_FIGHTER_POSTCHECK_ONLY)
+    file(REMOVE_RECURSE "${root}")
+    file(MAKE_DIRECTORY "${root}")
+    file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
+    execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+        "@CMAKE_CURRENT_BINARY_DIR@/scripts/fighter-prefab.vegascript" RESULT_VARIABLE result)
+    if(NOT result EQUAL 0)
+        message(FATAL_ERROR "VegaEditorFighterPrefab failed: ${result}")
+    endif()
 endif()
-# Vega 7ea0f2c expands constructor snapshots when Apply/Save writes a type prefab.
-# Characterize the engine limitation and prove the game fails closed; never
-# mistake successful generic editor commands for usable sparse ship authoring.
-execute_process(COMMAND "${VEGA_SHIP_PREFAB_CHECK}" --reject-expanded-root "${root}" RESULT_VARIABLE validation)
+# The override is deliberately different from the constructor default. The
+# optional expectation and postcheck-only mode also exercise a negative control.
+if(NOT DEFINED VEGA_FIGHTER_EXPECT_RENDER)
+    set(VEGA_FIGHTER_EXPECT_RENDER false)
+endif()
+execute_process(COMMAND "${VEGA_SHIP_PREFAB_CHECK}" --accept-sparse-root "${root}"
+    "${VEGA_FIGHTER_EXPECT_RENDER}" RESULT_VARIABLE validation)
 if(NOT validation EQUAL 0)
-    message(FATAL_ERROR "Expected the game's safe rejection of expanded engine authoring: ${validation}")
+    message(FATAL_ERROR "Sparse Fighter prefab postcheck failed: ${validation}")
 endif()

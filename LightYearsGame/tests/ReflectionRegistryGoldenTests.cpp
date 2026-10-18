@@ -39,6 +39,7 @@ namespace
 				if (property.assetKind != vega::reflect::AssetKind::None) entry["asset"] = vega::reflect::AssetKindName(property.assetKind);
 				// Struct-typed entries name their struct; no current engine property has one, so the golden is unchanged.
 				if (!property.structType.empty()) entry["structType"] = property.structType;
+				if (property.construction) entry["construction"] = true;
 				properties.push_back(std::move(entry));
 			}
 			types.push_back({
