@@ -267,6 +267,57 @@
     "spawnable": false
   },
   {
+    "addable": false,
+    "base": "",
+    "functions": [],
+    "name": "PhysicsBoxShape",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Half Extents",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Local Center",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Local Rotation",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
     "addable": true,
     "base": "ActorComponent",
     "functions": [],
@@ -357,6 +408,102 @@
           [
             128,
             "Layer 7"
+          ],
+          [
+            256,
+            "Layer 8"
+          ],
+          [
+            512,
+            "Layer 9"
+          ],
+          [
+            1024,
+            "Layer 10"
+          ],
+          [
+            2048,
+            "Layer 11"
+          ],
+          [
+            4096,
+            "Layer 12"
+          ],
+          [
+            8192,
+            "Layer 13"
+          ],
+          [
+            16384,
+            "Layer 14"
+          ],
+          [
+            32768,
+            "Layer 15"
+          ],
+          [
+            65536,
+            "Layer 16"
+          ],
+          [
+            131072,
+            "Layer 17"
+          ],
+          [
+            262144,
+            "Layer 18"
+          ],
+          [
+            524288,
+            "Layer 19"
+          ],
+          [
+            1048576,
+            "Layer 20"
+          ],
+          [
+            2097152,
+            "Layer 21"
+          ],
+          [
+            4194304,
+            "Layer 22"
+          ],
+          [
+            8388608,
+            "Layer 23"
+          ],
+          [
+            16777216,
+            "Layer 24"
+          ],
+          [
+            33554432,
+            "Layer 25"
+          ],
+          [
+            67108864,
+            "Layer 26"
+          ],
+          [
+            134217728,
+            "Layer 27"
+          ],
+          [
+            268435456,
+            "Layer 28"
+          ],
+          [
+            536870912,
+            "Layer 29"
+          ],
+          [
+            1073741824,
+            "Layer 30"
+          ],
+          [
+            -2147483648,
+            "Layer 31"
           ]
         ],
         "max": null,
@@ -403,6 +550,102 @@
           [
             128,
             "Layer 7"
+          ],
+          [
+            256,
+            "Layer 8"
+          ],
+          [
+            512,
+            "Layer 9"
+          ],
+          [
+            1024,
+            "Layer 10"
+          ],
+          [
+            2048,
+            "Layer 11"
+          ],
+          [
+            4096,
+            "Layer 12"
+          ],
+          [
+            8192,
+            "Layer 13"
+          ],
+          [
+            16384,
+            "Layer 14"
+          ],
+          [
+            32768,
+            "Layer 15"
+          ],
+          [
+            65536,
+            "Layer 16"
+          ],
+          [
+            131072,
+            "Layer 17"
+          ],
+          [
+            262144,
+            "Layer 18"
+          ],
+          [
+            524288,
+            "Layer 19"
+          ],
+          [
+            1048576,
+            "Layer 20"
+          ],
+          [
+            2097152,
+            "Layer 21"
+          ],
+          [
+            4194304,
+            "Layer 22"
+          ],
+          [
+            8388608,
+            "Layer 23"
+          ],
+          [
+            16777216,
+            "Layer 24"
+          ],
+          [
+            33554432,
+            "Layer 25"
+          ],
+          [
+            67108864,
+            "Layer 26"
+          ],
+          [
+            134217728,
+            "Layer 27"
+          ],
+          [
+            268435456,
+            "Layer 28"
+          ],
+          [
+            536870912,
+            "Layer 29"
+          ],
+          [
+            1073741824,
+            "Layer 30"
+          ],
+          [
+            -2147483648,
+            "Layer 31"
           ]
         ],
         "max": null,
@@ -411,6 +654,33 @@
         "requiredType": "",
         "speed": 1.0,
         "tooltip": ""
+      },
+      {
+        "category": "Shape",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Collision Radius",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Gameplay collision circle radius in world units; 0 disables it."
+      },
+      {
+        "category": "Shape",
+        "elementKind": 10,
+        "hasSetter": true,
+        "kind": 9,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Boxes",
+        "requiredType": "",
+        "speed": 1.0,
+        "structType": "PhysicsBoxShape",
+        "tooltip": "Authored box fixtures; they take precedence over the radius."
       }
     ],
     "removable": true,

@@ -69,8 +69,10 @@
 					"properties": {
 						"Active": true,
 						"Body Type": "Dynamic",
+						"Boxes": [],
 						"Collision Layer": [],
 						"Collision Mask": [],
+						"Collision Radius": 0.0,
 						"Physics Enabled": false
 					},
 					"type": "CollisionComponent"
@@ -143,8 +145,10 @@
 					"properties": {
 						"Active": true,
 						"Body Type": "Dynamic",
+						"Boxes": [],
 						"Collision Layer": [],
 						"Collision Mask": [],
+						"Collision Radius": 0.0,
 						"Physics Enabled": false
 					},
 					"type": "CollisionComponent"
@@ -217,8 +221,10 @@
 					"properties": {
 						"Active": true,
 						"Body Type": "Dynamic",
+						"Boxes": [],
 						"Collision Layer": [],
 						"Collision Mask": [],
+						"Collision Radius": 0.0,
 						"Physics Enabled": false
 					},
 					"type": "CollisionComponent"
