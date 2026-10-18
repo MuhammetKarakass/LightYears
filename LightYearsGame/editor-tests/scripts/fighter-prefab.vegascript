@@ -1,0 +1,43 @@
+open-scene scenes/sandbox.scene.json
+wait 2
+place-prefab prefabs/ships/player/fighter.prefab.json 800 400
+rename "Fighter editor test"
+expect-prefab prefabs/ships/player/fighter.prefab.json
+expect-prop Actor Ship Ship.Player.Fighter.Basic
+set-prop Actor Ship Ship.Player.Interceptor.Basic
+expect-prop-error construction-only
+expect-prop Actor Ship Ship.Player.Fighter.Basic
+expect-component HealthComponent present
+expect-component MovementComponent present
+expect-component PlayerMovementComponent present
+expect-prop Actor "Render Enabled" true
+set-prop Actor "Render Enabled" false
+expect-overridden Actor "Render Enabled" true
+revert-prefab-prop Actor "Render Enabled"
+expect-prop Actor "Render Enabled" true
+expect-overridden Actor "Render Enabled" false
+set-prop Actor "Render Enabled" false
+apply-prefab-prop Actor "Render Enabled"
+expect-overridden Actor "Render Enabled" false
+save-scene @VEGA_FIGHTER_PREFAB_SCENE@
+open-scene @VEGA_FIGHTER_PREFAB_SCENE@
+wait 2
+select-name "Fighter editor test"
+expect-prefab prefabs/ships/player/fighter.prefab.json
+expect-prop Actor Ship Ship.Player.Fighter.Basic
+expect-prop Actor "Render Enabled" false
+expect-overridden Actor "Render Enabled" false
+open-prefab prefabs/ships/player/fighter.prefab.json
+expect-prop Actor Ship Ship.Player.Fighter.Basic
+set-prop Actor "Render Enabled" true
+save-prefab
+close-prefab
+select-name "Fighter editor test"
+expect-prop Actor "Render Enabled" true
+save-scene @VEGA_FIGHTER_PREFAB_SCENE@
+open-scene @VEGA_FIGHTER_PREFAB_SCENE@
+wait 2
+select-name "Fighter editor test"
+expect-prop Actor Ship Ship.Player.Fighter.Basic
+expect-prop Actor "Render Enabled" true
+quit

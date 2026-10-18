@@ -3,6 +3,7 @@
 set(root "${TEST_ROOT}/assets")
 file(MAKE_DIRECTORY "${root}/content/data")
 file(COPY "${SOURCE_ROOT}/LightYearsGame/assets/content/data/" DESTINATION "${root}/content/data")
+file(COPY "${SOURCE_ROOT}/LightYearsGame/assets/prefabs/" DESTINATION "${root}/prefabs")
 file(WRITE "${root}/content/data/abilities.json" "{ invalid json\n")
 execute_process(COMMAND "${RUNTIME}" --asset-root "${root}" --visual-capture "${TEST_ROOT}/unexpected.png" --capture-frames 2
     WORKING_DIRECTORY "${TEST_ROOT}" RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE errors TIMEOUT 45)

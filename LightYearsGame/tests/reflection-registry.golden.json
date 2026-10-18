@@ -1124,6 +1124,70 @@
     "spawnable": false
   },
   {
+    "addable": true,
+    "base": "ActorComponent",
+    "functions": [],
+    "name": "ParallaxComponent",
+    "properties": [
+      {
+        "category": "Parallax",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1.0,
+        "min": 0.0,
+        "name": "Depth",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Parallax factor relative to the camera: 1 moves with the world, 0 is pinned to the screen, values between drift slower."
+      },
+      {
+        "category": "Parallax",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Can Rotate",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Turns the actor over time at Rotation Speed."
+      },
+      {
+        "category": "Parallax",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1000.0,
+        "min": -1000.0,
+        "name": "Rotation Speed",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Signed rotation in degrees per second while Can Rotate is enabled."
+      },
+      {
+        "category": "Parallax",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Drift Velocity",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Constant drift in world units per second added on top of parallax."
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
     "addable": false,
     "base": "Actor",
     "functions": [],
@@ -1709,6 +1773,19 @@
         "category": "Player",
         "elementKind": null,
         "hasSetter": true,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Ship",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Construction only: changing Ship is refused; place a prefab with the desired catalog Ship instead."
+      },
+      {
+        "category": "Player",
+        "elementKind": null,
+        "hasSetter": true,
         "kind": 2,
         "labels": [],
         "max": 100000.0,
@@ -1763,7 +1840,7 @@
       "PlayerMovementComponent"
     ],
     "root": 0,
-    "spawnable": false
+    "spawnable": true
   },
   {
     "addable": false,

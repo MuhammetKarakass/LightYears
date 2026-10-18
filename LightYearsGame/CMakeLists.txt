@@ -181,6 +181,10 @@ if(BUILD_TESTING)
 	target_compile_definitions(LightYearsSceneSandboxTests PRIVATE SCENE_TEST_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}")
 	vega_add_game_test_case(LightYearsSceneSandbox LightYearsSceneSandboxTests)
 
+	vega_add_game_test(LightYearsShipPrefabTests GAME PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ShipPrefabTests.cpp)
+	target_compile_definitions(LightYearsShipPrefabTests PRIVATE SHIP_PREFAB_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ship-prefab")
+	vega_add_game_test_case(LightYearsShipPrefab LightYearsShipPrefabTests)
+
 	vega_add_game_test(LightYearsContentTests
 		SOURCES ${VEGA_TESTS_DIR}/ContentLoaderTests.cpp
 		INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src

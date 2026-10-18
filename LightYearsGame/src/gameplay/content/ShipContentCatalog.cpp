@@ -3,6 +3,9 @@
 
 #include "gameConfigs/ship/ShipConfig.h"
 #include "gameplay/content/ShipLoader.h"
+#include "gameplay/content/ShipPrefabSpawner.h"
+#include <framework/AssetManager.h>
+#include <framework/EngineContext.h>
 #include "gameplay/progression/ShipProgression.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -161,6 +164,9 @@ namespace vega::content
 			{
 				return Fail(failureReason, "Ship content ID cannot be empty");
 			}
+			const auto configuredRoot = EngineContext::Current().Assets().GetAssetRootDirectory();
+			const auto assetRoot = configuredRoot.empty() ? filePath.parent_path().parent_path().parent_path() : std::filesystem::path{ configuredRoot };
+			if (definition.definition.prefabPath && !ValidateShipPrefab(EngineContext::Current(), assetRoot, *definition.definition.prefabPath, definition.id, failureReason)) return false;
 			if (!definition.definition.primaryWeaponId.empty() &&
 				!WeaponContentCatalog::FindById(definition.definition.primaryWeaponId))
 			{

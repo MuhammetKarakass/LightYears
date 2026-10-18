@@ -28,6 +28,7 @@ int main()
 	const auto assets = root / "assets";
 	std::filesystem::create_directories(assets / "content/data");
 	std::filesystem::copy(source, assets / "content/data", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+	std::filesystem::copy(source.parent_path().parent_path() / "prefabs", assets / "prefabs", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
 	context.Assets().SetAssetRootDirectory(assets.generic_u8string() + "/");
 	check(vega::GameContentBootstrap::Register(), "Bootstrap fixture failed");
 	const auto read = [](const auto& path) { nlohmann::json result; std::ifstream{ path } >> result; return result; };

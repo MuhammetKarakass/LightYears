@@ -16,10 +16,9 @@ namespace vega
 		VEGA_CLASS(PlayerSpaceShip)
 	public:
 
-		PlayerSpaceShip(
-			World* owningWorld,
-			const ShipDefinition& shipDef = content::ShipContentCatalog::GetPlayerFighterDefinition()
-		);
+		PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef = content::ShipContentCatalog::GetPlayerFighterDefinition());
+		const std::string& GetShip() const { return mShip; }
+		void SetShip(const std::string& ship);
 
 		virtual void BeginPlay() override;
 		virtual void ApplyDamage(float amt) override;
@@ -54,6 +53,7 @@ namespace vega
 		virtual bool IsAfterburnerRechargeBlocked() const override;
 
 	private:
+		std::string mShip;
 		virtual void Shoot() override;
 		void StopInvulnerability();
 		void OnCombatDamageObserved(const DamageContext& context);

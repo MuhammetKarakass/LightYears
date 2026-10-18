@@ -253,6 +253,14 @@ namespace vega::content
 				throw std::runtime_error(shipIdFailure);
 			}
 			loaded.definition.health = object.at("health").get<float>();
+			loaded.definition.catalogId = loaded.id;
+			loaded.definition.prefabPath.reset();
+			if (object.contains("prefabPath"))
+			{
+				const auto path = object.at("prefabPath").get<std::string>();
+				if (path.empty()) throw std::runtime_error("Ship prefabPath cannot be empty");
+				loaded.definition.prefabPath = path;
+			}
 			loaded.definition.texturePath = object.value("texturePath", loaded.definition.texturePath);
 			if (object.contains("engineMounts"))
 			{

@@ -10,13 +10,21 @@
 #include <framework/MathUtility.h>
 #include <framework/World.h>
 #include <framework/reflection/Reflection.h>
+#include <stdexcept>
 
 namespace vega
 {
 	VEGA_REFLECT(PlayerSpaceShip, SpaceShip)
 	{
+		VEGA_SPAWNABLE([](World& world)
+		{
+			const auto* ship = content::ShipContentCatalog::FindById(DefaultPlayerShipId);
+			if (!ship) throw std::runtime_error("Default player ship is unavailable");
+			return world.SpawnActor<PlayerSpaceShip>(*ship).lock();
+		});
 		VEGA_REQUIRES(PlayerMovementComponent);
 		VEGA_CATEGORY("Player");
+		VEGA_PROPERTY("Ship", GetShip, SetShip).Tooltip("Construction only: changing Ship is refused; place a prefab with the desired catalog Ship instead.");
 		VEGA_PROPERTY("Speed", GetSpeed, SetSpeed).Range(0.f, 100000.f);
 		VEGA_PROPERTY("Use Screen Clamp", GetUseScreenClamp, SetUseScreenClamp);
 		VEGA_READONLY("In Combat", IsInCombat);
@@ -25,6 +33,7 @@ namespace vega
 
 	PlayerSpaceShip::PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef)
 		: SpaceShip(owningWorld, shipDef)
+		, mShip(shipDef.catalogId)
 		, mAbilityLoadout(GetAbilitySystemComponent())
 		, mPlayerMovement(AddComponent<PlayerMovementComponent>())
 		, mModuleTriggerRuntime(GetAbilitySystemComponent(), GetShipRuntime(), GetRuntimeModifiers(), GetCombatRuntime(), GetShieldComponent())
@@ -56,6 +65,11 @@ namespace vega
 			mAttachedLightTags.push_back(GetOrAddComponent<LightComponent>().AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
 			mAttachedLightTags.push_back(GetOrAddComponent<LightComponent>().AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
 		}
+	}
+
+	void PlayerSpaceShip::SetShip(const std::string& ship)
+	{
+		if (ship != mShip) throw std::runtime_error("Ship is construction-only; place a prefab with the desired catalog Ship instead of changing an existing PlayerSpaceShip.");
 	}
 
 	void PlayerSpaceShip::SetupCollisionLayers()

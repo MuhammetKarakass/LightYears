@@ -3,6 +3,7 @@
 #include "gameplay/content/ModuleContentCatalog.h"
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/content/ShipPrefabSpawner.h"
 #include "gameplay/tags/GameplayTags.h"
 #include <framework/World.h>
 #include <algorithm>
@@ -73,7 +74,13 @@ namespace vega
 			mShipProgression.ForgetDestroyedAttributes();
 			auto windowSize = world->GetWindowSize();
 			const auto& shipDefinition = content::ShipContentCatalog::GetPlayerShipDefinition(mShipId);
-			mCurrentSpaceShip = world->SpawnActor<PlayerSpaceShip>(shipDefinition);
+			if (shipDefinition.prefabPath)
+			{
+				std::string reason;
+				mCurrentSpaceShip = SpawnShipPrefab(*world, *shipDefinition.prefabPath, shipDefinition.catalogId, &reason);
+				if (mCurrentSpaceShip.expired()) VEGA_GAME_ERROR("Player ship prefab failed: %s", reason.c_str());
+			}
+			else mCurrentSpaceShip = world->SpawnActor<PlayerSpaceShip>(shipDefinition);
 
 			auto ship = mCurrentSpaceShip.lock();
 			if (!ship)

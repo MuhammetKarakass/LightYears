@@ -17,7 +17,8 @@ clear-console
 play-mode
 wait 20
 expect-count DummyEnemy 3
-expect-entity-count 7
+expect-count PlayerSpaceShip 1
+expect-entity-count 8
 select-name Receiver
 expect-prop Actor Rotation 3
 expect-console Info "Wave spawned: 3 DummyEnemy"
@@ -32,6 +33,7 @@ stop
 wait 3
 expect-mode edit
 expect-count DummyEnemy 0
+expect-count PlayerSpaceShip 0
 expect-entity-count 4
 select-name Receiver
 expect-prop Actor Rotation 0

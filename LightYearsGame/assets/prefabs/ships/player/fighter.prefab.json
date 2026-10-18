@@ -1,0 +1,7 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Fighter",
+  "base": { "type": "PlayerSpaceShip" },
+  "properties": { "Ship": "Ship.Player.Fighter.Basic" }
+}

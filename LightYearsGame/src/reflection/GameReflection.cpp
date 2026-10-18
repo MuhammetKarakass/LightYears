@@ -21,9 +21,7 @@ namespace vega
 	{
 		auto& context = EngineContext::Current();
 		reflect::RegisterEngineTypes(context.Types());
-		static bool registered = false;
-		if (registered) return;
-		registered = true;
+		if (context.SceneSerialization().spawnFactories.count("PlayerSpaceShip")) return;
 		VEGA_REGISTER(SpaceShip);
 		VEGA_REGISTER(Asteroid);
 		VEGA_REGISTER(PlayerStart);
@@ -42,6 +40,13 @@ namespace vega
 		VEGA_REGISTER(MovementComponent);
 		VEGA_REGISTER(PlayerMovementComponent);
 		VEGA_REGISTER(PlayerSpaceShip);
+		SceneSerializer::RegisterSpawnFactory("PlayerSpaceShip", [](World& world, const nlohmann::json& properties)
+		{
+			const auto id = properties.value("Ship", std::string{ DefaultPlayerShipId });
+			const auto* ship = content::ShipContentCatalog::FindById(id);
+			if (!ship || id.rfind("Ship.Player.", 0) != 0) throw std::runtime_error("Unknown player ship: " + id);
+			return world.SpawnActor<PlayerSpaceShip>(*ship).lock();
+		}, context);
 		VEGA_REGISTER(EnemyActor);
 	}
 }

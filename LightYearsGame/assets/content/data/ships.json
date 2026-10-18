@@ -3,6 +3,7 @@
   "ships": [
     {
       "id": "Ship.Player.Fighter.Basic",
+      "prefabPath": "prefabs/ships/player/fighter.prefab.json",
       "health": 250.0,
       "speed": [350.0, 350.0],
       "collisionDamage": 25.0,

@@ -127,6 +127,10 @@ inline constexpr char DefaultPlayerShipId[] = "Ship.Player.Fighter.Basic";
 
 struct ShipDefinition
 {
+	// Identity carried with catalog values across World::SpawnActor's value copies.
+	std::string catalogId;
+	// Asset-relative construction reference; gameplay values remain in this catalog.
+	std::optional<std::string> prefabPath;
 	std::string texturePath;
 	float health;
 	sf::Vector2f speed;
