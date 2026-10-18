@@ -1,0 +1,7 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "CryoController",
+  "base": { "type": "PlayerSpaceShip" },
+  "properties": { "Ship": "Ship.Player.CryoController.Basic" }
+}

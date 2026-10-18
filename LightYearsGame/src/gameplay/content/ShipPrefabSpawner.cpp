@@ -33,7 +33,7 @@ namespace vega
 			if (chain.size() >= 64 || !chain.insert(absolute).second) throw std::runtime_error("Ship prefab cycle or depth limit");
 			const auto& base = document.at("base");
 			if (base.size() != 1 || base.contains("type") == base.contains("prefab")) throw std::runtime_error("Ship prefab base must select exactly one type or prefab");
-			// Stage 1 deliberately admits no component/script/hierarchy snapshots or gameplay overrides.
+			// Player prefabs admit no component/script/hierarchy snapshots or gameplay overrides.
 			for (const auto& field : document.items())
 				if (field.key() != "format" && field.key() != "version" && field.key() != "name" && field.key() != "base" && field.key() != "properties")
 					throw std::runtime_error("Ship prefab cannot author '" + field.key() + "'; gameplay data belongs to ships.json");
@@ -60,7 +60,6 @@ namespace vega
 		if (failureReason) failureReason->clear();
 		try
 		{
-			if (shipId != DefaultPlayerShipId) return Fail(failureReason, "Stage 1 supports only the Fighter ship prefab");
 			PrefabLibrary library{ context, assetRoot };
 			std::set<std::filesystem::path> chain;
 			const auto selection = ReadSelection(library, prefabPath, chain);

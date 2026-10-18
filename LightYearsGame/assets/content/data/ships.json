@@ -99,6 +99,7 @@
     },
     {
       "id": "Ship.Player.Breacher.Basic",
+      "prefabPath": "prefabs/ships/player/breacher.prefab.json",
       "texturePath": "SpaceShooterRedux/PNG/playerShip2_orange.png",
       "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 290.0,
@@ -207,6 +208,7 @@
     },
     {
       "id": "Ship.Player.Interceptor.Basic",
+      "prefabPath": "prefabs/ships/player/interceptor.prefab.json",
       "texturePath": "SpaceShooterRedux/PNG/playerShip3_red.png",
       "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 200.0,
@@ -333,6 +335,7 @@
     },
     {
       "id": "Ship.Player.Conductor.Basic",
+      "prefabPath": "prefabs/ships/player/conductor.prefab.json",
       "texturePath": "SpaceShooterRedux/PNG/playerShip3_blue.png",
       "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 220.0,
@@ -451,6 +454,7 @@
     },
     {
       "id": "Ship.Player.Aegis.Basic",
+      "prefabPath": "prefabs/ships/player/aegis.prefab.json",
       "texturePath": "SpaceShooterRedux/PNG/playerShip2_green.png",
       "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 270.0,
@@ -563,6 +567,7 @@
     },
     {
       "id": "Ship.Player.CryoController.Basic",
+      "prefabPath": "prefabs/ships/player/cryo_controller.prefab.json",
       "texturePath": "SpaceShooterRedux/PNG/playerShip2_blue.png",
       "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 250.0,

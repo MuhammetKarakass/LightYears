@@ -1,4 +1,5 @@
 #include "gameFramework/LightYearsAssets.h"
+#include "gameConfigs/GameplayTags.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/content/GameContentBootstrap.h"
@@ -8,6 +9,8 @@
 #include "player/PlayerSpaceShip.h"
 #include "reflection/GameReflection.h"
 #include <framework/AssetManager.h>
+#include <framework/LightComponent.h>
+#include <framework/SpriteComponent.h>
 #include <framework/World.h>
 #include <framework/reflection/Reflection.h>
 #include <framework/scene/PrefabLibrary.h>
@@ -16,12 +19,17 @@
 #include <fstream>
 #include <iostream>
 #include <utility>
+#ifdef _MSC_VER
+#include <crtdbg.h>
+#include <cstdlib>
+#endif
 
 namespace
 {
 	using Json = nlohmann::json;
 	Json checks = Json::array();
 	int failures = 0;
+	std::string checkPrefix;
 
 	class EditWorld final : public vega::World
 	{
@@ -32,8 +40,8 @@ namespace
 
 	void Check(bool passed, const std::string& name, Json actual = nullptr)
 	{
-		checks.push_back({ { "name", name }, { "passed", passed }, { "actual", std::move(actual) } });
-		if (!passed) { ++failures; std::cerr << name << '\n'; }
+		checks.push_back({ { "name", checkPrefix + name }, { "passed", passed }, { "actual", std::move(actual) } });
+		if (!passed) { ++failures; std::cerr << checkPrefix << name << '\n'; }
 	}
 
 	Json Attributes(const sas::AttributeSystem& attributes)
@@ -70,9 +78,29 @@ namespace
 		return result;
 	}
 
+	Json EngineLights(vega::PlayerSpaceShip& ship)
+	{
+		Json result = Json::object();
+		auto* lights = ship.FindComponent<vega::LightComponent>();
+		if (!lights) return result;
+		for (const auto& base : { vega::GameTags::Ship::Engine_Left, vega::GameTags::Ship::Engine_Right })
+			for (const auto& tag : lights->GetLightsByBaseTag(base))
+			{
+				const auto& light = *lights->GetLightData(tag);
+				result[tag.ToString()] = { { "offset", { light.offset.x, light.offset.y } }, { "color", { light.color.r, light.color.g, light.color.b, light.color.a } },
+					{ "size", { light.size.x, light.size.y } }, { "intensity", light.intensity }, { "stretch", light.shouldStretch }, { "trail", light.useComplexTrail },
+					{ "taper", light.taperAmount }, { "softness", light.edgeSoftness }, { "roundness", light.shapeRoundness }, { "enabled", light.isEnabled } };
+			}
+		return result;
+	}
+
 	void Compare(vega::PlayerSpaceShip& direct, vega::PlayerSpaceShip& prefab, const char* phase)
 	{
 		Check(Components(direct) == Components(prefab), std::string{ phase } + " component set", Components(prefab));
+		Check(EngineLights(direct) == EngineLights(prefab) && EngineLights(prefab).size() == 2, std::string{ phase } + " engine mounts and light style", EngineLights(prefab));
+		const auto* directSprite = direct.FindComponent<vega::SpriteComponent>();
+		const auto* prefabSprite = prefab.FindComponent<vega::SpriteComponent>();
+		Check(directSprite && prefabSprite && directSprite->GetTexturePath() == prefabSprite->GetTexturePath() && directSprite->GetScale() == prefabSprite->GetScale(), std::string{ phase } + " sprite texture and scale");
 		Check(Attributes(direct.GetAbilitySystemComponent().GetAttributes()) == Attributes(prefab.GetAbilitySystemComponent().GetAttributes()), std::string{ phase } + " owner attributes");
 		Check(Attributes(direct.GetShipRuntime().GetAttributes()) == Attributes(prefab.GetShipRuntime().GetAttributes()), std::string{ phase } + " ship attributes");
 		Check(Abilities(direct) == Abilities(prefab), std::string{ phase } + " exact ability grants and levels", Abilities(prefab));
@@ -86,6 +114,7 @@ namespace
 			direct.GetUseScreenClamp() == prefab.GetUseScreenClamp() && direct.GetMovementMode() == prefab.GetMovementMode(), std::string{ phase } + " movement");
 		Check(direct.GetHealthComponent().GetHealth() == prefab.GetHealthComponent().GetHealth() && direct.GetShieldComponent().GetShield() == prefab.GetShieldComponent().GetShield() &&
 			direct.GetEnergyComponent().GetEnergy() == prefab.GetEnergyComponent().GetEnergy(), std::string{ phase } + " component resources");
+		Check(a.horizontalRatingToThrust == b.horizontalRatingToThrust && a.verticalRatingToThrust == b.verticalRatingToThrust && a.ratingToMaxSpeed == b.ratingToMaxSpeed && a.movementRatingDiminishingScale == b.movementRatingDiminishingScale, std::string{ phase } + " movement rating conversion");
 		Check(direct.GetModuleApplier().HasApplied() == prefab.GetModuleApplier().HasApplied() && direct.GetModuleApplier().GetOwnedHandleCount() == prefab.GetModuleApplier().GetOwnedHandleCount() &&
 			direct.GetEnabledModuleSystems() == prefab.GetEnabledModuleSystems(), std::string{ phase } + " module state");
 	}
@@ -98,7 +127,7 @@ namespace
 	}
 }
 
-int main(int argc, char** argv)
+int RunTests(int argc, char** argv)
 {
 	using namespace vega;
 	EngineContext context;
@@ -110,6 +139,7 @@ int main(int argc, char** argv)
 		Json document;
 		std::ifstream{ root / "prefabs/ships/player/fighter.prefab.json" } >> document;
 		Check(document.value("properties", Json::object()) == Json{ { "Ship", DefaultPlayerShipId }, { "Render Enabled", expectedRender } }, "Saved prefab contains exactly Ship and intentional Render Enabled override", document);
+		Check(document.value("base", Json::object()) == Json{ { "type", "PlayerSpaceShip" } }, "Editor Fighter retains the type base");
 		Check(!document.contains("components"), "Saved prefab contains no constructor component snapshots");
 		std::string reason;
 		const bool valid = ValidateShipPrefab(context, root, "prefabs/ships/player/fighter.prefab.json", DefaultPlayerShipId, &reason);
@@ -119,6 +149,19 @@ int main(int argc, char** argv)
 		RegisterGameTypes();
 		const bool bootstrapped = GameContentBootstrap::Register();
 		Check(bootstrapped, "Editor asset copy passes game content bootstrap");
+		Json interceptorDocument;
+		std::ifstream{ root / "prefabs/ships/player/interceptor.prefab.json" } >> interceptorDocument;
+		Check(interceptorDocument.value("properties", Json::object()) == Json{ { "Ship", "Ship.Player.Interceptor.Basic" }, { "Render Enabled", false } } &&
+			interceptorDocument.value("base", Json::object()) == Json{ { "type", "PlayerSpaceShip" } } && !interceptorDocument.contains("components"), "Editor Interceptor remains a sparse selected prefab", interceptorDocument);
+		Check(ValidateShipPrefab(context, root, "prefabs/ships/player/interceptor.prefab.json", "Ship.Player.Interceptor.Basic", &reason), "Game validator accepts editor Interceptor variant", reason);
+		if (bootstrapped)
+		{
+			World directWorld{ context }, prefabWorld{ context };
+			const auto direct = directWorld.SpawnActor<PlayerSpaceShip>(*content::ShipContentCatalog::FindById("Ship.Player.Interceptor.Basic")).lock();
+			const auto prefab = SpawnShipPrefab(prefabWorld, "prefabs/ships/player/interceptor.prefab.json", "Ship.Player.Interceptor.Basic", &reason).lock();
+			Check(prefab && prefab->GetShip() == "Ship.Player.Interceptor.Basic" && !prefab->IsRenderEnabled(), "Editor Interceptor reopens with its construction choice and visibility", reason);
+			if (prefab) Compare(*direct, *prefab, "Editor Interceptor");
+		}
 		if (valid && bootstrapped)
 		{
 			World directWorld{ context }, prefabWorld{ context };
@@ -155,8 +198,82 @@ int main(int argc, char** argv)
 		std::string reason;
 		Check(!SpawnShipPrefab(isolatedWorld, path, DefaultPlayerShipId, &reason).expired(), "Standalone prefab spawn registers reflection in the owning engine context", reason);
 	}
+	// Keep fixtures confined to the build tree, including all shipped prefab dependencies.
+	std::filesystem::copy(source / "prefabs", artifacts / "prefabs", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
 	for (const auto& id : content::ShipContentCatalog::GetPlayerShipIds())
-		Check((id == DefaultPlayerShipId) == content::ShipContentCatalog::FindById(id)->prefabPath.has_value(), "Only Fighter selects a prefab: " + id);
+	{
+		const auto& selected = *content::ShipContentCatalog::FindById(id);
+		Check(selected.prefabPath.has_value(), id + " selects a prefab");
+		if (!selected.prefabPath) continue;
+		std::string diagnostic;
+		Check(ValidateShipPrefab(context, source, *selected.prefabPath, id, &diagnostic), id + " validator accepts shipped prefab", diagnostic);
+		World directWorld{ context }, prefabWorld{ context };
+		const auto direct = directWorld.SpawnActor<PlayerSpaceShip>(selected).lock();
+		const auto prefab = SpawnShipPrefab(prefabWorld, *selected.prefabPath, id, &diagnostic).lock();
+		Check(prefab && diagnostic.empty(), id + " prefab selection reaches constructor", diagnostic);
+		if (!prefab) continue;
+		Check(prefab->GetShip() == id && direct->GetShip() == id, id + " prefab retains catalog identity");
+		Compare(*direct, *prefab, (id + " constructed").c_str());
+		Check(!prefab->IsPhysicsEnabled() && !prefab->GetMovementComponent().HasBegunPlay() && prefabWorld.GetTimerManager().GetTraversalTimerCount() == 0 &&
+			LiveActors(prefabWorld) == 1 && PlayerManager::GetPlayerManager().GetPlayers().empty(), id + " scratch construction has no gameplay side effects");
+		const auto saved = SceneSerializer::Save(prefabWorld);
+		World reopened{ context };
+		Check(SceneSerializer::Load(reopened, saved).warnings.empty() && SceneSerializer::Save(reopened) == saved && saved["entities"].size() == 1 &&
+			saved["entities"][0]["prefab"] == *selected.prefabPath && !saved["entities"][0].contains("components"), id + " sparse scene save/reopen", saved);
+		const auto reopenedShips = reopened.GetActorsByTypeIncludingPending<PlayerSpaceShip>();
+		Check(reopenedShips.size() == 1, id + " reopened exactly one ship");
+		if (reopenedShips.size() == 1) if (const auto ship = reopenedShips.front().lock()) Compare(*direct, *ship, (id + " reopened").c_str());
+		Player owner{ id };
+		const auto rules = owner.BuildModuleRules();
+		ModuleLoadout modules;
+		Check(rules && modules.SeedDefaults(*rules), id + " seeds its own schematic");
+		if (rules)
+		{
+			Check(modules.GetPlacements().size() == selected.schematic->defaultModules.size(), id + " retains every default module placement");
+			direct->GetModuleApplier().Apply(modules, *rules);
+			prefab->GetModuleApplier().Apply(modules, *rules);
+			Compare(*direct, *prefab, (id + " modules").c_str());
+			Check(!prefab->GetModuleApplier().Apply(modules, *rules), id + " module application is idempotent");
+		}
+		direct->BeginPlayInternal();
+		prefab->BeginPlayInternal();
+		Compare(*direct, *prefab, (id + " BeginPlay").c_str());
+		Check(prefab->IsPhysicsEnabled() && prefabWorld.GetTimerManager().GetTraversalTimerCount() == 1, id + " BeginPlay starts one invulnerability timer");
+		// A descendant must also override an explicitly selected parent before realization.
+		Json parent{ { "format", "vega.prefab" }, { "version", 1 }, { "base", { { "type", "PlayerSpaceShip" } } }, { "properties", { { "Ship", DefaultPlayerShipId } } } };
+		Json child{ { "format", "vega.prefab" }, { "version", 1 }, { "base", { { "prefab", "selected-parent.prefab.json" } } }, { "properties", { { "Ship", id } } } };
+		std::ofstream{ artifacts / "selected-parent.prefab.json" } << parent.dump(2);
+		std::ofstream{ artifacts / "selected-child.prefab.json" } << child.dump(2);
+		context.Assets().SetAssetRootDirectory(artifacts.generic_string() + "/");
+		World descendantWorld{ context };
+		const auto descendant = SpawnShipPrefab(descendantWorld, "selected-child.prefab.json", id, &diagnostic).lock();
+		Check(descendant && descendant->GetShip() == id, id + " descendant selector overrides selected Fighter parent", diagnostic);
+		World comparisonWorld{ context };
+		const auto comparison = comparisonWorld.SpawnActor<PlayerSpaceShip>(selected).lock();
+		if (descendant) Compare(*comparison, *descendant, (id + " selected-parent variant").c_str());
+		// Reject each forbidden shape for every catalog selection, before any actors can leak.
+		parent["properties"]["Ship"] = id;
+		for (const std::string fault : { "Ship", "type", "components", "scripts", "children", "Speed", "Render Enabled", "escape" })
+		{
+			auto invalid = parent;
+			if (fault == "Ship") invalid["properties"]["Ship"] = id == DefaultPlayerShipId ? "Ship.Player.Interceptor.Basic" : DefaultPlayerShipId;
+			else if (fault == "type") invalid["base"]["type"] = "DummyEnemy";
+			else if (fault == "Speed") invalid["properties"]["Speed"] = 1;
+			else if (fault == "Render Enabled") invalid["properties"]["Render Enabled"] = "false";
+			else if (fault == "escape") invalid["base"] = { { "prefab", "../outside.prefab.json" } };
+			else invalid[fault] = Json::array();
+			std::ofstream{ artifacts / "all-ships-invalid.prefab.json" } << invalid.dump(2);
+			Check(!ValidateShipPrefab(context, artifacts, "all-ships-invalid.prefab.json", id, &diagnostic) && !diagnostic.empty(), id + " validator rejects " + fault, diagnostic);
+			const auto count = descendantWorld.GetActorCountIncludingPending();
+			Check(SpawnShipPrefab(descendantWorld, "all-ships-invalid.prefab.json", id, &diagnostic).expired() && descendantWorld.GetActorCountIncludingPending() == count &&
+				descendantWorld.unresolvedPrefabs.empty() && descendantWorld.GetTimerManager().GetTraversalTimerCount() == 0, id + " rejected " + fault + " leaks no actors or timers");
+		}
+		context.Assets().SetAssetRootDirectory(source.generic_string() + "/");
+		prefab->Destroy();
+		prefabWorld.TickInternal(0.f);
+		prefabWorld.GetTimerManager().UpdateTimer(0.f); // Application normally advances timers separately from World.
+		Check(LiveActors(prefabWorld) == 0 && prefabWorld.GetActorCountIncludingPending() == 0 && prefabWorld.GetTimerManager().GetTraversalTimerCount() == 0, id + " destruction reclaims prefab actors and timers");
+	}
 	World directWorld{ context }, prefabWorld{ context };
 	const auto direct = directWorld.SpawnActor<PlayerSpaceShip>(definition).lock();
 	std::string reason;
@@ -195,6 +312,7 @@ int main(int argc, char** argv)
 	context.Assets().SetAssetRootDirectory(artifacts.generic_string() + "/");
 	Json document;
 	std::ifstream{ source / path } >> document;
+	document["base"] = { { "type", "PlayerSpaceShip" } }; // Standalone invalid fixtures keep no source-tree dependencies.
 	const auto write = [&](const std::string& name, const Json& value) { std::ofstream{ artifacts / name } << value.dump(2) << '\n'; };
 	write("valid.prefab.json", document);
 	const auto reject = [&](const std::string& candidate, const std::string& id = DefaultPlayerShipId)
@@ -270,41 +388,82 @@ int main(int argc, char** argv)
 	context.Assets().SetAssetRootDirectory(source.generic_string() + "/");
 	Check(content::ShipContentCatalog::LoadFromFile(source / "content/data/ships.json", &reason, true), "Restore shipped catalog", reason);
 
-	World runtime{ context };
-	PlayerManager& manager = PlayerManager::GetPlayerManager();
-	manager.Reset();
-	Player& player = manager.CreateNewPlayer();
-	auto first = player.SpawnSpaceShip(&runtime).lock();
-	Check(first && manager.GetPlayers().size() == 1 && player.GetLifeCount() == 2 && LiveActors(runtime) == 1, "Player spawns exactly one prefab ship and consumes one life");
-	if (first)
+	for (const auto& id : content::ShipContentCatalog::GetPlayerShipIds())
 	{
-		const auto inventory = player.GetModuleLoadout().GetInventory().size();
-		const auto placements = player.GetModuleLoadout().GetPlacements().size();
-		const auto grants = Abilities(*first);
-		Check(first->FindComponent<SceneEntityComponent>() && first->FindComponent<SceneEntityComponent>()->prefab == path && first->GetModuleApplier().HasApplied(), "Player uses prefab and applies modules once");
-		player.AwardShipXP(definition.progressionDefinition.baseXP);
-		player.AwardScrap(1000000);
-		Check(player.TryPurchaseAbilityLevel(sas::AbilitySlot::Ability1, &reason), "Buy ability level before respawn", reason);
-		const auto purchased = first->GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability1)->GetLevel();
-		const auto position = first->GetActorLocation();
-		first->Destroy();
-		Check(player.GetCurrentSpaceShip().expired(), "Destroy clears Player binding before respawn");
-		const auto second = player.SpawnSpaceShip(&runtime).lock();
-		Check(second && second != first && manager.GetPlayers().size() == 1 && player.GetLifeCount() == 1 && LiveActors(runtime) == 1, "Respawn retains one Player and one live ship, consumes one life");
-		if (second)
+		checkPrefix = id + " respawn: ";
+		const auto& selectedDefinition = *content::ShipContentCatalog::FindById(id);
+		const auto selectedPath = *selectedDefinition.prefabPath;
+		EditWorld runtime{ context };
+		PlayerManager& manager = PlayerManager::GetPlayerManager();
+		manager.Reset();
+		manager.SetSelectedShipId(id);
+		Player& player = manager.CreateNewPlayer();
+		auto first = player.SpawnSpaceShip(&runtime).lock();
+		Check(first && manager.GetPlayers().size() == 1 && player.GetLifeCount() == 2 && LiveActors(runtime) == 1, "Player spawns exactly one prefab ship and consumes one life");
+		if (first)
 		{
-			Check(second->FindComponent<SceneEntityComponent>()->prefab == path && second->GetActorLocation() == position && player.GetShipProgression().GetLevel() == 2,
-				"Respawn retains prefab, progression and positioning");
-			Check(player.GetModuleLoadout().GetInventory().size() == inventory && player.GetModuleLoadout().GetPlacements().size() == placements && second->GetModuleApplier().HasApplied(), "Respawn does not duplicate module inventory or placements");
-			const auto respawnGrants = Abilities(*second);
-			bool unique = true;
-			for (const auto& entry : respawnGrants.items()) if (entry.value().at("count") != 1) unique = false;
-			Check(second->GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability1)->GetLevel() == purchased && respawnGrants.size() == grants.size() && unique, "Respawn restores purchased levels without double grants", respawnGrants);
-			second->Destroy();
+			const auto inventory = player.GetModuleLoadout().GetInventory().size();
+			const auto placements = player.GetModuleLoadout().GetPlacements().size();
+			const auto grants = Abilities(*first);
+			Check(first->FindComponent<SceneEntityComponent>() && first->FindComponent<SceneEntityComponent>()->prefab == selectedPath && first->GetModuleApplier().HasApplied(), "Player uses prefab and applies modules once");
+			player.AwardShipXP(selectedDefinition.progressionDefinition.baseXP);
+			player.AwardScrap(1000000);
+			Check(player.TryPurchaseAbilityLevel(sas::AbilitySlot::Ability1, &reason), "Buy ability level before respawn", reason);
+			const auto purchased = first->GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability1)->GetLevel();
+			const auto position = first->GetActorLocation();
+			first->Destroy();
+			Check(player.GetCurrentSpaceShip().expired(), "Destroy clears Player binding before respawn");
+			const auto second = player.SpawnSpaceShip(&runtime).lock();
+			Check(second && second != first && manager.GetPlayers().size() == 1 && player.GetLifeCount() == 1 && LiveActors(runtime) == 1, "Respawn retains one Player and one live ship, consumes one life");
+			if (second)
+			{
+				Check(second->FindComponent<SceneEntityComponent>()->prefab == selectedPath && second->GetActorLocation() == position && player.GetShipProgression().GetLevel() == 2,
+					"Respawn retains prefab, progression and positioning");
+				Check(player.GetModuleLoadout().GetInventory().size() == inventory && player.GetModuleLoadout().GetPlacements().size() == placements && second->GetModuleApplier().HasApplied(), "Respawn does not duplicate module inventory or placements");
+				const auto respawnGrants = Abilities(*second);
+				bool unique = true;
+				for (const auto& entry : respawnGrants.items()) if (entry.value().at("count") != 1) unique = false;
+				Check(second->GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability1)->GetLevel() == purchased && respawnGrants.size() == grants.size() && unique, "Respawn restores purchased levels without double grants", respawnGrants);
+				second->Destroy();
+			}
 		}
+		manager.Reset();
+		manager.SetSelectedShipId(DefaultPlayerShipId);
+		runtime.TickInternal(0.f);
+		Check(runtime.GetActorCountIncludingPending() == 0 && runtime.GetTimerManager().GetTraversalTimerCount() == 0 && LiveActors(runtime) == 0, id + " respawn teardown leaves no live ship");
 	}
-	manager.Reset();
+	checkPrefix.clear();
+	// Optional prefabPath is still a supported catalog contract, so retain and exercise Player's fallback.
+	ships = validShips;
+	for (auto& ship : ships["ships"]) ship.erase("prefabPath");
+	write("legacy-ships.json", ships);
+	Check(content::ShipContentCatalog::LoadFromFile(artifacts / "legacy-ships.json", &reason, true), "Catalog still accepts legacy definitions without prefabPath", reason);
+	{
+		World legacyWorld{ context };
+		Player legacy;
+		const auto ship = legacy.SpawnSpaceShip(&legacyWorld).lock();
+		Check(ship && !ship->FindComponent<SceneEntityComponent>() && ship->GetShip() == DefaultPlayerShipId && ship->GetModuleApplier().HasApplied(), "Player direct-construction fallback remains reachable");
+		if (ship) ship->Destroy();
+	}
+	Check(content::ShipContentCatalog::LoadFromFile(source / "content/data/ships.json", &reason, true), "Restore prefab catalog after fallback check", reason);
 	std::ofstream{ artifacts / "ship-prefab-results.json" } << Json{ { "failures", failures }, { "checks", checks } }.dump(2) << '\n';
 	std::cout << checks.size() << " ship prefab E2E checks; " << failures << " failures\n";
 	return failures ? 1 : 0;
+}
+
+int main(int argc, char** argv)
+{
+#ifdef _MSC_VER
+	_set_error_mode(_OUT_TO_STDERR);
+	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+#endif
+	try { return RunTests(argc, argv); }
+	catch (const std::exception& error)
+	{
+		std::cerr << "Ship prefab E2E exception: " << error.what() << '\n' << checks.dump(2) << '\n';
+		return 1;
+	}
 }

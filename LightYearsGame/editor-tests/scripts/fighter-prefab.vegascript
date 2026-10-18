@@ -26,9 +26,26 @@ expect-overridden Actor "Render Enabled" false
 set-prop Actor "Render Enabled" false
 apply-prefab-prop Actor "Render Enabled"
 expect-overridden Actor "Render Enabled" false
+place-prefab prefabs/ships/player/interceptor.prefab.json 1000 400
+rename "Interceptor editor test"
+expect-prefab prefabs/ships/player/interceptor.prefab.json
+expect-prop Actor Ship Ship.Player.Interceptor.Basic
+expect-prop HealthComponent "Max Health" 200
+set-prop Actor "Render Enabled" false
+apply-prefab-prop Actor "Render Enabled"
+open-prefab prefabs/ships/player/interceptor.prefab.json
+expect-prop Actor Ship Ship.Player.Interceptor.Basic
+expect-prop HealthComponent "Max Health" 200
+save-prefab
+close-prefab
 save-scene @VEGA_FIGHTER_PREFAB_SCENE@
 open-scene @VEGA_FIGHTER_PREFAB_SCENE@
 wait 2
+select-name "Interceptor editor test"
+expect-prefab prefabs/ships/player/interceptor.prefab.json
+expect-prop Actor Ship Ship.Player.Interceptor.Basic
+expect-prop Actor "Render Enabled" false
+expect-prop HealthComponent "Max Health" 200
 select-name "Fighter editor test"
 expect-prefab prefabs/ships/player/fighter.prefab.json
 expect-prop Actor Ship Ship.Player.Fighter.Basic
@@ -64,4 +81,9 @@ expect-prop HealthComponent "Max Health" 250
 expect-prop MovementComponent "Legacy Speed" 350 350
 expect-prop ShieldComponent "Max Shield" 0
 expect-prop EnergyComponent "Max Energy" 0
+select-name "Interceptor editor test"
+expect-prefab prefabs/ships/player/interceptor.prefab.json
+expect-prop Actor Ship Ship.Player.Interceptor.Basic
+expect-prop Actor "Render Enabled" false
+expect-prop HealthComponent "Max Health" 200
 quit

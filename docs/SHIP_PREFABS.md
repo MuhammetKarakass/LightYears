@@ -1,9 +1,47 @@
-# Ship prefab pilot: Fighter
+# Player ship prefabs
 
-Stage 1 implements `Ship.Player.Fighter.Basic` as `PlayerSpaceShip` plus
-`prefabs/ships/player/fighter.prefab.json`. Only Fighter's catalog entry has an
-optional `prefabPath`; other player ships retain direct construction. Sparse
-editor authoring uses Vega e3bce0c's construction-property contract.
+Stage 2a extends the Fighter pilot to all six catalog player ships. Every shipped
+`Ship.Player.*` entry has a `prefabPath` under `prefabs/ships/player/`. Behaviour
+remains in C++; the editor-authored prefab chooses the catalog ship. Gameplay
+numbers, weapon selection, progression and module schematics remain in `ships.json`.
+
+## Variant decision
+
+All six shipped assets remain flat: `base.type=PlayerSpaceShip`, with only
+`properties.Ship`. A shared unselected `player_ship.prefab.json` base was tried
+against read-only Vega e6ed855. Its editor Apply/Save dropped Fighter's Ship
+(equal to the factory default), and Interceptor Save wrote SpriteComponent Texture
+and HealthComponent Max Health snapshots. Both documents failed the unchanged
+strict game validator. This fails sparse authoring even though Vega documents
+construction-selector resolution for variants. Therefore no shared base is
+shipped in stage 2a. The desired base-class/variant workflow needs a Vega authoring
+fix before adoption; do not weaken game validation to accommodate snapshots.
+
+The game E2E still checks a descendant overriding an explicitly Fighter-selected
+parent with every ship choice. It compares component inventory, attributes,
+grants, movement and engine lights, rather than only checking the final Ship
+string. Runtime variant resolution and sparse editor authoring are separate
+acceptance boundaries. See the [variant authoring request](engine-requests/ship-prefab-variant-authoring.md).
+
+All paths below are relative to `prefabs/ships/player/`; all IDs have the prefix
+`Ship.Player.` and suffix `.Basic`.
+
+| Ship ID middle | Prefab file | Preserved special case |
+| --- | --- | --- |
+| Fighter | `fighter.prefab.json` | Rapid laser; expanded schematic with locked cells; original engine mounts. |
+| Breacher | `breacher.prefab.json` | Rapid shotgun cone; its health, movement and module layout. |
+| Interceptor | `interceptor.prefab.json` | Dual kinetic blaster; its lighter hull and movement profile. |
+| Conductor | `conductor.prefab.json` | Electric arc launcher; its energy/progression profile and schematic. |
+| Aegis | `aegis.prefab.json` | Continuous heat laser beam; its defense/energy profile and wide schematic. |
+| CryoController | `cryo_controller.prefab.json` | Cryo projector wave; its shield/energy profile and schematic. |
+
+The five non-Fighter entries author engine offsets at (-29,-16) and (29,-16).
+The existing loader takes their light style from the Fighter presentation base
+(cyan), then PlayerSpaceShip creates both lights. There is no separate per-ship
+light-style selector to migrate. Tests compare actual light data on both paths.
+Default ability slots still come from `DefaultAbilityLoadout.cpp`; the primary
+weapon grant comes from each catalog definition through the existing SpaceShip
+constructor. Module seeding and gating still use the selected ship's schematic.
 
 ## Ownership and construction
 
@@ -38,13 +76,13 @@ Catalog validation reads authored prefab/variant chains through the engine's
 `PrefabLibrary::Load`, including canonical asset-root confinement. It checks the
 resolved base type is exactly PlayerSpaceShip and the inherited/overridden Ship
 equals the catalog record ID, without constructing scratch actors during catalog
-bootstrap. Stage 1 permits only `Ship` and boolean `Render Enabled` properties;
+bootstrap. Player ship prefabs permit only `Ship` and boolean `Render Enabled` properties;
 component snapshots, scripts, children, other ship IDs and other overrides are rejected.
 Apply and scratch Save Prefab write sparse deltas against a freshly constructed
 property-aware base, always retaining Ship and any intentional Render Enabled
 override. Equal constructor component values are omitted. Generic editor edits
 outside this narrow contract remain rejected by the game catalog/spawner.
-This deliberately narrow pilot does not prescribe
+This deliberately narrow player contract does not prescribe
 the later enemy or ship-family authoring contract.
 
 Runtime uses a fresh, root-bound `PrefabLibrary::Resolve`, checks its result and
@@ -62,16 +100,28 @@ consumption, progression binding, purchased ability restoration, module loadout,
 delegate binding and spawn positioning retain their existing ordering before
 BeginPlay. No Player is created by either prefab resolution or the scene factory.
 
+The direct `SpawnActor<PlayerSpaceShip>(definition)` fallback remains. Although
+all shipped player entries now have a prefab, `prefabPath` remains optional and
+the loader still accepts definitions without it. The E2E reloads a build-tree
+catalog without prefab paths and exercises Player's direct spawn branch. Existing
+direct constructors also remain necessary for callers and equivalence tests.
+
 ## Verification
 
-`LightYearsShipPrefab` exercises direct/prefab equivalence, scratch safety,
+`LightYearsShipPrefab` iterates all player catalog IDs and exercises direct/prefab
+equivalence before and after applying each ship's default modules and BeginPlay,
+engine-light data, all movement fields, scratch safety,
 construction-selector refusal, sparse save/reopen, invalid references and
-composition, variants, catalog reload and Player respawn. Its inputs/results are
+composition, construction-selector variants, catalog reload and Player respawn
+for every ship (life count, prefab identity, purchased ability levels, module
+inventory/placements, positioning and actor/timer cleanup). Its inputs/results are
 written under `build/e2e-artifacts/ship-prefab/`.
 
-`VegaEditorFighterPrefab` places the shipped Fighter, saves/reopens its scene,
+`VegaEditorFighterPrefab` places Fighter and Interceptor prefabs, saves/reopens their scene,
 executes Apply/Revert on Render Enabled, then edits/saves the prefab in the scratch
-Inspector and reopens the scene again. The runner recreates only a dedicated
+Inspector and reopens the scene again. Both prefabs undergo Apply and scratch
+Save, retain their distinct Ship selections, and are checked by the game validator
+and spawner against direct construction. The runner recreates only a dedicated
 build-tree asset copy. It does not edit shipped source assets. The scenario
 retains Render Enabled=false through Apply and scratch Save, verifies catalog
 values through Revert, reopen and reload-prefabs refresh, and checks Ship mutation
@@ -86,3 +136,10 @@ catalog changes (the editor content watcher does this around its reload hook).
 Existing expanded assets remain explicit overrides and are still rejected by the
 game; loading alone does not migrate them. Automated editor success does not
 establish manual visual acceptance.
+
+## Remaining stage
+
+Enemies are outside stage 2a. They still require a separate prefab construction
+contract through `EnemyFactory`, preserving behavior/combat profiles, spawn
+context and rewards. Dummy actors also remain for a later stage; this migration
+changes no enemy or dummy definitions, constructors or factories.
