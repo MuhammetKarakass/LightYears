@@ -31,7 +31,8 @@ int main()
 	auto& schema = vega::EngineContext::Current().SceneSettings();
 	const auto* route = schema.Find("routeStop");
 	const auto* ship = schema.Find("playerShip");
-	Check(route && ship && schema.Find("bounds") && schema.Fields().size() == 3, "Engine/game schema registration incomplete");
+	// Engine fields: bounds, gravity; game fields: routeStop, playerShip.
+	Check(route && ship && schema.Find("bounds") && schema.Find("gravity") && schema.Fields().size() == 4, "Engine/game schema registration incomplete");
 	if (!route || !ship) return 1;
 	GalaxyRoute galaxy;
 	std::string error;
@@ -91,6 +92,6 @@ int main()
 	try { local.Register(bounded); } catch (const std::invalid_argument&) { rejected = true; }
 	Check(rejected, "Invalid schema default accepted");
 	RegisterGameSceneSettings();
-	Check(schema.Fields().size() == 3, "Repeated registration duplicates fields");
+	Check(schema.Fields().size() == 4, "Repeated registration duplicates fields");
 	return failures ? 1 : 0;
 }

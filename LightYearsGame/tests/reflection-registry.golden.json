@@ -973,6 +973,157 @@
     "spawnable": false
   },
   {
+    "addable": true,
+    "base": "ActorComponent",
+    "functions": [],
+    "name": "RigidBodyComponent",
+    "properties": [
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 6,
+        "labels": [
+          [
+            0,
+            "Dynamic"
+          ],
+          [
+            1,
+            "Kinematic"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "Body Type",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 9.999999747378752e-05,
+        "name": "Density",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100.0,
+        "min": 0.0,
+        "name": "Friction",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1.0,
+        "min": 0.0,
+        "name": "Restitution",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Linear Damping",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Angular Damping",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Gravity Scale",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Fixed Rotation",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Continuous",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rigid Body",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Initial Linear Velocity",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
     "addable": false,
     "base": "Actor",
     "functions": [],
