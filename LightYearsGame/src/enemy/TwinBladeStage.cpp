@@ -57,7 +57,7 @@ namespace vega {
 			
 			float nextSpawnInterval = RandRange(mSpawnInterval[0], mSpawnInterval[1]);
 			
-			mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+			mSpawnTimerHandle = GetWorld()->GetTimerManager().SetTimer(
 				GetWeakPtr(), 
 				&TwinBladeStage::SpawnTwinBlade, 
 				nextSpawnInterval, 
@@ -67,7 +67,7 @@ namespace vega {
 	}
 	void TwinBladeStage::StageFinished()
 	{
-		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(mSpawnTimerHandle);
 	}
 
 	void TwinBladeStage::AddSpawnLocations()

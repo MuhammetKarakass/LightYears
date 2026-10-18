@@ -61,7 +61,7 @@ namespace vega
 	WingSentinelProjectileActor::WingSentinelProjectileActor(World* world, Actor* owner, const WingSentinelsPresentationProfile& profile)
 		: AbilityWorldActor(world, owner), mProfile(profile)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 	}
 
 	void WingSentinelProjectileActor::BeginPlay()

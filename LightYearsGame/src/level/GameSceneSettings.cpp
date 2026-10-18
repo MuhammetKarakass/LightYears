@@ -2,6 +2,7 @@
 #include "gameplay/galaxy/GalaxyRoute.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/AssetManager.h>
+#include <framework/EngineContext.h>
 #include <framework/scene/SceneSettings.h>
 #include <framework/debug/Log.h>
 
@@ -11,7 +12,7 @@ namespace vega
 	{
 		GalaxyRoute route;
 		std::string error;
-		const auto root = std::filesystem::path{ AssetManager::GetAssetManager().GetAssetRootDirectory() };
+		const auto root = std::filesystem::path{ EngineContext::Current().Assets().GetAssetRootDirectory() };
 		std::vector<SceneSettingOption> stops;
 		if (route.LoadFromFile(root / "content/data/galaxy_route.json", error) && !route.Stops().empty())
 		{
@@ -36,7 +37,7 @@ namespace vega
 		stop.max = static_cast<double>(stops.size() - 1);
 		stop.tooltip = "Campaign route backdrop. Updates immediately in Edit mode.";
 		stop.options = [stops = std::move(stops)]() { return stops; };
-		SceneSettingsSchema::Get().Register(std::move(stop));
+		EngineContext::Current().SceneSettings().Register(std::move(stop));
 
 		SceneSettingField ship;
 		ship.key = "playerShip";
@@ -51,6 +52,6 @@ namespace vega
 			for (const auto& id : content::ShipContentCatalog::GetPlayerShipIds()) result.push_back({ id, id });
 			return result;
 		};
-		SceneSettingsSchema::Get().Register(std::move(ship));
+		EngineContext::Current().SceneSettings().Register(std::move(ship));
 	}
 }

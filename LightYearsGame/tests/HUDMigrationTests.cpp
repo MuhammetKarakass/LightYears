@@ -826,7 +826,7 @@ int main(int argc, char** argv)
 		mode == "--menus" ? "HUDMigrationMenus" : "HUDMigrationWarning";
 	try
 	{
-		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
 		if (mode == "--ability" && !vega::GameContentBootstrap::Register())

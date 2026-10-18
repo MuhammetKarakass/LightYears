@@ -66,8 +66,8 @@ namespace vega::movement
 			// Movement keeps Box2D's bilateral layer/mask rule; line-of-sight
 			// queries can ignore it so environment walls still occlude weapons.
 			if (respectCollisionFilters &&
-				(static_cast<uint8_t>(candidate->GetCollisionMask() & queryActor.GetCollisionLayer()) == 0 ||
-					static_cast<uint8_t>(queryActor.GetCollisionMask() & candidate->GetCollisionLayer()) == 0))
+				(static_cast<std::uint32_t>(candidate->GetCollisionMask() & queryActor.GetCollisionLayer()) == 0 ||
+					static_cast<std::uint32_t>(queryActor.GetCollisionMask() & candidate->GetCollisionLayer()) == 0))
 			{
 				continue;
 			}

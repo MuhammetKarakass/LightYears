@@ -1,4 +1,5 @@
 #include "gameplay/module/generated/ModuleMineActor.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include <algorithm>

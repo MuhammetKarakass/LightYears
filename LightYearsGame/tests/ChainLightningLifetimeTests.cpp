@@ -119,18 +119,13 @@ namespace
 		return 1;
 	}
 
-	void ClearGameTimers()
-	{
-		vega::TimerManager::GetGameTimerManager().ClearAllTimers();
-	}
 }
 
 int RunChainLightningLifetimeTests()
 {
 	using namespace vega;
-	AssetManager::GetAssetManager().SetAssetRootDirectory("LightYearsGame/assets/");
+	vega::EngineContext::Current().Assets().SetAssetRootDirectory("LightYearsGame/assets/");
 	if (!GameContentBootstrap::Register()) return Fail("Game content bootstrap failed");
-	ClearGameTimers();
 
 	std::string windowTitle = "Chain Lightning lifetime test";
 	Application application{ sf::Vector2u{ 256u, 256u }, 32u, windowTitle, sf::Style::None };
@@ -142,17 +137,16 @@ int RunChainLightningLifetimeTests()
 		ChainLightningAbility behavior;
 		if (!ActivateChainLightning(*fixture.owner, 1, behavior))
 			return Fail("A valid single-target Chain Lightning cast was rejected");
-		TimerManager::GetGameTimerManager().UpdateTimer(0.23f);
+		fixture.world->GetTimerManager().UpdateTimer(0.23f);
 		if (fixture.target->receivedDamageCount != 1)
 			return Fail("The normal delayed chain link did not hit exactly once");
 		fixture.world->TickInternal(0.f);
 		if (CountArcs(*fixture.world) != 1)
 			return Fail("The normal delayed link did not spawn exactly one arc");
-		TimerManager::GetGameTimerManager().UpdateTimer(1.f);
+		fixture.world->GetTimerManager().UpdateTimer(1.f);
 		if (fixture.target->receivedDamageCount != 1)
 			return Fail("A completed one-link cast applied another hit");
 	}
-	ClearGameTimers();
 
 	{
 		WorldFixture fixture;
@@ -171,17 +165,16 @@ int RunChainLightningLifetimeTests()
 			return Fail("Repeated independent casts were rejected");
 		}
 		fixture.owner->Destroy();
-		TimerManager::GetGameTimerManager().UpdateTimer(0.23f);
+		fixture.world->GetTimerManager().UpdateTimer(0.23f);
 		if (fixture.target->receivedDamageCount != 1)
 			return Fail("Destroying one owner cancelled another cast or allowed the destroyed owner's link");
 		fixture.world->TickInternal(0.f);
 		if (CountArcs(*fixture.world) != 1)
 			return Fail("Owner teardown spawned an arc for the cancelled cast");
-		TimerManager::GetGameTimerManager().UpdateTimer(1.f);
+		fixture.world->GetTimerManager().UpdateTimer(1.f);
 		if (fixture.target->receivedDamageCount != 1)
 			return Fail("A cancelled or completed cast produced a later duplicate link");
 	}
-	ClearGameTimers();
 
 	{
 		WorldFixture fixture;
@@ -199,15 +192,14 @@ int RunChainLightningLifetimeTests()
 		if (!ActivateChainLightning(*fixture.owner, 4, behavior))
 			return Fail("Target teardown fixture cast was rejected");
 		fixture.target->Destroy();
-		TimerManager::GetGameTimerManager().UpdateTimer(0.23f);
-		TimerManager::GetGameTimerManager().UpdateTimer(1.f);
+		fixture.world->GetTimerManager().UpdateTimer(0.23f);
+		fixture.world->GetTimerManager().UpdateTimer(1.f);
 		if (fixture.target->receivedDamageCount != 0 || secondTarget->receivedDamageCount != 0)
 			return Fail("A destroyed link target or its later bounce received damage");
 		fixture.world->TickInternal(0.f);
 		if (CountArcs(*fixture.world) != 0)
 			return Fail("A target destroyed during link travel still spawned an arc");
 	}
-	ClearGameTimers();
 
 	{
 		WorldFixture fixture;
@@ -216,14 +208,13 @@ int RunChainLightningLifetimeTests()
 		if (!ActivateChainLightning(*fixture.owner, 5, *behavior))
 			return Fail("Ability teardown fixture cast was rejected");
 		behavior.reset();
-		TimerManager::GetGameTimerManager().UpdateTimer(0.23f);
+		fixture.world->GetTimerManager().UpdateTimer(0.23f);
 		if (fixture.target->receivedDamageCount != 0)
 			return Fail("Destroying the ability behavior during link travel still applied damage");
 		fixture.world->TickInternal(0.f);
 		if (CountArcs(*fixture.world) != 0)
 			return Fail("Destroying the ability behavior during link travel still spawned an arc");
 	}
-	ClearGameTimers();
 
 	{
 		WorldFixture fixture;
@@ -232,10 +223,8 @@ int RunChainLightningLifetimeTests()
 		if (!ActivateChainLightning(*fixture.owner, 6, behavior))
 			return Fail("World teardown fixture cast was rejected");
 		fixture.world.reset();
-		TimerManager::GetGameTimerManager().UpdateTimer(0.23f);
 		if (fixture.target->receivedDamageCount != 0)
 			return Fail("An externally retained target was damaged after its World was destroyed");
 	}
-	ClearGameTimers();
 	return 0;
 }

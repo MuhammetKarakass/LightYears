@@ -1,6 +1,7 @@
 #include <gas/GasContentSchemas.h>
 #include "gameplay/content/GameContentSchemas.h"
 #include "framework/content/ContentSchema.h"
+#include "framework/EngineContext.h"
 #include "gameplay/content/AbilityLoader.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/content/EffectLoader.h"
@@ -57,7 +58,7 @@ namespace vega::content
 
 	void RegisterGameContentSchemas()
 	{
-		auto& registry = ContentSchemaRegistry::Get();
+		auto& registry = EngineContext::Current().ContentSchemas();
 		if (registry.Find("ability")) return;
 		registry.isTag = [](const std::string& value) { return GameplayTagSchema::Validate(GameplayTag{ value }, GameplayTagKind::Any); };
 		registry.isAttribute = [](const std::string& value) { return AttributeIdSchema::Validate(sas::AttributeId{ value }); };

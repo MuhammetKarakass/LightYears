@@ -3,6 +3,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/IDamageable.h"
 #include "gameplay/HealthComponent.h"
 
 namespace vega
@@ -10,7 +11,7 @@ namespace vega
 	// Shared base for player-owned summons that are real combat targets. It keeps
 	// life/armor/critical ownership outside individual abilities while leaving
 	// each concrete summon free to implement its own movement and attacks.
-	class SummonedCombatantActor : public AbilityWorldActor, public Combatant
+	class SummonedCombatantActor : public AbilityWorldActor, public Combatant, public IDamageable
 	{
 	public:
 		struct CombatantConfiguration

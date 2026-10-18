@@ -11,7 +11,7 @@ namespace vega
 		: Actor(world)
 		, mOwner(owner)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		if (!mOwner)
 		{
 			return;

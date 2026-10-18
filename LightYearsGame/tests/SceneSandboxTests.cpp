@@ -52,7 +52,7 @@ int main()
 	using namespace vega;
 	using Json = nlohmann::json;
 	const auto root = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets";
-	AssetManager::GetAssetManager().SetAssetRootDirectory(root.generic_string() + "/");
+	vega::EngineContext::Current().Assets().SetAssetRootDirectory(root.generic_string() + "/");
 	vega::script::SetScriptRoot(root);
 	vega::script::RegisterScriptTypes();
 	RegisterGameTypes();
@@ -132,7 +132,7 @@ int main()
 	const auto dummy = world.GetActorsByTypeIncludingPending<DummyEnemy>()[0].lock();
 	const auto& shipIds = content::ShipContentCatalog::GetPlayerShipIds();
 	Check(!shipIds.empty(), "Ship catalog is empty");
-	const auto* shipProperty = reflect::TypeRegistry::Get().Find("DummyEnemy")->FindProperty("Ship");
+	const auto* shipProperty = engineContext.Types().Find("DummyEnemy")->FindProperty("Ship");
 	Check(shipProperty->SetValue(dummy.get(), shipIds[0]), "Dummy construction-only Ship edit failed");
 	World edited{ nullptr };
 	auto editedData = SceneSerializer::Save(world, scene["settings"]);
@@ -176,7 +176,7 @@ int main()
 	componentActor->AddComponent<SceneEntityComponent>("", "Composition test");
 	for (const auto& name : { "HealthComponent", "ShieldComponent", "EnergyComponent", "LightComponent", "CollisionComponent" })
 	{
-		const auto* info = reflect::TypeRegistry::Get().Find(name);
+		const auto* info = engineContext.Types().Find(name);
 		Check(info && info->addComponent && info->removable, "Suitable components must be addable and removable");
 		info->addComponent(*componentActor);
 	}
@@ -187,8 +187,8 @@ int main()
 	Check(SceneSerializer::Load(compositionRoundTrip, composition).warnings.empty() && SceneSerializer::Save(compositionRoundTrip) == composition,
 		"Game addable components and removed sprite must round trip exactly");
 	for (const auto& name : { "MovementComponent", "PlayerMovementComponent", "ScriptComponent" })
-		Check(!reflect::TypeRegistry::Get().Find(name)->addComponent, "Owner-specific movement and scripts must not be generically addable");
-	const auto* dummyType = reflect::TypeRegistry::Get().Find("DummyEnemy");
+		Check(!engineContext.Types().Find(name)->addComponent, "Owner-specific movement and scripts must not be generically addable");
+	const auto* dummyType = engineContext.Types().Find("DummyEnemy");
 	for (const auto& name : { "HealthComponent", "ShieldComponent", "EnergyComponent", "MovementComponent" })
 		Check(dummyType->RequiresComponent(name), "Ships must inherit required core components");
 	Check(!dummy->RemoveComponent(dummy->GetHealthComponent()), "Ship health removal must be refused");

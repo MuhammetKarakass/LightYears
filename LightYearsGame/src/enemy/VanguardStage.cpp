@@ -68,7 +68,7 @@ namespace vega
 		mSpawnLocIndex[2] = mSpawnLoc.x +60.f;
 
 		float spawnInterval = RandRange(mMinSpawnInterval, mMaxSpawnInterval);
-		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SpawnVanguard,spawnInterval,true);
+		mSpawnTimerHandle = GetWorld()->GetTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SpawnVanguard,spawnInterval,true);
 		++mRowSpawnCount;
 	}
 
@@ -83,8 +83,8 @@ namespace vega
 
 		if (mVanguardPerRow == mCurrentRowVanguardCount)
 		{
-			TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
-			mSwitchTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SwitchRow, mSwitchInterval,false);
+			GetWorld()->GetTimerManager().ClearTimer(mSpawnTimerHandle);
+			mSwitchTimerHandle = GetWorld()->GetTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SwitchRow, mSwitchInterval,false);
 			mCurrentRowVanguardCount = 0;
 		}
 	}
@@ -119,8 +119,8 @@ namespace vega
 	}
 	void VanguardStage::StageFinished()
 	{
-		TimerManager::GetGameTimerManager().ClearTimer(mSwitchTimerHandle);
-		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(mSwitchTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(mSpawnTimerHandle);
 	}
 
 }

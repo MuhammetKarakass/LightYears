@@ -1,5 +1,6 @@
 #pragma once
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedLease.h"
 #include <optional>
 

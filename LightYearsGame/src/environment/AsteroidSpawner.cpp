@@ -27,7 +27,7 @@ namespace vega
 		if(!mIsSpawning)
 			return;
 		mIsSpawning = false;
-		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimer);
+		mWorld->GetTimerManager().ClearTimer(mSpawnTimer);
 	}
 	
 	void AsteroidSpawner::SetConfig(const AsteroidSpawnerConfig& config)
@@ -57,7 +57,7 @@ namespace vega
 		for(int i = 0; i < spawnAmt; i++)
 		{
 			float delay = RandRange(0.0f, 0.3f * i);
-			TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(), &AsteroidSpawner::SpawnAsteroid, delay, false);
+			mWorld->GetTimerManager().SetTimer(GetWeakPtr(), &AsteroidSpawner::SpawnAsteroid, delay, false);
 		}
 	}
 
@@ -122,13 +122,13 @@ namespace vega
 		for(int i = 0; i < spawnAmt; i++)
 		{
 			float delay = RandRange(0.0f, 0.3f * i);
-			TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(), &AsteroidSpawner::SpawnAsteroid, delay, false);
+			mWorld->GetTimerManager().SetTimer(GetWeakPtr(), &AsteroidSpawner::SpawnAsteroid, delay, false);
 		}
 
 		if(mConfig.withTimer && mIsSpawning)
 		{
 			float nextSpawnIn = RandRange(mConfig.spawnIntervalRange.first, mConfig.spawnIntervalRange.second);
-			mSpawnTimer = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(), [this]() {
+			mSpawnTimer = mWorld->GetTimerManager().SetTimer(GetWeakPtr(), [this]() {
 				SpawnAsteroidInternal();
 			}, nextSpawnIn, false);
 		}

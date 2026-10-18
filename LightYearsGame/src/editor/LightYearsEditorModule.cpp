@@ -32,7 +32,7 @@ namespace vega
 			std::string SelectedSky() const override { return SkyIdForRouteStop(mPipeline.BackdropStopId()); }
 			std::size_t SceneSelection(const vega::EditorContext& context) const override
 			{
-				const auto value = context.sceneSettings ? SceneSettingsSchema::Get().Value(*context.sceneSettings, "routeStop") : nlohmann::json(0);
+				const auto value = context.sceneSettings ? context.Engine().SceneSettings().Value(*context.sceneSettings, "routeStop") : nlohmann::json(0);
 				const auto index = value.is_number_integer() ? value.get<int>() : 0;
 				return mSkies.empty() ? 0 : std::min(static_cast<std::size_t>(std::max(index, 0)), mSkies.size() - 1);
 			}

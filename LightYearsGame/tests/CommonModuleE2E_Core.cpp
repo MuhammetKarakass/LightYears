@@ -31,7 +31,7 @@ namespace common_module_e2e
 			const std::string description = FormatModuleDescription(*module, module->sizeVariants.front());
 			report.Check(description.find('{') == std::string::npos && description.find('}') == std::string::npos,
 				std::string{ "Common card formats all numeric tokens: " } + moduleId);
-			const TextWidget descriptionText{ description, UIStyle::Get().Font(UIFontRole::Body), 9 };
+			const TextWidget descriptionText{ application.GetEngineContext(), description, application.GetEngineContext().Style().Font(UIFontRole::Body), 9 };
 			const float width = descriptionText.GetBound().size.x;
 			report.Check(width <= 376.f, std::string{ "Common card fits one inventory description line: " } + moduleId, width);
 		}

@@ -1,5 +1,6 @@
 #pragma once
 #include "gameplay/damage/DamageContext.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedLease.h"
 #include <SFML/System/Vector2.hpp>
 

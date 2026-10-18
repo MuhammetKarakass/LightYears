@@ -262,7 +262,7 @@ namespace vega
 			{
 				if (std::filesystem::exists(candidate))
 				{
-					AssetManager::GetAssetManager().SetAssetRootDirectory(candidate.generic_string() + "/");
+					vega::EngineContext::Current().Assets().SetAssetRootDirectory(candidate.generic_string() + "/");
 					break;
 				}
 			}

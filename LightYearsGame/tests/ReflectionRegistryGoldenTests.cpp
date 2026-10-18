@@ -17,10 +17,10 @@ namespace
 				{ "tooltip", function.tooltip }, { "callableInPlay", function.callableInPlay } });
 		return result;
 	}
-	nlohmann::json DumpRegistry()
+	nlohmann::json DumpRegistry(vega::EngineContext& context)
 	{
 		nlohmann::json types = nlohmann::json::array();
-		for (const auto* type : vega::reflect::TypeRegistry::Get().RegisteredTypes())
+		for (const auto* type : context.Types().RegisteredTypes())
 		{
 			nlohmann::json properties = nlohmann::json::array();
 			for (const auto& property : type->properties)
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	vega::EngineContext::Scope contextScope{ engineContext };
 	vega::RegisterGameTypes();
 	vega::script::RegisterScriptTypes();
-	const auto actual = DumpRegistry();
+	const auto actual = DumpRegistry(engineContext);
 	// Explicit capture is used once before a registration refactor; ordinary tests never rewrite the oracle.
 	if (argc == 3 && std::string{ argv[1] } == "--dump")
 	{
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 	// Repeated module registration must preserve order, descriptors and custom hooks.
 	vega::RegisterGameTypes();
 	vega::script::RegisterScriptTypes();
-	if (DumpRegistry() != actual) return 1;
+	if (DumpRegistry(engineContext) != actual) return 1;
 	std::cout << "Full reflection registry matches pre-macro golden (" << actual.size() << " types)\n";
 	return 0;
 }

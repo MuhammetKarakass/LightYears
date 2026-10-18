@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 	Report report;
 	try
 	{
-		AssetManager::GetAssetManager().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Tempered Hull content registration failed" };
 		std::string title = "Tempered Hull E2E"; Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false);
 		ArmorChecks(report, application); BastionChecks(report, application); MedicChecks(report, application); report.artifact["passed"] = true;

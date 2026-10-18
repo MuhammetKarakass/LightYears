@@ -13,6 +13,7 @@
 #include "enemy/ChaosStage.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
+#include "gameConfigs/GameplayTags.h"
 #include "gameConfigs/world/EnvironmentConfig.h"
 
 namespace vega
@@ -50,7 +51,7 @@ namespace vega
 		}
 		else 
 		{
-			TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), &LevelOne::GameOver, 3.f, false);
+			GetEngineContext().GlobalTimers().SetTimer(GetWeakPtr(), &LevelOne::GameOver, 3.f, false);
 		}
 	}
 
@@ -148,6 +149,7 @@ namespace vega
 			};
 
 			mPlanetsLayer = SpawnActor<BackgroundLayer>(planetDefs);
+			mPlanetsLayer.lock()->SetLightTag(GameTags::Environment::Planet);
 			mPlanetsLayer.lock()->SetRandomVisibility(true);
 
 			mPlanetsLayer.lock()->SetUseDepthColor(true);

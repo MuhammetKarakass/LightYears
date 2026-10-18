@@ -4,10 +4,11 @@
 #include "player/Reward.h"
 #include "VFX/Explosion.h"
 #include "gameplay/HealthComponent.h"
+#include "gameplay/combat/IDamageable.h"
 
 namespace vega
 {
-	class Asteroid : public Actor
+	class Asteroid : public Actor, public IDamageable
 	{
 		VEGA_CLASS(Asteroid)
 	public:

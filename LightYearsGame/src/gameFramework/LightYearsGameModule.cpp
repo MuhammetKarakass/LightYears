@@ -77,7 +77,7 @@ namespace vega
 			const auto project = ProjectSettings::Load(mProjectFile);
 			runtimeRoot = std::filesystem::weakly_canonical(mProjectFile.parent_path() / project.editor.value("assetRoot", std::string{ "." }));
 		}
-		AssetManager::GetAssetManager().SetAssetRootDirectory(runtimeRoot.generic_string() + "/");
+		application.GetEngineContext().Assets().SetAssetRootDirectory(runtimeRoot.generic_string() + "/");
 		sas::AbilitySystemDebugView::effectPeriod = [](const sas::GameplayEffectRuntimeSnapshot& effect)
 		{
 			if (effect.effectId == DamageStatusEffectIds::IgniteEffectId) return CombatTick::Interval;
@@ -125,7 +125,7 @@ namespace vega
 		};
 		vega::script::SetScriptRoot(ResourceRoot(!editor));
 		vega::script::RegisterScriptTypes();
-		vega::script::ScriptRuntime::Get().SetPlayerResolver([](World&) -> std::weak_ptr<Actor>
+		vega::script::ScriptRuntime::Get(application.GetEngineContext()).SetPlayerResolver([](World&) -> std::weak_ptr<Actor>
 		{
 			const auto* player = PlayerManager::GetPlayerManager().GetPlayer();
 			return player ? player->GetCurrentSpaceShip() : std::weak_ptr<PlayerSpaceShip>{};
@@ -211,7 +211,7 @@ namespace vega
 
 	void LightYearsGameModule::ApplySceneSettings(const nlohmann::json& settings)
 	{
-		const auto stop = SceneSettingsSchema::Get().Value(settings, "routeStop");
+		const auto stop = mApplication->GetEngineContext().SceneSettings().Value(settings, "routeStop");
 		if (!stop.is_number_integer() || stop.get<double>() < 0 || stop.get<double>() > std::numeric_limits<int>::max())
 			throw std::runtime_error("routeStop must be a nonnegative integer");
 		if (mVisualPipeline) mVisualPipeline->SetRouteStopIndex(static_cast<std::size_t>(stop.get<int>()));

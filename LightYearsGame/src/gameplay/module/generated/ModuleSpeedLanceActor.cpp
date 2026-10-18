@@ -15,7 +15,7 @@ namespace vega
 	{
 		const float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
 		mDirection = length > 0.f ? direction / length : sf::Vector2f{ 0.f, -1.f };
-		SetRenderLayer(RenderLayer::Projectile); SetAbilityPhysicsEnabled(false); SetAbilityCollisionRadius(profile.collisionRadius); ConfigureCollisionFromOwner();
+		SetRenderLayer(RenderLayer::WorldFront); SetAbilityPhysicsEnabled(false); SetAbilityCollisionRadius(profile.collisionRadius); ConfigureCollisionFromOwner();
 		SetDamage(damage); SetDamageTags({ DamageTypeSchema::Energy }); SetDamagePayload(MakeModuleGeneratedDamagePayload(0, DamageSourceScalingPolicy::AlreadyResolved)); SetLifeTime(range / speed);
 		SetActorRotation(std::atan2(mDirection.y, mDirection.x) * 57.2957795131f + 90.f);
 	}

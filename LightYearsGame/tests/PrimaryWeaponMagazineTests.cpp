@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 	using namespace vega;
 
 	std::cout << "Starting PrimaryWeaponMagazineTests...\n";
-	AssetManager::GetAssetManager().SetAssetRootDirectory(
+	vega::EngineContext::Current().Assets().SetAssetRootDirectory(
 		(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 	);
 

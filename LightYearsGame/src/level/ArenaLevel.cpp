@@ -6,6 +6,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/dash/DashContracts.h"
 #include "gameplay/content/AbilityContentCatalog.h"
+#include "gameplay/combat/IDamageable.h"
 #include "framework/TimerManager.h"
 
 namespace vega
@@ -240,9 +241,9 @@ namespace vega
 
      void ArenaLevel::OnArenaBoundaryPenaltyTriggered(weak_ptr<Actor> trackedActor)
      {
-         TimerManager::GetGameTimerManager().ClearTimer(mBoundaryPenaltyTimerHandle);
+         GetTimerManager().ClearTimer(mBoundaryPenaltyTimerHandle);
 
-         mBoundaryPenaltyTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+         mBoundaryPenaltyTimerHandle = GetTimerManager().SetTimer(
              GetWeakPtr(),
              [this, trackedActor]()
              {
@@ -283,7 +284,10 @@ namespace vega
              return;
          }
 
-         actor->ApplyDamage(9999999.f);
+         if (auto* damageable = dynamic_cast<IDamageable*>(actor.get()))
+         {
+             damageable->ApplyDamage(9999999.f);
+         }
      }
      void ArenaLevel::InitializePlayerRespawnSystem()
      {

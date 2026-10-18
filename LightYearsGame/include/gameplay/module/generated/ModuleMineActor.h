@@ -1,5 +1,6 @@
 #pragma once
 #include "framework/Actor.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedLease.h"
 #include "presentation/ability/moduleGenerated/ModuleGeneratedPresentationProfile.h"
 

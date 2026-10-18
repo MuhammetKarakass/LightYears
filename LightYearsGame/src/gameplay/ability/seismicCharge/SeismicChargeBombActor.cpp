@@ -186,7 +186,7 @@ namespace vega
 		mMaximumRangeTelegraph(1.f, 96),
 		mShockwave(1.f, 128)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		// The bomb is a deterministic delivery marker, never a physical obstacle
 		// or a targetable projectile. Its damage comes only from the shockwave band.
 		SetAbilityPhysicsEnabled(false);

@@ -64,7 +64,7 @@
           ],
           [
             3,
-            "Projectile"
+            "WorldFront"
           ],
           [
             4,
@@ -769,7 +769,7 @@
         "name": "Look-ahead Strength",
         "requiredType": "",
         "speed": 1.0,
-        "tooltip": "How strongly the camera moves from the ship toward the cursor, from 0 to 1."
+        "tooltip": "How strongly the camera moves from the follow target toward the cursor, from 0 to 1."
       },
       {
         "category": "Look-ahead",
@@ -782,7 +782,7 @@
         "name": "Look-ahead Dead Zone",
         "requiredType": "",
         "speed": 1.0,
-        "tooltip": "Cursor distance from the ship before camera look-ahead starts reacting."
+        "tooltip": "Cursor distance from the follow target before camera look-ahead starts reacting."
       },
       {
         "category": "Look-ahead",
@@ -821,7 +821,7 @@
         "name": "Movement Look-ahead Strength",
         "requiredType": "",
         "speed": 1.0,
-        "tooltip": "How strongly ship velocity pulls the camera toward the movement direction."
+        "tooltip": "How strongly follow-target velocity pulls the camera toward the movement direction."
       },
       {
         "category": "Look-ahead",
@@ -834,7 +834,7 @@
         "name": "Movement Look-ahead Max Distance",
         "requiredType": "",
         "speed": 1.0,
-        "tooltip": "Maximum movement-direction camera offset at high ship speed."
+        "tooltip": "Maximum movement-direction camera offset at high follow-target speed."
       },
       {
         "category": "Look-ahead",
@@ -873,7 +873,7 @@
         "name": "Speed For Max Zoom Out",
         "requiredType": "",
         "speed": 1.0,
-        "tooltip": "Ship speed that reaches the full speed-based zoom-out amount."
+        "tooltip": "Follow-target speed that reaches the full speed-based zoom-out amount."
       },
       {
         "category": "Zoom",

@@ -201,7 +201,7 @@ namespace vega
 		: AbilityWorldActor(world, owner)
 		, mPresentationProfile(presentationProfile)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		// These are continuous query beams, not physical projectile bodies.
 		SetAbilityPhysicsEnabled(false);
 		SetCollisionLayer(CollisionLayer::None);

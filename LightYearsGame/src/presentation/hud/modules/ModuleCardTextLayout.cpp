@@ -1,5 +1,6 @@
 #include "presentation/hud/modules/ModuleCardTextLayout.h"
 #include "framework/AssetManager.h"
+#include "framework/EngineContext.h"
 #include <SFML/Graphics/Text.hpp>
 #include <algorithm>
 #include <vector>
@@ -62,7 +63,7 @@ namespace vega::ModuleCardText
 	{
 		if (text.empty()) return {};
 		if (width <= 0.f || maxLines == 0) return { {}, 0, true };
-		const auto font = AssetManager::GetAssetManager().LoadFont(fontPath);
+		const auto font = EngineContext::Current().Assets().LoadFont(fontPath);
 		if (!font) return ApproximateWrap(text, characterSize, width, maxLines);
 		sf::Text measured{ *font, "", characterSize };
 		const auto fits = [&measured, width](const sf::String& line) { measured.setString(line); return measured.getLocalBounds().size.x <= width; };

@@ -1,4 +1,5 @@
 #include "gameplay/module/generated/ModuleDelayedExplosionActor.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
 #include <algorithm>
 

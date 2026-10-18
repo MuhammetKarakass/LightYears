@@ -1,5 +1,6 @@
 #pragma once
 #include <framework/EngineAssets.h>
+#include <framework/EngineContext.h>
 
 namespace vega
 {
@@ -7,7 +8,7 @@ namespace vega
 	// or lights. Linking reflection must never change another project's defaults.
 	inline void InstallVegaEngineAssets()
 	{
-		EngineAssets::Get() = {
+		EngineContext::Current().Defaults() = {
 			"SpaceShooterRedux/Bonus/kenvector_future.ttf",
 			"SpaceShooterRedux/PNG/UI/buttonBlue.png",
 			"SpaceShooterRedux/Bonus/sfx_zap.ogg",

@@ -1,4 +1,5 @@
 #include "gameplay/module/generated/ModuleRicochetProjectileActor.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/targeting/SweptGeometry.h"

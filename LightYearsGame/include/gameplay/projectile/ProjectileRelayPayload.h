@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "framework/GameplayTag.h"
 #include "attributes/AttributeSystem.h"
 #include "content/ContentId.h"
 

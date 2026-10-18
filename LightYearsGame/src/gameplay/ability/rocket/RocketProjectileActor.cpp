@@ -152,7 +152,7 @@ namespace vega
 		mPresentationProfile(presentationProfile),
 		mTargetLocation(std::move(targetLocation))
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 	}
 
 	void RocketProjectileActor::BeginPlay()

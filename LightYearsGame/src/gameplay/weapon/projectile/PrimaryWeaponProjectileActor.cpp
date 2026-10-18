@@ -44,7 +44,7 @@ namespace vega
 		mRemainingPierces(std::max(0, static_cast<int>(std::round(sas::FindAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 0.f))))),
 		mPresentationDefinition(presentation)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		// Primary shots own collision through their swept segment test in Move().
 		// A second Box2D body only duplicates collision work for every active
 		// projectile and produces no gameplay result that the sweep does not.
@@ -55,7 +55,7 @@ namespace vega
 		SetAbilityCollisionRadius(std::max(0.1f, sas::FindAttributeValue(values, CollisionAttributeIds::Radius, 8.f)));
 		ConfigureCollisionFromOwner();
 		SetVisualScale(mVisualScale);
-		vega::perf::IncBullets();
+		vega::perf::AddToCounter("Bullets", 1);
 
 	}
 
@@ -337,7 +337,7 @@ namespace vega
 			mImpactBehavior->OnProjectileFinished();
 			mImpactBehaviorCompleted = true;
 		}
-		vega::perf::DecBullets();
+		vega::perf::AddToCounter("Bullets", -1);
 		Actor::Destroy();
 	}
 

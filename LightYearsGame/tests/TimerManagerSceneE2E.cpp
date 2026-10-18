@@ -487,8 +487,6 @@ namespace vega
 
 	int RunTimerManagerSceneE2E(const char* artifactPath, const std::string& setupError)
 	{
-		TimerManager::GetGlobalTimerManager().ClearAllTimers();
-		TimerManager::GetGameTimerManager().ClearAllTimers();
 		std::unique_ptr<TimerMeasurementApplication> application;
 		std::shared_ptr<ArenaLevel> level;
 		TimerSamples globalSamples;
@@ -523,26 +521,26 @@ namespace vega
 				for (int frame = 0; frame < SimulationFrameCount; ++frame)
 				{
 					level->TickInternal(SimulationDeltaSeconds);
-					const std::size_t globalCount = TimerManager::GetGlobalTimerManager().GetTraversalTimerCount();
+					const std::size_t globalCount = application->GetEngineContext().GlobalTimers().GetTraversalTimerCount();
 					globalSamples.traversalCounts.push_back(globalCount);
 					const double globalUpdate = MeasureUpdate([&]()
 					{
-						TimerManager::GetGlobalTimerManager().UpdateTimer(SimulationDeltaSeconds);
+						application->GetEngineContext().GlobalTimers().UpdateTimer(SimulationDeltaSeconds);
 					});
 
 					double gameUpdate = 0.0;
 					const bool gameTimerActive = !level->IsPaused();
 					if (gameTimerActive)
 					{
-						const std::size_t gameCount = TimerManager::GetGameTimerManager().GetTraversalTimerCount();
+						const std::size_t gameCount = level->GetTimerManager().GetTraversalTimerCount();
 						gameSamples.traversalCounts.push_back(gameCount);
 						gameUpdate = MeasureUpdate([&]()
 						{
-							TimerManager::GetGameTimerManager().UpdateTimer(SimulationDeltaSeconds);
+							level->GetTimerManager().UpdateTimer(SimulationDeltaSeconds);
 						});
 					}
 					level->StepPhysics(SimulationDeltaSeconds);
-					AudioManager::GetAudioManager().Update(SimulationDeltaSeconds);
+					application->GetEngineContext().Audio().Update(SimulationDeltaSeconds);
 					globalSamples.updateMicroseconds.push_back(globalUpdate);
 					if (gameTimerActive) gameSamples.updateMicroseconds.push_back(gameUpdate);
 					combinedFrameUpdateMicroseconds.push_back(globalUpdate + gameUpdate);
@@ -563,8 +561,8 @@ namespace vega
 			try
 			{
 				const std::weak_ptr<Object> sceneListener{ level };
-				e16Artifact = RunOneShotThrowScenario(TimerManager::GetGlobalTimerManager(), sceneListener);
-				e17Artifact = RunClearAddNestedUpdateScenario(TimerManager::GetGlobalTimerManager(), sceneListener);
+				e16Artifact = RunOneShotThrowScenario(application->GetEngineContext().GlobalTimers(), sceneListener);
+				e17Artifact = RunClearAddNestedUpdateScenario(application->GetEngineContext().GlobalTimers(), sceneListener);
 			}
 			catch (const std::exception& exception)
 			{
@@ -653,8 +651,7 @@ namespace vega
 		};
 
 		level.reset();
-		TimerManager::GetGlobalTimerManager().ClearAllTimers();
-		TimerManager::GetGameTimerManager().ClearAllTimers();
+		application->GetEngineContext().GlobalTimers().ClearAllTimers();
 		application.reset();
 		if (!WriteArtifact(std::filesystem::absolute(artifactPath), artifact))
 		{

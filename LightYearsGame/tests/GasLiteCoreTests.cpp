@@ -5867,7 +5867,7 @@ int main(int argc, char** argv)
 		// The real ship classes load their textures through AssetManager. The
 		// gameplay test runs from the repository root, so point that manager at
 		// the same asset directory used by the game before spawning a ship.
-		AssetManager::GetAssetManager().SetAssetRootDirectory("LightYearsGame/assets/");
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory("LightYearsGame/assets/");
 		World realOverdriveWorld{ nullptr };
 	const shared_ptr<PlayerSpaceShip> realOverdriveOwner =
 		realOverdriveWorld.SpawnActor<PlayerSpaceShip>().lock();

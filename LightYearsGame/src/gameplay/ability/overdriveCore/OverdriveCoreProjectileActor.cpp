@@ -149,7 +149,7 @@ namespace vega
 		mTargetLocation(std::move(targetLocation)),
 		mTargetActor(std::move(targetActor))
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 	}
 
 	void OverdriveCoreProjectileActor::BeginPlay()

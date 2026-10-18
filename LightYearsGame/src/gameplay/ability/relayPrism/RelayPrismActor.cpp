@@ -151,7 +151,7 @@ namespace vega
 		SetAbilityPhysicsEnabled(false);
 		SetCollisionLayer(CollisionLayer::None);
 		SetCollisionMask(CollisionLayer::None);
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		mGlow.setOrigin({ mGlow.getRadius(), mGlow.getRadius() });
 		mCore.setOrigin({ mCore.getRadius(), mCore.getRadius() });
 		ConfigureVisualGeometry();

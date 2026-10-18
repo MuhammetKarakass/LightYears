@@ -3,6 +3,7 @@
 
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
+#include "framework/EngineContext.h"
 #include "framework/debug/Log.h"
 #include "framework/debug/Profiler.h"
 
@@ -51,7 +52,7 @@ namespace vega
 			return;
 		}
 		mRouteAttempted = true;
-		const std::string root = AssetManager::GetAssetManager().GetAssetRootDirectory();
+		const std::string root = EngineContext::Current().Assets().GetAssetRootDirectory();
 		const std::filesystem::path base = root.empty() ? std::filesystem::path("LightYearsGame/assets") : std::filesystem::path(root);
 		std::string error;
 		mRouteLoaded = mRoute.LoadFromFile(base / "content/data/galaxy_route.json", error) && !mRoute.Stops().empty();

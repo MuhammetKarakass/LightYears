@@ -22,7 +22,10 @@ namespace vega
 	}
 	void PlayerRespawnSystem::Clear()
 	{
-		TimerManager::GetGameTimerManager().ClearTimer(mRespawnTimerHandle);
+		if (mWorld)
+		{
+			mWorld->GetTimerManager().ClearTimer(mRespawnTimerHandle);
+		}
 		if (const shared_ptr<PlayerSpaceShip> playerShip = mCurrentPlayerShip.lock(); playerShip && mPlayerShipDestroyedDelegateHandle.IsValid())
 		{
 			playerShip->onActorDestroyed.UnbindAction(mPlayerShipDestroyedDelegateHandle);
@@ -48,7 +51,13 @@ namespace vega
 		mHasPendingRespawn = true;
 		onRespawnScheduled.Broadcast();
 
-		mRespawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+		if (!mWorld)
+		{
+			FailRespawn();
+			return;
+		}
+
+		mRespawnTimerHandle = mWorld->GetTimerManager().SetTimer(
 			mTimerOwner,
 			[this]()
 			{
@@ -120,7 +129,10 @@ namespace vega
 	}
 	void PlayerRespawnSystem::FailRespawn()
 	{
-		TimerManager::GetGameTimerManager().ClearTimer(mRespawnTimerHandle);
+		if (mWorld)
+		{
+			mWorld->GetTimerManager().ClearTimer(mRespawnTimerHandle);
+		}
 		mHasPendingRespawn = false;
 		mPlayerShipDestroyedDelegateHandle.Reset();
 		mCurrentPlayerShip.reset();

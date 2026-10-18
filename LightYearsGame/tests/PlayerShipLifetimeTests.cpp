@@ -39,7 +39,7 @@ namespace
 int RunPlayerShipLifetimeTests()
 {
 	using namespace vega;
-	AssetManager::GetAssetManager().SetAssetRootDirectory("LightYearsGame/assets/");
+	vega::EngineContext::Current().Assets().SetAssetRootDirectory("LightYearsGame/assets/");
 	if (!GameContentBootstrap::Register())
 	{
 		return Fail("Game content bootstrap could not register shipped content");

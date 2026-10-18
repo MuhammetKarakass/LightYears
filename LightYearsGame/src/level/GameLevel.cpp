@@ -92,7 +92,7 @@ namespace vega
 	
 	void GameLevel::OnGameStart()
 	{
-		AudioManager::GetAudioManager().PlayMusic(
+		GetEngineContext().Audio().PlayMusic(
 			"SpaceShooterRedux/Musics/cosmic_reverie.ogg",
 			AudioType::SFX_World,
 			45.0f,  // Volume
@@ -103,12 +103,12 @@ namespace vega
 
 	void GameLevel::OnGamePaused()
 	{
-		AudioManager::GetAudioManager().SetMenuMode(true);
+		GetEngineContext().Audio().SetMenuMode(true);
 	}
 
 	void GameLevel::OnGameResumed()
 	{
-		AudioManager::GetAudioManager().SetMenuMode(false);
+		GetEngineContext().Audio().SetMenuMode(false);
 	}
 
 	void GameLevel::InitializeLevelSystems()
@@ -160,20 +160,20 @@ namespace vega
 
 	void GameLevel::OnResumeGame()
 	{
-		mTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), &GameLevel::TogglePause, 0.1f, false);
+		mTimerHandle = GetEngineContext().GlobalTimers().SetTimer(GetWeakPtr(), &GameLevel::TogglePause, 0.1f, false);
 	}
 
 	void GameLevel::OnQuitToMenu()
 	{
-		mTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), [this]()
+		mTimerHandle = GetEngineContext().GlobalTimers().SetTimer(GetWeakPtr(), [this]()
 			{
-				AudioManager::GetAudioManager().SetMenuMode(false);
-				TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
+				GetEngineContext().Audio().SetMenuMode(false);
+				GetEngineContext().GlobalTimers().ClearTimer(mTimerHandle);
 
 				if (IsPaused())
 					SetPaused(false);
 
-				AudioManager::GetAudioManager().StopMusic();
+				GetEngineContext().Audio().StopMusic();
 
 				PlayerManager::GetPlayerManager().Reset();
 				GetApplication()->LoadWorld<MainMenuLevel>();
@@ -182,11 +182,11 @@ namespace vega
 
 	void GameLevel::OnRestartLevel()
 	{
-		AudioManager::GetAudioManager().SetMenuMode(false);
+		GetEngineContext().Audio().SetMenuMode(false);
 		PlayerManager::GetPlayerManager().Reset();
-		mTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), [this]()
+		mTimerHandle = GetEngineContext().GlobalTimers().SetTimer(GetWeakPtr(), [this]()
 			{
-				TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
+				GetEngineContext().GlobalTimers().ClearTimer(mTimerHandle);
 
 				if (IsPaused())
 					SetPaused(false);
@@ -196,10 +196,10 @@ namespace vega
 
 	void GameLevel::OnQuitGame()
 	{
-		mTimerHandle= TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), [this]()
+		mTimerHandle= GetEngineContext().GlobalTimers().SetTimer(GetWeakPtr(), [this]()
 		{
-			AudioManager::GetAudioManager().SetMenuMode(false);
-			TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
+			GetEngineContext().Audio().SetMenuMode(false);
+			GetEngineContext().GlobalTimers().ClearTimer(mTimerHandle);
 			if (IsPaused())
 				SetPaused(false);
 			GetApplication()->QuitApplication();
@@ -208,7 +208,7 @@ namespace vega
 
 	void GameLevel::TogglePause()
 	{
-		TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
+		GetEngineContext().GlobalTimers().ClearTimer(mTimerHandle);
 		if (IsPaused())
 		{
 			SetPaused(false);

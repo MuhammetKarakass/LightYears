@@ -1,5 +1,6 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/combat/IDamageable.h"
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
 #include "gameplay/HealthComponent.h"
@@ -258,7 +259,10 @@ namespace vega
 		}
 		else
 		{
-			target.ApplyDamage(resolvedDamage);
+			if (auto* damageable = dynamic_cast<IDamageable*>(&target))
+			{
+				damageable->ApplyDamage(resolvedDamage);
+			}
 		}
 
 		ApplyBonusHitBatch(bonusHits, target, source, deliveryType, deliveryActor);

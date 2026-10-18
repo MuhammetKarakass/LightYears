@@ -25,10 +25,10 @@ int main()
 	using namespace vega;
 	using Json = nlohmann::json;
 	const auto root = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets";
-	AssetManager::GetAssetManager().SetAssetRootDirectory(root.generic_string() + "/");
+	vega::EngineContext::Current().Assets().SetAssetRootDirectory(root.generic_string() + "/");
 	Check(GameContentBootstrap::Register(), "Content bootstrap failed");
 	RegisterGameSceneSettings();
-	auto& schema = SceneSettingsSchema::Get();
+	auto& schema = vega::EngineContext::Current().SceneSettings();
 	const auto* route = schema.Find("routeStop");
 	const auto* ship = schema.Find("playerShip");
 	Check(route && ship && schema.Find("bounds") && schema.Fields().size() == 3, "Engine/game schema registration incomplete");

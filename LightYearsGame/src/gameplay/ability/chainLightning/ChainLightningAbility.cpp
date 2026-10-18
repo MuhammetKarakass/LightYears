@@ -163,7 +163,7 @@ namespace vega
 					std::dynamic_pointer_cast<ChainLightningTimerOwnerActor>(selfObject);
 				if (!self) return;
 				const weak_ptr<ChainLightningTimerOwnerActor> selfWeak = self;
-				const TimerHandle handle = TimerManager::GetGameTimerManager().SetTimer(
+				const TimerHandle handle = GetWorld()->GetTimerManager().SetTimer(
 					mTraversal.worldLifetime,
 					[selfWeak]()
 					{
@@ -298,8 +298,9 @@ namespace vega
 			void ClearTimerHandles()
 			{
 				if (!mScheduledTimerHandle) return;
-				TimerManager& timerManager = TimerManager::GetGameTimerManager();
-				timerManager.ClearTimer(*mScheduledTimerHandle);
+				// World teardown clears actor back-pointers before releasing actors, and the
+				// world already cleared its timers; only remove while the world is reachable.
+				if (World* world = GetWorld()) world->GetTimerManager().ClearTimer(*mScheduledTimerHandle);
 				mScheduledTimerHandle.reset();
 			}
 

@@ -20,7 +20,7 @@ namespace vega
 		mMainMenuHUD.lock()->onQuitButtonClicked.BindAction(GetWeakPtr(), &MainMenuLevel::QuitGame);
 
 
-		AudioManager::GetAudioManager().PlayMusic(
+		GetEngineContext().Audio().PlayMusic(
 			"SpaceShooterRedux/Musics/menu_theme.ogg",
 			AudioType::Music,
 			30.0f,
@@ -32,7 +32,7 @@ namespace vega
 	void MainMenuLevel::StartGame()
 	{
 		// Stop menu music.
-		AudioManager::GetAudioManager().StopMusic();
+		GetEngineContext().Audio().StopMusic();
 		
 		GetApplication()->LoadWorld<ArenaTestLevel>();
 	}

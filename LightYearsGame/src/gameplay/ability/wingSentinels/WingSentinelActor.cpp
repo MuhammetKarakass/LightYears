@@ -18,7 +18,7 @@ namespace vega
 	WingSentinelActor::WingSentinelActor(World* world, Actor* owner, const WingSentinelsPresentationProfile& profile, Configuration configuration)
 		: AbilityWorldActor(world, owner), mProfile(profile), mConfiguration(configuration)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetAbilityPhysicsEnabled(false);
 	}
 

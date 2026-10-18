@@ -1,4 +1,5 @@
 #include "gameplay/module/generated/ModuleGuidedProjectileActor.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
 #include "gameplay/projectile/ProjectileSweep.h"
 #include "gameplay/combat/Combatant.h"
@@ -11,7 +12,7 @@ namespace vega
 {
 	ModuleGuidedProjectileActor::ModuleGuidedProjectileActor(World* world, Actor* source, const ModuleGuidedPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, const weak_ptr<Actor>& target, float speed, float lifetime, float damage, const GameplayTag& damageType) : AbilityWorldActor{ world, source }, mProfile{ profile }, mLease{ lease }, mTarget{ target }, mSpeed{ speed }
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetAbilityPhysicsEnabled(false);
 		SetAbilityCollisionRadius(profile.radius);
 		ConfigureCollisionFromOwner();

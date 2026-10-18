@@ -27,7 +27,7 @@ namespace vega
 		, mColor(color)
 		, mRemainingLifetime(ConeBlastLifetime)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetCollisionLayer(CollisionLayer::None);
 		SetCollisionMask(CollisionLayer::None);
 		mFan.resize(ConeArcSegments + 2);

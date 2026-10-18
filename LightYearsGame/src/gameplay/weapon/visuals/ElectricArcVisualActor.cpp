@@ -28,7 +28,7 @@ namespace vega
 		, mEnd(end)
 		, mColor(color)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetCollisionLayer(CollisionLayer::None);
 		SetCollisionMask(CollisionLayer::None);
 		mOuterBolt.resize(BoltPointCount);

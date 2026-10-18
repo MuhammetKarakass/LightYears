@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 	Report report;
 	try
 	{
-		AssetManager::GetAssetManager().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"); if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Gold/Hull content registration failed" };
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"); if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Gold/Hull content registration failed" };
 		const auto* hull = content::ModuleContentCatalog::FindById("Module.Utility.StrippedHull.Rare"); report.Check(hull && hull->rarity == ModuleRarity::Uncommon, "stable Hull ContentId now declares Uncommon rarity");
 		std::string title = "Gold and Hull E2E"; Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false); GoldChecks(report, application); HullChecks(report, application); report.artifact["passed"] = true;
 	}

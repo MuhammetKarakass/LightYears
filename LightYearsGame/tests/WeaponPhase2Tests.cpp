@@ -762,7 +762,7 @@ int main()
 	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
 #endif
-	AssetManager::GetAssetManager().SetAssetRootDirectory(
+	vega::EngineContext::Current().Assets().SetAssetRootDirectory(
 		(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 	);
 	if (!GameContentBootstrap::Register())

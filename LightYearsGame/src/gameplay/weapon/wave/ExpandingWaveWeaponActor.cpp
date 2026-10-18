@@ -64,7 +64,7 @@ namespace vega
 		)))
 		, mColor(presentation.pointLightDef.color)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetDamage(std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			CommonAttributeIds::Damage,

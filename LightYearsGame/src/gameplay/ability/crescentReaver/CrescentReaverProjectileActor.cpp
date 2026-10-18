@@ -282,7 +282,7 @@ namespace vega
 		: AbilityWorldActor(world, owner),
 		mPresentationProfile{ presentationProfile }
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 	}
 
 	void CrescentReaverProjectileActor::BeginPlay()

@@ -111,7 +111,7 @@ namespace vega
 		: AbilityWorldActor(world, owner)
 		, mProfile(profile)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 	}
 
 	void CombatSentryProjectileActor::ConfigureFromAttributes(

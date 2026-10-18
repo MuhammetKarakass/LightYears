@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "framework/CollisionLayer.h"
 
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>

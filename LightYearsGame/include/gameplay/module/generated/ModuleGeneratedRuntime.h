@@ -1,5 +1,6 @@
 #pragma once
 #include "gameplay/module/ModuleResolver.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedLease.h"
 #include "gameplay/module/generated/ModuleRicochetProjectileActor.h"
 #include "framework/Delegate.h"

@@ -8,6 +8,7 @@
 #include "gameplay/EnergyComponent.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/IDamageable.h"
 #include "gameplay/ship/ShipRuntime.h"
 #include "gameplay/MovementComponent.h"
 #include "gameplay/ship/ShipRuntimeModifiers.h"
@@ -25,7 +26,8 @@ namespace vega
 		: public Actor,
 		  public Combatant,
 		  public DashMovementController,
-		  public PortalTransferParticipant
+		  public PortalTransferParticipant,
+		  public IDamageable
 	{
 		VEGA_CLASS(SpaceShip)
 	public:

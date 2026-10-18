@@ -6,7 +6,7 @@ namespace vega
 	VitalsView::VitalsView(shared_ptr<const VitalsViewModel> viewModel)
 		: Panel{ { 510.f, 92.f } }, mViewModel{ std::move(viewModel) }
 	{
-		const UIStyle& style = UIStyle::Get();
+		const UIStyle& style = GetEngineContext().Style();
 		SetBackgroundColor(sf::Color::Transparent);
 		SetLayout(UILayout::Anchored(UIAnchor::BottomLeft, { 20.f, -20.f }));
 

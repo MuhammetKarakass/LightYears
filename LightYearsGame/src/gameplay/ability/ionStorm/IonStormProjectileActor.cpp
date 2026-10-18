@@ -165,7 +165,7 @@ namespace vega
 		, mCore(std::max(1.f, presentationProfile.visual.radius), 24)
 		, mTrail(sf::PrimitiveType::TriangleStrip, 4)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetAbilityPhysicsEnabled(false);
 		SetCollisionLayer(CollisionLayer::None);
 		SetCollisionMask(CollisionLayer::None);

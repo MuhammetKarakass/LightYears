@@ -58,7 +58,7 @@ namespace
 	class TestProjectile final : public vega::Actor, public vega::ProjectileReflectionParticipant
 	{
 	public:
-		TestProjectile() : Actor(nullptr) {}
+		explicit TestProjectile(vega::World* world = nullptr) : Actor(world) {}
 
 		bool CanBeReflected() const override { return true; }
 		bool TryReflectProjectile(const vega::ProjectileReflectionRequest& request) override
@@ -263,12 +263,13 @@ namespace
 int main()
 {
 	vega::InstallVegaEngineAssets();
-	auto& timers = vega::TimerManager::GetGameTimerManager();
+	vega::World reflectionWorld{ nullptr };
+	auto& timers = reflectionWorld.GetTimerManager();
 	timers.ClearAllTimers();
 
 	auto owner = std::make_shared<vega::Actor>(nullptr);
 	auto surface = std::make_shared<TestSurface>(*owner);
-	auto projectile = std::make_shared<TestProjectile>();
+	auto projectile = std::make_shared<TestProjectile>(&reflectionWorld);
 	projectile->SetVelocity({ 1.f, 0.f });
 	if (!Reflect(*projectile, *surface))
 	{
@@ -313,7 +314,7 @@ int main()
 		return Fail("Reflection registry removal, recreation or World teardown checks failed");
 	}
 
-	auto destroyedProjectile = std::make_shared<TestProjectile>();
+	auto destroyedProjectile = std::make_shared<TestProjectile>(&reflectionWorld);
 	destroyedProjectile->SetVelocity({ 1.f, 0.f });
 	surface->lockDuration = 0.05f;
 	if (!Reflect(*destroyedProjectile, *surface))
@@ -327,7 +328,7 @@ int main()
 	{
 		return Fail("Destroyed actor timer did not skip its callback as expected");
 	}
-	auto independentProjectile = std::make_shared<TestProjectile>();
+	auto independentProjectile = std::make_shared<TestProjectile>(&reflectionWorld);
 	independentProjectile->SetVelocity({ 1.f, 0.f });
 	if (!Reflect(*independentProjectile, *surface))
 	{

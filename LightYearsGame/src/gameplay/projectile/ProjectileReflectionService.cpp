@@ -220,24 +220,28 @@ namespace vega
 		if (lockDuration > 0.f)
 		{
 			const uint64_t lockGeneration = participant->LockSurface(surfaceId);
-			TimerManager::GetGameTimerManager().SetTimer(
-				projectile.GetWeakPtr(),
-				[projectileHandle = projectile.GetWeakPtr(), surfaceId, lockGeneration]() {
-					const shared_ptr<Object> object = projectileHandle.lock();
-					const shared_ptr<Actor> liveProjectile =
-						object ? std::dynamic_pointer_cast<Actor>(object) : shared_ptr<Actor>{};
-					if (liveProjectile && !liveProjectile->GetIsPendingDestroy())
-					{
-						if (auto* liveParticipant =
-							dynamic_cast<ProjectileReflectionParticipant*>(liveProjectile.get()))
+			World* const timerWorld = projectile.GetWorld();
+			if (timerWorld)
+			{
+				timerWorld->GetTimerManager().SetTimer(
+					projectile.GetWeakPtr(),
+					[projectileHandle = projectile.GetWeakPtr(), surfaceId, lockGeneration]() {
+						const shared_ptr<Object> object = projectileHandle.lock();
+						const shared_ptr<Actor> liveProjectile =
+							object ? std::dynamic_pointer_cast<Actor>(object) : shared_ptr<Actor>{};
+						if (liveProjectile && !liveProjectile->GetIsPendingDestroy())
 						{
-							liveParticipant->UnlockSurface(surfaceId, lockGeneration);
+							if (auto* liveParticipant =
+								dynamic_cast<ProjectileReflectionParticipant*>(liveProjectile.get()))
+							{
+								liveParticipant->UnlockSurface(surfaceId, lockGeneration);
+							}
 						}
-					}
-				},
-				lockDuration,
-				false
-			);
+					},
+					lockDuration,
+					false
+				);
+			}
 		}
 		return true;
 	}

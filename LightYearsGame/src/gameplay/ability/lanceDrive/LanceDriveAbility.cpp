@@ -214,14 +214,14 @@ namespace vega
 				return !lance || !lance->ConsumesFrontalContact(source, target);
 			}
 		);
-		const std::uint8_t enemyLayer = static_cast<std::uint8_t>(GameCollision::Enemy);
-		const std::uint8_t currentCollisionMask =
-			static_cast<std::uint8_t>(ship->GetCollisionMask());
+		const std::uint32_t enemyLayer = static_cast<std::uint32_t>(GameCollision::Enemy);
+		const std::uint32_t currentCollisionMask =
+			static_cast<std::uint32_t>(ship->GetCollisionMask());
 		mCollisionMaskSnapshotHasEnemyLayer =
 			(currentCollisionMask & enemyLayer) != 0;
 		mHasCollisionMaskSnapshot = true;
 		ship->SetCollisionMask(static_cast<CollisionLayer>(
-			currentCollisionMask & static_cast<std::uint8_t>(~enemyLayer)
+			currentCollisionMask & static_cast<std::uint32_t>(~enemyLayer)
 		));
 		mActive = true;
 		context.abilitySystem.AddOwnedTag(AbilityData::LanceDrive::State::Active);
@@ -274,16 +274,16 @@ namespace vega
 		{
 			if (mHasCollisionMaskSnapshot)
 			{
-				const std::uint8_t enemyLayer = static_cast<std::uint8_t>(GameCollision::Enemy);
-				std::uint8_t collisionMask =
-					static_cast<std::uint8_t>(ship->GetCollisionMask());
+				const std::uint32_t enemyLayer = static_cast<std::uint32_t>(GameCollision::Enemy);
+				std::uint32_t collisionMask =
+					static_cast<std::uint32_t>(ship->GetCollisionMask());
 				if (mCollisionMaskSnapshotHasEnemyLayer)
 				{
 					collisionMask |= enemyLayer;
 				}
 				else
 				{
-					collisionMask &= static_cast<std::uint8_t>(~enemyLayer);
+					collisionMask &= static_cast<std::uint32_t>(~enemyLayer);
 				}
 				ship->SetCollisionMask(static_cast<CollisionLayer>(collisionMask));
 				mHasCollisionMaskSnapshot = false;

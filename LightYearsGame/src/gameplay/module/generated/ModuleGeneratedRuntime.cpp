@@ -1,4 +1,5 @@
 #include "gameplay/module/generated/ModuleGeneratedRuntime.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
 #include "gameplay/module/generated/ModuleGuidedProjectileActor.h"
 #include "gameplay/module/generated/ModuleMineActor.h"

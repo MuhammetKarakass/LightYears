@@ -124,7 +124,7 @@ namespace vega
 		ArenaLevel::OnGameStart();
 		SpawnDummyTargets();
 
-		AudioManager::GetAudioManager().FadeToMusic("SpaceShooterRedux/Musics/cosmic_reverie.ogg",
+		GetEngineContext().Audio().FadeToMusic("SpaceShooterRedux/Musics/cosmic_reverie.ogg",
 			AudioType::Music,
 			5.0f,
 			1.0f,

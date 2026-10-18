@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "gameConfigs/GameplayTags.h"
 #include "player/PlayerSpaceShip.h"
 
 #include "gameplay/ability/loadout/DefaultAbilityLoadout.h"
@@ -7,6 +8,7 @@
 #include <framework/LightComponent.h>
 #include <framework/SpriteComponent.h>
 #include <framework/MathUtility.h>
+#include <framework/World.h>
 #include <framework/reflection/Reflection.h>
 
 namespace vega
@@ -74,7 +76,8 @@ namespace vega
 		// fires onDamageResolved here and damage dealt fires onDamageDealt on the source ship.
 		GetCombatRuntime().onDamageResolved.BindAction(GetWeakPtr(), &PlayerSpaceShip::OnCombatDamageObserved);
 		GetCombatRuntime().onDamageDealt.BindAction(GetWeakPtr(), &PlayerSpaceShip::OnCombatDamageObserved);
-		TimerManager::GetGameTimerManager().SetTimer(
+		TimerManager& timers = GetWorld()->GetTimerManager();
+		timers.SetTimer(
 			GetWeakPtr(),
 			&PlayerSpaceShip::StopInvulnerability,
 			mInvulnerabilityTime,

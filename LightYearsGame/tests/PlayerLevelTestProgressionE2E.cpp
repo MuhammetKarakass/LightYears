@@ -272,7 +272,7 @@ int main(int argc, char** argv)
 	const std::filesystem::path artifactPath{ argv[1] };
 	try
 	{
-		vega::AssetManager::GetAssetManager().SetAssetRootDirectory(
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory(
 			(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 		);
 		if (!vega::GameContentBootstrap::Register())

@@ -32,7 +32,7 @@ namespace
 	void Measure(Report& report, const std::string& text, unsigned int size, float width, unsigned int lines, const std::string& name, bool requireComplete, const std::string& fontPath = ModuleCardText::BodyFont)
 	{
 		const auto layout = ModuleCardText::Wrap(text, fontPath, size, width, lines);
-		const auto font = AssetManager::GetAssetManager().LoadFont(fontPath);
+		const auto font = vega::EngineContext::Current().Assets().LoadFont(fontPath);
 		sf::Text measured{ *font, "", size };
 		std::istringstream stream{ layout.text };
 		std::string line;
@@ -146,7 +146,7 @@ namespace
 					}
 		}
 		report.Check(modules == 22 && combinations > 200, "all shipped Uncommon combinations covered", { { "modules", modules }, { "combinations", combinations } });
-		const auto body = AssetManager::GetAssetManager().LoadFont(ModuleCardText::BodyFont);
+		const auto body = vega::EngineContext::Current().Assets().LoadFont(ModuleCardText::BodyFont);
 		const std::string turkish = u8"\u00c7\u011e\u0130\u00d6\u015e\u00dc\u00e7\u011f\u0131\u00f6\u015f\u00fc";
 		for (const auto codepoint : sf::String::fromUtf8(turkish.begin(), turkish.end())) report.Check(body->hasGlyph(codepoint), "body font has Turkish glyph", static_cast<unsigned int>(codepoint));
 		Measure(report, turkish + " " + turkish, 14, 80.f, 8, "UTF-8 wraps by codepoint", true);
@@ -228,7 +228,7 @@ int main(int argc, char** argv)
 	Report report; const std::filesystem::path artifact{ argv[1] }; std::filesystem::create_directories(artifact.parent_path());
 	try
 	{
-		AssetManager::GetAssetManager().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "P7 content registration failed" };
 		std::string title = "Uncommon P7 E2E"; Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false);
 		Run(report, application, artifact.parent_path()); report.artifact["passed"] = true;

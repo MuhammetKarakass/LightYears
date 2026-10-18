@@ -130,7 +130,7 @@ namespace vega
 		, mTargetActor(std::move(targetActor))
 		, mTargetLocation(std::move(targetLocation))
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 	}
 
 	void FrozenThrongHuskActor::BeginPlay()

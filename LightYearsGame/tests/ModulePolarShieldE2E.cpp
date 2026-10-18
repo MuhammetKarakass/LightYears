@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 	Report report;
 	try
 	{
-		AssetManager::GetAssetManager().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"); if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Polar Shield content registration failed" };
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"); if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Polar Shield content registration failed" };
 		const auto* module = content::ModuleContentCatalog::FindById("Module.Defense.PolarShield.Rare"); report.Check(module && module->sizeVariants.size() == 1 && module->sizeVariants.front().shape.cells.size() == 2 && module->sideFeatures.empty() && module->sharedPools.empty(), "Polar remains fixed two cells with no sides");
 		std::string title = "Polar Shield E2E"; Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false); PoolChecks(report, application); SharedLayerChecks(report, application); report.artifact["passed"] = true;
 	}

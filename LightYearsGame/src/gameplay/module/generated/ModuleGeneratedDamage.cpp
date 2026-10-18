@@ -1,4 +1,5 @@
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
+#include "framework/GameplayTag.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "framework/Actor.h"

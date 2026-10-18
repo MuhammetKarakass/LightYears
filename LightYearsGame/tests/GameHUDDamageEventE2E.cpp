@@ -142,10 +142,10 @@ namespace vega
 		void TickScene(ArenaLevel& level, float deltaTime)
 		{
 			level.TickInternal(deltaTime);
-			TimerManager::GetGlobalTimerManager().UpdateTimer(deltaTime);
-			if (!level.IsPaused()) TimerManager::GetGameTimerManager().UpdateTimer(deltaTime);
+			level.GetEngineContext().GlobalTimers().UpdateTimer(deltaTime);
+			if (!level.IsPaused()) level.GetTimerManager().UpdateTimer(deltaTime);
 			level.StepPhysics(deltaTime);
-			AudioManager::GetAudioManager().Update(deltaTime);
+			level.GetEngineContext().Audio().Update(deltaTime);
 		}
 
 		bool WriteArtifact(const std::filesystem::path& path, const Json& artifact)
@@ -177,8 +177,6 @@ namespace vega
 
 	int RunGameHUDDamageEventE2E(const char* artifactPath, const std::string& setupError)
 	{
-		TimerManager::GetGlobalTimerManager().ClearAllTimers();
-		TimerManager::GetGameTimerManager().ClearAllTimers();
 		PlayerManager& playerManager = PlayerManager::GetPlayerManager();
 
 		std::unique_ptr<DamageEventApplication> application;
@@ -390,8 +388,7 @@ namespace vega
 
 		hud.reset();
 		level.reset();
-		TimerManager::GetGlobalTimerManager().ClearAllTimers();
-		TimerManager::GetGameTimerManager().ClearAllTimers();
+		application->GetEngineContext().GlobalTimers().ClearAllTimers();
 		playerManager.Reset();
 		application.reset();
 

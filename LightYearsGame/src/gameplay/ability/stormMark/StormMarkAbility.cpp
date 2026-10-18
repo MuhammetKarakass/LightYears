@@ -349,7 +349,8 @@ namespace vega
 		const float strikeHeight = std::max(1.f, presentationProfile->strikeHeight);
 		const int safeTargetLimit = std::max(1, targetLimit);
 
-		TimerManager::GetGameTimerManager().SetTimer(
+		TimerManager& timers = world->GetTimerManager();
+		timers.SetTimer(
 			timerOwner,
 			[
 				world,
@@ -408,7 +409,7 @@ namespace vega
 							static_cast<float>(targetCount - 1);
 					const float strikeDelay = strikeDuration * normalizedIndex;
 					const weak_ptr<Actor> targetWeak = target;
-					TimerManager::GetGameTimerManager().SetTimer(
+					world->GetTimerManager().SetTimer(
 						timerOwner,
 						[
 								world,

@@ -66,7 +66,7 @@ namespace vega
 	{
 		SetActorLocation(mStartLocation);
 		SetActorRotation(RadiansToDegrees(std::atan2(mDirection.y, mDirection.x)) + 90.f);
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetCollisionLayer(CollisionLayer::None);
 		SetCollisionMask(CollisionLayer::None);
 		// SpawnActor promotes pending actors on the next world tick. Register now

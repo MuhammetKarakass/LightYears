@@ -198,7 +198,7 @@ namespace vega
 		mExplosionShockwave(1.f, 64),
 		mTrail(sf::PrimitiveType::TriangleStrip, 4)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		// The projectile is a delivery marker; it must never damage or block via
 		// contact while travelling. Damage is resolved once at the target point.
 		SetAbilityPhysicsEnabled(false);

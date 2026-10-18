@@ -16,7 +16,7 @@ namespace vega
 	}
 	void HexagonStage::BeginStage()
 	{
-		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&HexagonStage::SpawnHexagon, mSpawnInterval, true);
+		mSpawnTimerHandle = GetWorld()->GetTimerManager().SetTimer(GetWeakPtr(),&HexagonStage::SpawnHexagon, mSpawnInterval, true);
 	}
 	void HexagonStage::TickStage(float deltaTime)
 	{
@@ -24,7 +24,7 @@ namespace vega
 
 	void HexagonStage::StageFinished()
 	{
-		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(mSpawnTimerHandle);
 	}
 	void HexagonStage::SpawnHexagon()
 	{

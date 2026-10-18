@@ -58,8 +58,6 @@ int main()
 {
 	vega::InstallVegaEngineAssets();
 	using namespace vega;
-	TimerManager& timers = TimerManager::GetGameTimerManager();
-	timers.ClearAllTimers();
 	std::string balanceLoadFailure;
 	if (!content::DamageStatusBalanceCatalog::LoadFromFile(
 		"LightYearsGame/assets/content/data/damage_status_balance.json",
@@ -138,7 +136,7 @@ int main()
 
 	const auto advance = [&](float deltaTime)
 	{
-		timers.UpdateTimer(deltaTime);
+		world.GetTimerManager().UpdateTimer(deltaTime);
 		world.TickInternal(deltaTime);
 	};
 	advance(0.29f);
@@ -176,6 +174,6 @@ int main()
 		return Fail("Storm Mark final strike did not coincide with telegraph cleanup");
 	}
 
-	timers.ClearAllTimers();
+	world.GetTimerManager().ClearAllTimers();
 	return 0;
 }

@@ -91,7 +91,7 @@ namespace vega
 		: AbilityWorldActor(world, owner)
 		, mPresentationProfile(presentationProfile)
 	{
-		SetRenderLayer(RenderLayer::Projectile);
+		SetRenderLayer(RenderLayer::WorldFront);
 		SetDamageTags({ DamageTypeSchema::Thermal });
 		ConfigureCollisionFromOwner();
 	}

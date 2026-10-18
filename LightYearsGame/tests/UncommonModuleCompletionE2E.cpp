@@ -9,7 +9,7 @@ int main(int argc, char** argv)
 	report.artifact["input"] = { { "levels", { 1, 2, 3 } }, { "equipRemoveCyclesPerSide", 10 }, { "GoldPerSidePerKill", 1 }, { "O4BonusSeconds", 1 }, { "O5FirstHitMultiplier", 1.15 }, { "GlassHealthThreshold", .5 }, { "GlassCriticalChancePoints", 10 }, { "GritHealthThreshold", .35 }, { "GritShieldRegenMultiplier", 2 }, { "MovementFadeSeconds", 1.5 } };
 	try
 	{
-		AssetManager::GetAssetManager().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
+		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Completion content registration failed" };
 		std::string title = "Uncommon completion E2E";
 		Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None };

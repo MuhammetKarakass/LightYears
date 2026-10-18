@@ -106,7 +106,7 @@ namespace vega
 		static const bool registered = []
 		{
 			std::filesystem::path assetRoot =
-				AssetManager::GetAssetManager().GetAssetRootDirectory();
+				EngineContext::Current().Assets().GetAssetRootDirectory();
 			if (assetRoot.empty())
 			{
 				assetRoot = "LightYearsGame/assets";

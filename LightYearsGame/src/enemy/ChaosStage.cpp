@@ -34,7 +34,7 @@ namespace vega
 	void ChaosStage::BeginStage()
 	{
 		GameStage::BeginStage();
-		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+		mSpawnTimerHandle = GetWorld()->GetTimerManager().SetTimer(
 			GetWeakPtr(),
 			&ChaosStage::SpawnVanguard,
 			mSpawnInterval
@@ -53,7 +53,7 @@ namespace vega
 				mIsTotalChaosActive = false;				
 				onTotalChaosEnded.Broadcast();
 				
-				TimerManager::GetGameTimerManager().SetTimer(
+				GetWorld()->GetTimerManager().SetTimer(
 					GetWeakPtr(),
 					&ChaosStage::StageDurationFinished,
 					0.2f,
@@ -65,8 +65,8 @@ namespace vega
 
 	void ChaosStage::StageFinished()
 	{
-		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
-		TimerManager::GetGameTimerManager().ClearTimer(mTotalChaosTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(mSpawnTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(mTotalChaosTimerHandle);
 	}
 
 	void ChaosStage::SpawnVanguard()
@@ -81,7 +81,7 @@ namespace vega
 
 			sf::Vector2f nextSpawnLoc = GetRandomSpawnLocationTop();
 
-			TimerManager::GetGameTimerManager().SetTimer(
+			GetWorld()->GetTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
 					content::SpawnEnemy(*GetWorld(), EnemyIds::ApproachGunnerBasic, nextSpawnLoc);
@@ -91,7 +91,7 @@ namespace vega
 			);
 
 		}
-		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+		mSpawnTimerHandle = GetWorld()->GetTimerManager().SetTimer(
 			GetWeakPtr(),
 			&ChaosStage::SpawnTwinBlade,
 			mSpawnInterval
@@ -108,7 +108,7 @@ namespace vega
 		{
 			float delay = RandRange(0.1f, 0.3f);
 			sf::Vector2f nextSpawnLoc = GetRandomSpawnLocationTop();
-			TimerManager::GetGameTimerManager().SetTimer(
+			GetWorld()->GetTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
 					content::SpawnEnemy(*GetWorld(), EnemyIds::StrafeSkirmisherBasic, nextSpawnLoc);
@@ -118,7 +118,7 @@ namespace vega
 			);
 		}
 
-		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+		mSpawnTimerHandle = GetWorld()->GetTimerManager().SetTimer(
 			GetWeakPtr(),
 			&ChaosStage::SpawnHexagon,
 			mSpawnInterval
@@ -135,7 +135,7 @@ namespace vega
 		{
 			float delay = RandRange(0.1f, 0.3f);
 			sf::Vector2f nextSpawnLoc = GetRandomSpawnLocationTop();
-			TimerManager::GetGameTimerManager().SetTimer(
+			GetWorld()->GetTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
 					content::SpawnEnemy(*GetWorld(), EnemyIds::RangeKeeperBasic, nextSpawnLoc);
@@ -169,7 +169,7 @@ namespace vega
 			int enemyType = RandRange(1, 3);
 			float microDelay = RandRange(0.4f, 0.8f);
 
-			TimerManager::GetGameTimerManager().SetTimer(
+			GetWorld()->GetTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, enemyType]() {
 					SpawnEnemyByType(enemyType);
@@ -179,7 +179,7 @@ namespace vega
 			);
 		}
 		float nextBatchDelay = RandRange(1.f, 1.3f);
-		mTotalChaosTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+		mTotalChaosTimerHandle = GetWorld()->GetTimerManager().SetTimer(
 			GetWeakPtr(),
 			&ChaosStage::TotalChaos,
 			nextBatchDelay,
@@ -235,7 +235,7 @@ namespace vega
 				sf::Vector2f{ GetWorld()->GetWindowSize().x/2.f, GetWorld()->GetWindowSize().y / 2.f },
 				50.f, sf::Color::Red);
 			
-			TimerManager::GetGameTimerManager().SetTimer(
+			GetWorld()->GetTimerManager().SetTimer(
 				GetWeakPtr(),
 				&ChaosStage::TotalChaos,
 				10.f,
@@ -244,7 +244,7 @@ namespace vega
 		}
 		else 
 		{
-			mSpawnTimerHandle= TimerManager::GetGameTimerManager().SetTimer(
+			mSpawnTimerHandle= GetWorld()->GetTimerManager().SetTimer(
 				GetWeakPtr(),
 				&ChaosStage::SpawnVanguard,
 				mSpawnInterval
