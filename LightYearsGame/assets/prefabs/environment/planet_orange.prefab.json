@@ -1,0 +1,25 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Planet Orange",
+  "base": { "type": "SpriteActor" },
+  "components": [
+    {
+      "type": "SpriteComponent",
+      "properties": {
+        "Texture": "SpaceShooterRedux/PNG/Planets/Planet6.png",
+        "Scale": [1.0, 1.0]
+      }
+    },
+    {
+      "type": "ParallaxComponent",
+      "added": true,
+      "properties": {
+        "Depth": 0.3,
+        "Can Rotate": true,
+        "Rotation Speed": 6.0,
+        "Drift Velocity": [0.0, 0.0]
+      }
+    }
+  ]
+}

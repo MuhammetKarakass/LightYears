@@ -1,0 +1,20 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Planet Blue Large",
+  "base": { "prefab": "prefabs/environment/planet_blue.prefab.json" },
+  "components": [
+    {
+      "type": "SpriteComponent",
+      "properties": {
+        "Scale": [1.6, 1.6]
+      }
+    },
+    {
+      "type": "ParallaxComponent",
+      "properties": {
+        "Depth": 0.5
+      }
+    }
+  ]
+}
