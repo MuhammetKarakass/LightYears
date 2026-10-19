@@ -256,11 +256,217 @@
     "spawnable": false
   },
   {
+    "addable": false,
+    "base": "",
+    "functions": [],
+    "name": "LightSettings",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Tag",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Base gameplay tag for the light; AddLight appends _0, _1 by occurrence."
+      },
+      {
+        "asset": "Any",
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Texture",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Light shader path; empty uses the engine default point-light shader."
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 4,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Color",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100.0,
+        "min": 0.0,
+        "name": "Intensity",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Size",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Offset",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Local offset from the actor, or a world position for World-space lights."
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Enabled",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 6,
+        "labels": [
+          [
+            0,
+            "Local"
+          ],
+          [
+            1,
+            "World"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "Light Space",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Stretch",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Stretches along the owner's forward direction with speed."
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Complex Trail",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1.0,
+        "min": 0.0,
+        "name": "Taper Amount",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1.0,
+        "min": 0.0,
+        "name": "Edge Softness",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1.0,
+        "min": 0.0,
+        "name": "Shape Roundness",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
     "addable": true,
     "base": "ActorComponent",
     "functions": [],
     "name": "LightComponent",
-    "properties": [],
+    "properties": [
+      {
+        "category": "Lights",
+        "elementKind": 10,
+        "hasSetter": true,
+        "kind": 9,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Authored Lights",
+        "requiredType": "",
+        "speed": 1.0,
+        "structType": "LightSettings",
+        "tooltip": "Design-time lights; each entry is created through AddLight. Runtime code-added lights are not saved here."
+      }
+    ],
     "removable": true,
     "requiredComponents": [],
     "root": 1,
