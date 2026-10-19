@@ -1,0 +1,39 @@
+open-scene scenes/sandbox.scene.json
+wait 2
+place-prefab prefabs/dummies/dummy_standard.prefab.json 600 500
+rename "Dummy editor test"
+expect-prefab prefabs/dummies/dummy_standard.prefab.json
+expect-prop Actor Ship Ship.Enemy.RangeKeeper.Basic
+set-prop Actor Ship Ship.Enemy.ApproachGunner.Basic
+expect-prop-error construction-only
+expect-prop Actor Ship Ship.Enemy.RangeKeeper.Basic
+expect-prop HealthComponent "Max Health" 100
+expect-prop ShieldComponent "Max Shield" 0
+set-prop HealthComponent "Max Health" 999
+revert-prefab-prop HealthComponent "Max Health"
+expect-prop HealthComponent "Max Health" 100
+apply-prefab-prop Actor Ship
+open-prefab prefabs/dummies/dummy_standard.prefab.json
+expect-prop Actor Ship Ship.Enemy.RangeKeeper.Basic
+save-prefab
+close-prefab
+save-scene @VEGA_DUMMY_PREFAB_SCENE@
+open-scene @VEGA_DUMMY_PREFAB_SCENE@
+wait 2
+select-name "Dummy editor test"
+expect-prefab prefabs/dummies/dummy_standard.prefab.json
+expect-prop Actor Ship Ship.Enemy.RangeKeeper.Basic
+expect-prop HealthComponent "Max Health" 100
+expect-prop ShieldComponent "Max Shield" 0
+reload-prefabs
+select-name "Dummy editor test"
+expect-prop Actor Ship Ship.Enemy.RangeKeeper.Basic
+save-scene @VEGA_DUMMY_PREFAB_SCENE@
+open-scene @VEGA_DUMMY_PREFAB_SCENE@
+wait 2
+select-name "Dummy editor test"
+expect-prefab prefabs/dummies/dummy_standard.prefab.json
+expect-prop Actor Ship Ship.Enemy.RangeKeeper.Basic
+expect-prop HealthComponent "Max Health" 100
+expect-prop ShieldComponent "Max Shield" 0
+quit

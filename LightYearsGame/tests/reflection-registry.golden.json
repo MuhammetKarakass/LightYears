@@ -1274,6 +1274,7 @@
     "properties": [
       {
         "category": "Dummy",
+        "construction": true,
         "elementKind": null,
         "hasSetter": true,
         "kind": 5,
@@ -1283,7 +1284,7 @@
         "name": "Ship",
         "requiredType": "",
         "speed": 1.0,
-        "tooltip": "Construction only: reload the scene to apply a changed ship."
+        "tooltip": "Construction only: changing Ship is refused; place a prefab with the desired catalog Ship instead."
       }
     ],
     "removable": false,

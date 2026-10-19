@@ -127,22 +127,26 @@ int main()
 	copiedSprite->TickInternal(1.f);
 	Check(copiedSprite->GetActorRotation() == 45.f, "Script update did not use the authored override");
 
-	// Ship edits retain the requested construction data; the next load rebuilds
-	// the actual ship from that catalog definition instead of mutating combat.
+	// Ship is a construction selector: live edits are refused, while an authored
+	// scene property rebuilds the actual ship from that catalog definition.
 	const auto dummy = world.GetActorsByTypeIncludingPending<DummyEnemy>()[0].lock();
 	const auto& shipIds = content::ShipContentCatalog::GetPlayerShipIds();
 	Check(!shipIds.empty(), "Ship catalog is empty");
 	const auto* shipProperty = engineContext.Types().Find("DummyEnemy")->FindProperty("Ship");
-	Check(shipProperty->SetValue(dummy.get(), shipIds[0]), "Dummy construction-only Ship edit failed");
+	const auto authoredShip = dummy->GetShip();
+	Check(shipProperty->construction, "Dummy Ship must be a construction property");
+	Check(!shipProperty->SetValue(dummy.get(), shipIds[0]), "Dummy construction-only Ship edit must be refused");
+	Check(shipProperty->SetValue(dummy.get(), authoredShip) && dummy->GetShip() == authoredShip, "Dummy construction-only Ship reapplied idempotently");
 	World edited{ nullptr };
 	auto editedData = SceneSerializer::Save(world, scene["settings"]);
+	editedData["entities"][1]["properties"]["Ship"] = shipIds[0];
 	// Explicit component overrides take precedence over a selected ship's
 	// defaults. Clear them here to inspect the new constructor's texture.
 	editedData["entities"][1]["components"] = Json::array();
 	Check(SceneSerializer::Load(edited, editedData).warnings.empty(), "Edited dummy scene failed to load");
 	const auto editedDummy = edited.GetActorsByTypeIncludingPending<DummyEnemy>()[0].lock();
-	Check(editedDummy->FindComponent<SceneEntityComponent>()->spawnData["Ship"] == shipIds[0], "Dummy Ship construction data was lost");
-	Check(editedDummy->FindComponent<SpriteComponent>()->GetTexturePath() == content::ShipContentCatalog::FindById(shipIds[0])->texturePath, "Dummy factory ignored authored Ship");
+	Check(editedDummy->GetShip() == shipIds[0], "Dummy factory ignored authored Ship");
+	Check(editedDummy->FindComponent<SpriteComponent>()->GetTexturePath() == content::ShipContentCatalog::FindById(shipIds[0])->texturePath, "Dummy factory ignored authored Ship texture");
 
 	bool applied = false;
 	auto level = std::make_shared<HeadlessSceneLevel>(nullptr, scene, [&](const Json& settings) { applied = settings["routeStop"] == 0; });

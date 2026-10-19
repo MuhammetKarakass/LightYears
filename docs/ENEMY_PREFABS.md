@@ -1,9 +1,10 @@
 ﻿# Enemy actor prefabs
 
 Stage 2b makes all shipped enemy actors sparse prefabs. Content is authored in
-assets; C++ still owns construction, combat, behavior and lifecycle. Dummies and
-level/scene migration remain separate stages. No stage, arena, wave or level
-source changes are needed to adopt the enemy spawn path.
+assets; C++ still owns construction, combat, behavior and lifecycle. Stage 2c
+does the same for dummy targets; level/scene migration remains a separate stage.
+No stage, arena, wave or level source changes are needed to adopt the enemy spawn
+path.
 
 ## Catalog and assets
 
@@ -91,14 +92,46 @@ three IDs, check their construction values and refusal behavior, Revert a health
 edit, Apply the selector, scratch Save, scene save/reopen and reload-prefabs.
 Its C++ postcheck requires sparse selector-only assets and scene instances and
 compares every edited prefab with direct construction through the game validator
-and spawner. Editor automation does not establish manual visual acceptance.
+and spawner. `LightYearsDummyPrefab` does the equivalent for the standard dummy
+prefab and `VegaEditorDummyPrefab` places, saves and reopens it. Editor
+automation does not establish manual visual acceptance.
 
 The requested build/full-suite comparisons and focused runs are recorded in
 `build/w10-enemies-report.md`; the reflection golden is regenerated with
 `LightYearsReflectionRegistryGoldenTests --dump` and reviewed separately.
 
+## Dummies (stage 2c)
+
+Dummy targets use the same construction-selector contract, but their selector is
+the existing `DummyEnemy` **Ship** property: a catalog ship ID, not an enemy
+definition ID. `DummyEnemy` carries the resolved `ShipDefinition::catalogId` in
+its own member. **Ship** is now writable and marked `.Construction()`. Reapplying
+the same ID is idempotent; changing it on an existing actor is refused with a
+construction-only error. The scene factory still constructs the requested
+catalog chassis, and `DummyEnemy`'s constructor keeps its training-target shield
+override (maximum shield 50).
+
+`assets/prefabs/dummies/dummy_standard.prefab.json` is the shipped dummy prefab:
+
+| Prefab | Base type | Selector |
+| --- | --- | --- |
+| `prefabs/dummies/dummy_standard.prefab.json` | `DummyEnemy` | `Ship.Enemy.RangeKeeper.Basic` |
+
+It is a flat `vega.prefab` version 1 document with exactly
+`properties: {"Ship": "Ship.Enemy.RangeKeeper.Basic"}`. It copies no gameplay
+numbers or component values; chassis numbers remain in `ships.json`. Dummy
+prefabs share the ship/enemy `PrefabLibrary` resolution and sparse validation
+path through `ValidateDummyPrefab` / `SpawnDummyPrefab`; only the `Ship` selector
+is admitted, and the selected ID must exist in the ship catalog.
+
+ArenaTestLevel's four 9000-health / 40-armor targets and twenty 50-health
+targets are unchanged. Their overrides (health, armor, speed, weapon) are
+arena-only values with no catalog home, so no heavy-dummy prefab is shipped.
+Expressing them as prefabs needs a data-model change: a catalog-owned dummy
+definition (for example health/armor/speed/weapon overrides, or dummy variants
+in `ships.json`) that the prefab can select without copying numbers into assets.
+
 ## Remaining stages
 
-DummyEnemy prefab adoption is the second step of stage 2b. Migrating levels to
-editor-authored scenes follows separately. This stage changes neither dummy
-construction nor level/scene authoring.
+Migrating levels to editor-authored scenes follows separately. This stage does
+not change ArenaTestLevel's dummy construction or level/scene authoring.

@@ -3,6 +3,7 @@
 #include "gameplay/content/EnemyContentCatalog.h"
 #include "player/PlayerSpaceShip.h"
 #include "enemy/EnemyActor.h"
+#include "enemy/DummyEnemy.h"
 #include "reflection/GameReflection.h"
 #include <framework/AssetManager.h>
 #include <framework/World.h>
@@ -29,6 +30,7 @@ namespace vega
 		};
 		constexpr CatalogPrefabContract PlayerContract{ "PlayerSpaceShip", "Ship", "ships.json", true };
 		constexpr CatalogPrefabContract EnemyContract{ "EnemyActor", "Enemy ID", "enemy_definitions.json", false };
+		constexpr CatalogPrefabContract DummyContract{ "DummyEnemy", "Ship", "ships.json", false };
 
 		bool Fail(std::string* reason, const std::string& message)
 		{
@@ -163,5 +165,17 @@ namespace vega
 	{
 		if (!content::EnemyContentCatalog::FindById(enemyId)) { Fail(failureReason, "Unknown catalog enemy: " + enemyId); return {}; }
 		return SpawnCatalogPrefab<EnemyActor>(world, prefabPath, enemyId, EnemyContract, [](const EnemyActor& enemy) -> const std::string& { return enemy.GetEnemyId(); }, failureReason);
+	}
+
+	bool ValidateDummyPrefab(EngineContext& context, const std::filesystem::path& assetRoot, const std::string& prefabPath, const std::string& shipId, std::string* failureReason)
+	{
+		if (!content::ShipContentCatalog::FindById(shipId)) return Fail(failureReason, "Unknown catalog ship: " + shipId);
+		return ValidateCatalogPrefab(context, assetRoot, prefabPath, shipId, DummyContract, failureReason);
+	}
+
+	std::weak_ptr<DummyEnemy> SpawnDummyPrefab(World& world, const std::string& prefabPath, const std::string& shipId, std::string* failureReason)
+	{
+		if (!content::ShipContentCatalog::FindById(shipId)) { Fail(failureReason, "Unknown catalog ship: " + shipId); return {}; }
+		return SpawnCatalogPrefab<DummyEnemy>(world, prefabPath, shipId, DummyContract, [](const DummyEnemy& dummy) -> const std::string& { return dummy.GetShip(); }, failureReason);
 	}
 }

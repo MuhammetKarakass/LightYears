@@ -140,5 +140,5 @@ establish manual visual acceptance.
 ## Remaining stage
 
 Stage 2b adds [enemy actor prefabs](ENEMY_PREFABS.md) through EnemyFactory,
-preserving combat/behavior profiles, caller context and rewards. Dummy prefab
-adoption is the next step; editor-authored level scenes remain a later stage.
+preserving combat/behavior profiles, caller context and rewards. Stage 2c adds
+dummy target prefabs; editor-authored level scenes remain a later stage.

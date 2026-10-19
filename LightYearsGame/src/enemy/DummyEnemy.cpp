@@ -3,7 +3,6 @@
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/World.h>
 #include <framework/reflection/Reflection.h>
-#include <framework/scene/SceneEntityComponent.h>
 #include <stdexcept>
 
 namespace vega
@@ -16,16 +15,8 @@ namespace vega
 			if (!ship) throw std::runtime_error("Default dummy ship is unavailable");
 			return world.SpawnActor<DummyEnemy>(*ship).lock();
 		});
-		type.Property("Ship", [](const Self& actor)
-		{
-			const auto* identity = actor.FindComponent<SceneEntityComponent>();
-			return identity ? identity->spawnData.value("Ship", std::string{ "Ship.Enemy.RangeKeeper.Basic" })
-				: std::string{ "Ship.Enemy.RangeKeeper.Basic" };
-		}, [](Self& actor, const std::string& ship)
-		{
-			if (!content::ShipContentCatalog::FindById(ship)) throw std::runtime_error("Unknown dummy ship: " + ship);
-			actor.GetOrAddComponent<SceneEntityComponent>().spawnData["Ship"] = ship;
-		}).Category("Dummy").Tooltip("Construction only: reload the scene to apply a changed ship.");
+		VEGA_CATEGORY("Dummy");
+		VEGA_PROPERTY("Ship", GetShip, SetShip).Tooltip("Construction only: changing Ship is refused; place a prefab with the desired catalog Ship instead.").Construction();
 	}
 
 	namespace
@@ -43,9 +34,15 @@ namespace vega
 
 	DummyEnemy::DummyEnemy(World* owningWorld, const ShipDefinition& shipDef)
 		: SpaceShip(owningWorld, MakeDummyShipDefinition(shipDef))
+		, mShip(shipDef.catalogId)
 	{
 		SetMovementMode(ShipMovementMode::ThrustDrift);
 		SetVelocity({ 0.f, 0.f });
+	}
+
+	void DummyEnemy::SetShip(const std::string& ship)
+	{
+		if (ship != mShip) throw std::runtime_error("Ship is construction-only; place a prefab with the desired catalog Ship instead of changing an existing DummyEnemy.");
 	}
 
 	void DummyEnemy::Tick(float deltaTime)
