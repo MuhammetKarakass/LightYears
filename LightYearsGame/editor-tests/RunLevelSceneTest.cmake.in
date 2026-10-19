@@ -1,0 +1,23 @@
+# Only this fixed build-tree asset copy is disposable; source assets are never edited.
+set(root "@CMAKE_CURRENT_BINARY_DIR@/level-scene-test-assets")
+file(REAL_PATH "${root}" resolved_root)
+file(REAL_PATH "@CMAKE_BINARY_DIR@" build_root)
+string(FIND "${resolved_root}/" "${build_root}/" root_prefix)
+if(NOT root_prefix EQUAL 0 OR NOT resolved_root MATCHES "/level-scene-test-assets$")
+    message(FATAL_ERROR "Refusing disposable asset cleanup outside the intended build directory: ${resolved_root}")
+endif()
+if(NOT VEGA_LEVEL_POSTCHECK_ONLY)
+    file(REMOVE_RECURSE "${root}")
+    file(MAKE_DIRECTORY "${root}")
+    file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
+    execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+        "@CMAKE_CURRENT_BINARY_DIR@/scripts/level-scene.vegascript" RESULT_VARIABLE result)
+    if(NOT result EQUAL 0)
+        message(FATAL_ERROR "VegaEditorLevelScene failed: ${result}")
+    endif()
+endif()
+execute_process(COMMAND "${VEGA_LEVEL_CHECK}" --editor-postcheck "${root}"
+    "@CMAKE_CURRENT_BINARY_DIR@/level-scene-temp.scene.json" RESULT_VARIABLE validation)
+if(NOT validation EQUAL 0)
+    message(FATAL_ERROR "ArenaTest scene postcheck failed: ${validation}")
+endif()

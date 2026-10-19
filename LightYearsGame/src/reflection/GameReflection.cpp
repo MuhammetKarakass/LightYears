@@ -4,6 +4,8 @@
 #include "environment/Asteroid.h"
 #include "level/PlayerStart.h"
 #include "level/SpriteActor.h"
+#include "level/authoring/ArenaSetupActor.h"
+#include "level/authoring/EncounterSetupActor.h"
 #include "enemy/DummyEnemy.h"
 #include "gameplay/HealthComponent.h"
 #include "gameplay/ShieldComponent.h"
@@ -57,5 +59,14 @@ namespace vega
 			if (!actor) throw std::runtime_error("Cannot construct catalog enemy: " + id);
 			return actor;
 		}, context);
+		VEGA_REGISTER(ArenaBoundarySettings);
+		VEGA_REGISTER(ArenaRespawnSettings);
+		VEGA_REGISTER(ArenaMusicSettings);
+		VEGA_REGISTER(ArenaHeavyDummySettings);
+		VEGA_REGISTER(ArenaEncounterProgression);
+		VEGA_REGISTER(ArenaWaveTemplate);
+		VEGA_REGISTER(ArenaWaveEntry);
+		VEGA_REGISTER(ArenaSetupActor);
+		VEGA_REGISTER(EncounterSetupActor);
 	}
 }

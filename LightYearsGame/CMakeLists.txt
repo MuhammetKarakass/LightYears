@@ -181,6 +181,9 @@ if(BUILD_TESTING)
 	target_compile_definitions(LightYearsSceneSandboxTests PRIVATE SCENE_TEST_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}")
 	vega_add_game_test_case(LightYearsSceneSandbox LightYearsSceneSandboxTests)
 
+	vega_add_game_test(LightYearsLevelLayoutTests GAME PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/LevelLayoutTests.cpp)
+	vega_add_game_test_case(LightYearsLevelLayout LightYearsLevelLayoutTests)
+
 	vega_add_game_test(LightYearsShipPrefabTests GAME PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ShipPrefabTests.cpp)
 	target_compile_definitions(LightYearsShipPrefabTests PRIVATE SHIP_PREFAB_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ship-prefab")
 	vega_add_game_test_case(LightYearsShipPrefab LightYearsShipPrefabTests)

@@ -2,6 +2,7 @@
 
 #include "gameplay/encounter/EncounterWaveRuntime.h"
 #include "level/ArenaLevel.h"
+#include "level/LevelLayout.h"
 
 #include <cstdint>
 #include <optional>
@@ -96,7 +97,12 @@ namespace vega
 	{
 	public:
 		ArenaTestLevel(Application* owningApp);
+		using SettingsApplier = std::function<void(const nlohmann::json&)>;
+		ArenaTestLevel(Application* owningApp, nlohmann::json scene, SettingsApplier applySettings = {}, bool editMode = false);
 		~ArenaTestLevel() override;
+		bool IsEditMode() const override { return mEditMode; }
+		const LevelLayout& GetLayout() const { return mLayout; }
+		const SceneLoadResult& GetSceneLoadResult() const { return mLoadResult; }
 
 		bool StartEncounter();
 		bool RestartEncounter();
@@ -105,6 +111,7 @@ namespace vega
 		const ArenaPlaytestMetrics& GetPlaytestMetrics() const { return mPlaytestMetrics; }
 
 	protected:
+		void BeginPlay() override;
 		virtual ArenaDefinition CreateArenaDefinition() const override;
 		virtual PlayerRespawnDefinition CreatePlayerRespawnDefinition() const override;
 		virtual bool DispatchEvent(const sf::Event& event) override;
@@ -116,6 +123,11 @@ namespace vega
 		virtual weak_ptr<PlayerSpaceShip> ResolveEncounterPlayerShip() const;
 
 	private:
+		LevelLayout mLayout;
+		SceneLoadResult mLoadResult;
+		SettingsApplier mApplySettings;
+		bool mEditMode = false;
+		bool mSelectSceneShip = false;
 		std::optional<sf::Keyboard::Key> mHeldShipSelectionKey;
 
 		void SpawnDummyTargets();

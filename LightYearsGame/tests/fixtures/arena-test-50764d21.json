@@ -1,0 +1,30 @@
+{
+  "sourceHead": "50764d218ccabf82fcebf84a3a3a45941c133ce5",
+  "bounds": [0, 0, 6000, 3000],
+  "boundary": {"enabled": true, "visualType": "DebugRectangle", "outOfBoundsMargin": 20, "outOfBoundsTime": 5, "outlineColor": [90,230,255,180], "warningColor": [255,80,80,220], "outlineThickness": 4},
+  "respawn": {"spawnLocation": [3000,1500], "respawnDelay": 1, "playerIndex": 0, "createPlayerIfMissing": true, "useScreenClamp": false, "respawnWhenDestroyed": true, "gameOverWhenRespawnFails": true, "playerShipId": "Default"},
+  "music": {"path": "SpaceShooterRedux/Musics/cosmic_reverie.ogg", "type": "Music", "volume": 5, "pitch": 1, "loop": true, "fadeDuration": 1},
+  "baseMusic": {"path": "SpaceShooterRedux/Musics/cosmic_reverie.ogg", "type": "SFX_World", "volume": 45, "pitch": 1, "loop": true},
+  "enabled": false,
+  "sequenceMode": "EndlessCycle",
+  "progression": {"additionalEnemyEveryWaves": 1, "enemyLevelEveryWaves": 3, "maximumAdditionalEnemies": 0, "maximumEnemyLevel": 15, "seed": 1337},
+  "maximumConcurrentEnemies": 24,
+  "spawnPoints": [[900,600],[5100,600],[900,2400],[5100,2400]],
+  "spawnOffsetSpacing": 50,
+  "waves": [
+    {"entries": [{"enemyId":"Enemy.ApproachGunner.Basic","count":2,"spawnInterval":0.5}], "interWaveDelay":1.5},
+    {"entries": [{"enemyId":"Enemy.ApproachGunner.Basic","count":1,"spawnInterval":0.4},{"enemyId":"Enemy.StrafeSkirmisher.Basic","count":1,"spawnInterval":0}], "interWaveDelay":1.5},
+    {"entries": [{"enemyId":"Enemy.ApproachGunner.Basic","count":1,"spawnInterval":0.3},{"enemyId":"Enemy.StrafeSkirmisher.Basic","count":1,"spawnInterval":0.3},{"enemyId":"Enemy.RangeKeeper.Basic","count":1,"spawnInterval":0.3}], "interWaveDelay":1.5}
+  ],
+  "dummyShip": "Ship.Enemy.RangeKeeper.Basic",
+  "dummyArmor": 40,
+  "dummyLegacySpeed": [0,0],
+  "dummyVelocity": [0,0],
+  "dummyRotation": 0,
+  "heavyDummyHealth": 9000,
+  "heavyDummyWeapon": "Weapon.Projectile.FighterRapidLaser.Basic",
+  "heavyDummyPositions": [[2100,1950],[2700,1950],[3300,1950],[3900,1950]],
+  "smallDummyHealth": 50,
+  "smallDummyWeapon": "",
+  "smallDummyPositions": [[2940,1455],[2970,1455],[3000,1455],[3030,1455],[3060,1455],[2940,1485],[2970,1485],[3000,1485],[3030,1485],[3060,1485],[2940,1515],[2970,1515],[3000,1515],[3030,1515],[3060,1515],[2940,1545],[2970,1545],[3000,1545],[3030,1545],[3060,1545]]
+}

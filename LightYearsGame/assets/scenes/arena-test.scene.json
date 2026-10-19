@@ -1,0 +1,565 @@
+{
+  "format": "vega.scene",
+  "version": 1,
+  "settings": {
+    "bounds": [
+      0,
+      0,
+      6000,
+      3000
+    ],
+    "playerShip": "Ship.Player.Fighter.Basic",
+    "routeStop": 0,
+    "levelRules": "ArenaTest"
+  },
+  "entities": [
+    {
+      "guid": "c0000000000000000000000000000001",
+      "name": "Arena setup",
+      "type": "ArenaSetupActor",
+      "properties": {
+        "Boundary": {
+          "enabled": true,
+          "visualType": "DebugRectangle",
+          "outOfBoundsMargin": 20,
+          "outOfBoundsTime": 5,
+          "outlineColor": [
+            90,
+            230,
+            255,
+            180
+          ],
+          "warningColor": [
+            255,
+            80,
+            80,
+            220
+          ],
+          "outlineThickness": 4
+        },
+        "Respawn": {
+          "respawnDelay": 1,
+          "playerIndex": 0,
+          "createPlayerIfMissing": true,
+          "useScreenClamp": false,
+          "respawnWhenDestroyed": true,
+          "gameOverWhenRespawnFails": true,
+          "playerShipId": "Default"
+        },
+        "Music": {
+          "path": "SpaceShooterRedux/Musics/cosmic_reverie.ogg",
+          "volume": 5,
+          "pitch": 1,
+          "loop": true,
+          "fadeDuration": 1
+        },
+        "DummyArmor": 40,
+        "HeavyDummy": {
+          "ship": "Ship.Enemy.RangeKeeper.Basic",
+          "health": 9000,
+          "armor": 40,
+          "legacySpeed": [
+            0,
+            0
+          ],
+          "primaryWeaponId": "Weapon.Projectile.FighterRapidLaser.Basic"
+        },
+        "HeavyDummyPositions": [
+          [
+            2100,
+            1950
+          ],
+          [
+            2700,
+            1950
+          ],
+          [
+            3300,
+            1950
+          ],
+          [
+            3900,
+            1950
+          ]
+        ]
+      }
+    },
+    {
+      "guid": "c0000000000000000000000000000002",
+      "name": "Encounter setup",
+      "type": "EncounterSetupActor",
+      "properties": {
+        "Enabled": false,
+        "SequenceMode": "EndlessCycle",
+        "Progression": {
+          "additionalEnemyEveryWaves": 1,
+          "enemyLevelEveryWaves": 3,
+          "maximumAdditionalEnemies": 0,
+          "maximumEnemyLevel": 15,
+          "seed": 1337
+        },
+        "MaximumConcurrentEnemies": 24,
+        "SpawnPoints": [
+          [
+            900,
+            600
+          ],
+          [
+            5100,
+            600
+          ],
+          [
+            900,
+            2400
+          ],
+          [
+            5100,
+            2400
+          ]
+        ],
+        "SpawnOffsetSpacing": 50,
+        "Waves": [
+          {
+            "interWaveDelay": 1.5
+          },
+          {
+            "interWaveDelay": 1.5
+          },
+          {
+            "interWaveDelay": 1.5
+          }
+        ],
+        "Entries": [
+          {
+            "wave": 0,
+            "enemyId": "Enemy.ApproachGunner.Basic",
+            "count": 2,
+            "spawnInterval": 0.5
+          },
+          {
+            "wave": 1,
+            "enemyId": "Enemy.ApproachGunner.Basic",
+            "count": 1,
+            "spawnInterval": 0.4
+          },
+          {
+            "wave": 1,
+            "enemyId": "Enemy.StrafeSkirmisher.Basic",
+            "count": 1,
+            "spawnInterval": 0
+          },
+          {
+            "wave": 2,
+            "enemyId": "Enemy.ApproachGunner.Basic",
+            "count": 1,
+            "spawnInterval": 0.3
+          },
+          {
+            "wave": 2,
+            "enemyId": "Enemy.StrafeSkirmisher.Basic",
+            "count": 1,
+            "spawnInterval": 0.3
+          },
+          {
+            "wave": 2,
+            "enemyId": "Enemy.RangeKeeper.Basic",
+            "count": 1,
+            "spawnInterval": 0.3
+          }
+        ]
+      }
+    },
+    {
+      "guid": "c0000000000000000000000000000003",
+      "name": "Player start",
+      "type": "PlayerStart",
+      "properties": {
+        "Location": [
+          3000,
+          1500
+        ],
+        "Ship": "Ship.Player.Fighter.Basic"
+      }
+    },
+    {
+      "guid": "d0000000000000000000000000000001",
+      "name": "Small dummy 1",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2940,
+          1455
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000002",
+      "name": "Small dummy 2",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2970,
+          1455
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000003",
+      "name": "Small dummy 3",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3000,
+          1455
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000004",
+      "name": "Small dummy 4",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3030,
+          1455
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000005",
+      "name": "Small dummy 5",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3060,
+          1455
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000006",
+      "name": "Small dummy 6",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2940,
+          1485
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000007",
+      "name": "Small dummy 7",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2970,
+          1485
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000008",
+      "name": "Small dummy 8",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3000,
+          1485
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000009",
+      "name": "Small dummy 9",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3030,
+          1485
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d000000000000000000000000000000a",
+      "name": "Small dummy 10",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3060,
+          1485
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d000000000000000000000000000000b",
+      "name": "Small dummy 11",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2940,
+          1515
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d000000000000000000000000000000c",
+      "name": "Small dummy 12",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2970,
+          1515
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d000000000000000000000000000000d",
+      "name": "Small dummy 13",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3000,
+          1515
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d000000000000000000000000000000e",
+      "name": "Small dummy 14",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3030,
+          1515
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d000000000000000000000000000000f",
+      "name": "Small dummy 15",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3060,
+          1515
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000010",
+      "name": "Small dummy 16",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2940,
+          1545
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000011",
+      "name": "Small dummy 17",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          2970,
+          1545
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000012",
+      "name": "Small dummy 18",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3000,
+          1545
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000013",
+      "name": "Small dummy 19",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3030,
+          1545
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    },
+    {
+      "guid": "d0000000000000000000000000000014",
+      "name": "Small dummy 20",
+      "prefab": "prefabs/dummies/dummy_standard.prefab.json",
+      "properties": {
+        "Location": [
+          3060,
+          1545
+        ]
+      },
+      "components": [
+        {
+          "type": "HealthComponent",
+          "properties": {
+            "Max Health": 50
+          }
+        }
+      ]
+    }
+  ]
+}

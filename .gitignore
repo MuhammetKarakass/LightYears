@@ -58,3 +58,7 @@ out*.txt
 /split-staging/
 !LightYearsGame/tests/*.cmake
 !LightYearsGame/tests/reflection-registry.golden.json
+!LightYearsGame/tests/fixtures/
+LightYearsGame/tests/fixtures/*
+!LightYearsGame/tests/fixtures/arena-test-50764d21.json
+!LightYearsGame/tests/fixtures/arena-test-50764d21-headless.json

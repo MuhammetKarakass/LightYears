@@ -1,0 +1,933 @@
+{
+  "bounds": [
+    0.0,
+    0.0,
+    6000.0,
+    3000.0
+  ],
+  "dummies": [
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 9000.0,
+      "health": 9000.0,
+      "maxHealth": 9000.0,
+      "position": [
+        2100.0,
+        1950.0
+      ],
+      "primary": true,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 9000.0,
+      "health": 9000.0,
+      "maxHealth": 9000.0,
+      "position": [
+        2700.0,
+        1950.0
+      ],
+      "primary": true,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2940.0,
+        1455.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2940.0,
+        1485.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2940.0,
+        1515.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2940.0,
+        1545.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2970.0,
+        1455.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2970.0,
+        1485.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2970.0,
+        1515.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        2970.0,
+        1545.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3000.0,
+        1455.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3000.0,
+        1485.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3000.0,
+        1515.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3000.0,
+        1545.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3030.0,
+        1455.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3030.0,
+        1485.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3030.0,
+        1515.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3030.0,
+        1545.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3060.0,
+        1455.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3060.0,
+        1485.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3060.0,
+        1515.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 50.0,
+      "health": 50.0,
+      "maxHealth": 50.0,
+      "position": [
+        3060.0,
+        1545.0
+      ],
+      "primary": false,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 9000.0,
+      "health": 9000.0,
+      "maxHealth": 9000.0,
+      "position": [
+        3300.0,
+        1950.0
+      ],
+      "primary": true,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "armor": 40.0,
+      "attributeMaxHealth": 9000.0,
+      "health": 9000.0,
+      "maxHealth": 9000.0,
+      "position": [
+        3900.0,
+        1950.0
+      ],
+      "primary": true,
+      "rotation": 0.0,
+      "speed": [
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "idle": true,
+  "playerStart": [
+    3000.0,
+    1500.0
+  ],
+  "waves": [
+    {
+      "level": 1,
+      "number": 1,
+      "planned": 3,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 1,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 1950320328
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 1,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 1950320393
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 1,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 1950320202
+        }
+      ]
+    },
+    {
+      "level": 1,
+      "number": 2,
+      "planned": 4,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 1,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 2009125594
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 1,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 2009128217
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 1,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 2092373039
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 1,
+          "position": [
+            5100.0,
+            2400.0
+          ],
+          "seed": 2092373859
+        }
+      ]
+    },
+    {
+      "level": 1,
+      "number": 3,
+      "planned": 5,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 1,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 2009113451
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 1,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 2009115816
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 1,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 2092361214
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 1,
+          "position": [
+            5100.0,
+            2400.0
+          ],
+          "seed": 2092361010
+        },
+        {
+          "cull": false,
+          "id": "Enemy.RangeKeeper.Basic",
+          "level": 1,
+          "position": [
+            950.0,
+            600.0
+          ],
+          "seed": 1019124248
+        }
+      ]
+    },
+    {
+      "level": 2,
+      "number": 4,
+      "planned": 4,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 2009136568
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 2009136635
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 2009133626
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            5100.0,
+            2400.0
+          ],
+          "seed": 2009136244
+        }
+      ]
+    },
+    {
+      "level": 2,
+      "number": 5,
+      "planned": 5,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 2009124169
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 2009121418
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 2009121483
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 2,
+          "position": [
+            5100.0,
+            2400.0
+          ],
+          "seed": 2092369680
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 2,
+          "position": [
+            950.0,
+            600.0
+          ],
+          "seed": 2092369745
+        }
+      ]
+    },
+    {
+      "level": 2,
+      "number": 6,
+      "planned": 6,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 2009141726
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 2,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 2009141535
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 2,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 2092389670
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 2,
+          "position": [
+            5100.0,
+            2400.0
+          ],
+          "seed": 2092389735
+        },
+        {
+          "cull": false,
+          "id": "Enemy.RangeKeeper.Basic",
+          "level": 2,
+          "position": [
+            950.0,
+            600.0
+          ],
+          "seed": 1019156173
+        },
+        {
+          "cull": false,
+          "id": "Enemy.RangeKeeper.Basic",
+          "level": 2,
+          "position": [
+            5150.0,
+            600.0
+          ],
+          "seed": 1019155980
+        }
+      ]
+    },
+    {
+      "level": 3,
+      "number": 7,
+      "planned": 5,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 2009129711
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 2009129518
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 2009132156
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            5100.0,
+            2400.0
+          ],
+          "seed": 2009132989
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            950.0,
+            600.0
+          ],
+          "seed": 2009133054
+        }
+      ]
+    },
+    {
+      "level": 3,
+      "number": 8,
+      "planned": 6,
+      "spawns": [
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            900.0,
+            600.0
+          ],
+          "seed": 2009149884
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            5100.0,
+            600.0
+          ],
+          "seed": 2009149949
+        },
+        {
+          "cull": false,
+          "id": "Enemy.ApproachGunner.Basic",
+          "level": 3,
+          "position": [
+            900.0,
+            2400.0
+          ],
+          "seed": 2009152527
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 3,
+          "position": [
+            5100.0,
+            2400.0
+          ],
+          "seed": 2092397893
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 3,
+          "position": [
+            950.0,
+            600.0
+          ],
+          "seed": 2092397958
+        },
+        {
+          "cull": false,
+          "id": "Enemy.StrafeSkirmisher.Basic",
+          "level": 3,
+          "position": [
+            5150.0,
+            600.0
+          ],
+          "seed": 2092398023
+        }
+      ]
+    }
+  ]
+}

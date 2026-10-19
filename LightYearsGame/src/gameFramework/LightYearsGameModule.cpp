@@ -172,7 +172,22 @@ namespace vega
 
 		if (editor) return;
 
-		if (mDevOptions.scenePath.empty()) mApplication->LoadWorld<ArenaTestLevel>();
+		if (mDevOptions.scenePath.empty())
+		{
+			try
+			{
+				const auto level = std::make_shared<ArenaTestLevel>(mApplication);
+				if (level->GetLayout().fromScene && !mDevOptions.galaxyStopSpecified) ApplySceneSettings(level->GetLayout().scene["settings"]);
+				if (level->GetLayout().fromScene && mDevOptions.shipIndex < 0) PlayerManager::GetPlayerManager().SetSelectedShipId(level->GetLayout().playerShip);
+				mApplication->LoadWorld(level);
+			}
+			catch (const std::exception& error)
+			{
+				VEGA_GAME_ERROR("Scene: %s", error.what());
+				mExitCode = 1;
+				mApplication->QuitApplication();
+			}
+		}
 		else
 		{
 			try
@@ -238,7 +253,11 @@ namespace vega
 			else if (arg == "--visual-ship" && hasValue) options.shipIndex = std::atoi(__argv[++i]);
 			else if (arg == "--visual-assets" && hasValue) options.visualAssets = __argv[++i];
 			else if (arg == "--perf-autoplay") options.perfAutoPlay = true;
-			else if (arg == "--galaxy-stop" && hasValue) options.galaxyStop = std::max(0, std::atoi(__argv[++i]));
+			else if (arg == "--galaxy-stop" && hasValue)
+			{
+				options.galaxyStop = std::max(0, std::atoi(__argv[++i]));
+				options.galaxyStopSpecified = true;
+			}
 			else if (arg == "--orbit-speed-steps" && hasValue) options.orbitSpeedSteps = std::atoi(__argv[++i]);
 			else if (arg == "--warp" && hasValue) options.warpBeta = std::clamp(static_cast<float>(std::atof(__argv[++i])), 0.f, 0.99f);
 		}
@@ -424,6 +443,14 @@ namespace vega
 
 	std::shared_ptr<World> LightYearsGameModule::CreateLevel(Application& application, const nlohmann::json& scene, bool edit)
 	{
+		const auto settings = scene.value("settings", nlohmann::json::object());
+		if (settings.contains("levelRules"))
+		{
+			if (!settings["levelRules"].is_string()) throw std::runtime_error("settings.levelRules must be a string");
+			const auto rules = settings["levelRules"].get<std::string>();
+			if (rules == "ArenaTest") return std::make_shared<ArenaTestLevel>(&application, scene, [this](const nlohmann::json& value) { ApplySceneSettings(value); }, edit);
+			if (!rules.empty()) throw std::runtime_error("Unsupported settings.levelRules: " + rules);
+		}
 		return std::make_shared<SceneLevel>(&application, scene,
 			[this](const nlohmann::json& settings) { ApplySceneSettings(settings); }, edit);
 	}

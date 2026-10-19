@@ -1,5 +1,4 @@
 #include "level/ArenaTestLevel.h"
-#include "level/ArenaSandboxSetup.h"
 #include "enemy/EnemyActor.h"
 #include "framework/AudioManager.h"
 #include "framework/Actor.h"
@@ -11,7 +10,6 @@
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/damage/DamageContext.h"
-#include "gameplay/enemy/EnemyIds.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "player/Player.h"
 #include "player/PlayerManager.h"
@@ -20,7 +18,6 @@
 #include "widget/GameHUD.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <string>
 
@@ -28,13 +25,7 @@ namespace vega
 {
 	namespace
 	{
-		constexpr int ArenaMaximumConcurrentEnemies = 24;
-		constexpr float EncounterSpawnOffsetSpacing = 50.f;
-		// Encounter waves are kept but switched off for dummy-target testing.
-		// Flip this flag to start the endless wave sequence again.
-		constexpr bool EncounterWavesEnabled = false;
-
-		sf::Vector2f ResolveEncounterSpawnOffset(size_t localSpawnIndex)
+		sf::Vector2f ResolveEncounterSpawnOffset(size_t localSpawnIndex, float spacing)
 		{
 			if (localSpawnIndex == 0) return {};
 			const int ring = static_cast<int>(std::ceil((std::sqrt(static_cast<double>(localSpawnIndex) + 1.0) - 1.0) * 0.5));
@@ -52,7 +43,7 @@ namespace vega
 			case 2: x = -ring + offset; y = -ring; break;
 			default: x = ring; y = -ring + offset; break;
 			}
-			return sf::Vector2f{ static_cast<float>(x) * EncounterSpawnOffsetSpacing, static_cast<float>(y) * EncounterSpawnOffsetSpacing };
+			return sf::Vector2f{ static_cast<float>(x) * spacing, static_cast<float>(y) * spacing };
 		}
 
 		// Presentation/debug wording only; the resolved DamageContext is never
@@ -86,8 +77,32 @@ namespace vega
 		}
 	}
 	ArenaTestLevel::ArenaTestLevel(Application* owningApp)
-		:ArenaLevel(owningApp)
+		: ArenaLevel(owningApp), mLayout{ LevelLayout::ReadArenaTest(GetEngineContext()) }
 	{
+	}
+
+	ArenaTestLevel::ArenaTestLevel(Application* owningApp, nlohmann::json scene, SettingsApplier applySettings, bool editMode)
+		: ArenaLevel{ owningApp }, mLayout{ editMode ? LevelLayout{} : LevelLayout::Parse(scene, GetEngineContext()) }, mApplySettings{ std::move(applySettings) }, mEditMode{ editMode }, mSelectSceneShip{ true }
+	{
+		if (editMode)
+		{
+			LevelLayout::RegisterTypesAndContent();
+			mLayout.scene = std::move(scene);
+			mLayout.fromScene = true;
+		}
+		SetPaused(editMode);
+	}
+
+	void ArenaTestLevel::BeginPlay()
+	{
+		mLoadResult = mEditMode ? SceneSerializer::Load(*this, mLayout.scene) : mLayout.LoadEntities(*this);
+		if (mApplySettings) mApplySettings(mLayout.scene.value("settings", nlohmann::json::object()));
+		if (mEditMode) return;
+		mLayout.ConfigureDummies(*this);
+		// The default game path retains --visual-ship and the selected ship across runs.
+		// Explicit scene Play uses PlayerStart, like SceneLevel.
+		if (mSelectSceneShip) PlayerManager::GetPlayerManager().SetSelectedShipId(mLayout.playerShip);
+		ArenaLevel::BeginPlay();
 	}
 
 	ArenaTestLevel::~ArenaTestLevel()
@@ -97,12 +112,12 @@ namespace vega
 
 	ArenaDefinition ArenaTestLevel::CreateArenaDefinition() const
 	{
-		return CreateSandboxArenaDefinition();
+		return mLayout.arena;
 	}
 
 	PlayerRespawnDefinition ArenaTestLevel::CreatePlayerRespawnDefinition() const
 	{
-		return ConfigureSandboxPlayerRespawn(ArenaLevel::CreatePlayerRespawnDefinition());
+		return mLayout.respawn;
 	}
 
 	void ArenaTestLevel::CreateHUDControllers()
@@ -124,14 +139,10 @@ namespace vega
 		ArenaLevel::OnGameStart();
 		SpawnDummyTargets();
 
-		GetEngineContext().Audio().FadeToMusic("SpaceShooterRedux/Musics/cosmic_reverie.ogg",
-			AudioType::Music,
-			5.0f,
-			1.0f,
-			true,
-			1.0f);
+		const auto& music = mLayout.music;
+		GetEngineContext().Audio().FadeToMusic(music.path, AudioType::Music, music.volume, music.pitch, music.loop, music.fadeDuration);
 
-		if (EncounterWavesEnabled)
+		if (mLayout.encounterEnabled)
 		{
 			StartEncounter();
 		}
@@ -139,77 +150,37 @@ namespace vega
 
 	void ArenaTestLevel::SpawnDummyTargets()
 	{
-		// Stationary dummy targets for weapon testing. Flip these flags to hide the
-		// layout or bring back the 50-health square targets.
-		constexpr bool SpawnDummyTargetsEnabled = true;
-		constexpr bool SpawnSquareDummyTargetsEnabled = true;
-		if (!SpawnDummyTargetsEnabled)
-		{
-			return;
-		}
-
-		const ShipDefinition* dummySource = content::ShipContentCatalog::FindById(
-			"Ship.Enemy.RangeKeeper.Basic"
-		);
-		if (!dummySource)
+		const auto& config = mLayout.heavyDummy;
+		const auto* source = content::ShipContentCatalog::FindById(config.ship);
+		if (!source)
 		{
 			VEGA_GAME_ERROR("Arena test dummy ship definition is unavailable.");
 			return;
 		}
-		ShipDefinition oldDummyDefinition = *dummySource;
-		oldDummyDefinition.health = 9000.f;
-		// Use 40 Armor on the fighter-based dummy targets for testing.
-		oldDummyDefinition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, 40.f });
-		oldDummyDefinition.speed = { 0.f, 0.f };
-		oldDummyDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
-
-		ShipDefinition newDummyDefinition = oldDummyDefinition;
-		newDummyDefinition.health = 50.f;
-		newDummyDefinition.primaryWeaponId.clear();
-
-		const sf::FloatRect& arenaBounds = GetArenaDefinition().legalBounds;
-		const sf::Vector2f arenaCenter{
-			arenaBounds.position.x + arenaBounds.size.x * 0.5f,
-			arenaBounds.position.y + arenaBounds.size.y * 0.5f
-		};
-
-		const auto spawnDummy = [&](const ShipDefinition& definition, float horizontalOffset, float verticalOffset)
+		ShipDefinition definition = *source;
+		definition.health = config.health;
+		definition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, config.armor });
+		definition.speed = config.legacySpeed;
+		definition.primaryWeaponId = config.primaryWeaponId;
+		const auto spawn = [&](const ShipDefinition& ship, sf::Vector2f position)
 		{
-			const sf::Vector2f dummyLocation{
-				arenaCenter.x + horizontalOffset,
-				arenaCenter.y + verticalOffset
-			};
-			if (auto dummy = SpawnActor<DummyEnemy>(definition).lock())
+			if (const auto dummy = SpawnActor<DummyEnemy>(ship).lock())
 			{
-				dummy->SetActorLocation(dummyLocation);
+				dummy->SetActorLocation(position);
 				dummy->SetVelocity({ 0.f, 0.f });
 				dummy->SetActorRotation(0.f);
 			}
 		};
-
-		// Existing stationary targets remain in their original horizontal layout.
-		spawnDummy(oldDummyDefinition, -900.f, 450.f);
-		spawnDummy(oldDummyDefinition, -300.f, 450.f);
-		spawnDummy(oldDummyDefinition, 300.f, 450.f);
-		spawnDummy(oldDummyDefinition, 900.f, 450.f);
-
-		// Add 20 new 50-health stationary targets in a 120x90 area around arena center.
-		if (!SpawnSquareDummyTargetsEnabled)
-		{
-			return;
-		}
-		constexpr int dummyColumns = 5;
-		constexpr int dummyRows = 4;
-		constexpr float dummySpacing = 30.f;
-		for (int row = 0; row < dummyRows; ++row)
-		{
-			for (int column = 0; column < dummyColumns; ++column)
-			{
-				const float horizontalOffset = (static_cast<float>(column) - (dummyColumns - 1) * 0.5f) * dummySpacing;
-				const float verticalOffset = (static_cast<float>(row) - (dummyRows - 1) * 0.5f) * dummySpacing;
-				spawnDummy(newDummyDefinition, horizontalOffset, verticalOffset);
-			}
-		}
+		for (auto position : mLayout.heavyDummyPositions) spawn(definition, position);
+		// Only an absent scene uses the historical code-generated small layout.
+		if (mLayout.fromScene) return;
+		definition.health = 50.f;
+		definition.primaryWeaponId.clear();
+		const auto& bounds = GetArenaDefinition().legalBounds;
+		const sf::Vector2f center = bounds.position + bounds.size * 0.5f;
+		for (int row = 0; row < 4; ++row)
+			for (int column = 0; column < 5; ++column)
+				spawn(definition, center + sf::Vector2f{ (column - 2.f) * 30.f, (row - 1.5f) * 30.f });
 	}
 
 	void ArenaTestLevel::Tick(float deltaTime)
@@ -253,7 +224,7 @@ namespace vega
 	{
 		// An encounter started by hand (tests) restarts even while waves are off.
 		const bool restartEncounter =
-			EncounterWavesEnabled || mEncounterState != ArenaEncounterState::Idle;
+			mLayout.encounterEnabled || mEncounterState != ArenaEncounterState::Idle;
 		ResetEncounter();
 		ArenaLevel::OnRestartLevel();
 		if (restartEncounter)
@@ -264,6 +235,7 @@ namespace vega
 
 	bool ArenaTestLevel::DispatchEvent(const sf::Event& event)
 	{
+		if (mEditMode) return true;
 		if (const auto* keyReleased = event.getIf<sf::Event::KeyReleased>())
 		{
 			if (mHeldShipSelectionKey && *mHeldShipSelectionKey == keyReleased->code)
@@ -307,43 +279,19 @@ namespace vega
 
 	bool ArenaTestLevel::StartEncounter()
 	{
+		if (mEditMode) return false;
 		ResetEncounter();
 
-		const List<EnemyWaveDefinition> definitions{
-			{
-				{ { sas::ContentId{ EnemyIds::ApproachGunnerBasic }, 2, 0.5f } },
-				1.5f
-			},
-			{
-				{
-					{ sas::ContentId{ EnemyIds::ApproachGunnerBasic }, 1, 0.4f },
-					{ sas::ContentId{ EnemyIds::StrafeSkirmisherBasic }, 1, 0.f }
-				},
-				1.5f
-			},
-			{
-				{
-					{ sas::ContentId{ EnemyIds::ApproachGunnerBasic }, 1, 0.3f },
-					{ sas::ContentId{ EnemyIds::StrafeSkirmisherBasic }, 1, 0.3f },
-					{ sas::ContentId{ EnemyIds::RangeKeeperBasic }, 1, 0.3f }
-				},
-				1.5f
-			}
-		};
-
 		mEncounterFailureReported = false;
-		// The arena is an endless run: the three definitions are cyclic composition
-		// templates, the level rises every three waves, and the planned total follows the
-		// absolute wave number. The first two fields are finite-mode legacy and unused here.
-		const EncounterProgression progression{ 1, 3, 0, 15, 1337u, ArenaMaximumConcurrentEnemies };
+		// The same runtime owns endless cycling, scaling, seed derivation and caps.
 		std::string failureReason;
-		if (!mEncounterWaveRuntime.Start(definitions,
+		if (!mEncounterWaveRuntime.Start(mLayout.waves,
 			[this](const sas::ContentId& enemyId, size_t spawnIndex, const EnemySpawnContext& context)
 			{
 				return SpawnEncounterEnemy(enemyId, spawnIndex, context);
 			},
-			progression,
-			EncounterSequenceMode::EndlessCycle,
+			mLayout.progression,
+			mLayout.sequenceMode,
 			&failureReason))
 		{
 			VEGA_GAME_ERROR("Arena encounter could not start: %s", failureReason.c_str());
@@ -465,25 +413,16 @@ namespace vega
 		}
 	}
 
-	weak_ptr<EnemyActor> ArenaTestLevel::SpawnEncounterEnemy(
-		const sas::ContentId& enemyId,
-		size_t spawnIndex,
-		const EnemySpawnContext& context)
+	weak_ptr<EnemyActor> ArenaTestLevel::SpawnEncounterEnemy(const sas::ContentId& enemyId, size_t spawnIndex, const EnemySpawnContext& context)
 	{
-		const sf::FloatRect& bounds = GetArenaDefinition().legalBounds;
-		const std::array<sf::Vector2f, 4> spawnPoints{
-			sf::Vector2f{ bounds.position.x + 900.f, bounds.position.y + 600.f },
-			sf::Vector2f{ bounds.position.x + bounds.size.x - 900.f, bounds.position.y + 600.f },
-			sf::Vector2f{ bounds.position.x + 900.f, bounds.position.y + bounds.size.y - 600.f },
-			sf::Vector2f{ bounds.position.x + bounds.size.x - 900.f, bounds.position.y + bounds.size.y - 600.f }
-		};
+		const auto& spawnPoints = mLayout.spawnPoints;
 		// Encounter-owned enemies are owned by the encounter lifecycle, so camera
 		// visibility must not remove them.
 		EnemySpawnContext encounterContext = context;
 		encounterContext.windowCullEnabled = false;
 		const size_t spawnPointIndex = spawnIndex % spawnPoints.size();
 		const size_t localSpawnIndex = spawnIndex / spawnPoints.size();
-		const sf::Vector2f spawnLocation = spawnPoints[spawnPointIndex] + ResolveEncounterSpawnOffset(localSpawnIndex);
+		const sf::Vector2f spawnLocation = spawnPoints[spawnPointIndex] + ResolveEncounterSpawnOffset(localSpawnIndex, mLayout.spawnOffsetSpacing);
 		const weak_ptr<EnemyActor> spawned = content::SpawnEnemy(
 			*this,
 			enemyId.ToString(),

@@ -53,5 +53,14 @@ namespace vega
 			return result;
 		};
 		EngineContext::Current().SceneSettings().Register(std::move(ship));
+
+		SceneSettingField rules;
+		rules.key = "levelRules";
+		rules.label = "Level rules";
+		rules.category = "Gameplay";
+		rules.type = SceneSettingType::String;
+		rules.defaultValue = "";
+		rules.tooltip = "Empty uses SceneLevel; ArenaTest uses the existing arena playtest rules. Applied on Play.";
+		EngineContext::Current().SceneSettings().Register(std::move(rules));
 	}
 }

@@ -19,16 +19,17 @@ set(VEGA_PREFABS_CAPTURE "\"${CMAKE_CURRENT_BINARY_DIR}/prefab-inspector.png\"")
 set(VEGA_FIGHTER_PREFAB_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/fighter-prefab-temp.scene.json\"")
 set(VEGA_ENEMY_PREFAB_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/enemy-prefab-temp.scene.json\"")
 set(VEGA_DUMMY_PREFAB_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/dummy-prefab-temp.scene.json\"")
+set(VEGA_LEVEL_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/level-scene-temp.scene.json\"")
 set(VEGA_SETTINGS_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/settings-source.scene.json")
 set(VEGA_SETTINGS_SAVED "${CMAKE_CURRENT_BINARY_DIR}/settings-temp.scene.json")
 set(VEGA_SETTINGS_BEFORE "${CMAKE_CURRENT_BINARY_DIR}/settings-before.png")
 set(VEGA_SETTINGS_AFTER "${CMAKE_CURRENT_BINARY_DIR}/settings-after.png")
 set(VEGA_EXPORT_TEST_DIR "${CMAKE_BINARY_DIR}/export-test/LightYears")
-foreach(script IN ITEMS sky-editor gas-content gas-content-invalid gas-debugger multi-select lua-api scene-settings console-profiler prefabs fighter-prefab enemy-prefab dummy-prefab content)
+foreach(script IN ITEMS sky-editor gas-content gas-content-invalid gas-debugger multi-select lua-api scene-settings console-profiler prefabs fighter-prefab enemy-prefab dummy-prefab level-scene content)
     configure_file(scripts/${script}.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/${script}.vegascript @ONLY)
 endforeach()
 configure_file(scripts/export.vegascript.in ${CMAKE_CURRENT_BINARY_DIR}/scripts/export.vegascript @ONLY)
-foreach(test IN ITEMS SkyEditor GasContent MultiSelect LuaApi SceneSettings ConsoleProfiler Prefabs FighterPrefab EnemyPrefab DummyPrefab Export Content)
+foreach(test IN ITEMS SkyEditor GasContent MultiSelect LuaApi SceneSettings ConsoleProfiler Prefabs FighterPrefab EnemyPrefab DummyPrefab LevelScene Export Content)
     configure_file(Run${test}Test.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Run${test}Test.cmake @ONLY)
     add_test(NAME VegaEditor${test} COMMAND ${CMAKE_COMMAND}
         -DVEGA_EDITOR=$<TARGET_FILE:LightYearsEditor>
@@ -37,6 +38,7 @@ foreach(test IN ITEMS SkyEditor GasContent MultiSelect LuaApi SceneSettings Cons
         -DVEGA_SHIP_PREFAB_CHECK=$<TARGET_FILE:LightYearsShipPrefabTests>
         -DVEGA_ENEMY_PREFAB_CHECK=$<TARGET_FILE:LightYearsEnemyPrefabTests>
         -DVEGA_DUMMY_PREFAB_CHECK=$<TARGET_FILE:LightYearsDummyPrefabTests>
+        -DVEGA_LEVEL_CHECK=$<TARGET_FILE:LightYearsLevelLayoutTests>
         -P ${CMAKE_CURRENT_BINARY_DIR}/Run${test}Test.cmake)
     set_tests_properties(VegaEditor${test} PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:LightYearsEditor> TIMEOUT 90)
 endforeach()

@@ -1,0 +1,65 @@
+open-scene scenes/arena-test.scene.json
+expect-mode edit
+expect-setting levelRules "ArenaTest"
+expect-count ArenaSetupActor 1
+expect-count EncounterSetupActor 1
+expect-count PlayerStart 1
+expect-count DummyEnemy 20
+expect-count PlayerSpaceShip 0
+expect-count EnemyActor 0
+select-name "Arena setup"
+expect-prop Actor Boundary.outlineThickness 4
+expect-prop Actor Respawn.respawnDelay 1
+expect-prop Actor Music.volume 5
+expect-prop Actor HeavyDummy.health 9000
+expect-prop Actor DummyArmor 40
+set-prop Actor Boundary.outlineThickness 6
+expect-prop Actor Boundary.outlineThickness 6
+undo
+expect-prop Actor Boundary.outlineThickness 4
+select-name "Encounter setup"
+expect-prop Actor Enabled false
+expect-prop Actor Progression.seed 1337
+expect-prop Actor Entries[0].count 2
+expect-prop Actor Waves[0].interWaveDelay 1.5
+set-prop Actor Progression.seed 42
+expect-prop Actor Progression.seed 42
+undo
+set-prop Actor Entries[0].count 3
+expect-prop Actor Entries[0].count 3
+undo
+set-prop Actor Waves[0].interWaveDelay 2
+expect-prop Actor Waves[0].interWaveDelay 2
+undo
+save-scene @VEGA_LEVEL_SCENE@
+open-scene @VEGA_LEVEL_SCENE@
+expect-mode edit
+select-name "Encounter setup"
+expect-prop Actor Progression.seed 1337
+expect-prop Actor Entries[0].count 2
+expect-prop Actor Waves[0].interWaveDelay 1.5
+select-name "Small dummy 1"
+expect-prefab prefabs/dummies/dummy_standard.prefab.json
+expect-prop HealthComponent "Max Health" 50
+play-mode
+wait 2
+expect-mode play
+expect-count PlayerSpaceShip 1
+expect-player-ship Ship.Player.Fighter.Basic
+expect-count DummyEnemy 24
+expect-count EnemyActor 0
+stop
+wait 2
+expect-mode edit
+expect-count DummyEnemy 20
+expect-count PlayerSpaceShip 0
+expect-count EnemyActor 0
+select-name "Arena setup"
+expect-prop Actor Music.volume 5
+select-name "Encounter setup"
+expect-prop Actor Enabled false
+save-scene @VEGA_LEVEL_SCENE@
+open-scene @VEGA_LEVEL_SCENE@
+expect-count ArenaSetupActor 1
+expect-count EncounterSetupActor 1
+quit

@@ -131,7 +131,11 @@ Expressing them as prefabs needs a data-model change: a catalog-owned dummy
 definition (for example health/armor/speed/weapon overrides, or dummy variants
 in `ships.json`) that the prefab can select without copying numbers into assets.
 
-## Remaining stages
+## Level scenes (stage 3)
 
-Migrating levels to editor-authored scenes follows separately. This stage does
-not change ArenaTestLevel's dummy construction or level/scene authoring.
+[ArenaTest scene authoring](LEVEL_SCENES.md) now places twenty small dummy prefab
+instances with sparse Max Health overrides. ArenaSetupActor supplies their Armor
+contribution to the existing ShipRuntime before BeginPlay. Four heavy targets
+retain direct C++ construction; their positions and constructor inputs now live
+in the scene setup actor because existing dummy reflection has no Armor/weapon
+constructor override. The stage 2c prefab/catalog contracts above remain intact.

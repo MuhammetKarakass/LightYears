@@ -37,6 +37,7 @@ namespace vega
 			std::string colorScript = "nebula_teal_pink";
 			std::string capturePath, scenePath;
 			bool sceneSpecified = false;
+			bool galaxyStopSpecified = false;
 			int captureFrames = 180;
 			float playerHull = -1.f;
 			int shipIndex = -1;
