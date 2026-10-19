@@ -83,11 +83,33 @@ namespace vega
 			unsigned moonSeed = 0;
 			bool visible = true, moon = true;
 			std::optional<visual::PlanetRing> ring;
+			// Authored/data-path overrides (unset keeps the entry-0 behavior): exact surface rotation in radians,
+			// exact 3D light direction, brightness multiplier and the surface spin axis.
+			std::optional<float> rotation;
+			std::optional<sf::Vector3f> light;
+			float brightnessScale = 1.f;
+			sf::Vector3f spinAxis{0.f, 1.f, 0.f};
 		};
 		enum class PlanetBodyPass { BackRing, BackMoon, Body, FrontRing, FrontMoon };
 		using PlanetBodyObserver = std::function<void(std::size_t, PlanetBodyPass, const visual::PlanetParams&, unsigned)>;
+		// Placement inputs shared by entry 0 (explicit array entry) and the additional entries.
+		struct EntryBodyContext
+		{
+			sf::Vector2f output;
+			sf::Vector2f fallbackAt;
+			float baseRadius = 100.f;
+			sf::Vector2f driftPixels;
+			float planetParallax = 0.f;
+			float bandParallax = 0.f;
+			float pipelineRotationSpeed = 0.f;
+			float elapsedSeconds = 0.f;
+			bool mirrored = false;
+			// Non-null in an orbit scene: placement uses the owner's view and this scene's star longitudes.
+			const visual::OrbitSettings* sceneOrbit = nullptr;
+		};
 		bool DrawPlanetBody(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const PlanetBodyDescription& body, sf::Vector2f hostCenter, bool starHidden, float timeSeconds, std::size_t index);
-		void DrawAdditionalPlanetBodies(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds);
+		PlanetBodyDescription BuildEntryBody(const sky::DeepSkyPlanetEntry& entry, std::size_t index, const EntryBodyContext& context) const;
+		void DrawAdditionalPlanetBodies(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds, const visual::OrbitSettings* sceneOrbit);
 		std::vector<PlanetBodyDescription> mAdditionalPlanetBodies;
 		PlanetBodyObserver mPlanetBodyObserver;
 
@@ -124,7 +146,7 @@ namespace vega
 		void DrawHostStarAt(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f center, float maxBrightness, std::optional<float> radius);
 		bool DrawPlanet(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds);
 		// The low-orbit stop: a horizon or disk planet (with its ring and moon), rigidly turning sky and stars, host star and motes; no objects or nebula.
-		void DrawOrbitBackground(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const visual::DeepSkyStop& deepSky, const visual::OrbitSettings& orbit, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds, float cap);
+		void DrawOrbitBackground(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const visual::DeepSkyStop& deepSky, const sky::DeepSkyPlanetEntry& owner, const visual::OrbitSettings& orbit, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds, float cap);
 		// Rebuilds the field stars when the sky, the band, the stop's clusters or the catalog changed; nullptr adds no clusters.
 		void RebuildStars(const visual::StarFieldSettings& starField, const visual::MilkyWaySettings& band, const visual::DeepSkyStop* clusters, bool mirrored, sf::Vector2f outputSize, unsigned catalogVersion);
 		// Near-field dust motes, lit by the star direction and thinned or thickened by the stop.

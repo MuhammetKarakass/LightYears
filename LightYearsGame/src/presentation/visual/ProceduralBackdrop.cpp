@@ -246,6 +246,21 @@ namespace vega
 			return static_cast<unsigned>(seed ^ (seed >> 32));
 		}
 
+		// Deterministic per-entry surface and moon seeds for authored planet lists; entry 0 keeps the legacy seed.
+		float EntrySurfaceSeed(std::uint64_t locationSeed, std::size_t index)
+		{
+			const std::uint64_t mixed = Mix(locationSeed, 0x51ed2701f3f5a2c7ULL + static_cast<std::uint64_t>(index));
+			return static_cast<float>(mixed % 97u) + 1.f;
+		}
+
+		unsigned EntryMoonSeed(std::uint64_t locationSeed, std::size_t index)
+		{
+			return FoldSeed(Mix(locationSeed, 0x6d2b79f5ULL + static_cast<std::uint64_t>(index)));
+		}
+
+		// Authored drift is clamped this far outside the output, so a long-running body stays near the screen.
+		constexpr float DriftScreenMargin = 0.25f;
+
 		// Space gradient: the region's shadow colour near black; a stop's sky tint moves it toward the stop's own colour.
 		void DrawSkyGradient(sf::RenderTarget& target, const visual::SkyPalette& palette, const visual::DeepSkyStop* deepSky, float cap)
 		{
@@ -505,9 +520,20 @@ namespace vega
 		pipeline.SetBackgroundLook(look);
 		const float cap = std::min(settings.tierMaxBrightness[TierIndex(LuminanceTier::Background)] * look.capScale, 1.f);
 		mOrbitRate.reset();
-		if (deepSky != nullptr && deepSky->orbit)
+		// Only resolved entry 0 owns the scene. Legacy assets resolve to entry 0 as well; empty lists keep the generated fallback.
+		sky::DeepSkyPlanetEntry synthesizedOwner;
+		const sky::DeepSkyPlanetEntry* owner = deepSky != nullptr && !deepSky->planets.empty() ? &deepSky->planets.front() : nullptr;
+		if (owner == nullptr && deepSky != nullptr && deepSky->orbit)
 		{
-			DrawOrbitBackground(assets, pipeline, *deepSky, *deepSky->orbit, cameraCenter, viewHeight, timeSeconds, cap);
+			synthesizedOwner.planet = deepSky->planet;
+			synthesizedOwner.orbit = deepSky->orbit;
+			synthesizedOwner.legacy = true;
+			owner = &synthesizedOwner;
+		}
+		const visual::OrbitSettings* sceneOrbit = owner != nullptr && owner->orbit ? &*owner->orbit : nullptr;
+		if (sceneOrbit != nullptr)
+		{
+			DrawOrbitBackground(assets, pipeline, *deepSky, *owner, *sceneOrbit, cameraCenter, viewHeight, timeSeconds, cap);
 			return;
 		}
 		const BackdropComposition composition = BuildStopComposition(settings, mLocationSeed, deepSky);
@@ -579,7 +605,7 @@ namespace vega
 			moon.maxBrightness = cap;
 			mMoon->Draw(background, moon);
 		}
-		DrawAdditionalPlanetBodies(assets, pipeline, cameraCenter, viewHeight, timeSeconds);
+		DrawAdditionalPlanetBodies(assets, pipeline, cameraCenter, viewHeight, timeSeconds, nullptr);
 
 		// Lit cloud layers, lit by the host star where it is now (the same position the host star and planet use).
 		const HostStarSettings& host = settings.hostStar;
@@ -820,7 +846,7 @@ namespace vega
 		return OrbitSpeedSteps[mOrbitSpeedStep];
 	}
 
-	void ProceduralBackdrop::DrawOrbitBackground(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const visual::DeepSkyStop& deepSky, const visual::OrbitSettings& orbit, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds, float cap)
+	void ProceduralBackdrop::DrawOrbitBackground(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const visual::DeepSkyStop& deepSky, const sky::DeepSkyPlanetEntry& owner, const visual::OrbitSettings& orbit, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds, float cap)
 	{
 		using namespace visual;
 		sf::RenderTarget& background = pipeline.Target(Layer::Background);
@@ -859,12 +885,19 @@ namespace vega
 		pipeline.CompositeNebula();
 
 		// The orbited planet's kind is the stop's override, else the kind of the planet it orbits.
-		if (settings.planet.enabled && (mHasPlanet || orbit.kind.has_value()))
+		// A legacy owner keeps its historical ignored position/scale/hide behavior; an explicit array entry uses them.
+		const bool legacyOwner = owner.legacy;
+		const bool ownerVisible = settings.planet.enabled && (legacyOwner ? (mHasPlanet || orbit.kind.has_value()) : !owner.planet.hide);
+		if (ownerVisible)
 		{
 			PlanetKind kind = mPlanetKind;
 			if (orbit.planet >= 0 && static_cast<std::size_t>(orbit.planet) < mPlanetKinds.size())
 			{
 				kind = mPlanetKinds[static_cast<std::size_t>(orbit.planet)];
+			}
+			if (owner.planet.kind && !legacyOwner)
+			{
+				kind = *owner.planet.kind;
 			}
 			if (orbit.kind)
 			{
@@ -884,6 +917,16 @@ namespace vega
 			planet.light = starShown ? OrbitSky::PlanetLight(orbit, view, starLon, starAcross) : sf::Vector3f(-0.7f, -0.45f, 0.55f);
 			SetStarLight(planet, mHostStar, starShown);
 			OrbitSky::PlacePlanet(planet, orbit, view, -drift * settings.planet.parallax);
+			if (!legacyOwner)
+			{
+				// An explicit owner uses its authored screen-fraction offset from the framing centre and radius scale.
+				if (owner.planet.at)
+				{
+					const float offsetX = composition.mirrored ? -owner.planet.at->x : owner.planet.at->x;
+					planet.center += sf::Vector2f(offsetX * output.x, owner.planet.at->y * output.y);
+				}
+				planet.radius *= owner.planet.scale.value_or(1.f);
+			}
 			// The ring and the moon pass behind the planet on the far side of their orbit and in front of it on the near side.
 			const ColorRamp ramp = PlanetRamp(kind);
 			const unsigned moonSeed = FoldSeed(mLocationSeed) ^ 0x6d2b79f5u;
@@ -907,6 +950,9 @@ namespace vega
 			}
 		}
 
+		// Additional bodies keep the owner's scene and suppression rules; they draw after entry 0 as their own groups.
+		DrawAdditionalPlanetBodies(assets, pipeline, cameraCenter, viewHeight, timeSeconds, &orbit);
+
 		DrawMotes(assets, pipeline, &deepSky, drift, timeSeconds, cap);
 
 		LensParams lens;
@@ -926,6 +972,25 @@ namespace vega
 		const sf::Vector2f drift = cameraCenter - mCameraStart;
 		const visual::DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
 		const BackdropComposition composition = BuildStopComposition(assets.Settings(), mLocationSeed, deepSky);
+		// An array-only sky has an explicit resolved entry 0; a legacy entry 0 keeps the original path below.
+		const sky::DeepSkyPlanetEntry* owner = deepSky != nullptr && !deepSky->planets.empty() ? &deepSky->planets.front() : nullptr;
+		if (owner != nullptr && !owner->legacy)
+		{
+			EntryBodyContext context;
+			context.output = output;
+			context.fallbackAt = composition.planetAt;
+			context.baseRadius = output.y * settings.radius * BuildBackdropComposition(assets.Settings(), mLocationSeed).planetScale;
+			context.driftPixels = drift * unitsToPixels;
+			context.planetParallax = settings.parallax;
+			context.bandParallax = composition.band.parallax;
+			context.elapsedSeconds = std::max(timeSeconds - mLocationStart, 0.f);
+			context.pipelineRotationSpeed = settings.rotationSpeed;
+			context.mirrored = composition.mirrored;
+			const PlanetBodyDescription body = BuildEntryBody(*owner, 0, context);
+			const auto& host = assets.Settings().hostStar;
+			const sf::Vector2f hostCenter = BackdropCenter(output, composition.starAt.x, composition.starAt.y, drift, host.parallax, unitsToPixels);
+			return DrawPlanetBody(assets, pipeline, body, hostCenter, deepSky != nullptr && deepSky->hostStar.hide, timeSeconds, 0);
+		}
 		PlanetBodyDescription body;
 		body.center = BackdropCenter(output, composition.planetAt.x, composition.planetAt.y, drift, settings.parallax, unitsToPixels);
 		body.radius = output.y * settings.radius * composition.planetScale;
@@ -939,21 +1004,124 @@ namespace vega
 		return DrawPlanetBody(assets, pipeline, body, hostCenter, deepSky != nullptr && deepSky->hostStar.hide, timeSeconds, 0);
 	}
 
-	void ProceduralBackdrop::DrawAdditionalPlanetBodies(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds)
+	ProceduralBackdrop::PlanetBodyDescription ProceduralBackdrop::BuildEntryBody(const sky::DeepSkyPlanetEntry& entry, std::size_t index, const EntryBodyContext& context) const
 	{
-		if (mAdditionalPlanetBodies.empty() || !assets.Settings().planet.enabled || viewHeight <= 0.f) return;
+		const visual::DeepSkyPlanet& authored = entry.planet;
+		PlanetBodyDescription body;
+		body.visible = !authored.hide;
+		body.kind = authored.kind ? *authored.kind : (entry.orbit && entry.orbit->kind ? *entry.orbit->kind : (index < mPlanetKinds.size() ? mPlanetKinds[index] : mPlanetKind));
+		body.seed = index == 0 ? visual::PlanetParams{}.seed : EntrySurfaceSeed(mLocationSeed, index);
+		body.moonSeed = index == 0 ? FoldSeed(mLocationSeed) ^ 0x6d2b79f5u : EntryMoonSeed(mLocationSeed, index);
+		const float scale = authored.scale.value_or(1.f);
+		if (context.sceneOrbit != nullptr)
+		{
+			// An additional orbit body inherits the owner's framing when it has no orbit block of its own;
+			// only an authored block contributes a ring, a moon and its brightness.
+			const bool authoredOrbit = entry.orbit.has_value();
+			const visual::OrbitSettings& orbit = authoredOrbit ? *entry.orbit : *context.sceneOrbit;
+			const visual::OrbitSky::View view = visual::OrbitSky::MakeView(*context.sceneOrbit, context.output, mOrbitSeconds, context.driftPixels * context.bandParallax);
+			visual::PlanetParams placed;
+			visual::OrbitSky::PlacePlanet(placed, orbit, view, -context.driftPixels * context.planetParallax);
+			body.center = placed.center;
+			if (authored.at)
+			{
+				// New orbit entries read `at` as a screen-fraction offset from the default framing centre.
+				const float offsetX = context.mirrored ? -authored.at->x : authored.at->x;
+				body.center += sf::Vector2f(offsetX * context.output.x, authored.at->y * context.output.y);
+			}
+			body.radius = placed.radius * scale;
+			body.rotation = placed.rotation;
+			body.spinAxis = placed.spinAxis;
+			body.ring = authoredOrbit ? placed.ring : std::nullopt;
+			body.brightnessScale = authoredOrbit ? orbit.brightness : 1.f;
+			body.moon = authoredOrbit && orbit.moon;
+			body.light = visual::OrbitSky::PlanetLight(orbit, view, context.sceneOrbit->starDeg * DegToRad, context.sceneOrbit->starAcrossDeg * DegToRad);
+			return body;
+		}
+		// Ordinary scene: an absolute screen fraction at the camera start, mirrored like entry 0, with camera parallax.
+		sf::Vector2f at = context.fallbackAt;
+		if (authored.at) at = {context.mirrored ? 1.f - authored.at->x : authored.at->x, authored.at->y};
+		body.center = sf::Vector2f(context.output.x * at.x, context.output.y * at.y) - context.driftPixels * context.planetParallax;
+		if (authored.driftPerMinute)
+		{
+			// An authored drift moves the body from its composed position over the location clock; clamping keeps it near the screen.
+			const float minutes = context.elapsedSeconds / 60.f;
+			body.center += sf::Vector2f(authored.driftPerMinute->x * context.output.x * minutes, authored.driftPerMinute->y * context.output.y * minutes);
+			body.center.x = std::clamp(body.center.x, -DriftScreenMargin * context.output.x, (1.f + DriftScreenMargin) * context.output.x);
+			body.center.y = std::clamp(body.center.y, -DriftScreenMargin * context.output.y, (1.f + DriftScreenMargin) * context.output.y);
+		}
+		body.radius = context.baseRadius * scale;
+		if (authored.rotationDegreesPerMinute)
+		{
+			// Signed degrees per minute -> radians per second, giving uRotation = value * elapsed seconds.
+			body.rotationSpeed = *authored.rotationDegreesPerMinute * DegToRad / 60.f;
+			body.rotationScale = 1.f;
+		}
+		else
+		{
+			body.rotationSpeed = context.pipelineRotationSpeed;
+			body.rotationScale = PlanetSpinScale;
+		}
+		if (entry.orbit)
+		{
+			body.moon = entry.orbit->moon;
+			if (entry.orbit->ring)
+			{
+				// In an ordinary scene an extra's orbit ring contributes its radii and opacity; the ordinary equatorial normal is used.
+				visual::PlanetRing ring;
+				ring.inner = entry.orbit->ring->inner;
+				ring.outer = entry.orbit->ring->outer;
+				ring.opacity = entry.orbit->ring->opacity;
+				body.ring = ring;
+			}
+		}
+		else
+		{
+			// Entry 0 keeps the ordinary planet's procedural moon; extra ordinary bodies have no attachments unless authored.
+			body.moon = index == 0;
+		}
+		return body;
+	}
+
+	void ProceduralBackdrop::DrawAdditionalPlanetBodies(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds, const visual::OrbitSettings* sceneOrbit)
+	{
+		const visual::PipelineSettings& settings = assets.Settings();
+		if (!settings.planet.enabled || viewHeight <= 0.f) return;
 		const sf::Vector2f output(pipeline.OutputSize());
 		const sf::Vector2f drift = cameraCenter - mCameraStart;
 		const float unitsToPixels = UnitsToPixels(output.y, viewHeight);
 		const auto* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
-		const auto composition = BuildStopComposition(assets.Settings(), mLocationSeed, deepSky);
-		const auto& host = assets.Settings().hostStar;
+		const auto composition = BuildStopComposition(settings, mLocationSeed, deepSky);
+		const auto& host = settings.hostStar;
 		const sf::Vector2f hostCenter = BackdropCenter(output, composition.starAt.x, composition.starAt.y, drift, host.parallax, unitsToPixels);
-		for (std::size_t i = 0; i < mAdditionalPlanetBodies.size(); ++i)
+		const bool starHidden = sceneOrbit != nullptr ? !(host.enabled && !(deepSky != nullptr && deepSky->hostStar.hide)) : (deepSky != nullptr && deepSky->hostStar.hide);
+		if (!mAdditionalPlanetBodies.empty())
 		{
-			auto body = mAdditionalPlanetBodies[i];
-			body.center -= drift * assets.Settings().planet.parallax * unitsToPixels;
-			DrawPlanetBody(assets, pipeline, body, hostCenter, deepSky != nullptr && deepSky->hostStar.hide, timeSeconds, i + 1);
+			// Fixture-only seam: stage-1 tests feed resolved bodies directly and do not change an orbit scene.
+			if (sceneOrbit != nullptr) return;
+			for (std::size_t i = 0; i < mAdditionalPlanetBodies.size(); ++i)
+			{
+				auto body = mAdditionalPlanetBodies[i];
+				body.center -= drift * settings.planet.parallax * unitsToPixels;
+				DrawPlanetBody(assets, pipeline, body, hostCenter, starHidden, timeSeconds, i + 1);
+			}
+			return;
+		}
+		if (deepSky == nullptr || deepSky->planets.size() <= 1) return;
+		EntryBodyContext context;
+		context.output = output;
+		context.fallbackAt = composition.planetAt;
+		context.baseRadius = output.y * settings.planet.radius * BuildBackdropComposition(settings, mLocationSeed).planetScale;
+		context.driftPixels = drift * unitsToPixels;
+		context.planetParallax = settings.planet.parallax;
+		context.bandParallax = composition.band.parallax;
+		context.elapsedSeconds = std::max(timeSeconds - mLocationStart, 0.f);
+		context.pipelineRotationSpeed = settings.planet.rotationSpeed;
+		context.mirrored = composition.mirrored;
+		context.sceneOrbit = sceneOrbit;
+		for (std::size_t i = 1; i < deepSky->planets.size(); ++i)
+		{
+			DrawPlanetBody(assets, pipeline, BuildEntryBody(deepSky->planets[i], i, context), hostCenter, starHidden, timeSeconds, i);
 		}
 	}
 
@@ -964,7 +1132,6 @@ namespace vega
 		// A distant background moves continuously against the camera, without the gameplay pixel grid.
 		planet.center = body.center;
 		planet.radius = body.radius;
-		planet.brightness = settings.brightness;
 		planet.saturation = settings.saturation;
 		planet.opacity = settings.opacity;
 		planet.dither = settings.dither;
@@ -974,11 +1141,19 @@ namespace vega
 		planet.seed = body.seed;
 		planet.ring = body.ring;
 		planet.timeSeconds = timeSeconds;
-		planet.rotation = timeSeconds * body.rotationSpeed * body.rotationScale;
+		planet.rotation = body.rotation ? *body.rotation : timeSeconds * body.rotationSpeed * body.rotationScale;
+		planet.spinAxis = body.spinAxis;
+		planet.brightness = settings.brightness * body.brightnessScale;
 		planet.light = { -0.7f, -0.45f, 0.55f };
 
 		const visual::HostStarSettings& host = assets.Settings().hostStar;
-		if (host.enabled)
+		if (body.light)
+		{
+			// An orbit-scene entry has an exact scene light direction (already lifted toward its framing).
+			planet.light = *body.light;
+			SetStarLight(planet, mHostStar, !starHidden);
+		}
+		else if (host.enabled)
 		{
 			// Light points from the planet to the host star on screen, lifted toward the viewer.
 			const sf::Vector2f toStar = hostCenter - planet.center;

@@ -86,19 +86,58 @@ primary body's clipped bounding region, second-body visibility, and unchanged
 pixels outside the extra body's expected region. Ordinary pipeline enablement
 still applies; the seam does not change the orbit scene.
 
+## Stage 3 game adapter (resolved planets list)
+
+The game renders Vega's resolved `SkyAsset::planets` list. Entry 0 keeps the
+original path: a legacy entry 0 (from the legacy `planet`/`orbit` keys, or their
+absence) uses the generated fallback below, and an explicit array entry 0 is
+reconstructed through the same `BuildEntryBody` as the extras. Entries 1..N-1 are
+built as `PlanetBodyDescription` values and drawn through the Stage-1
+`DrawPlanetBody` after entry 0, in array order (later in front), each as its own
+back-ring → back-moon → body → front-ring → front-moon group with the common host
+star light. `rotationDegreesPerMinute` is a signed surface rotation
+(radians/second = value·π/180/60); `driftPerMinute` moves the body in
+output-size-relative fractions of the location clock and is clamped to a quarter
+output outside the screen. `planet.at` is an absolute screen fraction for a normal
+scene (mirrored with the stop, without extra jitter); on an orbit entry it is an
+offset from the default framing centre and `planet.scale` multiplies the placed
+radius. Extra ordinary bodies have no attachments unless an `orbit` block authors
+a ring/moon; extras in an orbit scene inherit the owner's framing for placement
+and use their own block only for ring, moon and brightness. A sky with no
+`planets` array (including `planets: []`, which the parser cannot distinguish from
+absence) still renders exactly as before.
+
+Extras never enter `DrawOrbitBackground`. In an orbit scene they draw after the
+owner and keep the scene and its suppression of objects, nebula, sky paint and
+asteroids; the owner's `starShown` still governs the shared illumination. Legacy
+orbit owners keep ignoring `planet.at`/`scale`/`hide`; an explicit orbit owner
+applies them. Ordinary pipeline enablement still applies, and the Stage-1 fixture
+seam remains a thin override that does not touch the orbit scene.
+
+`LightYearsBackdropPlanetsDataE2E` (mode `--planets-data`) injects cloned fixture
+skies through `PreviewDeepSky` and checks: explicit-entry-0 versus legacy pixel and
+submission parity at 0/30/120 s; three authored ring/moon bodies (order, kinds,
+18 submissions, churn confined to their regions); authored kind, ±signed
+rotation, drift placement, mirroring and drift clamping; a hidden extra
+submitting nothing; the eight-body cap and the nine-body parse rejection; an orbit
+owner keeping its submissions, state, scene and suppression plus ignoring legacy
+`at`/`scale`/`hide`; and an explicit orbit owner applying `at`/`scale`. Evidence
+is written under `build/w10-planets-render-data`.
+
 ## Remaining stages
 
 The read-only design is
 [`task-092-sky-multi-planet-design.out.md`](../../Vega/.sol/task-092-sky-multi-planet-design.out.md).
 
-- **Stage 2 (Vega parser/resolver, then game adoption):** introduce typed planet
-  entries, resolve inherited append semantics and legacy entry 0, distinguish
-  empty arrays from generated fallback, and validate the effective eight-body
-  limit transactionally. Define scene-orbit ownership, per-body motion/framing
-  and ring constraints while retaining legacy behavior.
-- **Stage 3 (Vega editor and game adapter):** add count/add/duplicate/remove/
-  reorder/select controls, indexed handles, owner labeling, signed speeds,
-  preset materialization, undo/redo and byte-preserving save/reopen.
+- **Stage 2 (Vega parser/resolver, then game adoption):** landed in Vega and
+  adopted here: typed planet entries, inherited append semantics, legacy entry 0,
+  scene-orbit ownership and the effective eight-body limit. An empty `planets`
+  array is still indistinguishable from no array, so the generated fallback
+  remains (engine limitation to revisit).
+- **Stage 3 (Vega editor and game adapter):** the game adapter renders the
+  resolved list (above); the editor count/add/duplicate/remove/reorder/select
+  controls, indexed handles, owner labeling, signed speeds, preset
+  materialization, undo/redo and byte-preserving save/reopen remain Vega work.
 - **Stage 4 (regression/docs):** extend parser/document/editor scripts and
   captures, retain legacy equivalence at animated times, update engine/module
   documentation and sample content, and review performance/visual overlap.
