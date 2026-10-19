@@ -20,6 +20,7 @@
 #include "gameConfigs/combat/EffectConfig.h"
 #include <framework/content/ContentSchema.h>
 #include "level/ArenaTestLevel.h"
+#include "level/LevelOne.h"
 #include "level/SceneLevel.h"
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
@@ -449,6 +450,7 @@ namespace vega
 			if (!settings["levelRules"].is_string()) throw std::runtime_error("settings.levelRules must be a string");
 			const auto rules = settings["levelRules"].get<std::string>();
 			if (rules == "ArenaTest") return std::make_shared<ArenaTestLevel>(&application, scene, [this](const nlohmann::json& value) { ApplySceneSettings(value); }, edit);
+			if (rules == "LevelOne") return std::make_shared<LevelOne>(&application, scene, [this](const nlohmann::json& value) { ApplySceneSettings(value); }, edit);
 			if (!rules.empty()) throw std::runtime_error("Unsupported settings.levelRules: " + rules);
 		}
 		return std::make_shared<SceneLevel>(&application, scene,

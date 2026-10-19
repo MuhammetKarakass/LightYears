@@ -21,12 +21,37 @@ namespace vega
 	LevelOne::LevelOne(Application* owningApp)
 		:GameLevel(owningApp),
 		mPlayerSpaceShip{},
+		mLayout{ LevelLayout::ReadLevelOne(GetEngineContext()) },
 		mChaosStage{},
 		mBackgroundActor{},
 		mPlanetsLayer{},
 		mMeteorsLayer{}
 	{
 	
+	}
+
+	LevelOne::LevelOne(Application* owningApp, nlohmann::json scene, SettingsApplier applySettings, bool editMode)
+		: GameLevel{ owningApp }, mLayout{ editMode ? LevelLayout{} : LevelLayout::Parse(scene, GetEngineContext(), "LevelOne") }, mApplySettings{ std::move(applySettings) }, mEditMode{ editMode }
+	{
+		if (editMode)
+		{
+			LevelLayout::RegisterTypesAndContent();
+			mLayout.scene = std::move(scene);
+			mLayout.fromScene = true;
+		}
+		SetPaused(editMode);
+	}
+
+	void LevelOne::BeginPlay()
+	{
+		mLoadResult = mEditMode ? SceneSerializer::Load(*this, mLayout.scene) : mLayout.LoadEntities(*this);
+		if (mApplySettings && mLayout.scene.value("settings", nlohmann::json::object()).contains("routeStop")) mApplySettings(mLayout.scene["settings"]);
+		if (!mEditMode) GameLevel::BeginPlay();
+	}
+
+	bool LevelOne::DispatchEvent(const sf::Event& event)
+	{
+		return mEditMode || GameLevel::DispatchEvent(event);
 	}
 
 	void LevelOne::OnGameStart()
@@ -98,19 +123,16 @@ namespace vega
 
 	void LevelOne::InitGameStages()
 	{
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		AddGameStage(shared_ptr<VanguardStage>{new VanguardStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		AddGameStage(shared_ptr<TwinBladeStage>{new TwinBladeStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		AddGameStage(shared_ptr<HexagonStage>{new HexagonStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-
-		shared_ptr<ChaosStage> chaosStage = shared_ptr<ChaosStage>{ new ChaosStage(this) };
-		mChaosStage = chaosStage;
-		AddGameStage(chaosStage);
-		chaosStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectChaosStageToHUD);
-
+		for (const auto& entry : mLayout.campaign.stages)
+		{
+			auto stage = mLayout.campaign.CreateStage(*this, entry);
+			if (const auto chaos = std::dynamic_pointer_cast<ChaosStage>(stage))
+			{
+				mChaosStage = chaos;
+				chaos->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectChaosStageToHUD);
+			}
+			AddGameStage(std::move(stage));
+		}
 	}
 
 	void LevelOne::ConnectChaosStageToHUD()

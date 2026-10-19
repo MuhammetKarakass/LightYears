@@ -6,6 +6,7 @@
 #include "level/SpriteActor.h"
 #include "level/authoring/ArenaSetupActor.h"
 #include "level/authoring/EncounterSetupActor.h"
+#include "level/authoring/CampaignSetupActor.h"
 #include "enemy/DummyEnemy.h"
 #include "gameplay/HealthComponent.h"
 #include "gameplay/ShieldComponent.h"
@@ -68,5 +69,11 @@ namespace vega
 		VEGA_REGISTER(ArenaWaveEntry);
 		VEGA_REGISTER(ArenaSetupActor);
 		VEGA_REGISTER(EncounterSetupActor);
+		VEGA_REGISTER(CampaignStageEntry);
+		VEGA_REGISTER(VanguardStageSettings);
+		VEGA_REGISTER(TwinBladeStageSettings);
+		VEGA_REGISTER(HexagonStageSettings);
+		VEGA_REGISTER(ChaosStageSettings);
+		VEGA_REGISTER(CampaignSetupActor);
 	}
 }

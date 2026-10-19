@@ -60,7 +60,7 @@ namespace vega
 		rules.category = "Gameplay";
 		rules.type = SceneSettingType::String;
 		rules.defaultValue = "";
-		rules.tooltip = "Empty uses SceneLevel; ArenaTest uses the existing arena playtest rules. Applied on Play.";
+		rules.tooltip = "Empty uses SceneLevel; ArenaTest uses arena playtest rules; LevelOne uses campaign rules. Applied on Play.";
 		EngineContext::Current().SceneSettings().Register(std::move(rules));
 	}
 }

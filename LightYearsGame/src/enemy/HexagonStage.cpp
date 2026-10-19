@@ -1,14 +1,16 @@
 #include "enemy/HexagonStage.h"
+#include "level/authoring/CampaignSetupActor.h"
 #include <framework/World.h>
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/enemy/EnemyIds.h"
 
 namespace vega
 {
-	HexagonStage::HexagonStage(World* world):
+	HexagonStage::HexagonStage(World* world) : HexagonStage{ world, HexagonStageSettings{} } {}
+	HexagonStage::HexagonStage(World* world, const HexagonStageSettings& settings) :
 		GameStage{world},
-		mSpawnInterval{5.f},
-		mSpawnGroupAmt{7},
+		mSpawnInterval{settings.spawnInterval},
+		mSpawnGroupAmt{settings.spawnGroups},
 		mCurrentSpawnCount{0},
 		mMidSpawnLoc{world->GetWindowSize().x/2.f, -100.f}
 	{

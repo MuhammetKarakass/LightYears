@@ -1,0 +1,58 @@
+open-scene scenes/level-one.scene.json
+expect-mode edit
+expect-setting levelRules "LevelOne"
+expect-count CampaignSetupActor 1
+expect-count PlayerSpaceShip 0
+expect-count EnemyActor 0
+select-name "Campaign setup"
+expect-prop Actor Stages[0].kind 0
+expect-prop Actor Stages[0].duration 5
+expect-prop Actor Stages[1].kind 1
+expect-prop Actor Stages[1].configuration 0
+expect-prop Actor Vanguard[0].rows 5
+expect-prop Actor TwinBlade[0].spawnCount 30
+expect-prop Actor Hexagon[0].spawnGroups 7
+expect-prop Actor Chaos[0].survivalDuration 60
+set-prop Actor Stages[0].duration 7
+expect-prop Actor Stages[0].duration 7
+undo
+expect-prop Actor Stages[0].duration 5
+set-prop Actor Vanguard[0].rows 6
+expect-prop Actor Vanguard[0].rows 6
+undo
+set-prop Actor TwinBlade[0].spawnCount 31
+expect-prop Actor TwinBlade[0].spawnCount 31
+undo
+set-prop Actor Hexagon[0].spawnGroups 8
+expect-prop Actor Hexagon[0].spawnGroups 8
+undo
+set-prop Actor Chaos[0].survivalDuration 61
+expect-prop Actor Chaos[0].survivalDuration 61
+undo
+save-scene @VEGA_CAMPAIGN_SCENE@
+open-scene @VEGA_CAMPAIGN_SCENE@
+expect-mode edit
+select-name "Campaign setup"
+expect-prop Actor Stages[0].duration 5
+expect-prop Actor Vanguard[0].rows 5
+expect-prop Actor TwinBlade[0].spawnCount 30
+expect-prop Actor Hexagon[0].spawnGroups 7
+expect-prop Actor Chaos[0].survivalDuration 60
+play-mode
+wait 2
+expect-mode play
+expect-count CampaignSetupActor 1
+expect-count PlayerSpaceShip 1
+expect-count EnemyActor 0
+stop
+wait 2
+expect-mode edit
+expect-count CampaignSetupActor 1
+expect-count PlayerSpaceShip 0
+expect-count EnemyActor 0
+select-name "Campaign setup"
+expect-prop Actor Stages[0].duration 5
+save-scene @VEGA_CAMPAIGN_SCENE@
+open-scene @VEGA_CAMPAIGN_SCENE@
+expect-count CampaignSetupActor 1
+quit

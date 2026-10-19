@@ -8,10 +8,12 @@
 
 namespace vega
 {
+	struct VanguardStageSettings;
 	class VanguardStage : public GameStage
 	{
 	public:
 		VanguardStage(World* world);
+		VanguardStage(World* world, const VanguardStageSettings& settings);
 		virtual void BeginStage() override;
 		virtual void TickStage(float deltaTime) override;
 

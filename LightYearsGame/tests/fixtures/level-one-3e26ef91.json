@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "3e26ef91eeb58e84d187c47ef0ae548191d97fbb",
+  "source": "LevelOne::InitGameStages and the four stage constructors, captured before runtime edits",
+  "Stages": [
+    {"kind":"Wait","duration":5,"configuration":-1},
+    {"kind":"Vanguard","duration":0,"configuration":0},
+    {"kind":"Wait","duration":5,"configuration":-1},
+    {"kind":"TwinBlade","duration":0,"configuration":0},
+    {"kind":"Wait","duration":5,"configuration":-1},
+    {"kind":"Hexagon","duration":0,"configuration":0},
+    {"kind":"Wait","duration":5,"configuration":-1},
+    {"kind":"Chaos","duration":0,"configuration":0}
+  ],
+  "Vanguard": [{"minSpawnInterval":1.25,"maxSpawnInterval":2,"spawnDistanceToEdge":100,"switchInterval":2.5,"rows":5,"perRow":5}],
+  "TwinBlade": [{"minSpawnInterval":0.75,"maxSpawnInterval":1.5,"spawnCount":30}],
+  "Hexagon": [{"spawnInterval":5,"spawnGroups":7}],
+  "Chaos": [{"spawnInterval":3,"spawnIntervalDecrement":0.05,"survivalDuration":60,"spawnMinDistanceTop":75}],
+  "decor": "Unchanged in C++; no decor values migrated. SpawnCosmetics and EnvironmentData remain authoritative."
+}

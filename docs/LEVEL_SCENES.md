@@ -1,16 +1,18 @@
-# Level scenes (stage 3)
+# Level scenes (stages 3–4)
 
 Content belongs in the editor; rules stay in C++. `ArenaTestLevel` now reads
 `LightYearsGame/assets/scenes/arena-test.scene.json`. `sandbox.scene.json` is a
-separate SceneLevel fixture and is unchanged. LevelOne is unchanged.
+separate SceneLevel fixture and is unchanged. Stage 4 loads LevelOne's campaign
+plan from `scenes/level-one.scene.json` into the existing LevelOne C++ rules.
 
-## Schema
+## ArenaTest schema
 
 The envelope is `vega.scene`, integer version 1, with ordinary engine entities.
 Required settings are `bounds: [x,y,width,height]`, `playerShip` (player catalog
 ID), `routeStop` (registered galaxy route index), and `levelRules: "ArenaTest"`.
 `levelRules` is a registered string in World Settings. Empty selects the existing
-SceneLevel; unknown nonempty rules are rejected by the game module.
+SceneLevel; LevelOne selects the campaign owner described below; unknown nonempty
+rules are rejected by the game module.
 
 Exactly one `PlayerStart`, `ArenaSetupActor`, and `EncounterSetupActor` must exist.
 Every authored entity GUID must be nonempty and unique, including explicit
@@ -152,6 +154,102 @@ headless equivalence using a disposable build-tree asset copy.
 
 Endless cycling/scaling, seed derivation, spiral offsets, failure handling,
 restart/input, ownership cleanup, boundary/camera/respawn execution and every
-playtest metric remain C++. Next work is a separate LevelOne scene migration and
-decor layers, including adopting existing planet prefabs. Nested wave authoring
-would require a separately owned Vega reflection/Inspector change.
+playtest metric remain C++. Nested wave authoring would require a separately
+owned Vega reflection/Inspector change.
+
+## LevelOne campaign (stage 4)
+
+`LightYearsGame/assets/scenes/level-one.scene.json` is an ordinary `vega.scene`
+version 1 with `settings.levelRules: "LevelOne"` and exactly one passive
+`CampaignSetupActor`. The game module maps this registered setting to LevelOne,
+not ArenaLevel or SceneLevel. The game's startup selection remains unchanged;
+the existing campaign entry/restart reads this file, and explicit scene Play
+selects its C++ owner. No PlayerStart is needed: LevelOne still creates the
+selected player's ship at the original window-relative position. Arena/encounter
+setup actors, player markers, dummies, player and enemy actor placements are
+incompatible with these campaign rules. Ordinary decorative entities may be added.
+
+CampaignSetupActor has five top-level reflected lists:
+
+| Property | Leaf entry fields |
+| --- | --- |
+| `Stages` | `kind` (Wait, Vanguard, TwinBlade, Hexagon, Chaos), `duration`, `configuration` |
+| `Vanguard` | minSpawnInterval, maxSpawnInterval, spawnDistanceToEdge, switchInterval, rows, perRow |
+| `TwinBlade` | minSpawnInterval, maxSpawnInterval, spawnCount |
+| `Hexagon` | spawnInterval, spawnGroups |
+| `Chaos` | spawnInterval, spawnIntervalDecrement, survivalDuration, spawnMinDistanceTop |
+
+Each Wait entry has nonnegative seconds in `duration` and `configuration: -1`.
+Other entries require `duration: 0`; their zero-based `configuration` selects
+the list matching `kind`. Their existing C++ rules determine completion. Chaos's
+survivalDuration is the countdown after TotalChaos starts, not the entire stage's
+duration. No new independent stage timeout is added. Lists may hold multiple
+configurations, including repeated kinds with different indices; at most one
+Chaos stage is permitted by the existing single Chaos HUD binding. The shipped
+order is Wait(5), Vanguard(0), Wait(5), TwinBlade(0), Wait(5), Hexagon(0), Wait(5),
+Chaos(0), where parentheses on combat stages are configuration indices.
+
+These flat typed lists avoid Vega v1's nested-list restriction, just as arena
+Waves/Entries do. Every list and every leaf field must be authored explicitly
+(or inherited from a resolved prefab). Unknown keys/kinds, missing/duplicate
+setup, bad GUIDs, invalid JSON kinds, nonfinite/negative durations, invalid
+configuration indices, nonpositive/reversed spawn intervals, nonpositive or
+overflowing counts, and Chaos intervals exhausted before difficulty 11 refuse
+Play with a field/list diagnostic. Unused parameter entries are also validated.
+Zero Wait/survivalDuration and nonnegative switch intervals retain engine timer
+semantics. No setter clamping silently repairs invalid gameplay data.
+
+LevelLayout shares the arena envelope/entity/reflection/prefab preflight and
+transactional entity realization, then resolves CampaignPlan instead of arena
+data. The rules owner is checked explicitly, so ArenaTest cannot accidentally
+consume a LevelOne plan or vice versa. The default LevelOne constructor uses
+code defaults **only if the file is absent**, with a path warning. Existing
+malformed, unreadable or invalid files fail; explicit scene Play never falls
+back. Edit loads entities, suppresses BeginPlay/stages/timers/player/decor and
+allows gameplay values to be repaired. The separately owned engine transactional
+Play-refusal work is still an acceptance boundary; CreateLevel may throw.
+
+Stage execution and spawn algorithms, random calls and their order, formation
+geometry, enemy identities, Chaos difficulty thresholds/asteroid settings,
+player creation/death/immediate respawn, the three-second game-over timer,
+pause/resume, restart and Chaos HUD binding remain C++. World bounds/playerShip
+do not replace campaign player/camera rules; the shipped scene omits them.
+An explicitly authored routeStop retains the common backdrop setting behavior.
+
+**Decor decision:** no decor data is migrated. SpawnCosmetics and EnvironmentData
+remain unchanged: darkPurple background, the existing planet/meteor definition
+order (including duplicate meteor paths), depth color, visibility, two planet
+sprites, forty meteors, size/velocity ranges, lights and planet tags. This avoids
+changing the visual construction or random sequence without a visual equivalence
+proof. No planet prefab replaces BackgroundLayer. Next work is a separate decor
+as prefabs decision and migration with its own visual/randomness evidence.
+
+### Campaign verification
+
+The pre-edit effective configuration is frozen at
+[`level-one-3e26ef91.json`](../LightYearsGame/tests/fixtures/level-one-3e26ef91.json).
+The old constructor/sequence path's headless trace is frozen in
+[`level-one-3e26ef91-headless.json`](../LightYearsGame/tests/fixtures/level-one-3e26ef91-headless.json).
+Ordinary tests never regenerate these inputs. Test-only build-tree copies of the
+four stage sources redirect RandRange to a fixed generator (seed 1741); shipping
+stage objects and Vega's random_device-backed RNG are unchanged. The capture
+uses the real GameStageSequence, world timers and enemy prefab spawn path, with
+a 1920×1080 headless viewport and 0.1-second steps. It records all eight stage
+beginnings/endings and 237 enemy IDs/positions/spawn steps through completion
+at step 3021. This is controlled stage timing evidence, not a live random seed
+or visible gameplay recording.
+
+`LightYearsCampaignScene` compares the reflected scene/defaults against the
+configuration fixture, requires exact frozen trace equality for both factory
+and legacy-constructor paths, and checks the actual LevelOne's stage execution
+has identical enemy spawns and final completion timing. It also exercises loader
+rejections, absent-only fallback, Edit lifecycle suppression, reflected round
+trips, original player respawns and the game-over timer. Artifacts are written
+under `build/e2e-artifacts/campaign-scene/`.
+
+Open `scenes/level-one.scene.json`, select **Campaign setup**, and edit Stages
+or the per-kind configuration lists in Inspector. `VegaEditorCampaignScene`
+opens this asset in a disposable build-tree copy, edits/undoes every list's
+fields, saves/reopens, enters Play, verifies the player/initial Wait, stops and
+saves again. Its C++ postcheck revalidates the saved configuration and headless
+trace. Automation does not establish manual visible-window acceptance.

@@ -2,6 +2,7 @@
 
 #include "level/authoring/ArenaSetupActor.h"
 #include "level/authoring/EncounterSetupActor.h"
+#include "level/authoring/CampaignSetupActor.h"
 #include "framework/scene/Scene.h"
 
 namespace vega
@@ -24,11 +25,13 @@ namespace vega
 		std::string playerShip;
 		nlohmann::json scene;
 		bool fromScene = false;
+		CampaignPlan campaign;
 
 		static LevelLayout Defaults();
 		static void RegisterTypesAndContent();
-		static LevelLayout Parse(const nlohmann::json& scene, EngineContext& context);
+		static LevelLayout Parse(const nlohmann::json& scene, EngineContext& context, const std::string& rules = "ArenaTest");
 		static LevelLayout ReadArenaTest(EngineContext& context);
+		static LevelLayout ReadLevelOne(EngineContext& context);
 		SceneLoadResult LoadEntities(World& world) const;
 		void ConfigureDummies(World& world) const;
 	};

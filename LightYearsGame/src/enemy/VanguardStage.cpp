@@ -1,4 +1,5 @@
 #include "enemy/VanguardStage.h"
+#include "level/authoring/CampaignSetupActor.h"
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/enemy/EnemyIds.h"
 #include <framework/World.h>
@@ -6,21 +7,22 @@
 
 namespace vega
 {
-	VanguardStage::VanguardStage(World* world) :
+	VanguardStage::VanguardStage(World* world) : VanguardStage{ world, VanguardStageSettings{} } {}
+	VanguardStage::VanguardStage(World* world, const VanguardStageSettings& settings) :
 		GameStage(world),
-		mMinSpawnInterval{ 1.25f },
-		mMaxSpawnInterval{ 2.f },
-		mSpawnDistanceToEdge{ 100.f },
-		mSwitchInterval{ 2.5f },
+		mMinSpawnInterval{ settings.minSpawnInterval },
+		mMaxSpawnInterval{ settings.maxSpawnInterval },
+		mSpawnDistanceToEdge{ settings.spawnDistanceToEdge },
+		mSwitchInterval{ settings.switchInterval },
 		mRightSpawnLoc{ 0.f,0.f },
 		mLeftSpawnLoc{ 0.f,0.f },
 		mMidSpawnLoc{ 0.f,0.f },
 		mSpawnLoc{ 0.f,0.f },
 		mSpawnTimerHandle{},
 		mSwitchTimerHandle{},
-		mRowsToSpawn{ 5 },
+		mRowsToSpawn{ settings.rows },
 		mRowSpawnCount{ 0 },
-		mVanguardPerRow{ 5 },
+		mVanguardPerRow{ settings.perRow },
 		mCurrentRowVanguardCount{ 0 },
 
 		mLastRandNum{ 1 },

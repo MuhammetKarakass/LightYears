@@ -6,10 +6,12 @@
 
 namespace vega
 {
+	struct HexagonStageSettings;
 	class HexagonStage: public GameStage
 	{
 	public:
 		HexagonStage(World* world);
+		HexagonStage(World* world, const HexagonStageSettings& settings);
 
 		virtual void BeginStage() override;
 		virtual void TickStage(float deltaTime) override;

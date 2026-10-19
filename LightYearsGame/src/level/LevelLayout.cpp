@@ -24,7 +24,7 @@ namespace vega
 	namespace
 	{
 		using Json = nlohmann::json;
-		void Require(bool valid, const std::string& message) { if (!valid) throw std::runtime_error("ArenaTest layout: " + message); }
+		void Require(bool valid, const std::string& message) { if (!valid) throw std::runtime_error("Level layout: " + message); }
 		bool Finite(float value) { return std::isfinite(value); }
 		bool Finite(sf::Vector2f value) { return Finite(value.x) && Finite(value.y); }
 		bool PlayerShip(const std::string& id) { return id.rfind("Ship.Player.", 0) == 0 && content::ShipContentCatalog::FindById(id); }
@@ -94,10 +94,10 @@ namespace vega
 			const auto typeName = resolved["type"].get<std::string>();
 			const auto* type = context.Types().Find(typeName);
 			Require(type && type->spawnable && type->root == reflect::TypeRoot::Actor, path + ": unknown/non-spawnable type " + typeName);
-			Require(typeName != "PlayerSpaceShip" && typeName != "EnemyActor", path + ": incompatible prefab/actor " + typeName + "; ArenaTest rules own player and encounter spawning");
+			Require(typeName != "PlayerSpaceShip" && typeName != "EnemyActor", path + ": incompatible prefab/actor " + typeName + "; level rules own player and stage/encounter spawning");
 			if (entity.contains("properties")) ValidateProperties(entity["properties"], *type, path + ".properties");
 			ValidateProperties(resolved.value("properties", Json::object()), *type, path + ".properties");
-			if (typeName == "ArenaSetupActor" || typeName == "EncounterSetupActor")
+			if (typeName == "ArenaSetupActor" || typeName == "EncounterSetupActor" || typeName == "CampaignSetupActor")
 				for (const auto& field : type->properties) Require(resolved["properties"].contains(field.name), path + ".properties." + field.name + " is required");
 			if (entity.contains("removed"))
 			{
@@ -229,7 +229,7 @@ namespace vega
 		return layout;
 	}
 
-	LevelLayout LevelLayout::Parse(const Json& scene, EngineContext& context)
+	LevelLayout LevelLayout::Parse(const Json& scene, EngineContext& context, const std::string& rules)
 	{
 		EngineContext::Scope scope{ context };
 		RegisterTypesAndContent();
@@ -237,16 +237,19 @@ namespace vega
 		Require(scene.contains("version") && scene["version"].is_number_integer() && scene["version"] == 1, "version must be integer 1");
 		Require(scene.contains("settings") && scene["settings"].is_object(), "settings must be object");
 		const auto& settings = scene["settings"];
-		Require(settings.contains("levelRules") && settings["levelRules"].is_string() && settings["levelRules"] == "ArenaTest", "settings.levelRules must be ArenaTest");
+		Require(rules == "ArenaTest" || rules == "LevelOne", "unknown rules owner: " + rules);
+		Require(settings.contains("levelRules") && settings["levelRules"].is_string() && settings["levelRules"] == rules, "settings.levelRules must be " + rules);
+		const bool campaign = rules == "LevelOne";
 		for (const auto& key : {"bounds", "playerShip", "routeStop", "levelRules"})
 		{
+			if (campaign && !settings.contains(key)) continue;
 			Require(settings.contains(key), std::string{"settings."} + key + " is required");
 			const auto* field = context.SceneSettings().Find(key);
 			Require(field && field->Validate(settings[key]).empty(), std::string{"settings."} + key + ": " + (field ? field->Validate(settings[key]) : "unregistered"));
 		}
-		Require(PlayerShip(settings["playerShip"].get<std::string>()), "settings.playerShip must name a player catalog ship");
+		if (!campaign) Require(PlayerShip(settings["playerShip"].get<std::string>()), "settings.playerShip must name a player catalog ship");
 		const auto bounds = ReadSceneBounds(settings, context.SceneSettings());
-		Require(bounds.has_value(), "settings.bounds is required and must have finite positive dimensions");
+		if (!campaign) Require(bounds.has_value(), "settings.bounds is required and must have finite positive dimensions");
 		Require(scene.contains("entities") && scene["entities"].is_array(), "entities must be array");
 		PrefabLibrary prefabs{ context, context.Prefabs().Root() };
 		std::set<std::string> guids;
@@ -256,6 +259,26 @@ namespace vega
 		World staging{ context };
 		const auto loaded = SceneSerializer::Load(staging, scene, &prefabs, false);
 		Require(loaded.warnings.empty(), loaded.warnings.empty() ? "" : loaded.warnings.front());
+		const auto campaigns = staging.GetActorsByTypeIncludingPending<CampaignSetupActor>();
+		if (campaign)
+		{
+			Require(campaigns.size() == 1, "LevelOne requires exactly one CampaignSetupActor");
+			// Campaign rules own player spawn/respawn. Arena setup or player markers
+			// would promise behavior these rules do not implement.
+			for (const auto& handle : staging.GetActorsByTypeIncludingPending<Actor>())
+			{
+				const auto actor = handle.lock();
+				Require(!dynamic_cast<ArenaSetupActor*>(actor.get()) && !dynamic_cast<EncounterSetupActor*>(actor.get()) &&
+					!dynamic_cast<PlayerStart*>(actor.get()) && !dynamic_cast<DummyEnemy*>(actor.get()), "LevelOne has an incompatible arena/player/dummy setup actor");
+			}
+			LevelLayout layout;
+			layout.campaign = campaigns[0].lock()->plan;
+			layout.campaign.Validate();
+			layout.scene = scene;
+			layout.fromScene = true;
+			return layout;
+		}
+		Require(campaigns.empty(), "ArenaTest cannot contain CampaignSetupActor");
 		const auto arenas = staging.GetActorsByTypeIncludingPending<ArenaSetupActor>();
 		const auto encounters = staging.GetActorsByTypeIncludingPending<EncounterSetupActor>();
 		const auto starts = staging.GetActorsByTypeIncludingPending<PlayerStart>();
@@ -293,6 +316,27 @@ namespace vega
 		std::ifstream input{ path };
 		Require(static_cast<bool>(input), "cannot open " + path.string());
 		try { return Parse(Json::parse(input), context); }
+		catch (const std::exception& error) { throw std::runtime_error(path.string() + ": " + error.what()); }
+	}
+
+	LevelLayout LevelLayout::ReadLevelOne(EngineContext& context)
+	{
+		EngineContext::Scope scope{ context };
+		RegisterTypesAndContent();
+		const auto path = std::filesystem::path{ context.Assets().GetAssetRootDirectory() } / "scenes/level-one.scene.json";
+		if (!std::filesystem::exists(path))
+		{
+			VEGA_GAME_WARN("LevelOne scene is absent (%s); using legacy C++ defaults.", path.string().c_str());
+			return LevelLayout{};
+		}
+		std::ifstream input{ path };
+		Require(static_cast<bool>(input), "cannot open " + path.string());
+		try
+		{
+			const auto scene = Json::parse(input);
+			Require(scene.contains("settings") && scene["settings"].is_object() && scene["settings"].value("levelRules", std::string{}) == "LevelOne", "settings.levelRules must be LevelOne");
+			return Parse(scene, context, "LevelOne");
+		}
 		catch (const std::exception& error) { throw std::runtime_error(path.string() + ": " + error.what()); }
 	}
 

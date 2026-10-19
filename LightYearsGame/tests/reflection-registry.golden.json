@@ -2686,6 +2686,403 @@
   },
   {
     "addable": false,
+    "base": "",
+    "functions": [],
+    "name": "CampaignStageEntry",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 6,
+        "labels": [
+          [
+            0,
+            "Wait"
+          ],
+          [
+            1,
+            "Vanguard"
+          ],
+          [
+            2,
+            "TwinBlade"
+          ],
+          [
+            3,
+            "Hexagon"
+          ],
+          [
+            4,
+            "Chaos"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "kind",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "duration",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Wait seconds. Other kinds require zero and finish through their C++ rules."
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 1,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "configuration",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Zero-based index into the list matching kind; Wait requires -1."
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "",
+    "functions": [],
+    "name": "VanguardStageSettings",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "minSpawnInterval",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "maxSpawnInterval",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "spawnDistanceToEdge",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "switchInterval",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 1,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "rows",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 1,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "perRow",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "",
+    "functions": [],
+    "name": "TwinBladeStageSettings",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "minSpawnInterval",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "maxSpawnInterval",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 1,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "spawnCount",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "",
+    "functions": [],
+    "name": "HexagonStageSettings",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "spawnInterval",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 1,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "spawnGroups",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "",
+    "functions": [],
+    "name": "ChaosStageSettings",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "spawnInterval",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "spawnIntervalDecrement",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "survivalDuration",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "spawnMinDistanceTop",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "Actor",
+    "functions": [],
+    "name": "CampaignSetupActor",
+    "properties": [
+      {
+        "category": "Campaign configuration",
+        "elementKind": 10,
+        "hasSetter": true,
+        "kind": 9,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Stages",
+        "requiredType": "",
+        "speed": 1.0,
+        "structType": "CampaignStageEntry",
+        "tooltip": ""
+      },
+      {
+        "category": "Campaign configuration",
+        "elementKind": 10,
+        "hasSetter": true,
+        "kind": 9,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Vanguard",
+        "requiredType": "",
+        "speed": 1.0,
+        "structType": "VanguardStageSettings",
+        "tooltip": ""
+      },
+      {
+        "category": "Campaign configuration",
+        "elementKind": 10,
+        "hasSetter": true,
+        "kind": 9,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "TwinBlade",
+        "requiredType": "",
+        "speed": 1.0,
+        "structType": "TwinBladeStageSettings",
+        "tooltip": ""
+      },
+      {
+        "category": "Campaign configuration",
+        "elementKind": 10,
+        "hasSetter": true,
+        "kind": 9,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Hexagon",
+        "requiredType": "",
+        "speed": 1.0,
+        "structType": "HexagonStageSettings",
+        "tooltip": ""
+      },
+      {
+        "category": "Campaign configuration",
+        "elementKind": 10,
+        "hasSetter": true,
+        "kind": 9,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Chaos",
+        "requiredType": "",
+        "speed": 1.0,
+        "structType": "ChaosStageSettings",
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 0,
+    "spawnable": true
+  },
+  {
+    "addable": false,
     "base": "ActorComponent",
     "functions": [],
     "name": "ScriptComponent",

@@ -62,3 +62,5 @@ out*.txt
 LightYearsGame/tests/fixtures/*
 !LightYearsGame/tests/fixtures/arena-test-50764d21.json
 !LightYearsGame/tests/fixtures/arena-test-50764d21-headless.json
+!LightYearsGame/tests/fixtures/level-one-3e26ef91.json
+!LightYearsGame/tests/fixtures/level-one-3e26ef91-headless.json

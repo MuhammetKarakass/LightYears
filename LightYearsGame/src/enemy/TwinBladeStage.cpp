@@ -1,16 +1,18 @@
 #include "enemy/TwinBladeStage.h"
+#include "level/authoring/CampaignSetupActor.h"
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/enemy/EnemyIds.h"
 #include <framework/MathUtility.h>
 #include <framework/World.h>
 
 namespace vega {
-	TwinBladeStage::TwinBladeStage(World* world):
+	TwinBladeStage::TwinBladeStage(World* world) : TwinBladeStage{ world, TwinBladeStageSettings{} } {}
+	TwinBladeStage::TwinBladeStage(World* world, const TwinBladeStageSettings& settings) :
 		GameStage(world),
-		mSpawnInterval{ {.75f,1.5f} },
+		mSpawnInterval{ {settings.minSpawnInterval,settings.maxSpawnInterval} },
 		mSpawnLocations{},
 		mSpawnTimerHandle{},
-		mSpawnCount{ 30 },
+		mSpawnCount{ settings.spawnCount },
 		mCurrentSpawnCount{ 0 },
 		mLastSpawnLoc{0.f, 0.f}
 	{

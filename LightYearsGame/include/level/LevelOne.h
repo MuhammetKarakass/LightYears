@@ -3,6 +3,7 @@
 //#include "framework/World.h"
 #include "level/GameLevel.h"
 #include "framework/TimerManager.h"
+#include "level/LevelLayout.h"
 
 namespace vega
 {
@@ -16,10 +17,17 @@ namespace vega
 
 	public:
 		LevelOne(Application* owningApp);
+		using SettingsApplier = std::function<void(const nlohmann::json&)>;
+		LevelOne(Application* owningApp, nlohmann::json scene, SettingsApplier applySettings = {}, bool editMode = false);
+		bool IsEditMode() const override { return mEditMode; }
+		const LevelLayout& GetLayout() const { return mLayout; }
+		const SceneLoadResult& GetLoadResult() const { return mLoadResult; }
 
 		weak_ptr<PlayerSpaceShip> mPlayerSpaceShip;
 
 	protected:
+		void BeginPlay() override;
+		bool DispatchEvent(const sf::Event& event) override;
 		virtual void OnGameStart() override;
 		virtual void Tick(float deltaTime) override;
 
@@ -30,6 +38,10 @@ namespace vega
 		virtual void OnGameResumed() override;
 
 	private:
+		LevelLayout mLayout;
+		SettingsApplier mApplySettings;
+		SceneLoadResult mLoadResult;
+		bool mEditMode = false;
 		virtual void InitGameStages() override;
 		void PlayerShipDestroyed(Actor* destroyedActor);
 		void ConnectChaosStageToHUD();

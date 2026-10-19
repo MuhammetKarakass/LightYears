@@ -7,11 +7,13 @@
 
 namespace vega
 {
+	struct ChaosStageSettings;
 	class AsteroidSpawner;
 	class ChaosStage : public GameStage
 	{
 	public:
 		ChaosStage(World* world);
+		ChaosStage(World* world, const ChaosStageSettings& settings);
 
 		virtual void BeginStage() override;
 		virtual void TickStage(float deltaTime) override;

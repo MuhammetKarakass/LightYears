@@ -1,4 +1,5 @@
 #include "enemy/ChaosStage.h"
+#include "level/authoring/CampaignSetupActor.h"
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/enemy/EnemyIds.h"
 #include <framework/MathUtility.h>
@@ -7,14 +8,15 @@
 
 namespace vega
 {
-	ChaosStage::ChaosStage(World* world) :
+	ChaosStage::ChaosStage(World* world) : ChaosStage{ world, ChaosStageSettings{} } {}
+	ChaosStage::ChaosStage(World* world, const ChaosStageSettings& settings) :
 		GameStage{ world },
-		mSpawnInterval{ 3.f },
-		mSpawnIntervalDecrement{ 0.05f },
-		mChaosTimer{ 60.f},
+		mSpawnInterval{ settings.spawnInterval },
+		mSpawnIntervalDecrement{ settings.spawnIntervalDecrement },
+		mChaosTimer{ settings.survivalDuration },
 		mDifficultyLevel{ 1 },
 		mSpawnAmt{1},
-		mSpawnMinDistanceTop{75.f},
+		mSpawnMinDistanceTop{settings.spawnMinDistanceTop},
 		mMaxAsteroidSpawnCount{ 1 },
 		mAsteroidSpawningActive{false},
 		mAsteroidSpawner{std::make_shared<AsteroidSpawner>(world,

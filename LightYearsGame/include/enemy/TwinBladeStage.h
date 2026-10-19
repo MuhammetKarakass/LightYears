@@ -5,10 +5,12 @@
 
 namespace vega
 {
+	struct TwinBladeStageSettings;
 	class TwinBladeStage : public GameStage
 	{
 	public:
 		TwinBladeStage(World* world);
+		TwinBladeStage(World* world, const TwinBladeStageSettings& settings);
 		virtual void BeginStage() override;
 		virtual void TickStage(float deltaTime) override;
 
