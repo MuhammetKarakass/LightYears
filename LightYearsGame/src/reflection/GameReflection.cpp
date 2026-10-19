@@ -13,6 +13,8 @@
 #include "player/PlayerSpaceShip.h"
 #include "enemy/EnemyActor.h"
 #include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/content/EnemyFactory.h"
+#include "gameplay/enemy/EnemyIds.h"
 #include <framework/scene/Scene.h>
 
 namespace vega
@@ -48,5 +50,12 @@ namespace vega
 			return world.SpawnActor<PlayerSpaceShip>(*ship).lock();
 		}, context);
 		VEGA_REGISTER(EnemyActor);
+		SceneSerializer::RegisterSpawnFactory("EnemyActor", [](World& world, const nlohmann::json& properties)
+		{
+			const auto id = properties.value("Enemy ID", std::string{ EnemyIds::ApproachGunnerBasic });
+			auto actor = content::ConstructEnemy(world, id).lock();
+			if (!actor) throw std::runtime_error("Cannot construct catalog enemy: " + id);
+			return actor;
+		}, context);
 	}
 }

@@ -1,0 +1,71 @@
+open-scene scenes/sandbox.scene.json
+wait 2
+place-prefab prefabs/enemies/Enemy.ApproachGunner.Basic.prefab.json 500 400
+rename "Approach editor test"
+expect-prefab prefabs/enemies/Enemy.ApproachGunner.Basic.prefab.json
+expect-prop Actor "Enemy ID" Enemy.ApproachGunner.Basic
+expect-prop Actor "Combat Profile ID" EnemyCombat.ApproachGunner.Basic
+expect-prop Actor "Ship XP Reward" 1
+expect-prop Actor "Collision Damage" 50
+expect-prop HealthComponent "Max Health" 60
+set-prop Actor "Enemy ID" Enemy.RangeKeeper.Basic
+expect-prop-error construction-only
+expect-prop Actor "Enemy ID" Enemy.ApproachGunner.Basic
+set-prop HealthComponent "Max Health" 999
+revert-prefab-prop HealthComponent "Max Health"
+expect-prop HealthComponent "Max Health" 60
+apply-prefab-prop Actor "Enemy ID"
+open-prefab prefabs/enemies/Enemy.ApproachGunner.Basic.prefab.json
+expect-prop Actor "Enemy ID" Enemy.ApproachGunner.Basic
+save-prefab
+close-prefab
+place-prefab prefabs/enemies/Enemy.StrafeSkirmisher.Basic.prefab.json 800 400
+rename "Strafe editor test"
+expect-prop Actor "Enemy ID" Enemy.StrafeSkirmisher.Basic
+expect-prop Actor "Combat Profile ID" EnemyCombat.StrafeSkirmisher.Basic
+expect-prop HealthComponent "Max Health" 60
+expect-prop Actor "Collision Damage" 50
+apply-prefab-prop Actor "Enemy ID"
+open-prefab prefabs/enemies/Enemy.StrafeSkirmisher.Basic.prefab.json
+expect-prop Actor "Enemy ID" Enemy.StrafeSkirmisher.Basic
+save-prefab
+close-prefab
+place-prefab prefabs/enemies/Enemy.RangeKeeper.Basic.prefab.json 1100 400
+rename "Range editor test"
+expect-prop Actor "Enemy ID" Enemy.RangeKeeper.Basic
+expect-prop Actor "Combat Profile ID" EnemyCombat.RangeKeeper.Basic
+expect-prop HealthComponent "Max Health" 100
+expect-prop Actor "Collision Damage" 60
+apply-prefab-prop Actor "Enemy ID"
+open-prefab prefabs/enemies/Enemy.RangeKeeper.Basic.prefab.json
+expect-prop Actor "Enemy ID" Enemy.RangeKeeper.Basic
+save-prefab
+close-prefab
+save-scene @VEGA_ENEMY_PREFAB_SCENE@
+open-scene @VEGA_ENEMY_PREFAB_SCENE@
+wait 2
+select-name "Approach editor test"
+expect-prefab prefabs/enemies/Enemy.ApproachGunner.Basic.prefab.json
+expect-prop Actor "Enemy ID" Enemy.ApproachGunner.Basic
+expect-prop HealthComponent "Max Health" 60
+select-name "Strafe editor test"
+expect-prop Actor "Enemy ID" Enemy.StrafeSkirmisher.Basic
+expect-prop HealthComponent "Max Health" 60
+select-name "Range editor test"
+expect-prop Actor "Enemy ID" Enemy.RangeKeeper.Basic
+expect-prop HealthComponent "Max Health" 100
+reload-prefabs
+select-name "Approach editor test"
+expect-prop Actor "Enemy ID" Enemy.ApproachGunner.Basic
+select-name "Strafe editor test"
+expect-prop Actor "Enemy ID" Enemy.StrafeSkirmisher.Basic
+select-name "Range editor test"
+expect-prop Actor "Enemy ID" Enemy.RangeKeeper.Basic
+save-scene @VEGA_ENEMY_PREFAB_SCENE@
+open-scene @VEGA_ENEMY_PREFAB_SCENE@
+wait 2
+select-name "Range editor test"
+expect-prop Actor "Enemy ID" Enemy.RangeKeeper.Basic
+expect-prop Actor "Ship XP Reward" 1
+expect-prop Actor "Collision Damage" 60
+quit

@@ -4,6 +4,8 @@
 
 #include "gameConfigs/GameplayTags.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/content/EnemyFactory.h"
+#include "gameplay/enemy/EnemyIds.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "framework/LightComponent.h"
 #include "framework/MathUtility.h"
@@ -11,13 +13,16 @@
 #include <framework/reflection/Reflection.h>
 
 #include <algorithm>
+#include <cmath>
+#include <stdexcept>
 
 namespace vega
 {
 	VEGA_REFLECT(EnemyActor, SpaceShip)
 	{
+		VEGA_SPAWNABLE([](World& world) { return content::ConstructEnemy(world, EnemyIds::ApproachGunnerBasic).lock(); });
 		VEGA_CATEGORY("Enemy");
-		VEGA_READONLY("Enemy ID", GetEnemyId);
+		VEGA_PROPERTY("Enemy ID", GetEnemyId, SetEnemyId).Construction();
 		VEGA_READONLY("Combat Profile ID", GetCombatProfileId);
 		VEGA_READONLY("Enemy Level", GetEnemyLevel);
 		VEGA_PROPERTY("Ship XP Reward", GetShipXPReward, SetShipXPReward).Range(0.f, 100000.f);
@@ -36,14 +41,7 @@ namespace vega
 		}
 	}
 
-	EnemyActor::EnemyActor(
-		World* owningWorld,
-		const ShipDefinition& shipDefinition,
-		const std::string& enemyId,
-		const EnemyCombatProfile& combatProfile,
-		const EnemyBehaviorProfile& behaviorProfile,
-		float encounterDamageMultiplier,
-		const EnemySpawnContext& spawnContext)
+	EnemyActor::EnemyActor(World* owningWorld, const ShipDefinition& shipDefinition, const std::string& enemyId, const EnemyCombatProfile& combatProfile, const EnemyBehaviorProfile& behaviorProfile, float encounterDamageMultiplier, const EnemySpawnContext& spawnContext)
 		: SpaceShip{ owningWorld, MakeEnemyRuntimeShipDefinition(shipDefinition) },
 		mEnemyRuntime{ GetCombatRuntime(), GetShipRuntime() },
 		mCombatProfile{ combatProfile },
@@ -69,6 +67,20 @@ namespace vega
 		}
 	}
 
+	void EnemyActor::SetEnemyId(const std::string& enemyId)
+	{
+		if (enemyId != mEnemyId) throw std::runtime_error("Enemy ID is construction-only; place a prefab with the desired catalog Enemy ID instead of changing an existing EnemyActor.");
+	}
+
+	void EnemyActor::ConfigureSpawnContext(float encounterDamageMultiplier, const EnemySpawnContext& spawnContext)
+	{
+		if (mSpawnContextLocked || GetIsPendingDestroy()) throw std::runtime_error("Enemy spawn context must be configured before BeginPlay.");
+		if (spawnContext.level < 1 || !std::isfinite(encounterDamageMultiplier) || encounterDamageMultiplier < 0.f) throw std::runtime_error("Invalid enemy spawn context or encounter damage multiplier.");
+		mEncounterDamageMultiplier = encounterDamageMultiplier;
+		mSpawnContext = spawnContext;
+		mWindowCullEnabled = spawnContext.windowCullEnabled;
+	}
+
 	EnemyActor::~EnemyActor()
 	{
 		mBehaviorRuntime.Clear();
@@ -77,6 +89,7 @@ namespace vega
 
 	void EnemyActor::BeginPlay()
 	{
+		mSpawnContextLocked = true;
 		if (mHasChassisPrimaryWeapon)
 		{
 			VEGA_GAME_ERROR("EnemyActor '%s' chassis must not own a primary weapon.", mEnemyId.c_str());

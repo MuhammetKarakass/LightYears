@@ -1,0 +1,7 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Enemy.RangeKeeper.Basic",
+  "base": { "type": "EnemyActor" },
+  "properties": { "Enemy ID": "Enemy.RangeKeeper.Basic" }
+}

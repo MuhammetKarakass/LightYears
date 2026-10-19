@@ -1,0 +1,7 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Enemy.StrafeSkirmisher.Basic",
+  "base": { "type": "EnemyActor" },
+  "properties": { "Enemy ID": "Enemy.StrafeSkirmisher.Basic" }
+}

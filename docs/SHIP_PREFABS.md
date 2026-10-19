@@ -139,7 +139,6 @@ establish manual visual acceptance.
 
 ## Remaining stage
 
-Enemies are outside stage 2a. They still require a separate prefab construction
-contract through `EnemyFactory`, preserving behavior/combat profiles, spawn
-context and rewards. Dummy actors also remain for a later stage; this migration
-changes no enemy or dummy definitions, constructors or factories.
+Stage 2b adds [enemy actor prefabs](ENEMY_PREFABS.md) through EnemyFactory,
+preserving combat/behavior profiles, caller context and rewards. Dummy prefab
+adoption is the next step; editor-authored level scenes remain a later stage.

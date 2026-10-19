@@ -6,6 +6,9 @@
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/content/EnemyCombatProfileCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/content/ShipPrefabSpawner.h"
+#include <framework/AssetManager.h>
+#include <framework/EngineContext.h>
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/enemy/EnemyBehaviorDecision.h"
 #include "gameplay/enemy/EnemyBehaviorProfileValidator.h"
@@ -244,17 +247,24 @@ namespace vega::content
 		EnemyDefinition ParseDefinition(const Json& object)
 		{
 			if (!object.is_object()) throw std::runtime_error("Each enemy definition entry must be a JSON object.");
-			static const std::set<std::string> allowedKeys = { "id", "shipId", "combatProfileId", "behaviorProfileId" };
+			static const std::set<std::string> allowedKeys = { "id", "shipId", "combatProfileId", "behaviorProfileId", "prefabPath" };
 			for (auto it = object.begin(); it != object.end(); ++it)
 				if (allowedKeys.find(it.key()) == allowedKeys.end()) throw std::runtime_error("Unknown key '" + it.key() + "' in enemy definition.");
 			if (!object.contains("id") || !object.contains("shipId") || !object.contains("combatProfileId") || !object.contains("behaviorProfileId"))
 				throw std::runtime_error("Enemy definition requires id, shipId, combatProfileId, and behaviorProfileId.");
-			return {
+			EnemyDefinition definition{
 				object.at("id").get<std::string>(),
 				object.at("shipId").get<std::string>(),
 				object.at("combatProfileId").get<std::string>(),
 				object.at("behaviorProfileId").get<std::string>()
 			};
+			if (object.contains("prefabPath"))
+			{
+				const auto path = object.at("prefabPath").get<std::string>();
+				if (path.empty()) throw std::runtime_error("Enemy prefabPath cannot be empty");
+				definition.prefabPath = path;
+			}
+			return definition;
 		}
 
 		bool LoadDocument(const std::filesystem::path& path, Json& document, std::string* failureReason)
@@ -266,10 +276,7 @@ namespace vega::content
 		}
 	}
 
-	bool EnemyContentCatalog::LoadFromFiles(
-		const std::filesystem::path& enemyDefinitionsPath,
-		const std::filesystem::path& behaviorProfilesPath,
-		std::string* failureReason)
+	bool EnemyContentCatalog::LoadFromFiles(const std::filesystem::path& enemyDefinitionsPath, const std::filesystem::path& behaviorProfilesPath, std::string* failureReason)
 	{
 		try
 		{
@@ -321,6 +328,9 @@ namespace vega::content
 
 			for (const EnemyDefinition& definition : definitions)
 			{
+				const auto configuredRoot = EngineContext::Current().Assets().GetAssetRootDirectory();
+				const auto assetRoot = configuredRoot.empty() ? enemyDefinitionsPath.parent_path().parent_path().parent_path() : std::filesystem::path{ configuredRoot };
+				if (definition.prefabPath && !ValidateEnemyPrefab(EngineContext::Current(), assetRoot, *definition.prefabPath, definition.id, failureReason)) return false;
 				const ShipDefinition* ship = ShipContentCatalog::FindById(definition.shipId);
 				if (!ship) return Fail(failureReason, "Enemy '" + definition.id + "' references missing ship '" + definition.shipId + "'.");
 				if (!ship->primaryWeaponId.empty())

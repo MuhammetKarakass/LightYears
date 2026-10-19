@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 
 namespace vega
 {
@@ -10,5 +11,6 @@ namespace vega
 		std::string shipId;
 		std::string combatProfileId;
 		std::string behaviorProfileId;
+		std::optional<std::string> prefabPath;
 	};
 }

@@ -1851,8 +1851,9 @@
     "properties": [
       {
         "category": "Enemy",
+        "construction": true,
         "elementKind": null,
-        "hasSetter": false,
+        "hasSetter": true,
         "kind": 5,
         "labels": [],
         "max": null,
@@ -1918,7 +1919,7 @@
     "removable": false,
     "requiredComponents": [],
     "root": 0,
-    "spawnable": false
+    "spawnable": true
   },
   {
     "addable": false,

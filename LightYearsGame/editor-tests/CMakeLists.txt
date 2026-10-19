@@ -17,22 +17,24 @@ set(VEGA_MULTI_CAPTURE "\"${CMAKE_CURRENT_BINARY_DIR}/multi-select-inspector.png
 set(VEGA_PREFABS_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/prefabs-temp.scene.json\"")
 set(VEGA_PREFABS_CAPTURE "\"${CMAKE_CURRENT_BINARY_DIR}/prefab-inspector.png\"")
 set(VEGA_FIGHTER_PREFAB_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/fighter-prefab-temp.scene.json\"")
+set(VEGA_ENEMY_PREFAB_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/enemy-prefab-temp.scene.json\"")
 set(VEGA_SETTINGS_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/settings-source.scene.json")
 set(VEGA_SETTINGS_SAVED "${CMAKE_CURRENT_BINARY_DIR}/settings-temp.scene.json")
 set(VEGA_SETTINGS_BEFORE "${CMAKE_CURRENT_BINARY_DIR}/settings-before.png")
 set(VEGA_SETTINGS_AFTER "${CMAKE_CURRENT_BINARY_DIR}/settings-after.png")
 set(VEGA_EXPORT_TEST_DIR "${CMAKE_BINARY_DIR}/export-test/LightYears")
-foreach(script IN ITEMS sky-editor gas-content gas-content-invalid gas-debugger multi-select lua-api scene-settings console-profiler prefabs fighter-prefab content)
+foreach(script IN ITEMS sky-editor gas-content gas-content-invalid gas-debugger multi-select lua-api scene-settings console-profiler prefabs fighter-prefab enemy-prefab content)
     configure_file(scripts/${script}.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/${script}.vegascript @ONLY)
 endforeach()
 configure_file(scripts/export.vegascript.in ${CMAKE_CURRENT_BINARY_DIR}/scripts/export.vegascript @ONLY)
-foreach(test IN ITEMS SkyEditor GasContent MultiSelect LuaApi SceneSettings ConsoleProfiler Prefabs FighterPrefab Export Content)
+foreach(test IN ITEMS SkyEditor GasContent MultiSelect LuaApi SceneSettings ConsoleProfiler Prefabs FighterPrefab EnemyPrefab Export Content)
     configure_file(Run${test}Test.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Run${test}Test.cmake @ONLY)
     add_test(NAME VegaEditor${test} COMMAND ${CMAKE_COMMAND}
         -DVEGA_EDITOR=$<TARGET_FILE:LightYearsEditor>
         -DVEGA_SKY_CHECK=$<TARGET_FILE:LightYearsSkyCaptureChecks>
         -DVEGA_CONTENT_LOADER=$<TARGET_FILE:LightYearsContentTests>
         -DVEGA_SHIP_PREFAB_CHECK=$<TARGET_FILE:LightYearsShipPrefabTests>
+        -DVEGA_ENEMY_PREFAB_CHECK=$<TARGET_FILE:LightYearsEnemyPrefabTests>
         -P ${CMAKE_CURRENT_BINARY_DIR}/Run${test}Test.cmake)
     set_tests_properties(VegaEditor${test} PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:LightYearsEditor> TIMEOUT 90)
 endforeach()

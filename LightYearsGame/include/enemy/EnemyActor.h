@@ -12,9 +12,7 @@ namespace vega
 	{
 		VEGA_CLASS(EnemyActor)
 	public:
-		EnemyActor(World* owningWorld, const ShipDefinition& shipDefinition, const std::string& enemyId,
-			const EnemyCombatProfile& combatProfile, const EnemyBehaviorProfile& behaviorProfile,
-			float encounterDamageMultiplier = 1.f, const EnemySpawnContext& spawnContext = {});
+		EnemyActor(World* owningWorld, const ShipDefinition& shipDefinition, const std::string& enemyId, const EnemyCombatProfile& combatProfile, const EnemyBehaviorProfile& behaviorProfile, float encounterDamageMultiplier = 1.f, const EnemySpawnContext& spawnContext = {});
 		~EnemyActor() override;
 
 		void BeginPlay() override;
@@ -22,8 +20,12 @@ namespace vega
 		void SetupCollisionLayers() override;
 
 		const std::string& GetEnemyId() const noexcept { return mEnemyId; }
+		void SetEnemyId(const std::string& enemyId);
+		// Caller-owned encounter state is installed after prefab construction, before BeginPlay.
+		void ConfigureSpawnContext(float encounterDamageMultiplier, const EnemySpawnContext& spawnContext);
 		const std::string& GetCombatProfileId() const noexcept { return mCombatProfileId; }
 		int GetEnemyLevel() const noexcept { return mSpawnContext.level; }
+		const EnemySpawnContext& GetSpawnContext() const noexcept { return mSpawnContext; }
 		EnemyRuntime& GetEnemyRuntime() { return mEnemyRuntime; }
 		const EnemyRuntime& GetEnemyRuntime() const { return mEnemyRuntime; }
 		EnemyBehaviorRuntime& GetEnemyBehaviorRuntime() { return mBehaviorRuntime; }
@@ -59,5 +61,6 @@ namespace vega
 		EnemySpawnContext mSpawnContext;
 		bool mWindowCullEnabled = true;
 		bool mHasChassisPrimaryWeapon = false;
+		bool mSpawnContextLocked = false;
 	};
 }

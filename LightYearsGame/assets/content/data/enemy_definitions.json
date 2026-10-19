@@ -5,19 +5,22 @@
       "id": "Enemy.ApproachGunner.Basic",
       "shipId": "Ship.Enemy.ApproachGunner.Basic",
       "combatProfileId": "EnemyCombat.ApproachGunner.Basic",
-      "behaviorProfileId": "EnemyBehavior.ApproachGunner.Basic"
+      "behaviorProfileId": "EnemyBehavior.ApproachGunner.Basic",
+      "prefabPath": "prefabs/enemies/Enemy.ApproachGunner.Basic.prefab.json"
     },
     {
       "id": "Enemy.StrafeSkirmisher.Basic",
       "shipId": "Ship.Enemy.StrafeSkirmisher.Basic",
       "combatProfileId": "EnemyCombat.StrafeSkirmisher.Basic",
-      "behaviorProfileId": "EnemyBehavior.StrafeSkirmisher.Basic"
+      "behaviorProfileId": "EnemyBehavior.StrafeSkirmisher.Basic",
+      "prefabPath": "prefabs/enemies/Enemy.StrafeSkirmisher.Basic.prefab.json"
     },
     {
       "id": "Enemy.RangeKeeper.Basic",
       "shipId": "Ship.Enemy.RangeKeeper.Basic",
       "combatProfileId": "EnemyCombat.RangeKeeper.Basic",
-      "behaviorProfileId": "EnemyBehavior.RangeKeeper.Basic"
+      "behaviorProfileId": "EnemyBehavior.RangeKeeper.Basic",
+      "prefabPath": "prefabs/enemies/Enemy.RangeKeeper.Basic.prefab.json"
     }
   ]
 }

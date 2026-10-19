@@ -1,0 +1,17 @@
+﻿# Only this fixed build-tree asset copy is disposable. Source assets remain read-only.
+set(root "@CMAKE_CURRENT_BINARY_DIR@/enemy-prefab-test-assets")
+if(NOT VEGA_ENEMY_POSTCHECK_ONLY)
+    file(REMOVE_RECURSE "${root}")
+    file(MAKE_DIRECTORY "${root}")
+    file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
+    execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+        "@CMAKE_CURRENT_BINARY_DIR@/scripts/enemy-prefab.vegascript" RESULT_VARIABLE result)
+    if(NOT result EQUAL 0)
+        message(FATAL_ERROR "VegaEditorEnemyPrefab failed: ${result}")
+    endif()
+endif()
+execute_process(COMMAND "${VEGA_ENEMY_PREFAB_CHECK}" --accept-sparse-root "${root}"
+    "@CMAKE_CURRENT_BINARY_DIR@/enemy-prefab-temp.scene.json" RESULT_VARIABLE validation)
+if(NOT validation EQUAL 0)
+    message(FATAL_ERROR "Sparse enemy prefab postcheck failed: ${validation}")
+endif()
