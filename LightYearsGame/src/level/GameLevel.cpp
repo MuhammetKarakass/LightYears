@@ -92,13 +92,7 @@ namespace vega
 	
 	void GameLevel::OnGameStart()
 	{
-		GetEngineContext().Audio().PlayMusic(
-			"SpaceShooterRedux/Musics/cosmic_reverie.ogg",
-			AudioType::SFX_World,
-			45.0f,  // Volume
-			1.0f,   // Pitch
-			true// Loop
-		);
+		// Level music is off: it kept playing after Stop in the editor.
 	}
 
 	void GameLevel::OnGamePaused()

@@ -148,9 +148,7 @@ namespace vega
 		ArenaLevel::OnGameStart();
 		SpawnDummyTargets();
 
-		const auto& music = mLayout.music;
-		GetEngineContext().Audio().FadeToMusic(music.path, AudioType::Music, music.volume, music.pitch, music.loop, music.fadeDuration);
-
+		// Level music is off: it kept playing after Stop in the editor. The Music block in the scene stays as unused data.
 		if (mLayout.encounterEnabled)
 		{
 			StartEncounter();
