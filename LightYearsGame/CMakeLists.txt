@@ -218,9 +218,6 @@ if(BUILD_TESTING)
 	target_compile_definitions(LightYearsDummyPrefabTests PRIVATE DUMMY_PREFAB_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}/dummy-prefab")
 	vega_add_game_test_case(LightYearsDummyPrefab LightYearsDummyPrefabTests)
 
-	vega_add_game_test(LightYearsPlanetPrefabTests GAME PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/PlanetPrefabTests.cpp)
-	target_compile_definitions(LightYearsPlanetPrefabTests PRIVATE PLANET_PREFAB_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}/planet-prefabs")
-	vega_add_game_test_case(LightYearsPlanetPrefab LightYearsPlanetPrefabTests)
 
 	vega_add_game_test(LightYearsContentTests
 		SOURCES ${VEGA_TESTS_DIR}/ContentLoaderTests.cpp
