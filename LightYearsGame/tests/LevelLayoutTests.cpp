@@ -54,7 +54,7 @@ namespace
 		const auto& visual = layout.arena.boundaryVisual;
 		const auto& respawn = layout.respawn;
 		const auto& progression = layout.progression;
-		Json waves = Json::array(), anchors = Json::array(), heavyPositions = Json::array();
+		Json waves = Json::array(), anchors = Json::array();
 		for (const auto& wave : layout.waves)
 		{
 			Json entries = Json::array();
@@ -62,7 +62,6 @@ namespace
 			waves.push_back({ {"entries", entries}, {"interWaveDelay", wave.nextWaveDelay} });
 		}
 		for (auto point : layout.spawnPoints) anchors.push_back(Vec(point));
-		for (auto point : layout.heavyDummyPositions) heavyPositions.push_back(Vec(point));
 		return {
 			{"bounds", {bounds.position.x,bounds.position.y,bounds.size.x,bounds.size.y}},
 			{"boundary", {{"enabled",visual.enabled},{"visualType",visual.visualType == ArenaBoundaryVisualType::DebugRectangle ? "DebugRectangle" : "Other"},
@@ -75,8 +74,7 @@ namespace
 			{"progression", {{"additionalEnemyEveryWaves",progression.additionalEnemyEveryWaves},{"enemyLevelEveryWaves",progression.enemyLevelEveryWaves},
 				{"maximumAdditionalEnemies",progression.maximumAdditionalEnemies},{"maximumEnemyLevel",progression.maximumEnemyLevel},{"seed",progression.seed}}},
 			{"maximumConcurrentEnemies",progression.maximumConcurrentEnemies},{"spawnPoints",anchors},{"spawnOffsetSpacing",layout.spawnOffsetSpacing},{"waves",waves},
-			{"dummyShip",layout.heavyDummy.ship},{"dummyArmor",layout.dummyArmor},{"dummyLegacySpeed",Vec(layout.heavyDummy.legacySpeed)},
-			{"heavyDummyHealth",layout.heavyDummy.health},{"heavyDummyWeapon",layout.heavyDummy.primaryWeaponId},{"heavyDummyPositions",heavyPositions}
+			{"dummyArmor",layout.dummyArmor}
 		};
 	}
 	bool Equivalent(const Json& expected, const Json& actual)
@@ -219,8 +217,14 @@ int main(int argc, char** argv)
 		Check(SceneSerializer::Load(reopened, saved).warnings.empty() && SceneSerializer::Save(reopened, scene["settings"]) == saved, "reflected round trip is stable after sparse input expansion");
 		for (const auto& entity : saved["entities"])
 		{
-			if (entity.contains("prefab")) Check(entity["prefab"] == "prefabs/dummies/dummy_standard.prefab.json" && entity["components"].size() == 1 && entity["components"][0]["properties"].size() == 1,
-				"small dummy stays a sparse prefab instance with only Max Health component override");
+			if (!entity.contains("prefab")) continue;
+			if (entity["prefab"] == "prefabs/dummies/dummy_standard.prefab.json")
+				Check(entity["components"].size() == 1 && entity["components"][0]["properties"].size() == 1,
+					"small dummy stays a sparse prefab instance with only Max Health component override");
+			else if (entity["prefab"] == "prefabs/dummies/dummy_heavy.prefab.json")
+				Check(!entity.contains("components") && entity["properties"].size() == 1 && entity["properties"].contains("Location"),
+					"heavy dummy stays a sparse prefab instance with only Location placement");
+			else Check(false, "unexpected prefab instance " + entity["prefab"].get<std::string>());
 		}
 		if (postcheck)
 		{
@@ -233,14 +237,14 @@ int main(int argc, char** argv)
 		auto edit = std::make_shared<ArenaTestLevel>(nullptr, editScene, ArenaTestLevel::SettingsApplier{}, true);
 		PlayerManager::GetPlayerManager().SetSelectedShipId("edit-mode-sentinel");
 		edit->BeginPlayInternal();
-		Check(edit->GetSceneLoadResult().spawned == 23 && edit->GetSceneLoadResult().warnings.empty(), "Edit loads exactly the 23 authored entities");
+		Check(edit->GetSceneLoadResult().spawned == 27 && edit->GetSceneLoadResult().warnings.empty(), "Edit loads exactly the 27 authored entities");
 		const auto before = SceneSerializer::Save(*edit, scene["settings"]);
 		edit->TickInternal(1.f);
 		edit->SetPaused(false);
 		edit->TickInternal(1.f);
 		Check(edit->IsPaused() && edit->GetEncounterState() == ArenaEncounterState::Idle && !edit->StartEncounter(), "Edit cannot start encounter even when Enabled or explicitly requested");
-		Check(edit->GetActorsByTypeIncludingPending<PlayerSpaceShip>().empty() && edit->GetActorsByTypeIncludingPending<EnemyActor>().empty() && edit->GetActorsByTypeIncludingPending<DummyEnemy>().size() == 20,
-			"Edit starts neither arena player, heavy dummy spawning nor enemy rules");
+		Check(edit->GetActorsByTypeIncludingPending<PlayerSpaceShip>().empty() && edit->GetActorsByTypeIncludingPending<EnemyActor>().empty() && edit->GetActorsByTypeIncludingPending<DummyEnemy>().size() == 24,
+			"Edit places all 24 authored dummies and starts neither arena player nor enemy rules");
 		Check(PlayerManager::GetPlayerManager().GetSelectedShipId() == "edit-mode-sentinel" && SceneSerializer::Save(*edit, scene["settings"]) == before, "Edit ticks preserve player selection and authored data");
 		for (const auto& actor : edit->GetActorsByTypeIncludingPending<Actor>()) Check(!actor.lock()->FindComponent<SceneEntityComponent>()->HasBegunPlay(), "Edit never invokes component BeginPlay");
 		edit.reset();
@@ -317,12 +321,6 @@ int main(int argc, char** argv)
 		reject("music fade", [](Json& j) { j["entities"][0]["properties"]["Music"]["fadeDuration"] = -1; }, "Music");
 		reject("music path", [](Json& j) { j["entities"][0]["properties"]["Music"]["path"] = ""; }, "Music");
 		reject("small dummy armor", [](Json& j) { j["entities"][0]["properties"]["DummyArmor"] = -1; }, "DummyArmor");
-		reject("heavy health", [](Json& j) { j["entities"][0]["properties"]["HeavyDummy"]["health"] = 0; }, "HeavyDummy");
-		reject("heavy armor", [](Json& j) { j["entities"][0]["properties"]["HeavyDummy"]["armor"] = -1; }, "HeavyDummy");
-		reject("heavy nonfinite position", [](Json& j) { j["entities"][0]["properties"]["HeavyDummyPositions"][0][0] = std::numeric_limits<double>::infinity(); }, "finite");
-		reject("heavy invalid speed", [](Json& j) { j["entities"][0]["properties"]["HeavyDummy"]["legacySpeed"][0] = 1e100; }, "finite");
-		reject("heavy ship", [](Json& j) { j["entities"][0]["properties"]["HeavyDummy"]["ship"] = "Missing"; }, "HeavyDummy.ship");
-		reject("heavy weapon", [](Json& j) { j["entities"][0]["properties"]["HeavyDummy"]["primaryWeaponId"] = "Missing"; }, "primaryWeaponId");
 		reject("unknown struct field", [](Json& j) { j["entities"][0]["properties"]["Boundary"]["typo"] = 1; }, "typo");
 		reject("unknown actor property", [](Json& j) { j["entities"][0]["properties"]["typo"] = 1; }, "typo");
 		reject("struct kind", [](Json& j) { j["entities"][0]["properties"]["Boundary"] = 1; }, "object");

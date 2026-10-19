@@ -4,14 +4,13 @@ expect-setting levelRules "ArenaTest"
 expect-count ArenaSetupActor 1
 expect-count EncounterSetupActor 1
 expect-count PlayerStart 1
-expect-count DummyEnemy 20
+expect-count DummyEnemy 24
 expect-count PlayerSpaceShip 0
 expect-count EnemyActor 0
 select-name "Arena setup"
 expect-prop Actor Boundary.outlineThickness 4
 expect-prop Actor Respawn.respawnDelay 1
 expect-prop Actor Music.volume 5
-expect-prop Actor HeavyDummy.health 9000
 expect-prop Actor DummyArmor 40
 set-prop Actor Boundary.outlineThickness 6
 expect-prop Actor Boundary.outlineThickness 6
@@ -51,7 +50,7 @@ expect-count EnemyActor 0
 stop
 wait 2
 expect-mode edit
-expect-count DummyEnemy 20
+expect-count DummyEnemy 24
 expect-count PlayerSpaceShip 0
 expect-count EnemyActor 0
 select-name "Arena setup"

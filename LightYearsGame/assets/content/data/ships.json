@@ -821,6 +821,58 @@
         "naturalGrowth": []
       },
       "baseOwnerAttributes": []
+    },
+    {
+      "id": "Ship.Enemy.HeavyDummy.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/Enemies/enemyBlack4.png",
+      "health": 9000.0,
+      "speed": [0.0, 0.0],
+      "collisionDamage": 60.0,
+      "score": 30,
+      "shipXPReward": 1.0,
+      "primaryWeaponId": "Weapon.Projectile.FighterRapidLaser.Basic",
+      "rewards": [
+        { "type": "Health", "weight": 0.3 },
+        { "type": "Life", "weight": 0.05 },
+        { "type": "Shield", "weight": 0.1 }
+      ],
+      "movement": {
+        "forwardThrust": 360.0,
+        "reverseThrust": 450.0,
+        "strafeThrust": 360.0,
+        "angularTurnSpeed": 200.0,
+        "angularTurnResponsiveness": 2.0,
+        "linearDamping": 0.70,
+        "maxSpeed": 460.0,
+        "inputResponsiveness": 14.0,
+        "mouseAimDeadZone": 28.0
+      },
+      "energy": {
+        "baseEnergyPower": 0.0,
+        "baseMaxShield": 60.0,
+        "shieldFullRechargeDuration": 5.5,
+        "baseShieldRechargeDelay": 3.0,
+        "baseAfterburnerCapacity": 0.0,
+        "afterburnerFullRechargeDuration": 8.0,
+        "baseAfterburnerRechargeDelay": 1.5,
+        "baseAfterburnerSpeedMultiplier": 1.0,
+        "baseAfterburnerAccelerationMultiplier": 1.0,
+        "baseAfterburnerEnergyDrainPerSecond": 15.0,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.20,
+        "baseAfterburnerManeuverabilityMultiplier": 1.0
+      },
+      "progression": {
+        "baseXP": 100.0,
+        "xpExponent": 1.25,
+        "naturalGrowth": []
+      },
+      "baseOwnerAttributes": [
+        {
+          "attributeId": "Owner.Armor",
+          "baseValue": 40.0
+        }
+      ]
     }
   ]
 }

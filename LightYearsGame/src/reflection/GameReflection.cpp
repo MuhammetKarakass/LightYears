@@ -63,7 +63,6 @@ namespace vega
 		VEGA_REGISTER(ArenaBoundarySettings);
 		VEGA_REGISTER(ArenaRespawnSettings);
 		VEGA_REGISTER(ArenaMusicSettings);
-		VEGA_REGISTER(ArenaHeavyDummySettings);
 		VEGA_REGISTER(ArenaEncounterProgression);
 		VEGA_REGISTER(ArenaWaveTemplate);
 		VEGA_REGISTER(ArenaWaveEntry);

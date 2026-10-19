@@ -1,0 +1,7 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Dummy Heavy",
+  "base": { "type": "DummyEnemy" },
+  "properties": { "Ship": "Ship.Enemy.HeavyDummy.Basic" }
+}

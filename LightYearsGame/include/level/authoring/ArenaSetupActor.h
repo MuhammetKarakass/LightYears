@@ -38,15 +38,6 @@ namespace vega
 		bool loop = true;
 		float fadeDuration = 1.f;
 	};
-	struct ArenaHeavyDummySettings
-	{
-		VEGA_STRUCT(ArenaHeavyDummySettings)
-		std::string ship = "Ship.Enemy.RangeKeeper.Basic";
-		float health = 9000.f;
-		float armor = 40.f;
-		sf::Vector2f legacySpeed{};
-		std::string primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
-	};
 	class ArenaSetupActor : public Actor
 	{
 		VEGA_CLASS(ArenaSetupActor)
@@ -55,8 +46,6 @@ namespace vega
 		ArenaBoundarySettings boundary;
 		ArenaRespawnSettings respawn;
 		ArenaMusicSettings music;
-		ArenaHeavyDummySettings heavyDummy;
 		float dummyArmor = 40.f;
-		std::vector<sf::Vector2f> heavyDummyPositions{ {2100.f,1950.f}, {2700.f,1950.f}, {3300.f,1950.f}, {3900.f,1950.f} };
 	};
 }

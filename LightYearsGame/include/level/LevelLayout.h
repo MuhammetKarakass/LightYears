@@ -13,8 +13,6 @@ namespace vega
 		ArenaDefinition arena;
 		PlayerRespawnDefinition respawn;
 		ArenaMusicSettings music;
-		ArenaHeavyDummySettings heavyDummy;
-		std::vector<sf::Vector2f> heavyDummyPositions;
 		float dummyArmor = 40.f;
 		bool encounterEnabled = false;
 		EncounterSequenceMode sequenceMode = EncounterSequenceMode::EndlessCycle;

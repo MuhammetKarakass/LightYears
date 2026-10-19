@@ -34,9 +34,8 @@ backdrop path.
 * `Music`: path (sound asset), volume, pitch, loop, fadeDuration. This is the
   existing Music fade request. The inherited GameLevel startup SFX_World music
   request remains unchanged, including its order before the fade.
-* `DummyArmor`: base Armor contribution for scene-placed dummy prefab instances.
-* `HeavyDummy`: ship catalog ID, health, armor, legacySpeed, primaryWeaponId.
-* `HeavyDummyPositions`: ordinary editable Vec2 list in world coordinates.
+* `DummyArmor`: base Armor contribution for scene-placed dummy prefab instances
+  that author no Armor of their own.
 
 `EncounterSetupActor` has these reflected fields:
 
@@ -71,13 +70,14 @@ also recomputing health-derived regen. This preserves the original 50 health /
 40 Armor target behavior. Edit keeps authored component values without applying
 gameplay attributes or running actor lifecycles.
 
-Four heavy targets remain code-spawned. Existing reflection exposes Max Health,
-but no Armor or primary-weapon constructor override, so the existing dummy
-prefab cannot express the original 9000 health / 40 Armor / rapid-laser target.
-Their construction inputs and positions now live in ArenaSetupActor; C++ still
-uses the original DummyEnemy constructor. They appear on Play, not in Edit.
-There is no new heavy-dummy catalog entry or expanded prefab contract. See
-[enemy/dummy prefabs](ENEMY_PREFABS.md).
+Four heavy targets are ordinary instances of
+`prefabs/dummies/dummy_heavy.prefab.json`, each with only a Location. Their
+9000 health / 40 Armor / rapid-laser construction lives in the catalog-owned
+`Ship.Enemy.HeavyDummy.Basic` chassis in `ships.json`, so no HeavyDummy fields or
+C++ override remain. The loader applies the same BeginPlay dummy rebind as for
+the small targets; because that chassis already authors Armor 40, `DummyArmor` is
+not stacked on top of it. They appear in Edit and on Play like the small targets.
+See [enemy/dummy prefabs](ENEMY_PREFABS.md).
 
 ## Loader order and failure behavior
 
@@ -112,7 +112,7 @@ The default path falls back to the historical C++ configuration **only when the
 scene file is absent**, with a warning containing its path. An existing malformed,
 unreadable or invalid scene is an error; it never silently selects defaults.
 Explicit scene Play never falls back. Edit loads authored entities without arena,
-player, heavy-dummy, music or encounter setup, even when Enabled is true. Invalid
+player, dummy-attribute, music or encounter setup, even when Enabled is true. Invalid
 gameplay values can be opened and corrected in Edit; Play validates the captured
 document before replacing the edit world.
 
@@ -129,7 +129,8 @@ Open `scenes/arena-test.scene.json` using File > Open or
 `LightYearsEditor --editor-scene scenes/arena-test.scene.json`. Select **Arena
 setup** or **Encounter setup** in Hierarchy. Expand their typed fields and lists
 in Inspector; edits and list operations use the normal reflection/undo path.
-Select a small dummy to move it or edit HealthComponent > Max Health. Use World
+Select a small or heavy dummy to move it; a small dummy also exposes
+HealthComponent > Max Health. Use World
 Settings for bounds/route/player/rules. Save writes an ordinary engine scene;
 plain setup actors gain complete writable defaults on the first save, while
 dummy instances retain sparse prefab overrides. Stop restores the edit snapshot.

@@ -30,14 +30,6 @@ namespace vega
 		VEGA_FIELD("loop", loop);
 		VEGA_FIELD("fadeDuration", fadeDuration);
 	}
-	VEGA_REFLECT_STRUCT(ArenaHeavyDummySettings)
-	{
-		VEGA_FIELD("ship", ship);
-		VEGA_FIELD("health", health);
-		VEGA_FIELD("armor", armor);
-		VEGA_FIELD("legacySpeed", legacySpeed);
-		VEGA_FIELD("primaryWeaponId", primaryWeaponId);
-	}
 	VEGA_REFLECT(ArenaSetupActor, Actor)
 	{
 		VEGA_SPAWNABLE();
@@ -45,8 +37,6 @@ namespace vega
 		VEGA_FIELD("Boundary", boundary);
 		VEGA_FIELD("Respawn", respawn);
 		VEGA_FIELD("Music", music);
-		VEGA_FIELD("DummyArmor", dummyArmor).Tooltip("Base Armor applied to scene-placed dummy prefab instances before BeginPlay.");
-		VEGA_FIELD("HeavyDummy", heavyDummy);
-		VEGA_FIELD("HeavyDummyPositions", heavyDummyPositions);
+		VEGA_FIELD("DummyArmor", dummyArmor).Tooltip("Base Armor applied to scene-placed dummy prefab instances that do not author their own Armor before BeginPlay.");
 	}
 }

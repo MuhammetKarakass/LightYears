@@ -111,31 +111,34 @@ construction-only error. The scene factory still constructs the requested
 catalog chassis, and `DummyEnemy`'s constructor keeps its training-target shield
 override (maximum shield 50).
 
-`assets/prefabs/dummies/dummy_standard.prefab.json` is the shipped dummy prefab:
+Two dummy prefabs are shipped:
 
 | Prefab | Base type | Selector |
 | --- | --- | --- |
 | `prefabs/dummies/dummy_standard.prefab.json` | `DummyEnemy` | `Ship.Enemy.RangeKeeper.Basic` |
+| `prefabs/dummies/dummy_heavy.prefab.json` | `DummyEnemy` | `Ship.Enemy.HeavyDummy.Basic` |
 
-It is a flat `vega.prefab` version 1 document with exactly
-`properties: {"Ship": "Ship.Enemy.RangeKeeper.Basic"}`. It copies no gameplay
-numbers or component values; chassis numbers remain in `ships.json`. Dummy
-prefabs share the ship/enemy `PrefabLibrary` resolution and sparse validation
-path through `ValidateDummyPrefab` / `SpawnDummyPrefab`; only the `Ship` selector
-is admitted, and the selected ID must exist in the ship catalog.
+Each is a flat `vega.prefab` version 1 document with exactly
+`properties: {"Ship": "<selector>"}`. It copies no gameplay numbers or component
+values; chassis numbers remain in `ships.json`. Dummy prefabs share the
+ship/enemy `PrefabLibrary` resolution and sparse validation path through
+`ValidateDummyPrefab` / `SpawnDummyPrefab`; only the `Ship` selector is admitted,
+and the selected ID must exist in the ship catalog.
 
-ArenaTestLevel's four 9000-health / 40-armor targets and twenty 50-health
-targets are unchanged. Their overrides (health, armor, speed, weapon) are
-arena-only values with no catalog home, so no heavy-dummy prefab is shipped.
-Expressing them as prefabs needs a data-model change: a catalog-owned dummy
-definition (for example health/armor/speed/weapon overrides, or dummy variants
-in `ships.json`) that the prefab can select without copying numbers into assets.
+`Ship.Enemy.HeavyDummy.Basic` is a catalog-owned chassis authored entirely in
+`ships.json`: a RangeKeeper clone with health 9000, Armor 40, zero speed and the
+Fighter rapid laser as its primary weapon. ArenaTestLevel's four heavy targets
+are now ordinary `dummy_heavy` prefab instances (see
+[Level scenes](#level-scenes-stage-3)), and the twenty small targets remain
+`dummy_standard` instances. `DummyArmor` on `ArenaSetupActor` is only the fallback
+Armor contribution for scene chassis that author none of their own; the heavy
+chassis authors its own Armor and is not stacked twice.
 
 ## Level scenes (stage 3)
 
-[ArenaTest scene authoring](LEVEL_SCENES.md) now places twenty small dummy prefab
-instances with sparse Max Health overrides. ArenaSetupActor supplies their Armor
-contribution to the existing ShipRuntime before BeginPlay. Four heavy targets
-retain direct C++ construction; their positions and constructor inputs now live
-in the scene setup actor because existing dummy reflection has no Armor/weapon
-constructor override. The stage 2c prefab/catalog contracts above remain intact.
+[ArenaTest scene authoring](LEVEL_SCENES.md) places twenty small and four heavy
+dummy prefab instances. ArenaSetupActor supplies the small targets' Armor
+contribution to the existing ShipRuntime before BeginPlay; the heavy prefab's
+catalog-owned chassis authors its own health, Armor and weapon, so no C++
+heavy-dummy override remains in ArenaSetupActor. The stage 2c prefab/catalog
+contracts above remain intact.

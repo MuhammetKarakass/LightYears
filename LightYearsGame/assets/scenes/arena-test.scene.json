@@ -53,35 +53,7 @@
           "loop": true,
           "fadeDuration": 1
         },
-        "DummyArmor": 40,
-        "HeavyDummy": {
-          "ship": "Ship.Enemy.RangeKeeper.Basic",
-          "health": 9000,
-          "armor": 40,
-          "legacySpeed": [
-            0,
-            0
-          ],
-          "primaryWeaponId": "Weapon.Projectile.FighterRapidLaser.Basic"
-        },
-        "HeavyDummyPositions": [
-          [
-            2100,
-            1950
-          ],
-          [
-            2700,
-            1950
-          ],
-          [
-            3300,
-            1950
-          ],
-          [
-            3900,
-            1950
-          ]
-        ]
+        "DummyArmor": 40
       }
     },
     {
@@ -560,6 +532,50 @@
           }
         }
       ]
+    },
+    {
+      "guid": "d1000000000000000000000000000001",
+      "name": "Heavy dummy 1",
+      "prefab": "prefabs/dummies/dummy_heavy.prefab.json",
+      "properties": {
+        "Location": [
+          2100,
+          1950
+        ]
+      }
+    },
+    {
+      "guid": "d1000000000000000000000000000002",
+      "name": "Heavy dummy 2",
+      "prefab": "prefabs/dummies/dummy_heavy.prefab.json",
+      "properties": {
+        "Location": [
+          2700,
+          1950
+        ]
+      }
+    },
+    {
+      "guid": "d1000000000000000000000000000003",
+      "name": "Heavy dummy 3",
+      "prefab": "prefabs/dummies/dummy_heavy.prefab.json",
+      "properties": {
+        "Location": [
+          3300,
+          1950
+        ]
+      }
+    },
+    {
+      "guid": "d1000000000000000000000000000004",
+      "name": "Heavy dummy 4",
+      "prefab": "prefabs/dummies/dummy_heavy.prefab.json",
+      "properties": {
+        "Location": [
+          3900,
+          1950
+        ]
+      }
     }
   ]
 }

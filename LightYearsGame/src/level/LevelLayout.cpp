@@ -9,7 +9,6 @@
 #include "gameplay/content/EnemyContentCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/content/ShipPrefabSpawner.h"
-#include "gameplay/content/WeaponContentCatalog.h"
 #include "framework/AssetManager.h"
 #include "framework/scene/PrefabLibrary.h"
 #include "framework/scene/SceneSettings.h"
@@ -150,8 +149,6 @@ namespace vega
 			layout.respawn.gameOverWhenRespawnFails = respawn.gameOverWhenRespawnFails;
 			layout.respawn.playerShipId = respawn.playerShipId;
 			layout.music = arena.music;
-			layout.heavyDummy = arena.heavyDummy;
-			layout.heavyDummyPositions = arena.heavyDummyPositions;
 			layout.dummyArmor = arena.dummyArmor;
 			layout.encounterEnabled = encounter.enabled;
 			layout.sequenceMode = encounter.sequenceMode;
@@ -200,11 +197,6 @@ namespace vega
 				Require(total <= std::numeric_limits<int>::max(), path + " total count overflows int32");
 			}
 			Require(Finite(layout.dummyArmor) && layout.dummyArmor >= 0, "DummyArmor must be finite/nonnegative");
-			const auto& dummy = layout.heavyDummy;
-			Require(content::ShipContentCatalog::FindById(dummy.ship), "HeavyDummy.ship is unknown: " + dummy.ship);
-			Require(Finite(dummy.health) && dummy.health > 0 && Finite(dummy.armor) && dummy.armor >= 0 && Finite(dummy.legacySpeed), "HeavyDummy health/armor/speed are invalid");
-			Require(dummy.primaryWeaponId.empty() || content::WeaponContentCatalog::FindById(dummy.primaryWeaponId), "HeavyDummy.primaryWeaponId is unknown: " + dummy.primaryWeaponId);
-			for (auto point : layout.heavyDummyPositions) Require(Finite(point), "HeavyDummyPositions must be finite");
 		}
 	}
 
@@ -370,7 +362,12 @@ namespace vega
 			attributes.SetBaseValue(OwnerAttributeIds::MaxHealth, dummy->GetHealthComponent().GetMaxHealth());
 			auto definition = *content::ShipContentCatalog::FindById(dummy->GetShip());
 			definition.health = dummy->GetHealthComponent().GetMaxHealth();
-			definition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, dummyArmor });
+			// DummyArmor is the fallback contribution for chassis that author no Armor of
+			// their own; a catalog entry that already carries Armor (the heavy dummy) keeps
+			// its authored value instead of stacking a second contribution.
+			const bool authorsArmor = std::any_of(definition.baseOwnerAttributes.begin(), definition.baseOwnerAttributes.end(),
+				[](const OwnerAttributeBaseEntry& entry) { return entry.attributeId == OwnerAttributeIds::Armor; });
+			if (!authorsArmor) definition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, dummyArmor });
 			definition.energyAttributes.baseMaxShield = dummy->GetShipRuntime().GetAuthoredBaseMaxShield();
 			// Rebind through the original ship system, including health-derived regen and
 			// owned base contributions, rather than leaving a health component snapshot.

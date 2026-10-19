@@ -2227,83 +2227,6 @@
     "addable": false,
     "base": "",
     "functions": [],
-    "name": "ArenaHeavyDummySettings",
-    "properties": [
-      {
-        "category": "",
-        "elementKind": null,
-        "hasSetter": true,
-        "kind": 5,
-        "labels": [],
-        "max": null,
-        "min": null,
-        "name": "ship",
-        "requiredType": "",
-        "speed": 1.0,
-        "tooltip": ""
-      },
-      {
-        "category": "",
-        "elementKind": null,
-        "hasSetter": true,
-        "kind": 2,
-        "labels": [],
-        "max": null,
-        "min": null,
-        "name": "health",
-        "requiredType": "",
-        "speed": 1.0,
-        "tooltip": ""
-      },
-      {
-        "category": "",
-        "elementKind": null,
-        "hasSetter": true,
-        "kind": 2,
-        "labels": [],
-        "max": null,
-        "min": null,
-        "name": "armor",
-        "requiredType": "",
-        "speed": 1.0,
-        "tooltip": ""
-      },
-      {
-        "category": "",
-        "elementKind": null,
-        "hasSetter": true,
-        "kind": 3,
-        "labels": [],
-        "max": null,
-        "min": null,
-        "name": "legacySpeed",
-        "requiredType": "",
-        "speed": 1.0,
-        "tooltip": ""
-      },
-      {
-        "category": "",
-        "elementKind": null,
-        "hasSetter": true,
-        "kind": 5,
-        "labels": [],
-        "max": null,
-        "min": null,
-        "name": "primaryWeaponId",
-        "requiredType": "",
-        "speed": 1.0,
-        "tooltip": ""
-      }
-    ],
-    "removable": false,
-    "requiredComponents": [],
-    "root": 2,
-    "spawnable": false
-  },
-  {
-    "addable": false,
-    "base": "",
-    "functions": [],
     "name": "ArenaEncounterProgression",
     "properties": [
       {
@@ -2525,34 +2448,7 @@
         "name": "DummyArmor",
         "requiredType": "",
         "speed": 1.0,
-        "tooltip": "Base Armor applied to scene-placed dummy prefab instances before BeginPlay."
-      },
-      {
-        "category": "Arena configuration",
-        "elementKind": null,
-        "hasSetter": true,
-        "kind": 10,
-        "labels": [],
-        "max": null,
-        "min": null,
-        "name": "HeavyDummy",
-        "requiredType": "",
-        "speed": 1.0,
-        "structType": "ArenaHeavyDummySettings",
-        "tooltip": ""
-      },
-      {
-        "category": "Arena configuration",
-        "elementKind": 3,
-        "hasSetter": true,
-        "kind": 9,
-        "labels": [],
-        "max": null,
-        "min": null,
-        "name": "HeavyDummyPositions",
-        "requiredType": "",
-        "speed": 1.0,
-        "tooltip": ""
+        "tooltip": "Base Armor applied to scene-placed dummy prefab instances that do not author their own Armor before BeginPlay."
       }
     ],
     "removable": false,

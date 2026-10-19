@@ -2,6 +2,7 @@
 #include "enemy/DummyEnemy.h"
 #include "gameConfigs/GameplayTags.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/content/ShipPrefabSpawner.h"
@@ -180,6 +181,56 @@ namespace
 		directWorld.TickInternal(0.f);
 	}
 
+	void HeavyEquivalence(EngineContext& engine, const std::filesystem::path& root)
+	{
+		constexpr const char* HeavyShipId = "Ship.Enemy.HeavyDummy.Basic";
+		constexpr const char* HeavyPrefabPath = "prefabs/dummies/dummy_heavy.prefab.json";
+		std::string reason;
+		Check(content::ShipContentCatalog::FindById(HeavyShipId) != nullptr, "Heavy dummy source ship is present");
+		CheckSparse(Read(root / HeavyPrefabPath), HeavyShipId);
+		Check(ValidateDummyPrefab(engine, root, HeavyPrefabPath, HeavyShipId, &reason), "Heavy dummy validator accepts", reason);
+		Check(!ValidateDummyPrefab(engine, root, HeavyPrefabPath, "Ship.Missing.Basic", &reason), "Heavy dummy validator rejects unknown ship", reason);
+		Check(!ValidateDummyPrefab(engine, root, HeavyPrefabPath, DummyShipId, &reason), "Heavy dummy validator rejects a mismatched selector", reason);
+		// The old arena path built the heavy dummy in code from RangeKeeper plus overrides;
+		// the catalog entry must reproduce every ShipRuntime-exposed attribute exactly.
+		ShipDefinition overrideDefinition = *content::ShipContentCatalog::FindById(DummyShipId);
+		overrideDefinition.health = 9000.f;
+		overrideDefinition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, 40.f });
+		overrideDefinition.speed = {};
+		overrideDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
+		World overrideWorld{ engine }, catalogWorld{ engine }, prefabWorld{ engine };
+		const auto overrideDummy = overrideWorld.SpawnActor<DummyEnemy>(overrideDefinition).lock();
+		const auto catalogDummy = catalogWorld.SpawnActor<DummyEnemy>(*content::ShipContentCatalog::FindById(HeavyShipId)).lock();
+		const auto prefabDummy = SpawnDummyPrefab(prefabWorld, HeavyPrefabPath, HeavyShipId, &reason).lock();
+		Check(overrideDummy && catalogDummy && prefabDummy != nullptr, "Heavy override, catalog and prefab dummies spawn", reason);
+		if (!overrideDummy || !catalogDummy || !prefabDummy) return;
+		const sf::Vector2f location{ 2100.f, 1950.f };
+		overrideDummy->SetActorLocation(location);
+		catalogDummy->SetActorLocation(location);
+		prefabDummy->SetActorLocation(location);
+		const auto compare = [&](DummyEnemy& expectedActor, DummyEnemy& actualActor, const std::string& stage)
+		{
+			const auto expected = Snapshot(expectedActor), actual = Snapshot(actualActor);
+			for (const auto& field : expected.items())
+			{
+				// The catalog id legitimately differs from the code-built RangeKeeper source.
+				if (field.key() == "ship") continue;
+				Check(field.value() == actual.at(field.key()), "Heavy " + stage + " " + field.key(), actual.at(field.key()));
+			}
+		};
+		compare(*overrideDummy, *catalogDummy, "override vs catalog");
+		compare(*catalogDummy, *prefabDummy, "catalog vs prefab");
+		overrideDummy->BeginPlayInternal();
+		catalogDummy->BeginPlayInternal();
+		prefabDummy->BeginPlayInternal();
+		compare(*overrideDummy, *catalogDummy, "override vs catalog begun");
+		overrideDummy->Tick(0.016f);
+		catalogDummy->Tick(0.016f);
+		prefabDummy->Tick(0.016f);
+		compare(*overrideDummy, *catalogDummy, "override vs catalog tick");
+		compare(*catalogDummy, *prefabDummy, "catalog vs prefab tick");
+	}
+
 	void Validation(EngineContext& engine, const std::filesystem::path& root)
 	{
 		const auto valid = Read(root / DummyPrefabPath);
@@ -270,6 +321,7 @@ int RunTests(int argc, char** argv)
 			Check(type->spawnable && actor && actor->GetShip() == DummyShipId && !actor->IsPhysicsEnabled(), "Editor class creation constructs the neutral default dummy");
 		}
 		Equivalence(engine, root);
+		HeavyEquivalence(engine, root);
 		Validation(engine, root);
 		Write(artifacts / "dummy-prefab-results.json", { { "checks", checks }, { "failures", failures } });
 	}

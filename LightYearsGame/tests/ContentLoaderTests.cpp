@@ -213,14 +213,15 @@ namespace
 				{ 40.f, 130.f, 20.f, 6.f, 5.5f, 95.f, 3.f, 6.f, 1.5f, 1.5f, 1.8f, 0.9f, 33.f, 0.22f, 0.45f }
 			}
 		}};
-		const std::array<const char*, 3> expectedEnemyIds{{
+		const std::array<const char*, 4> expectedEnemyIds{{
 			"Ship.Enemy.ApproachGunner.Basic",
 			"Ship.Enemy.StrafeSkirmisher.Basic",
-			"Ship.Enemy.RangeKeeper.Basic"
+			"Ship.Enemy.RangeKeeper.Basic",
+			"Ship.Enemy.HeavyDummy.Basic"
 		}};
-		if (!loadedShips.Succeeded() || loadedShips.definitions.size() != 9)
+		if (!loadedShips.Succeeded() || loadedShips.definitions.size() != 10)
 		{
-			return Fail("Ship JSON must contain six player ships and three enemy ships") ? 0 : 1;
+			return Fail("Ship JSON must contain six player ships and four enemy ships") ? 0 : 1;
 		}
 
 		vega::List<std::string> expectedPlayerShipIds;
@@ -356,7 +357,7 @@ namespace
 		{
 			if (loadedShips.definitions[expectedShips.size() + index].id != expectedEnemyIds[index])
 			{
-				return Fail("The three enemy ship definitions must remain after the six player ships") ? 0 : 1;
+				return Fail("The four enemy ship definitions must remain after the six player ships") ? 0 : 1;
 			}
 		}
 

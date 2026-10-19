@@ -18,6 +18,7 @@
 #include "widget/GameHUD.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <string>
 
@@ -25,6 +26,14 @@ namespace vega
 {
 	namespace
 	{
+		// Authored defaults for the absent-scene fallback only. The shipped arena scene
+		// places every dummy as a prefab instance; the catalog ship IDs below are the
+		// single source of truth for the fallback layout.
+		constexpr const char* DefaultHeavyDummyShipId = "Ship.Enemy.HeavyDummy.Basic";
+		constexpr const char* DefaultLightDummyShipId = "Ship.Enemy.RangeKeeper.Basic";
+		constexpr float DefaultLightDummyHealth = 50.f;
+		const std::array<sf::Vector2f, 4> DefaultHeavyDummyPositions{ { { 2100.f, 1950.f }, { 2700.f, 1950.f }, { 3300.f, 1950.f }, { 3900.f, 1950.f } } };
+
 		sf::Vector2f ResolveEncounterSpawnOffset(size_t localSpawnIndex, float spacing)
 		{
 			if (localSpawnIndex == 0) return {};
@@ -150,18 +159,16 @@ namespace vega
 
 	void ArenaTestLevel::SpawnDummyTargets()
 	{
-		const auto& config = mLayout.heavyDummy;
-		const auto* source = content::ShipContentCatalog::FindById(config.ship);
-		if (!source)
+		// Scene-placed prefabs own every dummy. Only an absent scene builds the historical
+		// code-generated layout so the arena still starts without a scene file.
+		if (mLayout.fromScene) return;
+		const auto* heavySource = content::ShipContentCatalog::FindById(DefaultHeavyDummyShipId);
+		const auto* lightSource = content::ShipContentCatalog::FindById(DefaultLightDummyShipId);
+		if (!heavySource || !lightSource)
 		{
-			VEGA_GAME_ERROR("Arena test dummy ship definition is unavailable.");
+			VEGA_GAME_ERROR("Arena test dummy ship definitions are unavailable.");
 			return;
 		}
-		ShipDefinition definition = *source;
-		definition.health = config.health;
-		definition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, config.armor });
-		definition.speed = config.legacySpeed;
-		definition.primaryWeaponId = config.primaryWeaponId;
 		const auto spawn = [&](const ShipDefinition& ship, sf::Vector2f position)
 		{
 			if (const auto dummy = SpawnActor<DummyEnemy>(ship).lock())
@@ -171,16 +178,16 @@ namespace vega
 				dummy->SetActorRotation(0.f);
 			}
 		};
-		for (auto position : mLayout.heavyDummyPositions) spawn(definition, position);
-		// Only an absent scene uses the historical code-generated small layout.
-		if (mLayout.fromScene) return;
-		definition.health = 50.f;
-		definition.primaryWeaponId.clear();
+		for (auto position : DefaultHeavyDummyPositions) spawn(*heavySource, position);
+		ShipDefinition light = *lightSource;
+		light.health = DefaultLightDummyHealth;
+		light.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, mLayout.dummyArmor });
+		light.primaryWeaponId.clear();
 		const auto& bounds = GetArenaDefinition().legalBounds;
 		const sf::Vector2f center = bounds.position + bounds.size * 0.5f;
 		for (int row = 0; row < 4; ++row)
 			for (int column = 0; column < 5; ++column)
-				spawn(definition, center + sf::Vector2f{ (column - 2.f) * 30.f, (row - 1.5f) * 30.f });
+				spawn(light, center + sf::Vector2f{ (column - 2.f) * 30.f, (row - 1.5f) * 30.f });
 	}
 
 	void ArenaTestLevel::Tick(float deltaTime)
