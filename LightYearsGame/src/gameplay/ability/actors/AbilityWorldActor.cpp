@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "gameConfigs/SimulationTimeDomains.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/debug/Profiler.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -118,7 +119,7 @@ namespace vega
 		// families consistent without repeating temporal code in each constructor.
 		if (IsProjectileActor())
 		{
-			SetSimulationTimeDomain(SimulationTimeDomain::ProjectileGameplay);
+			SetSimulationTimeDomain(GameTimeDomains::ProjectileGameplay);
 		}
 
 		Actor::BeginPlay();
@@ -270,7 +271,7 @@ namespace vega
 		mUnmanagedOwner = mOwner.expired() ? &newOwner : nullptr;
 		SetSimulationTimeDomain(
 			IsProjectileActor()
-				? SimulationTimeDomain::ProjectileGameplay
+				? GameTimeDomains::ProjectileGameplay
 				: newOwner.GetSimulationTimeDomain()
 		);
 		mAllowFriendlyFire = false;

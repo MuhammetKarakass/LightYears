@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "gameConfigs/SimulationTimeDomains.h"
 #include "enemy/EnemyActor.h"
 #include "framework/debug/Profiler.h"
 
@@ -57,7 +58,7 @@ namespace vega
 		mWindowCullEnabled{ spawnContext.windowCullEnabled },
 		mHasChassisPrimaryWeapon{ !shipDefinition.primaryWeaponId.empty() }
 	{
-		SetSimulationTimeDomain(SimulationTimeDomain::HostileGameplay);
+		SetSimulationTimeDomain(GameTimeDomains::HostileGameplay);
 		SetMovementMode(ShipMovementMode::ThrustDrift);
 		SetActorRotation(180.f);
 		if (!shipDefinition.engineMounts.empty())

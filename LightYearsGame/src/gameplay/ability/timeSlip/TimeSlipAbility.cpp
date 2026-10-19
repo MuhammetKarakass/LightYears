@@ -1,4 +1,5 @@
 #include "gameplay/ability/timeSlip/TimeSlipAbility.h"
+#include "gameConfigs/SimulationTimeDomains.h"
 
 #include "framework/World.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -171,7 +172,7 @@ namespace vega
 
 		mModifierSourceId = BuildModifierSourceId(context.owner);
 		world->SetSimulationTimeModifier(
-			SimulationTimeDomain::HostileGameplay,
+			GameTimeDomains::HostileGameplay,
 			mModifierSourceId,
 			gameplayTimeMultiplier
 		);
@@ -179,7 +180,7 @@ namespace vega
 		// projectile, including player primary/ability projectiles, receives the
 		// same authored temporal multiplier while the player remains real-time.
 		world->SetSimulationTimeModifier(
-			SimulationTimeDomain::ProjectileGameplay,
+			GameTimeDomains::ProjectileGameplay,
 			mModifierSourceId,
 			gameplayTimeMultiplier
 		);
@@ -208,11 +209,11 @@ namespace vega
 		if (World* world = context.owner.GetWorld())
 		{
 			world->RemoveSimulationTimeModifier(
-				SimulationTimeDomain::HostileGameplay,
+				GameTimeDomains::HostileGameplay,
 				mModifierSourceId
 			);
 			world->RemoveSimulationTimeModifier(
-				SimulationTimeDomain::ProjectileGameplay,
+				GameTimeDomains::ProjectileGameplay,
 				mModifierSourceId
 			);
 		}
