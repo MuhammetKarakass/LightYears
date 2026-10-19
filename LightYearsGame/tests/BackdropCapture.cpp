@@ -308,6 +308,86 @@ namespace
 
 	struct Shot { sf::Image image; Json trace; Json owner; };
 
+	int EditorGeometry(const std::filesystem::path& root)
+	{
+		std::filesystem::create_directories(root);
+		Capture capture;
+		const auto route = LoadRoute();
+		Json evidence = Json::array();
+		struct GeometryShot { vega::ProceduralBackdrop::SkyGeometry geometry; Json trace, owner; };
+		for (bool mirrored : {false, true})
+		{
+			const auto stop = std::find_if(route.Stops().begin(), route.Stops().end(), [&](const auto& candidate)
+			{
+				vega::ProceduralBackdrop backdrop;
+				backdrop.SetRouteStop(candidate);
+				return !candidate.planets.empty() && backdrop.EditorGeometry(capture.assets, Size).mirrored == mirrored;
+			});
+			Require(stop != route.Stops().end(), "Missing mirrored/unmirrored route fixture");
+			const auto shoot = [&](const Json& sky, float time, bool shifted)
+			{
+				std::string error;
+				Require(capture.assets.PreviewDeepSky(Json{{"stops", {{stop->id, sky}}}}, error), error);
+				vega::ProceduralBackdrop backdrop;
+				backdrop.SetRouteStop(*stop);
+				capture.Frame(backdrop, 0.f, false);
+				Json trace = Json::array();
+				Observe(backdrop, trace);
+				capture.Frame(backdrop, time, shifted);
+				return GeometryShot{backdrop.EditorGeometry(capture.assets, Size), std::move(trace), Owner(backdrop)};
+			};
+			for (const std::string scene : {"ordinary", "disk", "horizon"}) for (bool legacy : {false, true})
+			{
+				Json owner{{"planet", {{"at", {0.12f, 0.18f}}, {"scale", 0.8f}}}};
+				if (scene != "ordinary") owner["orbit"] = {{"kind", "terran"}, {"framing", scene}, {"diskRadius", 0.24f}, {"degreesPerMinute", 9.f}};
+				Json single = legacy ? owner : Json{{"planets", Json::array({owner})}};
+				Json multiple = single;
+				if (legacy) multiple["planets"] = Json::array();
+				multiple["planets"].push_back(Json{{"planet", {{"at", {0.22f, 0.31f}}, {"scale", 0.45f}, {"kind", "ice"}, {"driftPerMinute", {0.03f, -0.02f}}}}});
+				// An unauthored orbit position must remain at the framing origin, not an absolute screen fraction.
+				multiple["planets"].push_back(Json{{"planet", {{"scale", 0.7f}, {"kind", "gasGiant"}}}});
+				if (scene != "ordinary") multiple["planets"].back()["orbit"] = {{"framing", "disk"}, {"diskRadius", 0.17f}};
+				for (float time : {0.f, 37.f}) for (bool shifted : {false, true}) for (bool hidden : {false, true})
+				{
+					const auto control = shoot(single, time, shifted);
+					multiple["planets"].back()["planet"]["hide"] = hidden;
+					const auto drawn = shoot(multiple, time, shifted);
+					const auto& g = drawn.geometry;
+					const auto& before = control.geometry;
+					Require(g.planetAt == before.planetAt && g.bandDrift == before.bandDrift && g.planetRadius == before.planetRadius && g.planetBaseScale == before.planetBaseScale && g.band == before.band && g.mirrored == before.mirrored && g.hasPlanet == before.hasPlanet, "Extras changed an existing EditorGeometry field");
+					Require(drawn.owner == control.owner, "Extras changed rendered entry 0");
+					Require(!legacy || before.planets.empty(), "Legacy-only stop must leave per-entry geometry empty");
+					Require(g.planets.size() == 3 && g.mirrored == mirrored, "Incorrect resolved count or mirroring");
+					Json visible = multiple;
+					visible["planets"].back()["planet"]["hide"] = false;
+					const auto revealed = hidden ? shoot(visible, time, shifted) : drawn;
+					Json unit = visible;
+					for (auto& entry : unit["planets"]) entry["planet"]["scale"] = 1.f;
+					if (legacy) unit["planet"]["scale"] = 1.f;
+					const auto unscaled = shoot(unit, time, shifted);
+					for (std::size_t i = 0; i < 3; ++i)
+					{
+						const auto& entry = g.planets[i];
+						// Orbit owner uses its last rendered owner state; all other bodies have submission records.
+						const Json body = i == 0 && scene != "ordinary" ? revealed.owner : BodyOf(revealed.trace, i).at("planet");
+						const Json base = i == 0 && scene != "ordinary" ? unscaled.owner : BodyOf(unscaled.trace, i).at("planet");
+						const float dx = std::abs(entry.at.x * Size.x - body.at("center")[0].get<float>());
+						const float dy = std::abs(entry.at.y * Size.y - body.at("center")[1].get<float>());
+						const float dr = std::abs(entry.radius * Size.y - body.at("radius").get<float>());
+						const float db = std::abs(entry.baseScale * capture.assets.Settings().planet.radius * Size.y - base.at("radius").get<float>());
+						Require(entry.index == i && entry.hasBody && entry.visible == !(hidden && i == 2), "Wrong entry identity/body/visibility");
+						Require(dx < 1.f && dy < 1.f && dr < 1.f && db < 1.f, "Editor geometry differs from rendered body by at least a pixel");
+						if (hidden && i == 2) Require(std::none_of(drawn.trace.begin(), drawn.trace.end(), [](const auto& item) { return item.at("index") == 2; }), "Hidden body submitted");
+						evidence.push_back({{"stop", stop->id}, {"scene", scene}, {"legacyOwner", legacy}, {"time", time}, {"shifted", shifted}, {"hidden", hidden}, {"index", i}, {"centerErrorPixels", {dx, dy}}, {"radiusErrorPixels", dr}, {"baseRadiusErrorPixels", db}, {"at", V2(entry.at)}, {"radius", entry.radius}, {"baseScale", entry.baseScale}, {"drawn", body}});
+					}
+				}
+			}
+		}
+		std::ofstream{root / "editor-geometry.json"} << evidence.dump(2) << '\n';
+		std::cout << "Editor geometry agrees with rendered bodies: " << evidence.size() << " entry checks\n";
+		return 0;
+	}
+
 	int PlanetData(const std::filesystem::path& root)
 	{
 		std::filesystem::create_directories(root);
@@ -497,6 +577,7 @@ int main(int argc, char** argv)
 		if (argc == 4 && std::string{argv[1]} == "--compare") return Compare(argv[2], argv[3]);
 		if (argc == 3 && std::string{argv[1]} == "--two-body") return TwoBodies(argv[2]);
 		if (argc == 3 && std::string{argv[1]} == "--planets-data") return PlanetData(argv[2]);
+		if (argc == 3 && std::string{argv[1]} == "--editor-geometry") return EditorGeometry(argv[2]);
 		Require(argc == 3 || argc == 6, "Usage: LightYearsBackdropCapture --capture OUTPUT [STOP SECONDS fixed|shifted]");
 		Require(std::string{argv[1]} == "--capture", "Unknown capture command");
 		return CaptureStops(argv[2], argc == 6 ? argv[3] : "", argc == 6 ? std::stof(argv[4]) : 0.f, argc == 6 && std::string{argv[5]} == "shifted");

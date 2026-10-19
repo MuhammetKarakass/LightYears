@@ -396,6 +396,46 @@ namespace vega
 		result.band = composition.band;
 		result.mirrored = composition.mirrored;
 		result.hasPlanet = mHasPlanet && !(sky && sky->planet.hide);
+		// Legacy-only skies keep the original accessor/handle. A mixed list includes its synthesized owner.
+		if (sky && !sky->planetEntries.empty() && output.x && output.y)
+		{
+			const auto& settings = assets.Settings();
+			const auto* sceneOrbit = sky->planets.front().orbit ? &*sky->planets.front().orbit : nullptr;
+			EntryBodyContext context;
+			context.output = sf::Vector2f(output);
+			context.fallbackAt = composition.planetAt;
+			context.baseRadius = output.y * settings.planet.radius * result.planetBaseScale;
+			context.driftPixels = (mLastCameraCenter - mCameraStart) * UnitsToPixels(static_cast<float>(output.y), mAnchoredViewSize.y);
+			context.planetParallax = settings.planet.parallax;
+			context.bandParallax = composition.band.parallax;
+			context.elapsedSeconds = std::max(mLastTime - mLocationStart, 0.f);
+			context.pipelineRotationSpeed = settings.planet.rotationSpeed;
+			context.mirrored = composition.mirrored;
+			context.sceneOrbit = sceneOrbit;
+			for (std::size_t i = 0; i < sky->planets.size(); ++i)
+			{
+				const auto& entry = sky->planets[i];
+				const auto body = BuildEntryBody(entry, i, context);
+				SkyPlanetGeometry geometry;
+				// Legacy entry 0 has its own historical placement rules; its last drawn owner state is authoritative.
+				const auto center = entry.legacy ? mPlanetCenter : body.center;
+				const float radius = entry.legacy ? mPlanetRadius : body.radius;
+				geometry.at = {center.x / output.x, center.y / output.y};
+				geometry.radius = radius / output.y;
+				geometry.baseScale = result.planetBaseScale;
+				if (sceneOrbit && settings.planet.radius > 0.f)
+				{
+					// Resolve an unscaled body through the renderer's placement path, including per-entry framing.
+					auto unscaled = entry;
+					unscaled.planet.scale = 1.f;
+					geometry.baseScale = BuildEntryBody(unscaled, i, context).radius / (output.y * settings.planet.radius);
+				}
+				geometry.index = i;
+				geometry.hasBody = settings.planet.enabled && (!entry.legacy || mHasPlanet || (sceneOrbit && sceneOrbit->kind.has_value()));
+				geometry.visible = !entry.planet.hide;
+				result.planets.push_back(geometry);
+			}
+		}
 		return result;
 	}
 

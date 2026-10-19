@@ -57,6 +57,13 @@ namespace vega
 		float OrbitSpeedScale() const;
 		// Degrees per minute the sky turned at in the last drawn frame, scale included; empty when the stop is not an orbit.
 		std::optional<float> OrbitDegreesPerMinute() const { return mOrbitRate; }
+		struct SkyPlanetGeometry
+		{
+			sf::Vector2f at;
+			float radius = 0.f, baseScale = 1.f;
+			std::size_t index = 0;
+			bool hasBody = false, visible = true;
+		};
 		struct SkyGeometry
 		{
 			sf::Vector2f planetAt;
@@ -65,6 +72,7 @@ namespace vega
 			float planetBaseScale = 1.f;
 			visual::MilkyWaySettings band;
 			bool mirrored = false, hasPlanet = false;
+			std::vector<SkyPlanetGeometry> planets;
 		};
 		// Read the same composition used by Draw; authoring handles must not approximate seeded placement.
 		SkyGeometry EditorGeometry(const visual::VisualAssets& assets, sf::Vector2u output) const;

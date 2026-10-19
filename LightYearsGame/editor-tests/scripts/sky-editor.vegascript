@@ -61,4 +61,19 @@ expect-sky objects[0].at [0.3,0.5]
 expect-sky objects[0].size 0.25
 expect-sky objects[0].angleDeg 18
 capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/objects.png"
+# The harness copy supplies a legacy owner and two explicit extras; resolved entry 1 is planets.0.
+sky-open hd-168443
+expect-sky planets.0.planet.at [0.22,0.25]
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/planets-before.png"
+sky-drag planets.0.at 0 108
+expect-sky planets.0.planet.at [0.22,0.35]
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/planets-after.png"
+undo
+expect-sky planets.0.planet.at [0.22,0.25]
+redo
+expect-sky planets.0.planet.at [0.22,0.35]
+sky-save
+sky-open hd-168443
+expect-sky planets.0.planet.at [0.22,0.35]
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/planets-reopened.png"
 quit

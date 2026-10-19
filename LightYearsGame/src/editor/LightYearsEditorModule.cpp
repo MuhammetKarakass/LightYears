@@ -44,7 +44,9 @@ namespace vega
 			vega::sky::SkyGeometry Geometry(sf::Vector2u output) const override
 			{
 				const auto geometry = mPipeline.EditorBackdrop().EditorGeometry(mPipeline.EditorAssets(), output);
-				return {geometry.planetAt, geometry.bandDrift, geometry.planetRadius, geometry.planetBaseScale, geometry.band, geometry.mirrored, geometry.hasPlanet};
+				vega::sky::SkyGeometry result{geometry.planetAt, geometry.bandDrift, geometry.planetRadius, geometry.planetBaseScale, geometry.band, geometry.mirrored, geometry.hasPlanet};
+				for (const auto& entry : geometry.planets) result.planets.push_back({entry.at, entry.radius, entry.baseScale, entry.index, entry.hasBody, entry.visible});
+				return result;
 			}
 			vega::sky::SkyPalette Palette() const override { return vega::sky::SkyPaletteFor(mPipeline.EditorBackdrop().Sky()); }
 			bool RenderSky(sf::RenderTexture& target, std::size_t index, const World& world, sf::Vector2u size) override

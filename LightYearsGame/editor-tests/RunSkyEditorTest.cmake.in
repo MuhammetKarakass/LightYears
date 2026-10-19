@@ -4,6 +4,10 @@ file(SHA256 "@CMAKE_SOURCE_DIR@/LightYearsVisual/assets/deepsky.json" source_has
 # Fresh copies on every run; no authoring command can reach real asset paths.
 file(COPY "@CMAKE_SOURCE_DIR@/LightYearsVisual/assets/" DESTINATION "${root}/visual")
 file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}/assets")
+execute_process(COMMAND "${VEGA_SKY_CHECK}" --prepare "${root}" RESULT_VARIABLE prepare_result)
+if(NOT prepare_result EQUAL 0)
+	message(FATAL_ERROR "Cannot prepare disposable indexed planet fixture")
+endif()
 execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}/assets" --visual-assets "${root}/visual"
 	--editor-script "@CMAKE_CURRENT_BINARY_DIR@/scripts/sky-editor.vegascript"
 	WORKING_DIRECTORY "@CMAKE_CURRENT_BINARY_DIR@" RESULT_VARIABLE result TIMEOUT 150)

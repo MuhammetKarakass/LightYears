@@ -163,6 +163,7 @@ if(BUILD_TESTING)
 	endforeach()
 	vega_add_game_test_case(LightYearsBackdropPlanetsE2E LightYearsBackdropCapture ARGS --two-body ${CMAKE_BINARY_DIR}/w10-backdrop-two-body TIMEOUT 90)
 	vega_add_game_test_case(LightYearsBackdropPlanetsDataE2E LightYearsBackdropCapture ARGS --planets-data ${CMAKE_BINARY_DIR}/w10-planets-render-data TIMEOUT 240)
+	vega_add_game_test_case(LightYearsBackdropEditorGeometryE2E LightYearsBackdropCapture ARGS --editor-geometry ${CMAKE_BINARY_DIR}/w10-skyhandles-geometry TIMEOUT 120)
 	vega_add_game_test(LightYearsReflectionRegistryGoldenTests GAME
 		SOURCES ${VEGA_TESTS_DIR}/ReflectionRegistryGoldenTests.cpp LIBS VegaScript)
 	target_compile_definitions(LightYearsReflectionRegistryGoldenTests PRIVATE

@@ -124,6 +124,29 @@ owner keeping its submissions, state, scene and suppression plus ignoring legacy
 `at`/`scale`/`hide`; and an explicit orbit owner applying `at`/`scale`. Evidence
 is written under `build/w10-planets-render-data`.
 
+## Stage 4b game adapter: per-planet viewport handles
+
+Stage 4b is implemented on the game side. The editor host now supplies each
+resolved entry's presented centre, scaled radius, unscaled base scale, index and
+body/visibility flags. Centres and radii reuse `BuildEntryBody` with the last
+frame's camera drift and clocks; a synthesized legacy owner uses its rendered
+owner state. Ordinary positions are absolute fractions; orbit positions remain
+offsets from framing (an unauthored offset starts at zero). Vega converts mirrored
+X drags back to authored coordinates and uses the base scale for resize handles.
+The seven existing entry-0 accessor fields and all rendering paths are unchanged.
+Legacy-only stops leave the vector empty; hidden or disabled bodies have no
+viewport handle. Off-screen handles still require the form controls.
+
+`LightYearsBackdropEditorGeometryE2E` compares centres/radii and unit-scale radii
+against actual submissions (orbit entry 0 uses rendered owner state), within one
+pixel, for ordinary/disk/horizon scenes, both mirroring states, legacy/explicit
+owners, animated time, camera drift and hidden entries. It writes
+`build/w10-skyhandles-geometry/editor-geometry.json`. The game sky-editor scenario
+uses a disposable two-extra-planet fixture and `sky-drag planets.0.at`, checking
+`planets.0.planet.at`, undo/redo, saved/reopened data and changed/restored capture
+checksums. Interactive mouse picking, visual acceptance and GPU cost still need
+a windowed review; the offscreen proofs do not establish those.
+
 ## Remaining stages
 
 The read-only design is
@@ -135,9 +158,9 @@ The read-only design is
   array is still indistinguishable from no array, so the generated fallback
   remains (engine limitation to revisit).
 - **Stage 3 (Vega editor and game adapter):** the game adapter renders the
-  resolved list (above); the editor count/add/duplicate/remove/reorder/select
-  controls, indexed handles, owner labeling, signed speeds, preset
-  materialization, undo/redo and byte-preserving save/reopen remain Vega work.
+  resolved list (above) and supplies indexed handle geometry (Stage 4b). Vega
+  owns the editor list controls, indexed handle gestures, preset materialization,
+  undo/redo and byte-preserving save/reopen; see its current `docs/sky-editor.md`.
 - **Stage 4 (regression/docs):** extend parser/document/editor scripts and
   captures, retain legacy equivalence at animated times, update engine/module
   documentation and sample content, and review performance/visual overlap.

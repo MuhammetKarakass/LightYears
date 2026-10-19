@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iterator>
 #include <set>
+#include <cmath>
 
 namespace
 {
@@ -82,6 +83,17 @@ namespace
 		const auto original = Read(std::filesystem::path{VEGA_SKY_SOURCE} / "deepsky.json");
 		const auto saved = Read(root / "visual/deepsky.json");
 		Check(!Entry(original, "gj-676-a").empty() && Entry(original, "gj-676-a") == Entry(saved, "gj-676-a"), "Unrelated stop JSON bytes changed");
+		vega::SkyDocument planets{root / "visual"};
+		Check(planets.Open() && planets.Select("hd-168443"), "Cannot reopen indexed-handle fixture");
+		const auto at = planets.Value("planets.0.planet.at");
+		Check(at.is_array() && at.size() == 2 && std::abs(at[0].get<float>() - .22f) < 1e-5f && std::abs(at[1].get<float>() - .35f) < 1e-5f, "Second planet drag did not save planets.0.planet.at");
+		sf::Image planetsBefore, planetsAfter, planetsReopened;
+		Check(planetsBefore.loadFromFile(root / "planets-before.png") && planetsAfter.loadFromFile(root / "planets-after.png") && planetsReopened.loadFromFile(root / "planets-reopened.png"), "Indexed planet captures missing");
+		if (!failures)
+		{
+			Check(Checksum(planetsBefore) != Checksum(planetsAfter), "Indexed planet drag did not change rendered pixels");
+			Check(Checksum(planetsAfter) == Checksum(planetsReopened), "Indexed planet save/reopen changed pixels");
+		}
 		std::cout << "Sky checksums before=" << first << " edited=" << second << " undo=" << undo << "; changed planet central=" << central << " outside=" << outside << " band=" << band << '\n';
 		return failures ? 1 : 0;
 	}
@@ -90,6 +102,15 @@ namespace
 int main(int argc, char** argv)
 {
 	if (argc == 3 && std::string{argv[1]} == "--verify") return Verify(argv[2]);
+	if (argc == 3 && std::string{argv[1]} == "--prepare")
+	{
+		// Author only the disposable harness copy, preserving unrelated stop bytes through the real document API.
+		vega::SkyDocument sky{std::filesystem::path{argv[2]} / "visual"};
+		Check(sky.Open() && sky.Select("hd-168443"), "Cannot prepare indexed planet fixture");
+		const vega::Json entries = vega::Json::array({vega::Json{{"planet", {{"at", {.22, .25}}, {"scale", .45}, {"kind", "ice"}}}}, vega::Json{{"planet", {{"at", {.78, .25}}, {"scale", .3}, {"kind", "lava"}}}}});
+		Check(sky.Set("planet.scale", 1.f) && sky.Block("planets", entries) && sky.Save(), "Cannot save indexed planet fixture: " + sky.error);
+		return failures ? 1 : 0;
+	}
 	const std::filesystem::path root{VEGA_SKY_TEST_ROOT};
 	std::filesystem::create_directories(root);
 	const std::string original = "{\r\n\t\"presets\": {\"soft\": {\"band\": {\"clouds\": 2}, \"objects\": [{\"kind\": \"fog\"}]}},\r\n\t\"stops\": {\r\n\t\t\"one\": {\"use\": \"soft\", \"future\": {\"keep\": 1.2300}},\r\n\t\t\"other\": { \"band\": { \"dust\": 1.000 }, \"future\": [\"keep me\"] }\r\n\t}\r\n}\r\n";
