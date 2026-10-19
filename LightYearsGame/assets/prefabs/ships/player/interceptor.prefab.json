@@ -2,6 +2,6 @@
   "format": "vega.prefab",
   "version": 1,
   "name": "Interceptor",
-  "base": { "type": "PlayerSpaceShip" },
+  "base": { "prefab": "prefabs/ships/player/player_ship.prefab.json" },
   "properties": { "Ship": "Ship.Player.Interceptor.Basic" }
 }

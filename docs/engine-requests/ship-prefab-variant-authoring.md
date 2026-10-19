@@ -1,6 +1,16 @@
 # Engine request: sparse construction-property variants
 
-Date: 2026-10-19. Read-only engine: Vega e6ed855.
+Date: 2026-10-19. Read-only engine: Vega e6ed855. Resolved by Vega 471176f.
+
+**Resolved.** Vega 471176f adds `PrefabLibrary::DiffVariant` and routes Apply
+property/section, Apply All and scratch **Save Prefab** through it. The
+comparison parent is realized afresh with the edited descendant's construction
+selectors, and an explicitly authored selector is retained even when it equals
+the factory default. The LightYears two-ship scenario now authors Fighter and
+Interceptor variants of the shared unselected `player_ship.prefab.json` base and
+keeps Ship plus intentional Render Enabled with no constructor component
+snapshots through Apply/Apply All/scratch Save, scene save/reopen, Revert and
+content refresh. The original request is retained below as history.
 
 Stage 2a tried an unselected type base (`base.type=PlayerSpaceShip`, no Ship)
 and Fighter/Interceptor `base.prefab` variants containing only their Ship ID.

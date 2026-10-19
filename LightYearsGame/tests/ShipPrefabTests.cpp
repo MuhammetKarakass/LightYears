@@ -139,7 +139,7 @@ int RunTests(int argc, char** argv)
 		Json document;
 		std::ifstream{ root / "prefabs/ships/player/fighter.prefab.json" } >> document;
 		Check(document.value("properties", Json::object()) == Json{ { "Ship", DefaultPlayerShipId }, { "Render Enabled", expectedRender } }, "Saved prefab contains exactly Ship and intentional Render Enabled override", document);
-		Check(document.value("base", Json::object()) == Json{ { "type", "PlayerSpaceShip" } }, "Editor Fighter retains the type base");
+		Check(document.value("base", Json::object()) == Json{ { "prefab", "prefabs/ships/player/player_ship.prefab.json" } }, "Editor Fighter retains the shared base prefab link");
 		Check(!document.contains("components"), "Saved prefab contains no constructor component snapshots");
 		std::string reason;
 		const bool valid = ValidateShipPrefab(context, root, "prefabs/ships/player/fighter.prefab.json", DefaultPlayerShipId, &reason);
@@ -152,7 +152,7 @@ int RunTests(int argc, char** argv)
 		Json interceptorDocument;
 		std::ifstream{ root / "prefabs/ships/player/interceptor.prefab.json" } >> interceptorDocument;
 		Check(interceptorDocument.value("properties", Json::object()) == Json{ { "Ship", "Ship.Player.Interceptor.Basic" }, { "Render Enabled", false } } &&
-			interceptorDocument.value("base", Json::object()) == Json{ { "type", "PlayerSpaceShip" } } && !interceptorDocument.contains("components"), "Editor Interceptor remains a sparse selected prefab", interceptorDocument);
+			interceptorDocument.value("base", Json::object()) == Json{ { "prefab", "prefabs/ships/player/player_ship.prefab.json" } } && !interceptorDocument.contains("components"), "Editor Interceptor remains a sparse selected variant", interceptorDocument);
 		Check(ValidateShipPrefab(context, root, "prefabs/ships/player/interceptor.prefab.json", "Ship.Player.Interceptor.Basic", &reason), "Game validator accepts editor Interceptor variant", reason);
 		if (bootstrapped)
 		{
@@ -268,6 +268,25 @@ int RunTests(int argc, char** argv)
 			Check(SpawnShipPrefab(descendantWorld, "all-ships-invalid.prefab.json", id, &diagnostic).expired() && descendantWorld.GetActorCountIncludingPending() == count &&
 				descendantWorld.unresolvedPrefabs.empty() && descendantWorld.GetTimerManager().GetTraversalTimerCount() == 0, id + " rejected " + fault + " leaks no actors or timers");
 		}
+		// Variant chains must not inherit forbidden parent shapes or escape through a link.
+		Json chainParent{ { "format", "vega.prefab" }, { "version", 1 }, { "name", "Chain parent" }, { "base", { { "type", "PlayerSpaceShip" } } }, { "properties", { { "Ship", id } } } };
+		Json chainChild{ { "format", "vega.prefab" }, { "version", 1 }, { "name", "Chain child" }, { "base", { { "prefab", "chain-parent.prefab.json" } } }, { "properties", Json::object() } };
+		const auto writeChain = [&](const Json& parentDocument)
+		{
+			std::ofstream{ artifacts / "chain-parent.prefab.json" } << parentDocument.dump(2);
+			std::ofstream{ artifacts / "chain-child.prefab.json" } << chainChild.dump(2);
+			return ValidateShipPrefab(context, artifacts, "chain-child.prefab.json", id, &diagnostic);
+		};
+		Check(writeChain(chainParent) && diagnostic.empty(), id + " validator accepts a variant inherited through a sparse chain", diagnostic);
+		auto chainSnapshot = chainParent;
+		chainSnapshot["components"] = Json::array({ { { "type", "HealthComponent" }, { "properties", { { "Max Health", 1 } } } } });
+		Check(!writeChain(chainSnapshot) && !diagnostic.empty(), id + " validator rejects a chain parent with a component snapshot", diagnostic);
+		auto chainWrongShip = chainParent;
+		chainWrongShip["properties"]["Ship"] = id == DefaultPlayerShipId ? "Ship.Player.Interceptor.Basic" : DefaultPlayerShipId;
+		Check(!writeChain(chainWrongShip) && !diagnostic.empty(), id + " validator rejects a chain with a wrong inherited Ship", diagnostic);
+		auto chainEscape = chainParent;
+		chainEscape["base"] = { { "prefab", "../outside.prefab.json" } };
+		Check(!writeChain(chainEscape) && !diagnostic.empty(), id + " validator rejects a chain link escaping the asset root", diagnostic);
 		context.Assets().SetAssetRootDirectory(source.generic_string() + "/");
 		prefab->Destroy();
 		prefabWorld.TickInternal(0.f);
@@ -352,6 +371,14 @@ int RunTests(int argc, char** argv)
 	Check(variant && !variant->IsRenderEnabled() && variant->GetHealthComponent().GetHealth() == definition.health, "Variant inherits selection and keeps catalog health");
 	write("cycle.prefab.json", { { "format", "vega.prefab" }, { "version", 1 }, { "base", { { "prefab", "cycle.prefab.json" } } } });
 	reject("cycle.prefab.json");
+	// Depth is bounded independently of cycles; the engine limit is 64 documents.
+	for (int index = 0; index < 65; ++index)
+	{
+		Json link{ { "format", "vega.prefab" }, { "version", 1 }, { "properties", { { "Ship", DefaultPlayerShipId } } } };
+		link["base"] = index == 64 ? Json{ { "type", "PlayerSpaceShip" } } : Json{ { "prefab", "depth-" + std::to_string(index + 1) + ".prefab.json" } };
+		write("depth-" + std::to_string(index) + ".prefab.json", link);
+	}
+	reject("depth-0.prefab.json");
 	// Inject a serializer diagnostic only in the destination world, after successful
 	// scratch resolution, to exercise rollback of an actually created actor.
 	EditWorld partialWorld{ context };

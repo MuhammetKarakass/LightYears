@@ -1,0 +1,6 @@
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Player Ship",
+  "base": { "type": "PlayerSpaceShip" }
+}

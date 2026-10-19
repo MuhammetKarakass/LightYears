@@ -5,23 +5,36 @@ Stage 2a extends the Fighter pilot to all six catalog player ships. Every shippe
 remains in C++; the editor-authored prefab chooses the catalog ship. Gameplay
 numbers, weapon selection, progression and module schematics remain in `ships.json`.
 
-## Variant decision
+## Variant structure
 
-All six shipped assets remain flat: `base.type=PlayerSpaceShip`, with only
-`properties.Ship`. A shared unselected `player_ship.prefab.json` base was tried
-against read-only Vega e6ed855. Its editor Apply/Save dropped Fighter's Ship
-(equal to the factory default), and Interceptor Save wrote SpriteComponent Texture
-and HealthComponent Max Health snapshots. Both documents failed the unchanged
-strict game validator. This fails sparse authoring even though Vega documents
-construction-selector resolution for variants. Therefore no shared base is
-shipped in stage 2a. The desired base-class/variant workflow needs a Vega authoring
-fix before adoption; do not weaken game validation to accommodate snapshots.
+All six shipped assets are variants of the shared, unselected
+`player_ship.prefab.json` base. The base has `base.type=PlayerSpaceShip` and no
+Ship override; each variant links it and authors only its catalog id:
+
+```json
+{
+  "format": "vega.prefab",
+  "version": 1,
+  "name": "Fighter",
+  "base": { "prefab": "prefabs/ships/player/player_ship.prefab.json" },
+  "properties": { "Ship": "Ship.Player.Fighter.Basic" }
+}
+```
+
+Vega 471176f makes variant authoring sparse: Apply property/section, Apply All
+and scratch **Save Prefab** realize the comparison parent with the edited
+descendant's construction selectors and retain an explicitly authored selector
+even when it equals the factory default. Ship and intentional Render Enabled
+therefore survive editor saves while constructor component values stay
+inherited. This is the intended `C++ base class -> base prefab -> variants`
+workflow; the earlier flat-prefab fallback was removed. See the resolved
+[variant authoring request](engine-requests/ship-prefab-variant-authoring.md).
 
 The game E2E still checks a descendant overriding an explicitly Fighter-selected
 parent with every ship choice. It compares component inventory, attributes,
 grants, movement and engine lights, rather than only checking the final Ship
 string. Runtime variant resolution and sparse editor authoring are separate
-acceptance boundaries. See the [variant authoring request](engine-requests/ship-prefab-variant-authoring.md).
+acceptance boundaries.
 
 All paths below are relative to `prefabs/ships/player/`; all IDs have the prefix
 `Ship.Player.` and suffix `.Basic`.
@@ -73,11 +86,13 @@ invulnerability timer start in BeginPlay as before.
 ## Validation and spawn
 
 Catalog validation reads authored prefab/variant chains through the engine's
-`PrefabLibrary::Load`, including canonical asset-root confinement. It checks the
-resolved base type is exactly PlayerSpaceShip and the inherited/overridden Ship
-equals the catalog record ID, without constructing scratch actors during catalog
-bootstrap. Player ship prefabs permit only `Ship` and boolean `Render Enabled` properties;
-component snapshots, scripts, children, other ship IDs and other overrides are rejected.
+`PrefabLibrary::Load`, including canonical asset-root confinement for every
+link. It checks the resolved base type is exactly PlayerSpaceShip and the
+inherited/overridden Ship equals the catalog record ID, without constructing
+scratch actors during catalog bootstrap. Each document in the chain may author
+only `Ship` and boolean `Render Enabled` properties; component snapshots,
+scripts, children, other ship IDs and other overrides are rejected at any link,
+and chain cycles and depth are bounded.
 Apply and scratch Save Prefab write sparse deltas against a freshly constructed
 property-aware base, always retaining Ship and any intentional Render Enabled
 override. Equal constructor component values are omitted. Generic editor edits
@@ -117,19 +132,21 @@ for every ship (life count, prefab identity, purchased ability levels, module
 inventory/placements, positioning and actor/timer cleanup). Its inputs/results are
 written under `build/e2e-artifacts/ship-prefab/`.
 
-`VegaEditorFighterPrefab` places Fighter and Interceptor prefabs, saves/reopens their scene,
-executes Apply/Revert on Render Enabled, then edits/saves the prefab in the scratch
-Inspector and reopens the scene again. Both prefabs undergo Apply and scratch
-Save, retain their distinct Ship selections, and are checked by the game validator
-and spawner against direct construction. The runner recreates only a dedicated
+`VegaEditorFighterPrefab` places Fighter and Interceptor variants, saves/reopens
+their scene, executes Apply/Revert on Render Enabled, then edits/saves the prefab
+in the scratch Inspector and reopens the scene again. Both variants undergo Apply
+and scratch Save through the shared `player_ship.prefab.json` base, retain their
+distinct Ship selections, and are checked by the game validator and spawner
+against direct construction. The runner recreates only a dedicated
 build-tree asset copy. It does not edit shipped source assets. The scenario
 retains Render Enabled=false through Apply and scratch Save, verifies catalog
 values through Revert, reopen and reload-prefabs refresh, and checks Ship mutation
-refusal. The postcheck requires exactly Ship and the visibility override, no
-component snapshots, and acceptance by both the game validator and spawner; it
-compares the spawned ship with direct catalog construction. A postcheck-only
-wrong visibility expectation must fail. See the implemented
-[engine request](engine-requests/ship-prefab-sparse-authoring.md).
+refusal. The postcheck requires exactly Ship and the visibility override, the
+variant base link, no component snapshots, and acceptance by both the game
+validator and spawner; it compares the spawned ship with direct catalog
+construction. A postcheck-only wrong visibility expectation must fail. See the
+implemented [engine request](engine-requests/ship-prefab-sparse-authoring.md)
+and the resolved [variant authoring request](engine-requests/ship-prefab-variant-authoring.md).
 Placement, sparse Apply/Save, scene save/reopen, Revert and refresh are supported.
 Construction diff bases are fresh; resolved prefab caches must be reloaded after
 catalog changes (the editor content watcher does this around its reload hook).
