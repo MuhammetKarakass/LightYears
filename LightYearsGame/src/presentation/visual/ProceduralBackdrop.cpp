@@ -579,6 +579,7 @@ namespace vega
 			moon.maxBrightness = cap;
 			mMoon->Draw(background, moon);
 		}
+		DrawAdditionalPlanetBodies(assets, pipeline, cameraCenter, viewHeight, timeSeconds);
 
 		// Lit cloud layers, lit by the host star where it is now (the same position the host star and planet use).
 		const HostStarSettings& host = settings.hostStar;
@@ -925,53 +926,111 @@ namespace vega
 		const sf::Vector2f drift = cameraCenter - mCameraStart;
 		const visual::DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
 		const BackdropComposition composition = BuildStopComposition(assets.Settings(), mLocationSeed, deepSky);
+		PlanetBodyDescription body;
+		body.center = BackdropCenter(output, composition.planetAt.x, composition.planetAt.y, drift, settings.parallax, unitsToPixels);
+		body.radius = output.y * settings.radius * composition.planetScale;
+		body.kind = mPlanetKind;
+		body.rotationSpeed = settings.rotationSpeed;
+		body.rotationScale = PlanetSpinScale;
+		body.moonSeed = FoldSeed(mLocationSeed) ^ 0x6d2b79f5u;
+		body.visible = mHasPlanet && !(deepSky != nullptr && deepSky->planet.hide);
+		const auto& host = assets.Settings().hostStar;
+		const sf::Vector2f hostCenter = BackdropCenter(output, composition.starAt.x, composition.starAt.y, drift, host.parallax, unitsToPixels);
+		return DrawPlanetBody(assets, pipeline, body, hostCenter, deepSky != nullptr && deepSky->hostStar.hide, timeSeconds, 0);
+	}
+
+	void ProceduralBackdrop::DrawAdditionalPlanetBodies(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds)
+	{
+		if (mAdditionalPlanetBodies.empty() || !assets.Settings().planet.enabled || viewHeight <= 0.f) return;
+		const sf::Vector2f output(pipeline.OutputSize());
+		const sf::Vector2f drift = cameraCenter - mCameraStart;
+		const float unitsToPixels = UnitsToPixels(output.y, viewHeight);
+		const auto* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
+		const auto composition = BuildStopComposition(assets.Settings(), mLocationSeed, deepSky);
+		const auto& host = assets.Settings().hostStar;
+		const sf::Vector2f hostCenter = BackdropCenter(output, composition.starAt.x, composition.starAt.y, drift, host.parallax, unitsToPixels);
+		for (std::size_t i = 0; i < mAdditionalPlanetBodies.size(); ++i)
+		{
+			auto body = mAdditionalPlanetBodies[i];
+			body.center -= drift * assets.Settings().planet.parallax * unitsToPixels;
+			DrawPlanetBody(assets, pipeline, body, hostCenter, deepSky != nullptr && deepSky->hostStar.hide, timeSeconds, i + 1);
+		}
+	}
+
+	bool ProceduralBackdrop::DrawPlanetBody(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const PlanetBodyDescription& body, sf::Vector2f hostCenter, bool starHidden, float timeSeconds, std::size_t index)
+	{
+		const visual::PlanetSettings& settings = assets.Settings().planet;
 		visual::PlanetParams planet;
 		// A distant background moves continuously against the camera, without the gameplay pixel grid.
-		planet.center = BackdropCenter(output, composition.planetAt.x, composition.planetAt.y, drift, settings.parallax, unitsToPixels);
-		planet.radius = output.y * settings.radius * composition.planetScale;
+		planet.center = body.center;
+		planet.radius = body.radius;
 		planet.brightness = settings.brightness;
 		planet.saturation = settings.saturation;
 		planet.opacity = settings.opacity;
 		planet.dither = settings.dither;
 		planet.pixelScale = 1.f;
 		planet.surfacePixelScale = 1.f;
-		visual::SetPlanetKind(planet, mPlanetKind);
+		visual::SetPlanetKind(planet, body.kind);
+		planet.seed = body.seed;
+		planet.ring = body.ring;
 		planet.timeSeconds = timeSeconds;
-		planet.rotation = timeSeconds * settings.rotationSpeed * PlanetSpinScale;
+		planet.rotation = timeSeconds * body.rotationSpeed * body.rotationScale;
 		planet.light = { -0.7f, -0.45f, 0.55f };
 
 		const visual::HostStarSettings& host = assets.Settings().hostStar;
 		if (host.enabled)
 		{
 			// Light points from the planet to the host star on screen, lifted toward the viewer.
-			const sf::Vector2f toStar = BackdropCenter(output, composition.starAt.x, composition.starAt.y, drift, host.parallax, unitsToPixels) - planet.center;
+			const sf::Vector2f toStar = hostCenter - planet.center;
 			const float length = std::sqrt(toStar.x * toStar.x + toStar.y * toStar.y);
 			if (length > 0.f)
 			{
 				planet.light = { toStar.x / length, toStar.y / length, PlanetLightLift };
 			}
-			const bool starHidden = deepSky != nullptr && deepSky->hostStar.hide;
 			SetStarLight(planet, mHostStar, !starHidden);
 		}
 
-		mPlanetCenter = planet.center;
-		mPlanetRadius = planet.radius;
-		const float lightLength = std::sqrt(planet.light.x * planet.light.x + planet.light.y * planet.light.y);
-		if (lightLength > 0.f)
+		if (index == 0)
 		{
-			mStarDirection = sf::Vector2f(planet.light.x / lightLength, planet.light.y / lightLength);
+			mPlanetCenter = planet.center;
+			mPlanetRadius = planet.radius;
+			const float lightLength = std::sqrt(planet.light.x * planet.light.x + planet.light.y * planet.light.y);
+			if (lightLength > 0.f)
+			{
+				mStarDirection = sf::Vector2f(planet.light.x / lightLength, planet.light.y / lightLength);
+			}
 		}
 		// No planet at this place: keep the light direction above, but draw neither the planet nor its moon.
-		if (!mHasPlanet || (deepSky != nullptr && deepSky->planet.hide))
+		if (!body.visible)
 		{
 			return false;
 		}
 		// The orbiting moon is behind the planet in the upper half of its orbit, in front in the lower half.
 		sf::RenderTarget& background = pipeline.Target(visual::Layer::Background);
-		const unsigned moonSeed = FoldSeed(mLocationSeed) ^ 0x6d2b79f5u;
-		visual::DrawPlanetMoon(assets.Shaders(), background, planet, moonSeed, timeSeconds, false);
-		visual::DrawPlanet(assets.Shaders(), background, visual::PlanetRamp(mPlanetKind), planet);
-		visual::DrawPlanetMoon(assets.Shaders(), background, planet, moonSeed, timeSeconds, true);
+		const auto observe = [&](PlanetBodyPass pass) { if (mPlanetBodyObserver) mPlanetBodyObserver(index, pass, planet, body.moonSeed); };
+		const auto ramp = visual::PlanetRamp(body.kind);
+		if (body.ring)
+		{
+			observe(PlanetBodyPass::BackRing);
+			visual::DrawPlanetRing(assets.Shaders(), background, ramp, planet, false);
+		}
+		if (body.moon)
+		{
+			observe(PlanetBodyPass::BackMoon);
+			visual::DrawPlanetMoon(assets.Shaders(), background, planet, body.moonSeed, timeSeconds, false);
+		}
+		observe(PlanetBodyPass::Body);
+		visual::DrawPlanet(assets.Shaders(), background, ramp, planet);
+		if (body.ring)
+		{
+			observe(PlanetBodyPass::FrontRing);
+			visual::DrawPlanetRing(assets.Shaders(), background, ramp, planet, true);
+		}
+		if (body.moon)
+		{
+			observe(PlanetBodyPass::FrontMoon);
+			visual::DrawPlanetMoon(assets.Shaders(), background, planet, body.moonSeed, timeSeconds, true);
+		}
 		return true;
 	}
 }

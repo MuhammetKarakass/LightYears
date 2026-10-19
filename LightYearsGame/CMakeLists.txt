@@ -157,6 +157,11 @@ if(BUILD_TESTING)
 	endfunction()
 
 	set(VEGA_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+	vega_add_game_test(LightYearsBackdropCapture PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/BackdropCapture.cpp LIBS ${LIGHT_YEARS_GAME_APP_TARGET_NAME})
+	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${runtime} LightYearsBackdropCapture)
+	endforeach()
+	vega_add_game_test_case(LightYearsBackdropPlanetsE2E LightYearsBackdropCapture ARGS --two-body ${CMAKE_BINARY_DIR}/w10-backdrop-two-body TIMEOUT 90)
 	vega_add_game_test(LightYearsReflectionRegistryGoldenTests GAME
 		SOURCES ${VEGA_TESTS_DIR}/ReflectionRegistryGoldenTests.cpp LIBS VegaScript)
 	target_compile_definitions(LightYearsReflectionRegistryGoldenTests PRIVATE

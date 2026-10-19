@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -69,6 +70,27 @@ namespace vega
 		SkyGeometry EditorGeometry(const visual::VisualAssets& assets, sf::Vector2u output) const;
 
 	private:
+		friend class ProceduralBackdropTestAccess;
+		// Resolved output-pixel geometry, before uniform preparation. Only the game test fixture supplies extra bodies.
+		struct PlanetBodyDescription
+		{
+			sf::Vector2f center;
+			float radius = 100.f;
+			visual::PlanetKind kind = visual::PlanetKind::Terran;
+			float seed = visual::PlanetParams{}.seed;
+			float rotationSpeed = 0.f;
+			float rotationScale = 1.f;
+			unsigned moonSeed = 0;
+			bool visible = true, moon = true;
+			std::optional<visual::PlanetRing> ring;
+		};
+		enum class PlanetBodyPass { BackRing, BackMoon, Body, FrontRing, FrontMoon };
+		using PlanetBodyObserver = std::function<void(std::size_t, PlanetBodyPass, const visual::PlanetParams&, unsigned)>;
+		bool DrawPlanetBody(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const PlanetBodyDescription& body, sf::Vector2f hostCenter, bool starHidden, float timeSeconds, std::size_t index);
+		void DrawAdditionalPlanetBodies(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds);
+		std::vector<PlanetBodyDescription> mAdditionalPlanetBodies;
+		PlanetBodyObserver mPlanetBodyObserver;
+
 		// Emission and dust clouds and the pulsar, positioned as fractions of the output size.
 		struct EmissionState
 		{
