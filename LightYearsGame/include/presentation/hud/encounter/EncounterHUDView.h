@@ -10,7 +10,7 @@ namespace vega
 	class EncounterHUDView : public Panel
 	{
 	public:
-		explicit EncounterHUDView(shared_ptr<const EncounterHUDPresentation> presentation);
+		explicit EncounterHUDView(EngineContext& context, shared_ptr<const EncounterHUDPresentation> presentation);
 		void Tick(float deltaTime) override;
 		unsigned int GetRefreshCount() const { return mRefreshCount; }
 		const std::string& GetPresentedTitle() const { return mPresentation->title; }

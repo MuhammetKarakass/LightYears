@@ -9,7 +9,7 @@ namespace vega
 	class HoloCanvas : public Panel
 	{
 	public:
-		HoloCanvas();
+		HoloCanvas(EngineContext& context);
 		void Clear();
 		sf::VertexArray& Normal() { return mNormal; }
 		sf::VertexArray& Additive() { return mAdditive; }

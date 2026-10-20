@@ -3,8 +3,8 @@
 
 namespace vega
 {
-	VitalsView::VitalsView(shared_ptr<const VitalsViewModel> viewModel)
-		: Panel{ { 510.f, 92.f } }, mViewModel{ std::move(viewModel) }
+	VitalsView::VitalsView(EngineContext& context, shared_ptr<const VitalsViewModel> viewModel)
+		: Panel{ context, { 510.f, 92.f } }, mViewModel{ std::move(viewModel) }
 	{
 		const UIStyle& style = GetEngineContext().Style();
 		SetBackgroundColor(sf::Color::Transparent);

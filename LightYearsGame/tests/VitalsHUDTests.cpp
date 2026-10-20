@@ -166,7 +166,7 @@ namespace
 			if (definition && definition->systemCategory == GameplayTags::Module::System::HealthReadout) healthReadout = placement;
 		}
 		report.Check(healthReadout.instanceId != 0, "default loadout installs a HealthReadout module");
-		VitalsView readoutView{ presenter.GetViewModel() };
+		VitalsView readoutView{ application.GetEngineContext(), presenter.GetViewModel() };
 		readoutView.Tick(0.f);
 		const auto readoutGauges = std::dynamic_pointer_cast<StackPanel>(
 			std::dynamic_pointer_cast<StackPanel>(readoutView.GetChildren().front())->GetChildren().front());
@@ -210,7 +210,7 @@ namespace
 			presenter.GetViewModel()->score == replacementPlayer.GetScore(), "replacement player receives fresh subscriptions");
 
 		mutableModel->revision = UIRevision{};
-		VitalsView view{ std::shared_ptr<const VitalsViewModel>{ mutableModel } };
+		VitalsView view{ application.GetEngineContext(), std::shared_ptr<const VitalsViewModel>{ mutableModel } };
 		view.Tick(0.f);
 		report.Check(view.GetRefreshCount() == 1, "first view tick applies initial values");
 		view.Tick(0.f);
@@ -223,7 +223,7 @@ namespace
 		report.Check(view.GetRefreshCount() == 2, "multiple changes coalesce into one view refresh");
 		auto shortLivedPresenter = std::make_unique<VitalsPresenter>();
 		shortLivedPresenter->Tick();
-		VitalsView retainedView{ shortLivedPresenter->GetViewModel() };
+		VitalsView retainedView{ application.GetEngineContext(), shortLivedPresenter->GetViewModel() };
 		retainedView.Tick(0.f);
 		shortLivedPresenter.reset();
 		retainedView.Tick(0.f);

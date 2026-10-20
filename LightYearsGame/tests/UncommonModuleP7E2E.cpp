@@ -91,7 +91,7 @@ namespace
 		auto presenter = std::make_shared<ModuleScreenPresenter>(); presenter->SetOpen(true); presenter->Tick(0.f);
 		const auto model = presenter->GetViewModel(); const auto rules = player.BuildModuleRules();
 		report.Check(rules.has_value() && model->hasSchematic, "real schematic and presenter available");
-		ModuleScreenView view{ model, presenter };
+		ModuleScreenView view{ application.GetEngineContext(), model, presenter };
 		const auto tick = [&]() { level->TickInternal(0.f); presenter->Tick(0.f); view.NativeTick(0.f); view.ResolveLayoutTree({ { 0.f, 0.f }, { 1920.f, 1080.f } }, true); };
 		const auto point = [](sf::Vector2f p) { return sf::Vector2i{ static_cast<int>(p.x), static_cast<int>(p.y) }; };
 		std::uint32_t ricochetSmall = 0, ricochetLarge = 0, trailCard = 0, gritCard = 0;

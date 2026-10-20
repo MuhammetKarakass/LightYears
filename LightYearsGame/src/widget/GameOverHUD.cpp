@@ -17,7 +17,8 @@ namespace vega
 		}
 	}
 
-	GameOverHUD::GameOverHUD()
+	GameOverHUD::GameOverHUD(EngineContext& context)
+		: HUD{ context }
 	{
 		auto modalLayer = GetLayer(UILayer::Modal).lock();
 		auto overlay = modalLayer->AddChild<Panel>();

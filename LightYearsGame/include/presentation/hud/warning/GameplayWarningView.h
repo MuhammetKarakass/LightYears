@@ -13,7 +13,7 @@ namespace vega
 		friend struct HUDMigrationWarningTestAccess;
 
 	public:
-		explicit GameplayWarningView(shared_ptr<const GameplayWarningViewModel> viewModel);
+		explicit GameplayWarningView(EngineContext& context, shared_ptr<const GameplayWarningViewModel> viewModel);
 		void Tick(float deltaTime) override;
 
 	private:

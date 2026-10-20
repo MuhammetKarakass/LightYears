@@ -12,7 +12,7 @@ namespace vega
 	class VitalsView : public Panel
 	{
 	public:
-		explicit VitalsView(shared_ptr<const VitalsViewModel> viewModel);
+		explicit VitalsView(EngineContext& context, shared_ptr<const VitalsViewModel> viewModel);
 		void Tick(float deltaTime) override;
 		unsigned int GetRefreshCount() const { return mRefreshCount; }
 

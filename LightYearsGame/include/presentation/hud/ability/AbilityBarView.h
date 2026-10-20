@@ -11,7 +11,7 @@ namespace vega
 	class AbilityBarView : public Panel
 	{
 	public:
-		explicit AbilityBarView(shared_ptr<const AbilityBarViewModel> viewModel);
+		explicit AbilityBarView(EngineContext& context, shared_ptr<const AbilityBarViewModel> viewModel);
 		void Tick(float deltaTime) override;
 		unsigned int GetRefreshCount() const { return mRefreshCount; }
 		shared_ptr<Panel> GetColumn(std::size_t index) const { return mColumns[index].lock(); }

@@ -218,7 +218,7 @@ namespace
 		for (const ModuleEntryView& entry : model->installed) if (entry.instanceId == tipId) installedTip = &entry;
 		report.Check(installedTip && installedTip->rebooting && installedTip->rebootRemaining > 1.f && installedTip->bonusPercent == 25 && installedTip->cells.size() == 2,
 			"in-combat install shows a rebooting module with its bonus", { { "remaining", installedTip ? installedTip->rebootRemaining : -1.f } });
-		ModuleScreenView rebootView{ model, presenter };
+		ModuleScreenView rebootView{ application.GetEngineContext(), model, presenter };
 		rebootView.Tick(0.f);
 		const auto rebootCargoBuilds = rebootView.GetInventoryRefreshCount();
 		const auto rebootContentBuilds = presenter->GetContentBuildCount();
@@ -271,7 +271,7 @@ namespace
 		// Flush the slot swaps before measuring idle frames.
 		level->TickInternal(0.f);
 		// View input routing.
-		ModuleScreenView view{ presenter->GetViewModel(), std::weak_ptr<ModuleScreenPresenter>{ presenter } };
+		ModuleScreenView view{ application.GetEngineContext(), presenter->GetViewModel(), std::weak_ptr<ModuleScreenPresenter>{ presenter } };
 		view.Tick(0.f);
 		view.ResolveLayoutTree({ { 0.f, 0.f }, { 1280.f, 720.f } }, true);
 		report.Check(view.GetVisibility() && view.GetRefreshCount() == 1, "view builds when the model is open");

@@ -24,7 +24,8 @@ namespace vega
 	class GameVisualPipeline final : public WorldRenderPipeline
 	{
 	public:
-		GameVisualPipeline() = default;
+		// The context supplies the asset root and the dev labels' fonts.
+		explicit GameVisualPipeline(EngineContext& context) : mContext{ context } {}
 
 		// Loads shaders, palettes and settings. On failure the pipeline stays inactive and the game renders as before.
 		// colorScript names the palette script to start with; an unknown name keeps the library default.
@@ -61,6 +62,7 @@ namespace vega
 		void Compose(sf::RenderTarget& window) override;
 
 	private:
+		EngineContext& mContext;
 		void LogReport(const visual::ReloadReport& report) const;
 		void LoadRoute();
 		void ApplyRouteStop();

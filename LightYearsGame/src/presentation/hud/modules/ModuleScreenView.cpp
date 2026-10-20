@@ -201,7 +201,7 @@ namespace vega
 		}
 	}
 
-	ModuleScreenView::ModuleScreenView(shared_ptr<const ModuleScreenViewModel> viewModel, weak_ptr<ModuleScreenPresenter> presenter) : Panel{ { ScreenWidth, ScreenHeight } }, mViewModel{ std::move(viewModel) }, mPresenter{ std::move(presenter) }
+	ModuleScreenView::ModuleScreenView(EngineContext& context, shared_ptr<const ModuleScreenViewModel> viewModel, weak_ptr<ModuleScreenPresenter> presenter) : Panel{ context, { ScreenWidth, ScreenHeight } }, mViewModel{ std::move(viewModel) }, mPresenter{ std::move(presenter) }
 	{
 		SetBackgroundColor(sf::Color::Transparent);
 		SetLayout(UILayout::Anchored(UIAnchor::Center, { 0.f, 0.f }, { ScreenWidth, ScreenHeight }));

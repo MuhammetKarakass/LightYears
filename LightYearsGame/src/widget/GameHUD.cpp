@@ -15,9 +15,10 @@ namespace vega
 	{
 	}
 
-	GameHUD::GameHUD() :
-		mFrameRateText{ std::in_place, "Frame Rate:" },
-		mPlayerSpeedText{ std::in_place, "Speed:" }
+	GameHUD::GameHUD(EngineContext& context) :
+		HUD{ context },
+		mFrameRateText{ std::in_place, context, "Frame Rate:" },
+		mPlayerSpeedText{ std::in_place, context, "Speed:" }
 	{
 		mFrameRateText->SetTextSize(20);
 		mPlayerSpeedText->SetTextSize(20);

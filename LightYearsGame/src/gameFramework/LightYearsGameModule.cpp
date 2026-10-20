@@ -291,7 +291,7 @@ namespace vega
 			}
 		}
 		VEGA_GAME_INFO("Visual pipeline assets (%s): %s", origin, assetsDir.string().c_str());
-		mVisualPipeline = std::make_unique<GameVisualPipeline>();
+		mVisualPipeline = std::make_unique<GameVisualPipeline>(mApplication->GetEngineContext());
 		mVisualPipeline->Initialize(mApplication->GetRenderWindow(), assetsDir, mDevOptions.colorScript);
 		mVisualPipeline->SetEnabled(!mDevOptions.visualOff);
 		mVisualPipeline->SetRouteStopIndex(static_cast<std::size_t>(mDevOptions.galaxyStop));

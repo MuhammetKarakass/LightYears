@@ -1,4 +1,5 @@
 #include "editor/SkyDocument.h"
+#include "framework/EngineContext.h"
 #include <SFML/Graphics/Image.hpp>
 #include <fstream>
 #include <iostream>
@@ -56,6 +57,7 @@ namespace
 	}
 	int Verify(const std::filesystem::path& root)
 	{
+		vega::EngineContext engineContext;
 		sf::Image before, moved, edited, restored, reopened;
 		sf::Image disk, preview;
 		Check(disk.loadFromFile(root / "disk-baseline.png") && preview.loadFromFile(root / "unchanged-preview.png"), "Unchanged-data captures missing");
@@ -83,7 +85,7 @@ namespace
 		const auto original = Read(std::filesystem::path{VEGA_SKY_SOURCE} / "deepsky.json");
 		const auto saved = Read(root / "visual/deepsky.json");
 		Check(!Entry(original, "gj-676-a").empty() && Entry(original, "gj-676-a") == Entry(saved, "gj-676-a"), "Unrelated stop JSON bytes changed");
-		vega::SkyDocument planets{root / "visual"};
+		vega::SkyDocument planets{engineContext, root / "visual"};
 		Check(planets.Open() && planets.Select("hd-168443"), "Cannot reopen indexed-handle fixture");
 		const auto at = planets.Value("planets.0.planet.at");
 		Check(at.is_array() && at.size() == 2 && std::abs(at[0].get<float>() - .22f) < 1e-5f && std::abs(at[1].get<float>() - .35f) < 1e-5f, "Second planet drag did not save planets.0.planet.at");
@@ -101,11 +103,12 @@ namespace
 
 int main(int argc, char** argv)
 {
+	vega::EngineContext engineContext;
 	if (argc == 3 && std::string{argv[1]} == "--verify") return Verify(argv[2]);
 	if (argc == 3 && std::string{argv[1]} == "--prepare")
 	{
 		// Author only the disposable harness copy, preserving unrelated stop bytes through the real document API.
-		vega::SkyDocument sky{std::filesystem::path{argv[2]} / "visual"};
+		vega::SkyDocument sky{engineContext, std::filesystem::path{argv[2]} / "visual"};
 		Check(sky.Open() && sky.Select("hd-168443"), "Cannot prepare indexed planet fixture");
 		const vega::Json entries = vega::Json::array({vega::Json{{"planet", {{"at", {.22, .25}}, {"scale", .45}, {"kind", "ice"}}}}, vega::Json{{"planet", {{"at", {.78, .25}}, {"scale", .3}, {"kind", "lava"}}}}});
 		Check(sky.Set("planet.scale", 1.f) && sky.Block("planets", entries) && sky.Save(), "Cannot save indexed planet fixture: " + sky.error);
@@ -115,7 +118,7 @@ int main(int argc, char** argv)
 	std::filesystem::create_directories(root);
 	const std::string original = "{\r\n\t\"presets\": {\"soft\": {\"band\": {\"clouds\": 2}, \"objects\": [{\"kind\": \"fog\"}]}},\r\n\t\"stops\": {\r\n\t\t\"one\": {\"use\": \"soft\", \"future\": {\"keep\": 1.2300}},\r\n\t\t\"other\": { \"band\": { \"dust\": 1.000 }, \"future\": [\"keep me\"] }\r\n\t}\r\n}\r\n";
 	Write(root / "deepsky.json", original);
-	vega::SkyDocument sky{root};
+	vega::SkyDocument sky{engineContext, root};
 	Check(sky.Open() && sky.Select("one"), "Cannot open sky fixture: " + sky.error);
 	Check(!sky.document.Dirty() && sky.document.Serialize() == original, "Opening materialized defaults or changed bytes");
 	Check(sky.Value("band.clouds") == 2, "Preset did not resolve");
@@ -144,12 +147,12 @@ int main(int argc, char** argv)
 	Check(sky.Set("orbit.ring.inner", 1.5) && !sky.Set("orbit.ring.outer", 1.51) && sky.Set("orbit.ring.outer", 2.5), "Ring dependent range failed");
 	Check(sky.Save(), "Save failed: " + sky.error);
 	Check(Entry(Read(root / "deepsky.json"), "other") == Entry(original, "other"), "Unrelated JSON reformatted");
-	vega::SkyDocument loaded{root}; Check(loaded.Open() && loaded.Select("one") && loaded.Value("orbit.framing") == "disk", "Reopen lost values");
+	vega::SkyDocument loaded{engineContext, root}; Check(loaded.Open() && loaded.Select("one") && loaded.Value("orbit.framing") == "disk", "Reopen lost values");
 	Check(loaded.Authored("future") && loaded.Authored("future")->at("keep") == 1.23, "Unknown keys were lost");
 	Check(loaded.Set("band.width", .4), "External conflict setup failed");
 	const auto external = Read(root / "deepsky.json") + " "; Write(root / "deepsky.json", external);
 	Check(!loaded.Save() && Read(root / "deepsky.json") == external, "Save overwrote external changes");
-	Write(root / "deepsky.json", original); vega::SkyDocument clean{root};
+	Write(root / "deepsky.json", original); vega::SkyDocument clean{engineContext, root};
 	Check(clean.Open() && clean.Select("one") && clean.Set("band.width", .4) && clean.history.Undo() && !clean.document.Dirty() && clean.document.Serialize() == original, "Undo failed byte-exact clean-state restoration");
 	vega::sky::DeepSkyCatalog catalog; std::string error;
 	Check(catalog.Load(std::filesystem::path{VEGA_SKY_SOURCE} / "deepsky.json", error), "Shipped catalog no longer parses: " + error);
@@ -160,11 +163,11 @@ int main(int argc, char** argv)
 			? "{\r\n\t\"id\": \"aurora\", \"sky\": {\"band\": {\"width\": 0.2500}, \"future\": 1.2300}\r\n}\r\n"
 			: "{\r\n\t\"skies\": {\"aurora\": {\"band\": {\"width\": 0.2500}}, \"other\": {\"future\": 1.2300}}\r\n}\r\n";
 		Write(root / file, bytes);
-		vega::SkyDocument asset{root, file};
+		vega::SkyDocument asset{engineContext, root, file};
 		Check(asset.Open() && asset.Select("aurora"), "Cannot open independent sky asset");
 		Check(asset.Set("band.width", .4) && asset.history.Undo() && asset.document.Serialize() == bytes, "Sky asset undo changed bytes");
 		Check(asset.Set("band.width", .4) && asset.Save(), "Cannot save independent sky asset");
-		vega::SkyDocument reopened{root, file};
+		vega::SkyDocument reopened{engineContext, root, file};
 		Check(reopened.Open() && reopened.Select("aurora") && reopened.Value("band.width") == .4, "Sky asset reopen lost values");
 		Check(Read(root / file).find("1.2300") != std::string::npos, "Sky asset save rewrote opaque bytes");
 	}

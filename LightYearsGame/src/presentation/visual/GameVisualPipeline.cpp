@@ -52,7 +52,7 @@ namespace vega
 			return;
 		}
 		mRouteAttempted = true;
-		const std::string root = EngineContext::Current().Assets().GetAssetRootDirectory();
+		const std::string root = mContext.Assets().GetAssetRootDirectory();
 		const std::filesystem::path base = root.empty() ? std::filesystem::path("LightYearsGame/assets") : std::filesystem::path(root);
 		std::string error;
 		mRouteLoaded = mRoute.LoadFromFile(base / "content/data/galaxy_route.json", error) && !mRoute.Stops().empty();
@@ -87,7 +87,7 @@ namespace vega
 		mBackdrop.SetRouteStop(stops[mRouteStopIndex]);
 		if (!mStopLabel)
 		{
-			mStopLabel.emplace("");
+			mStopLabel.emplace(mContext, "");
 			mStopLabel->SetTextSize(20);
 		}
 		mStopLabel->SetString("Stop: " + std::to_string(mRouteStopIndex) + "  " + stops[mRouteStopIndex].name);
@@ -232,7 +232,7 @@ namespace vega
 		}
 		if (!mOrbitLabel)
 		{
-			mOrbitLabel.emplace("");
+			mOrbitLabel.emplace(mContext, "");
 			mOrbitLabel->SetTextSize(16);
 		}
 		char text[64];

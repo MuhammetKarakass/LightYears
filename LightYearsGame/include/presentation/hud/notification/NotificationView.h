@@ -9,7 +9,7 @@ namespace vega
 	class NotificationView : public Panel
 	{
 	public:
-		explicit NotificationView(shared_ptr<const NotificationViewModel> viewModel);
+		explicit NotificationView(EngineContext& context, shared_ptr<const NotificationViewModel> viewModel);
 		void Tick(float deltaTime) override;
 
 	private:

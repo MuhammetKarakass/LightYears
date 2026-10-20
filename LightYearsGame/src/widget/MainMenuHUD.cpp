@@ -16,7 +16,8 @@ namespace vega
 		}
 	}
 
-	MainMenuHUD::MainMenuHUD()
+	MainMenuHUD::MainMenuHUD(EngineContext& context)
+		: HUD{ context }
 	{
 		auto menuLayer = GetLayer(UILayer::Menu).lock();
 		auto title = menuLayer->AddChild<TextWidget>("Light Years");

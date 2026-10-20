@@ -3,8 +3,8 @@
 
 namespace vega
 {
-	NotificationView::NotificationView(shared_ptr<const NotificationViewModel> viewModel)
-		: Panel{ { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }
+	NotificationView::NotificationView(EngineContext& context, shared_ptr<const NotificationViewModel> viewModel)
+		: Panel{ context, { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }
 	{
 		SetBackgroundColor(sf::Color::Transparent);
 		SetLayout(UILayout::Stretch());

@@ -15,7 +15,7 @@ namespace vega
 		friend struct GameHUDDamageE2ETestAccess;
 
 	public:
-		GameHUD();
+		explicit GameHUD(EngineContext& context);
 		~GameHUD() override;
 		virtual void Draw(sf::RenderTarget& windowRef) override;
 		virtual void Tick(float deltaTime) override;

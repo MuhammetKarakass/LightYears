@@ -112,7 +112,7 @@ namespace vega
 		}
 	}
 
-	ShipHologramWidget::ShipHologramWidget() : Panel{ { 0.f, 0.f } }
+	ShipHologramWidget::ShipHologramWidget(EngineContext& context) : Panel{ context, { 0.f, 0.f } }
 	{
 	}
 

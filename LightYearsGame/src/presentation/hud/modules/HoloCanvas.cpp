@@ -2,7 +2,7 @@
 
 namespace vega
 {
-	HoloCanvas::HoloCanvas() : Panel{ { 0.f, 0.f } }
+	HoloCanvas::HoloCanvas(EngineContext& context) : Panel{ context, { 0.f, 0.f } }
 	{
 	}
 

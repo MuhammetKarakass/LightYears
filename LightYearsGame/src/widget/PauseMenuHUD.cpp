@@ -5,7 +5,8 @@
 
 namespace vega
 {
-	PauseMenuHUD::PauseMenuHUD()
+	PauseMenuHUD::PauseMenuHUD(EngineContext& context)
+		: HUD{ context }
 	{
 		auto modalLayer = GetLayer(UILayer::Modal).lock();
 		auto overlay = modalLayer->AddChild<Panel>();

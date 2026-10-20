@@ -120,7 +120,7 @@ namespace
 		std::string title = "HUD migration warning";
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
-		auto hud = std::make_shared<GameHUD>();
+		auto hud = std::make_shared<GameHUD>(application.GetEngineContext());
 		hud->NativeInit(application.GetRenderWindow());
 		auto controller = std::make_unique<GameplayWarningHUDController>(hud);
 		controller->ShowGameplayWarning(warning);
@@ -173,7 +173,7 @@ namespace
 		std::string title = "HUD migration notification";
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
-		auto hud = std::make_shared<GameHUD>();
+		auto hud = std::make_shared<GameHUD>(application.GetEngineContext());
 		hud->NativeInit(application.GetRenderWindow());
 		auto controller = std::make_unique<NotificationHUDController>(hud);
 		auto firstStage = std::make_shared<ChaosStage>(nullptr);
@@ -209,7 +209,7 @@ namespace
 			const UIRect rect = timer->GetResolvedRect();
 			report.Check(rect.position.y >= 0.f && std::abs(rect.position.y - 8.f) <= 1.f,
 				"timer top anchor stays inside viewport", { { "top", rect.position.y } });
-			TextWidget expectedTimer{ "TIME LEFT: 4", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf", 20 };
+			TextWidget expectedTimer{ application.GetEngineContext(), "TIME LEFT: 4", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf", 20 };
 			report.Check(timer->GetVisibility() && NearlyEqual(timer->GetBound().size.x, expectedTimer.GetBound().size.x),
 				"timer view displays the coalesced ceil value");
 			firstStage->onTotalChaosEnded.Broadcast();
@@ -242,7 +242,7 @@ namespace
 		std::string title = "HUD migration encounter";
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
-		auto hud = std::make_shared<GameHUD>();
+		auto hud = std::make_shared<GameHUD>(application.GetEngineContext());
 		hud->NativeInit(application.GetRenderWindow());
 		EncounterWaveSnapshot snapshot{};
 		auto controller = std::make_unique<EncounterHUDController>(hud, [&snapshot]() { return snapshot; });
@@ -476,7 +476,7 @@ namespace
 		geometryModel->slots[0].cooldownTenths = 15;
 		geometryModel->slots[1].state = AbilitySlotState::Ready;
 		geometryModel->revision.Bump();
-		AbilityBarView view{ geometryModel };
+		AbilityBarView view{ application.GetEngineContext(), geometryModel };
 		view.ResolveLayoutTree({ { 0.f, 0.f }, { 1920.f, 1080.f } }, true);
 		view.NativeTick(0.f);
 		view.ResolveLayoutTree({ { 0.f, 0.f }, { 1920.f, 1080.f } }, true);
@@ -553,7 +553,7 @@ namespace
 			960.f - 24.f + remainingIcon.size.x * .5f), "hidden slots collapse and recenter the remaining 48px logical cell");
 
 		auto lateModel = std::make_shared<AbilityBarViewModel>();
-		AbilityBarView lateBoundView{ lateModel };
+		AbilityBarView lateBoundView{ application.GetEngineContext(), lateModel };
 		lateBoundView.ResolveLayoutTree({ { 0.f, 0.f }, { 1920.f, 1080.f } }, true);
 		lateBoundView.NativeTick(0.f);
 		const bool initiallyEmpty = !lateBoundView.GetIcon(0);
@@ -577,7 +577,7 @@ namespace
 		textureModel->slots[1].visible = true;
 		textureModel->slots[1].iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		textureModel->revision.Bump();
-		AbilityBarView textureReloadView{ textureModel };
+		AbilityBarView textureReloadView{ application.GetEngineContext(), textureModel };
 		textureReloadView.ResolveLayoutTree({ { 0.f, 0.f }, { 1920.f, 1080.f } }, true);
 		textureReloadView.NativeTick(0.f);
 		auto oldIcon = textureReloadView.GetIcon(0);
@@ -595,7 +595,7 @@ namespace
 			"different-size icon path change replaces the old sprite child and uses the new asset bounds",
 			{ { "oldIconSize", { oldIconSize.x, oldIconSize.y } }, { "newIconSize", { newIconSize.x, newIconSize.y } } });
 
-		auto hud = std::make_shared<GameHUD>();
+		auto hud = std::make_shared<GameHUD>(application.GetEngineContext());
 		hud->NativeInit(application.GetRenderWindow());
 		auto barController = std::make_unique<AbilityBarHUDController>(hud);
 		barController->Tick(0.f);
@@ -664,7 +664,7 @@ namespace
 
 	bool LegacyTextCenterNear(vega::TextWidget& actual, const std::string& text, unsigned int size, float authoredCenterY, float viewportWidth)
 	{
-		vega::TextWidget legacy{ text };
+		vega::TextWidget legacy{ actual.GetEngineContext(), text };
 		legacy.SetTextSize(size);
 		const sf::FloatRect legacyGlyphBounds = legacy.GetBound();
 		const sf::FloatRect actualBounds = actual.GetBound();
@@ -679,7 +679,7 @@ namespace
 		Application application{ sf::Vector2u{ 1920u, 1080u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
 		MenuActionCounts mainActions;
-		auto mainMenu = std::make_shared<MainMenuHUD>();
+		auto mainMenu = std::make_shared<MainMenuHUD>(application.GetEngineContext());
 		mainMenu->NativeInit(application.GetRenderWindow());
 		mainMenu->Tick(0.f);
 		mainMenu->onStartButtonClicked.BindAction(&mainActions, &MenuActionCounts::MainStart);
@@ -713,7 +713,7 @@ namespace
 			"main menu remains centered at a 1280x720 viewport");
 
 		MenuActionCounts pauseActions;
-		auto pauseMenu = std::make_shared<PauseMenuHUD>();
+		auto pauseMenu = std::make_shared<PauseMenuHUD>(application.GetEngineContext());
 		pauseMenu->NativeInit(application.GetRenderWindow());
 		pauseMenu->Tick(0.f);
 		pauseMenu->onResumeButtonClicked.BindAction(&pauseActions, &MenuActionCounts::Resume);
@@ -749,7 +749,7 @@ namespace
 			"each pause button broadcasts its existing public delegate exactly once");
 
 		MenuActionCounts gameActions;
-		auto gameOver = std::make_shared<GameOverHUD>();
+		auto gameOver = std::make_shared<GameOverHUD>(application.GetEngineContext());
 		gameOver->SetTitleText("You Win!");
 		gameOver->SetScoreText(42);
 		gameOver->NativeInit(application.GetRenderWindow());
@@ -772,9 +772,9 @@ namespace
 			NearlyEqual(gameOverlay.size.x, 1820.f) && NearlyEqual(gameOverlay.size.y, 980.f), "game over overlay keeps 50px viewport insets");
 		report.Check(ButtonCenterNear(*gameButtons[0], 960.f, 300.f) && ButtonCenterNear(*gameButtons[1], 960.f, 375.f) &&
 			ButtonCenterNear(*gameButtons[2], 960.f, 450.f), "game over buttons keep Restart, Main Menu, Quit order and 75px pitch");
-		TextWidget expectedTitle{ "You Win!" };
+		TextWidget expectedTitle{ application.GetEngineContext(), "You Win!" };
 		expectedTitle.SetTextSize(40);
-		TextWidget expectedScore{ "Score: 42" };
+		TextWidget expectedScore{ application.GetEngineContext(), "Score: 42" };
 		expectedScore.SetTextSize(30);
 		auto titleText = *std::min_element(gameTexts.begin(), gameTexts.end(), [](const auto& left, const auto& right)
 		{

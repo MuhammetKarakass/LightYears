@@ -40,7 +40,7 @@ namespace vega
 	class ShipHologramWidget : public Panel
 	{
 	public:
-		ShipHologramWidget();
+		ShipHologramWidget(EngineContext& context);
 		void SetData(const HologramData& data);
 
 	protected:

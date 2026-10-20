@@ -8,7 +8,7 @@ namespace vega
 	class MainMenuHUD : public HUD
 	{
 	public:
-		MainMenuHUD();
+		explicit MainMenuHUD(EngineContext& context);
 		Delegate<> onStartButtonClicked;
 		Delegate<> onQuitButtonClicked;
 

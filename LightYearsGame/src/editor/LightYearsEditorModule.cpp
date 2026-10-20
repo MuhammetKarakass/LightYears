@@ -78,7 +78,7 @@ namespace vega
 				sas::RegisterEditorExtension(extensions);
 				if (auto* pipeline = VisualPipeline())
 				{
-					auto sky = std::make_shared<vega::EditorSkyEditor>(std::make_shared<LightYearsSkyPreview>(*pipeline));
+					auto sky = std::make_shared<vega::EditorSkyEditor>(extensions.Engine(), std::make_shared<LightYearsSkyPreview>(*pipeline));
 					sky->Register(extensions, sky);
 				}
 				extensions.AddScriptCommand(PlayerShipScriptCommand( [](vega::EditorContext& context, vega::CommandHistory&,

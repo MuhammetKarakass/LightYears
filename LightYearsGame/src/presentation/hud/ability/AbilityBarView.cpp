@@ -20,8 +20,8 @@ namespace vega
 		}
 	}
 
-	AbilityBarView::AbilityBarView(shared_ptr<const AbilityBarViewModel> viewModel)
-		: Panel{ { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }
+	AbilityBarView::AbilityBarView(EngineContext& context, shared_ptr<const AbilityBarViewModel> viewModel)
+		: Panel{ context, { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }
 	{
 		SetBackgroundColor(sf::Color::Transparent);
 		const UILayout rootLayout = UILayout::Anchored(UIAnchor::Bottom, { 50.f, -44.f });

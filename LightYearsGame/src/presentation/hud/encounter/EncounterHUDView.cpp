@@ -8,8 +8,8 @@ namespace vega
 		const sf::Color DetailTextColor{ 150, 190, 220, 255 };
 	}
 
-	EncounterHUDView::EncounterHUDView(shared_ptr<const EncounterHUDPresentation> presentation)
-		: Panel{ { 1.f, 1.f } }, mPresentation{ std::move(presentation) }
+	EncounterHUDView::EncounterHUDView(EngineContext& context, shared_ptr<const EncounterHUDPresentation> presentation)
+		: Panel{ context, { 1.f, 1.f } }, mPresentation{ std::move(presentation) }
 	{
 		SetBackgroundColor(sf::Color::Transparent);
 		SetLayout(UILayout::Stretch());

@@ -8,7 +8,7 @@ namespace vega
 	class PauseMenuHUD : public HUD
 	{
 	public:
-		PauseMenuHUD();
+		explicit PauseMenuHUD(EngineContext& context);
 		bool HandleEvent(const sf::Event& event) override;
 
 		Delegate<> onResumeButtonClicked;

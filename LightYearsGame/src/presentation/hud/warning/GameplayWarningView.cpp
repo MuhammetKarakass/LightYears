@@ -3,8 +3,8 @@
 
 namespace vega
 {
-	GameplayWarningView::GameplayWarningView(shared_ptr<const GameplayWarningViewModel> viewModel)
-		: Panel{ { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }
+	GameplayWarningView::GameplayWarningView(EngineContext& context, shared_ptr<const GameplayWarningViewModel> viewModel)
+		: Panel{ context, { 1.f, 1.f } }, mViewModel{ std::move(viewModel) }
 	{
 		SetBackgroundColor(sf::Color::Transparent);
 		SetLayout(UILayout::Stretch());

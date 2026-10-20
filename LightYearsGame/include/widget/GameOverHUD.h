@@ -10,7 +10,7 @@ namespace vega
 	class GameOverHUD : public HUD
 	{
 	public:
-		GameOverHUD();
+		explicit GameOverHUD(EngineContext& context);
 		void SetTitleText(const std::string& titleText);
 		void SetScoreText(unsigned int score);
 

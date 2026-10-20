@@ -28,7 +28,7 @@ namespace vega
 		static constexpr sf::Vector2f CardOrigin{ 864.f, 604.f };
 		static constexpr sf::Vector2f CardExtent{ 544.f, 194.f };
 
-		ModuleScreenView(shared_ptr<const ModuleScreenViewModel> viewModel, weak_ptr<ModuleScreenPresenter> presenter);
+		ModuleScreenView(EngineContext& context, shared_ptr<const ModuleScreenViewModel> viewModel, weak_ptr<ModuleScreenPresenter> presenter);
 		void Tick(float deltaTime) override;
 		bool HandleEvent(const sf::Event& event) override;
 		unsigned int GetRefreshCount() const { return mRefreshCount; }
