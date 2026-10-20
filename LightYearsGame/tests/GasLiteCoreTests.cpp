@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "framework/Core.h"

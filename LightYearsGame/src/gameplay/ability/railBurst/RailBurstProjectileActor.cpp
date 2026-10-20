@@ -1,4 +1,5 @@
 #include "gameplay/ability/railBurst/RailBurstProjectileActor.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/railBurst/RailBurstContracts.h"

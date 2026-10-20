@@ -1,4 +1,5 @@
 #include "presentation/hud/modules/ModuleScreenView.h"
+#include "framework/MathUtility.h"
 #include "presentation/hud/modules/ModuleCardTextLayout.h"
 #include "presentation/hud/modules/HoloCanvas.h"
 #include "presentation/hud/modules/HoloDraw.h"

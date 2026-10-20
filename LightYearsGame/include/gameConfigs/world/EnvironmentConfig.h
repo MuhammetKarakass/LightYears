@@ -1,13 +1,13 @@
 #pragma once
 
-#include "engineConfigs/EngineStructs.h"
+#include "framework/LightDefinitions.h"
 
 namespace EnvironmentData
 {
-		static const BackgroundLayerDefinition Star_Orange
+		static const vega::BackgroundLayerDefinition Star_Orange
 		(
 			"SpaceShooterRedux/PNG/Planets/Planet3.png",
-			PointLightDefinition
+			vega::PointLightDefinition
 			(
 				"SpaceShooterRedux/Shaders/point_light.frag",
 				sf::Color{ 255, 165, 0, 220 },
@@ -22,10 +22,10 @@ namespace EnvironmentData
 			1.25f
 		);
 
-		static const BackgroundLayerDefinition Planet_Earth_Blue
+		static const vega::BackgroundLayerDefinition Planet_Earth_Blue
 		(
 			"SpaceShooterRedux/PNG/Planets/Planet1.png",
-			PointLightDefinition
+			vega::PointLightDefinition
 			(
 				"SpaceShooterRedux/Shaders/point_light.frag",
 				sf::Color{ 170, 170, 255, 200 },
@@ -40,10 +40,10 @@ namespace EnvironmentData
 			1.2f
 		);
 
-		static const BackgroundLayerDefinition Planet_Green
+		static const vega::BackgroundLayerDefinition Planet_Green
 		(
 			"SpaceShooterRedux/PNG/Planets/Planet7.png",
-			PointLightDefinition
+			vega::PointLightDefinition
 			(
 				"SpaceShooterRedux/Shaders/point_light.frag",
 				sf::Color{ 170, 255, 170, 200 },
@@ -58,10 +58,10 @@ namespace EnvironmentData
 			, 1.2f
 		);
 
-		static const BackgroundLayerDefinition Planet_Orange
+		static const vega::BackgroundLayerDefinition Planet_Orange
 		(
 			"SpaceShooterRedux/PNG/Planets/Planet6.png",
-			PointLightDefinition
+			vega::PointLightDefinition
 			(
 				"SpaceShooterRedux/Shaders/point_light.frag",
 				sf::Color{ 255, 140, 140, 200 },
@@ -76,17 +76,17 @@ namespace EnvironmentData
 			, 1.3f
 		);
 
-		static const BackgroundLayerDefinition Planet_Blue
+		static const vega::BackgroundLayerDefinition Planet_Blue
 		(
 			"SpaceShooterRedux/PNG/Planets/Planet2.png"
 		);
 
-		static const BackgroundLayerDefinition Meteor1
+		static const vega::BackgroundLayerDefinition Meteor1
 		(
 			"SpaceShooterRedux/PNG/Planets/Planet4.png"
 		);
 
-		static const BackgroundLayerDefinition Meteor2
+		static const vega::BackgroundLayerDefinition Meteor2
 		(
 			"SpaceShooterRedux/PNG/Planets/Planet5.png"
 		);

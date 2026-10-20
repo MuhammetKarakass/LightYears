@@ -1,4 +1,5 @@
 #include "presentation/hud/modules/ShipHologramWidget.h"
+#include "framework/MathUtility.h"
 #include "presentation/hud/modules/ModuleScreenView.h"
 #include <algorithm>
 #include <cmath>

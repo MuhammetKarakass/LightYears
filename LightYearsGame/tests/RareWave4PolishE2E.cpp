@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 

@@ -1,4 +1,5 @@
 #include "gameplay/ability/combatSentry/CombatSentryAbility.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"

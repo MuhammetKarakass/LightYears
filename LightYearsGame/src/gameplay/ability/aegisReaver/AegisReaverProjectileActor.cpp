@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "gameplay/ability/aegisReaver/AegisReaverProjectileActor.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 

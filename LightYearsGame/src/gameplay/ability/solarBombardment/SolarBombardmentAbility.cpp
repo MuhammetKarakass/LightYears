@@ -1,4 +1,5 @@
 #include "gameplay/ability/solarBombardment/SolarBombardmentAbility.h"
+#include "framework/MathUtility.h"
 
 #include "attributes/AttributeSystem.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"

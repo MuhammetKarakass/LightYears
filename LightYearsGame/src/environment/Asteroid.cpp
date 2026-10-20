@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "environment/Asteroid.h"
 #include "gameplay/combat/Combatant.h"
 #include <framework/SpriteComponent.h>

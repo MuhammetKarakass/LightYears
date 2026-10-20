@@ -4,7 +4,7 @@
 #include "framework/Core.h"
 #include "framework/MathUtility.h"
 #include "attributes/AttributeSystem.h"
-#include "engineConfigs/EngineStructs.h"
+#include "framework/LightDefinitions.h"
 #include "gameplay/damage/DamageContext.h"
 #include "gameConfigs/combat/ScrapCostFormula.h"
 #include <string>
@@ -390,13 +390,13 @@ struct PrimaryWeaponSchema
 struct WeaponPresentationDefinition
 {
 	std::string texturePath;
-	PointLightDefinition pointLightDef;
+	vega::PointLightDefinition pointLightDef;
 	sf::Vector2f lightOffset;
 	float visualScale;
 
 	WeaponPresentationDefinition(
 		const std::string& inTexturePath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png",
-		const PointLightDefinition& inPointLightDef = PointLightDefinition(),
+		const vega::PointLightDefinition& inPointLightDef = vega::PointLightDefinition(),
 		const sf::Vector2f& inLightOffset = { 0.f, 0.f },
 		float inVisualScale = 1.f
 	)

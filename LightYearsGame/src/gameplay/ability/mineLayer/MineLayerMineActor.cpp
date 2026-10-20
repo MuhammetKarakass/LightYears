@@ -1,4 +1,5 @@
 #include "gameplay/ability/mineLayer/MineLayerMineActor.h"
+#include "framework/MathUtility.h"
 
 #include "attributes/AttributeSystem.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"

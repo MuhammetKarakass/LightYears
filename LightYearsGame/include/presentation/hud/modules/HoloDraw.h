@@ -1,5 +1,6 @@
 #pragma once
 
+#include "framework/MathUtility.h"
 #include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <cmath>

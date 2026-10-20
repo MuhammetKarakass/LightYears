@@ -148,7 +148,7 @@ namespace vega
 		mBackgroundActor = SpawnActor<BackGroundActor>("SpaceShooterRedux/Backgrounds/darkPurple.png");
 
 		
-			PointLightDefinition planetLightDef(
+			vega::PointLightDefinition planetLightDef(
 				"SpaceShooterRedux/Shaders/point_light.frag",
 				sf::Color{ 180, 200, 255, 255 },
 				1.15f,
@@ -159,7 +159,7 @@ namespace vega
 				0.9f,
 				1.0f			);
 
-			List<BackgroundLayerDefinition> planetDefs =
+			List<vega::BackgroundLayerDefinition> planetDefs =
 			{
 				EnvironmentData::Meteor1,
 				EnvironmentData::Meteor2,

@@ -1,4 +1,5 @@
 #include "gameplay/ability/frozenThrong/FrozenThrongAbility.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/frozenThrong/FrozenThrongContracts.h"
 #include "gameplay/ability/frozenThrong/FrozenThrongHuskActor.h"

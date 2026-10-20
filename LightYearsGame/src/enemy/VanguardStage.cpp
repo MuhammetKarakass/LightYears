@@ -1,4 +1,5 @@
 #include "enemy/VanguardStage.h"
+#include "framework/MathUtility.h"
 #include "level/authoring/CampaignSetupActor.h"
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/enemy/EnemyIds.h"

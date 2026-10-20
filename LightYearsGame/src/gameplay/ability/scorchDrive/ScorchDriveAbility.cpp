@@ -1,4 +1,5 @@
 #include "gameplay/ability/scorchDrive/ScorchDriveAbility.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"

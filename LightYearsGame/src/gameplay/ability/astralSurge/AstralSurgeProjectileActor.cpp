@@ -1,4 +1,5 @@
 #include "gameplay/ability/astralSurge/AstralSurgeProjectileActor.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/astralSurge/AstralSurgeContracts.h"

@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "gameplay/ability/crescentReaver/CrescentReaverProjectileActor.h"
 
 #include "gameplay/ability/GameAbility.h"

@@ -5,7 +5,7 @@
 #include <cmath>
 #include "framework/Core.h"
 #include "attributes/GameplayAttribute.h"
-#include "engineConfigs/EngineStructs.h"
+#include "framework/LightDefinitions.h"
 #include "player/Reward.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/control/ControlResponse.h"
@@ -15,7 +15,7 @@
 struct EngineMount
 {
 	sf::Vector2f offset;
-	PointLightDefinition pointLightDef;
+	vega::PointLightDefinition pointLightDef;
 };
 
 struct ShipMovementAttributes

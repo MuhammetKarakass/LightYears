@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "framework/World.h"
 #include "environment/AsteroidSpawner.h"
 #include "environment/Asteroid.h"

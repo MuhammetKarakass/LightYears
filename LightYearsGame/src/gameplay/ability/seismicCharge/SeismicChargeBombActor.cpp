@@ -1,4 +1,5 @@
 #include "gameplay/ability/seismicCharge/SeismicChargeBombActor.h"
+#include "framework/MathUtility.h"
 
 #include "attributes/AttributeSystem.h"
 #include "framework/World.h"

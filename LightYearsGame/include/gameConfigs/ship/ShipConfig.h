@@ -78,7 +78,7 @@ namespace ShipData
 		30.f,
 		(int)vega::ExplosionType::Heavy,
 		{
-			EngineMount{ {0.f,-25.f},PointLightDefinition("SpaceShooterRedux/Shaders/point_light.frag",
+			EngineMount{ {0.f,-25.f},vega::PointLightDefinition("SpaceShooterRedux/Shaders/point_light.frag",
 		sf::Color{ 255, 255, 0, 200 },
 		1.5f,
 		sf::Vector2f{ 20.f,75.f },

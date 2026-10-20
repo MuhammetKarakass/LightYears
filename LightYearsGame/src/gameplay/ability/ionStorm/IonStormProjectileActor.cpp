@@ -1,4 +1,5 @@
 #include "gameplay/ability/ionStorm/IonStormProjectileActor.h"
+#include "framework/MathUtility.h"
 
 #include "attributes/AttributeSystem.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"

@@ -1,4 +1,5 @@
 #include "attributes/AttributeSystem.h"
+#include "framework/MathUtility.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 

@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "EnemyCombatFoundationTests.h"
 #include "gameplay/enemy/EnemyRuntime.h"
 #include "gameplay/enemy/EnemyCombatProfile.h"

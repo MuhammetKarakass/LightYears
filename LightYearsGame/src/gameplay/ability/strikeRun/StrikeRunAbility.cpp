@@ -1,4 +1,5 @@
 #include "gameplay/ability/strikeRun/StrikeRunAbility.h"
+#include "framework/MathUtility.h"
 
 #include "attributes/AttributeSystem.h"
 #include "framework/World.h"

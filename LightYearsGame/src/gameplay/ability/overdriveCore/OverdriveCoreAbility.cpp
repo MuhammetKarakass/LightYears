@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/MathUtility.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreAbility.h"
 
 #include "attributes/AttributeSystem.h"

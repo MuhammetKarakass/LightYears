@@ -213,7 +213,7 @@ namespace vega::content
 		{
 			const Json& pointLight = object.at("pointLight");
 			const Json& color = pointLight.at("color");
-			const PointLightDefinition pointLightDefinition{
+			const vega::PointLightDefinition pointLightDefinition{
 				RequiredString(pointLight, "shaderPath"),
 				ParseColor(color),
 				pointLight.at("intensity").get<float>(),

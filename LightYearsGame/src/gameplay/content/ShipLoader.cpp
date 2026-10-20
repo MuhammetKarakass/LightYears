@@ -271,8 +271,8 @@ namespace vega::content
 				{
 					throw std::runtime_error("Ship engineMounts must be an array");
 				}
-				const PointLightDefinition engineLight = presentationBase.engineMounts.empty()
-					? PointLightDefinition{}
+				const vega::PointLightDefinition engineLight = presentationBase.engineMounts.empty()
+					? vega::PointLightDefinition{}
 					: presentationBase.engineMounts.front().pointLightDef;
 				loaded.definition.engineMounts.clear();
 				for (const Json& mount : mounts)

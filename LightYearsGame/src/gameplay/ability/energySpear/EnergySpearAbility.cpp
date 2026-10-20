@@ -1,4 +1,5 @@
 #include "gameplay/ability/energySpear/EnergySpearAbility.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/runtime/FocusActionLocks.h"
 

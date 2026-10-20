@@ -1,4 +1,5 @@
 #include "gameplay/ability/wingSentinels/WingSentinelActor.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
 #include "gameplay/ability/wingSentinels/WingSentinelsContracts.h"

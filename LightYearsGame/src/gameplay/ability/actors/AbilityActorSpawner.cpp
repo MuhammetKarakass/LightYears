@@ -1,4 +1,5 @@
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
+#include "framework/MathUtility.h"
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
