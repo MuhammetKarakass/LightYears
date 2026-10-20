@@ -61,31 +61,6 @@ namespace vega
 			return result;
 		}
 
-		bool IsOutsideActiveWorldView(
-			const Actor& actor,
-			float allowance
-		)
-		{
-			const World* world = actor.GetWorld();
-			if (!world || !world->GetApplication())
-			{
-				// Headless tests have no camera. Leaving cleanup disabled there keeps
-				// this presentation-only policy out of gameplay simulation tests.
-				return false;
-			}
-
-			const sf::View view = world->GetWorldView();
-			const sf::Vector2f halfViewSize = view.getSize() * 0.5f;
-			const sf::Vector2f minimum = view.getCenter() - halfViewSize;
-			const sf::Vector2f maximum = view.getCenter() + halfViewSize;
-			const sf::Vector2f location = actor.GetActorLocation();
-			const float margin = std::max(0.f, allowance);
-			return location.x < minimum.x - margin ||
-				location.x > maximum.x + margin ||
-				location.y < minimum.y - margin ||
-				location.y > maximum.y + margin;
-		}
-
 		bool IsPointInsideExpandedBounds(
 			const sf::Vector2f& point,
 			const sf::FloatRect& bounds,
@@ -385,12 +360,11 @@ namespace vega
 			return;
 		}
 
-		if (IsOutsideActiveWorldView(*this, 256.f))
+		// Headless tests have no camera; keep this presentation-only cleanup out of them.
+		if (GetWorld() && GetWorld()->GetApplication() && IsOutsideWorldView(256.f))
 		{
-			// Arena levels use world coordinates larger than the physical window.
-			// Actor::IsActorOutOfWindow compares against screen coordinates, which
-			// would immediately remove a projectile spawned near the arena centre.
-			// This remains a technical cleanup, but measures from the active camera.
+			// Arena levels use world coordinates larger than the physical window, so
+			// the cleanup measures from the active camera rather than the window.
 			Destroy();
 			return;
 		}

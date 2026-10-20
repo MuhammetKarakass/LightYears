@@ -123,11 +123,20 @@ namespace vega
 		SpaceShip::BeginPlay();
 	}
 
+	bool EnemyActor::IsOutsideCullView() const
+	{
+		// Measured from the camera view. The margin keeps at least the old window
+		// check's slack (twice the width plus the full size and 10 px), so enemies
+		// spawned just off-screen are never removed earlier than before.
+		const sf::Vector2f size = GetActorGlobalBounds().size;
+		return IsOutsideWorldView(size.x * 2.f + std::max(size.x, size.y) + 10.f);
+	}
+
 	void EnemyActor::Tick(float deltaTime)
 	{
 		ResetControlIntents();
 		if (GetIsPendingDestroy()) return;
-		if (mWindowCullEnabled && GetWorld() && GetWorld()->GetApplication() && IsActorOutOfWindow(GetActorGlobalBounds().size.x * 2.f))
+		if (mWindowCullEnabled && GetWorld() && GetWorld()->GetApplication() && IsOutsideCullView())
 		{
 			Destroy();
 			ResetControlIntents();
@@ -145,7 +154,7 @@ namespace vega
 		}
 		SpaceShip::Tick(deltaTime);
 		if (mWindowCullEnabled && !GetIsPendingDestroy() && GetWorld() && GetWorld()->GetApplication() &&
-			IsActorOutOfWindow(GetActorGlobalBounds().size.x * 2.f)) Destroy();
+			IsOutsideCullView()) Destroy();
 		ResetControlIntents();
 	}
 

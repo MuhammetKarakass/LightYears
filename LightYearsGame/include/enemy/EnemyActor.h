@@ -41,6 +41,7 @@ namespace vega
 		Delegate<float> onShipXPAwarded;
 
 	private:
+		bool IsOutsideCullView() const;
 		void ResetControlIntents();
 		void ApplyBehaviorIntent(const EnemyBehaviorIntent& intent, float deltaTime);
 		void OnActorBeginOverlap(Actor* otherActor) override;

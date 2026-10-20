@@ -26,6 +26,7 @@
 		"executable": "LightYearsGame.exe",
 		"assetDirectory": "assets",
 		"visualDirectory": "visual",
-		"log": "LightYears.log"
+		"log": "LightYears.log",
+		"processPriority": "aboveNormal"
 	}
 }

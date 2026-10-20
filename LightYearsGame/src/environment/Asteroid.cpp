@@ -3,6 +3,7 @@
 #include "gameplay/combat/Combatant.h"
 #include <framework/SpriteComponent.h>
 #include <framework/reflection/Reflection.h>
+#include <algorithm>
 
 namespace vega
 {
@@ -76,7 +77,10 @@ namespace vega
 		AddActorRotationOffset(mRotationSpeed * deltaTime);
 		UpdateBlink(deltaTime);
 
-		if ((IsActorOutOfWindow(150.f)))
+		// Camera-relative; the margin keeps the old window check's slack (150 px,
+		// the full size and 10 px) so asteroids entering from off-screen survive.
+		const sf::Vector2f size = GetActorGlobalBounds().size;
+		if (IsOutsideWorldView(150.f + std::max(size.x, size.y) + 10.f))
 		{
 			Destroy();
 		}
