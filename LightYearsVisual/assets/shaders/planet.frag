@@ -5,6 +5,18 @@
 // Per kind (PlanetKind order): giant bands and a storm spot, lava cracks that glow on the night side, a cloud layer
 // turning faster than the surface, and a thin atmosphere glow on the lit limb.
 // The host star tints and scales only the lit side; the night side and terminator follow the light direction.
+uniform int uSilhouette; // 1 = solid disk occluder, 2 = atmosphere-only additive emitter.
+uniform int uScattering;
+uniform int uEmitterDisk; // A contained ortho disk can be eclipsed as a whole; a horizon arc cannot.
+uniform vec3 uRayleigh;
+uniform float uMie;
+uniform float uMieG;
+uniform float uRayleighHeight;
+uniform float uMieHeight;
+uniform float uThickness;
+uniform float uScatterIntensity;
+uniform int uViewSamples;
+uniform int uLightSamples;
 uniform vec2 uCenter;
 uniform float uRadius;
 uniform float uPixel;          // output pixels per world pixel
@@ -114,6 +126,93 @@ vec3 pixelRay()
 	return cos(a) * (sin(u) * vec3(uFlow, 0.0) - cos(u) * vec3(0.0, 0.0, 1.0)) + sin(a) * vec3(-uFlow.y, uFlow.x, 0.0);
 }
 
+// Distances are in planet radii. Both projections use the same shell and planet shadow.
+vec2 sphereInterval(vec3 origin, vec3 dir, float radius)
+{
+	float b = dot(origin, dir);
+	float d = b * b - dot(origin, origin) + radius * radius;
+	if (d < 0.0) return vec2(1.0, -1.0);
+	return vec2(-b - sqrt(d), -b + sqrt(d));
+}
+
+vec2 densityAt(vec3 p)
+{
+	float altitude = max(length(p) - 1.0, 0.0) / uThickness;
+	// A truncated exponential has finite density at the shell boundary. Taper the last fifth to vacuum.
+	return exp(-altitude / vec2(uRayleighHeight, uMieHeight)) * (1.0 - smoothstep(0.8, 1.0, altitude));
+}
+
+vec3 singleScattering(vec3 origin, vec3 dir, bool mieOnly)
+{
+	vec2 shell = sphereInterval(origin, dir, 1.0 + uThickness);
+	float start = max(shell.x, 0.0);
+	float finish = shell.y;
+	vec2 ground = sphereInterval(origin, dir, 1.0);
+	if (ground.x > 0.0 && ground.y >= ground.x) finish = min(finish, ground.x);
+	if (finish <= start) return vec3(0.0);
+	vec3 light = normalize(uLight);
+	float mu = dot(dir, light); // Incoming photons travel along -light; outgoing along -dir.
+	float phaseR = 0.0596831 * (1.0 + mu * mu); // 3 / (16 pi)
+	float phaseM = 0.0795775 * (1.0 - uMieG * uMieG)
+		/ pow(max(1.0 + uMieG * uMieG - 2.0 * uMieG * mu, 0.001), 1.5);
+	float stepView = (finish - start) / float(uViewSamples);
+	vec2 opticalView = vec2(0.0);
+	vec3 sumR = vec3(0.0);
+	vec3 sumM = vec3(0.0);
+	// Constant upper bounds keep GLSL 1.20 drivers predictable; uniforms can only reduce work.
+	for (int i = 0; i < 8; ++i)
+	{
+		if (i >= uViewSamples) break;
+		vec3 sampleAt = origin + dir * (start + (float(i) + 0.5) * stepView);
+		vec2 density = densityAt(sampleAt);
+		vec2 halfDepth = density * stepView * 0.5;
+		opticalView += halfDepth;
+		vec2 shadow = sphereInterval(sampleAt, light, 1.0);
+		if (!(shadow.x > 0.0 && shadow.y >= shadow.x))
+		{
+			float stepLight = max(sphereInterval(sampleAt, light, 1.0 + uThickness).y, 0.0) / float(uLightSamples);
+			vec2 opticalLight = vec2(0.0);
+			for (int j = 0; j < 4; ++j)
+			{
+				if (j >= uLightSamples) break;
+				opticalLight += densityAt(sampleAt + light * ((float(j) + 0.5) * stepLight)) * stepLight;
+			}
+			vec2 depth = opticalView + opticalLight;
+			vec3 transmittance = exp(-uRayleigh * depth.x - vec3(uMie * depth.y));
+			sumR += transmittance * density.x * stepView;
+			sumM += transmittance * density.y * stepView;
+		}
+		opticalView += halfDepth;
+	}
+	vec3 radiance = sumM * uMie * phaseM;
+	if (!mieOnly) radiance += sumR * uRayleigh * phaseR;
+	return radiance * uLightColor * uLightIntensity * uScatterIntensity;
+}
+
+vec3 scatterBands(vec3 radiance, vec2 ditherPixel)
+{
+	float luma = dot(radiance, vec3(0.299, 0.587, 0.114));
+	if (luma <= 0.00001) return vec3(0.0);
+	// Five perceptual luminance bands preserve weak rims without changing their spectral hue.
+	float threshold = 0.5 + (bayer4(ditherPixel) - 0.5) * uDither;
+	float level = clamp(floor(sqrt(clamp(luma, 0.0, 1.0)) * 4.0 + threshold), 0.0, 4.0) / 4.0;
+	// Keep the faint tail continuous: rounding it into the first band creates a hard outer contour.
+	float banded = luma < 0.0625 ? 0.0625 * smoothstep(0.0, 0.015625, luma) : level * level;
+	vec3 color = radiance * (banded / luma);
+	return color / max(1.0, max(color.r, max(color.g, color.b)));
+}
+
+float emitterPhase(vec3 dir, vec2 limb, bool ray)
+{
+	// Peak-normalized HG suppresses a displaced copy of a wide horizon under the radial blur.
+	// Ortho has parallel view rays; use limb azimuth there, and restore the full ring as the star centres behind it.
+	vec3 light = normalize(uLight);
+	float mu = ray ? dot(dir, light) : dot(limb, normalize(light.xy + vec2(1e-4)));
+	float phase = pow(0.04 / max(1.64 - 1.6 * mu, 0.04), 1.5); // g = 0.8
+	if (!ray && uEmitterDisk != 0) phase = mix(phase, 1.0, smoothstep(0.9, 1.0, -light.z));
+	return phase;
+}
+
 void main()
 {
 	vec2 p = (gl_TexCoord[0].xy - uCenter) / uRadius;
@@ -127,6 +226,38 @@ void main()
 	float b = dot(dir, Pc);
 	float disc = b * b - (uRayDistance * uRayDistance - 1.0);
 	bool hit = ray ? (disc >= 0.0 && b - sqrt(max(disc, 0.0)) > 0.0) : r2 <= 1.0;
+	if (uSilhouette == 1)
+	{
+		if (!hit) discard;
+		gl_FragColor = vec4(1.0);
+		return;
+	}
+	vec2 atmospherePixel = gl_FragCoord.xy;
+	if (!ray && uSurfacePixel > 1.0) atmospherePixel = floor((gl_TexCoord[0].xy - uCenter) / uSurfacePixel);
+	vec3 scattered = vec3(0.0);
+	if (uScattering != 0)
+	{
+		if (uSilhouette == 2 && hit) discard;
+		if (uSilhouette == 2 && dot(dir, normalize(uLight)) <= 0.0) discard;
+		vec3 origin = ray ? -Pc : vec3(p, 2.0 + uThickness);
+		vec3 radiance = singleScattering(origin, dir, uSilhouette == 2);
+		scattered = scatterBands(radiance, atmospherePixel);
+		if (uSilhouette == 2)
+		{
+			vec2 limb = ray ? normalize(b * dir - Pc).xy : normalize(p);
+			// Mie already contains the view/light phase; only ortho needs the missing azimuth localization.
+			// Apply it after the bands so quantization cannot lift a weak tail into a uniform bright arc.
+			if (!ray) scattered *= emitterPhase(dir, limb, false);
+		}
+		if (!hit || uSilhouette == 2)
+		{
+			// The visible shell adds within the remaining brightness headroom; the emitter mask is purely additive.
+			float alpha = uSilhouette == 2 ? 0.0 : max(scattered.r, max(scattered.g, scattered.b)) * uOpacity;
+			gl_FragColor = vec4(scattered * uBrightness * uOpacity, alpha);
+			return;
+		}
+	}
+	else if (uSilhouette == 2 && (hit || back <= 0.0)) discard;
 	if (!hit)
 	{
 		if (ray && b <= 0.0)
@@ -147,6 +278,14 @@ void main()
 		float facing = smoothstep(-0.45, 0.75, dot(limb, toLight));
 		facing = mix(facing, 1.0, back);
 		float halo = exp(-alt / uHalo) * (1.0 - smoothstep(uHalo * (0.08 / 0.03), haloOuter, alt)) * (0.12 + 0.88 * facing) * (1.0 + 2.5 * back);
+		if (uSilhouette == 2)
+		{
+			// Match the visible halo's clamped coverage before adding colour. An unbounded halo clips
+			// RGB channels independently in the mask, turning warm dust yellow/green after composition.
+			gl_FragColor = vec4(uAtmosphere * uBrightness * 1.4 * min(halo * 0.85 * uOpacity, 1.0)
+				* back * emitterPhase(dir, limb, ray), 0.0);
+			return;
+		}
 		gl_FragColor = vec4(uAtmosphere * uBrightness * 1.4, halo * 0.85 * uOpacity);
 		return;
 	}
@@ -246,7 +385,7 @@ void main()
 	// A warm band along the terminator: sunlight crossing the most atmosphere turns red, as at sunset.
 	float duskOffset = (lambert - 0.04) / 0.11;
 	float dusk = exp(-duskOffset * duskOffset);
-	color += vec3(0.55, 0.22, 0.12) * dusk * 0.22 * max(uAtmosphere.r + uAtmosphere.g + uAtmosphere.b, 0.4);
+	if (uScattering == 0) color += vec3(0.55, 0.22, 0.12) * dusk * 0.22 * max(uAtmosphere.r + uAtmosphere.g + uAtmosphere.b, 0.4);
 
 	// Lava: crust cracks are thin lines of noise; they are bright on the lit side and glow on the night side.
 	float crack = 0.0;
@@ -272,8 +411,11 @@ void main()
 		color = mix(color, cloudColor, cloudAlpha);
 	}
 
-	color +=uAtmosphere * limb * limb * smoothstep(-0.25, 0.5, lambert) * 0.9;
-	color += uAtmosphere * pow(limb, 4.0) * back * 1.2;
+	if (uScattering == 0)
+	{
+		color +=uAtmosphere * limb * limb * smoothstep(-0.25, 0.5, lambert) * 0.9;
+		color += uAtmosphere * pow(limb, 4.0) * back * 1.2;
+	}
 
 	if (uKind == 3)
 	{
@@ -287,7 +429,9 @@ void main()
 	{
 		color = uRamp[0] * 0.45;
 	}
+	if (uScattering != 0) color = min(color + scattered, vec3(1.0));
 	color = mix(vec3(dot(color, vec3(0.299, 0.587, 0.114))), color, uSaturation);
 	float coverage = smoothstep(0.0, pixelEdge, edge);
 	gl_FragColor = vec4(color * uBrightness, uOpacity * coverage);
+	if (uScattering != 0) gl_FragColor.rgb *= gl_FragColor.a;
 }

@@ -4,6 +4,7 @@
 // draws it in two halves around the planet: the front half (z >= 0) over the planet, the back half under it. In ray mode it is one pass, and
 // the planet hides the ring where the ray meets the sphere first. The planet's shadow falls on the ring, and the face the star lights is
 // brighter than the unlit face, which glows only where light scatters through it.
+uniform int uSilhouette; // Keep actual band coverage and transparent gaps.
 uniform vec2 uCenter;
 uniform float uRadius;
 uniform vec3 uNormal;          // unit ring normal, scene axes (x right, y down, z toward viewer)
@@ -108,5 +109,5 @@ void main()
 
 	// Anti-aliasing: the inner and outer edges fade over one output pixel.
 	float fade = smoothstep(uInner - px, uInner + px, rr) * (1.0 - smoothstep(uOuter - px, uOuter + px, rr));
-	gl_FragColor = vec4(color, clamp(density * uOpacity, 0.0, 1.0) * fade);
+	gl_FragColor = vec4(uSilhouette != 0 ? vec3(1.0) : color, clamp(density * uOpacity, 0.0, 1.0) * fade);
 }

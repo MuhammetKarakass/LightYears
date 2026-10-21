@@ -1,6 +1,7 @@
 #version 120
 
 // Host star: limb-darkened disc with a soft scattered-light halo. Drawn additively, so the output is light only.
+uniform int uSilhouette; // Emitter disc with a little corona, independent of display brightness.
 uniform vec2 uCenter;
 uniform float uRadius;         // disc radius, output pixels
 uniform float uGlowRadius;     // halo extent, output pixels; the C++ side keeps it above uRadius
@@ -13,6 +14,12 @@ void main()
 {
 	vec2 d = gl_TexCoord[0].xy - uCenter;
 	float r = max(length(d), 0.5);
+	if (uSilhouette != 0)
+	{
+		float coverage = 1.0 - smoothstep(uRadius, uRadius * 1.5 + 2.0, r);
+		gl_FragColor = vec4(vec3(coverage), 0.0);
+		return;
+	}
 	if (r > uRayLength)
 	{
 		discard;

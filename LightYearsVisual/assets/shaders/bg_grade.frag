@@ -5,6 +5,7 @@
 // Order: black point, luma-preserving S-curve, saturation, luma-preserving split tone, then a hue-keeping limit to 1.
 
 uniform sampler2D texture;
+uniform int uClampOnly; // Shafts still respect the Background ceiling when artistic grading is disabled.
 uniform float uCap;
 uniform float uContrast;
 uniform float uSaturation;
@@ -19,6 +20,11 @@ void main()
 	const vec3 lumaWeights = vec3(0.2126, 0.7152, 0.0722);
 	vec4 c = texture2D(texture, gl_TexCoord[0].xy);
 	float cap = max(uCap, 1e-4);
+	if (uClampOnly != 0)
+	{
+		gl_FragColor = vec4(min(c.rgb, vec3(cap)), c.a);
+		return;
+	}
 
 	// Per-channel black point: values under uBlackPoint (output units) crush to black, deep space stays deep.
 	float bp = min(uBlackPoint / cap, 0.95);
