@@ -97,6 +97,8 @@ namespace vega
 			std::optional<sf::Vector3f> light;
 			float brightnessScale = 1.f;
 			sf::Vector3f spinAxis{0.f, 1.f, 0.f};
+			// The sky's planet block, for its per-stop atmosphere overrides; null uses the pipeline settings only.
+			const visual::DeepSkyPlanet* authored = nullptr;
 		};
 		enum class PlanetBodyPass { BackRing, BackMoon, Body, FrontRing, FrontMoon };
 		using PlanetBodyObserver = std::function<void(std::size_t, PlanetBodyPass, const visual::PlanetParams&, unsigned)>;

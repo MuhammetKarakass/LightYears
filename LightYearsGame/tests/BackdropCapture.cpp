@@ -188,6 +188,8 @@ namespace
 	{		std::filesystem::create_directories(root);
 		const auto route = LoadRoute();
 		Capture capture;
+		// Shafts are screen-wide by design; the region invariant below is about placement, so it runs with them off.
+		capture.assets.Settings().lightShafts.enabled = false;
 		const auto found = std::find_if(route.Stops().begin(), route.Stops().end(), [&](const auto& stop)
 		{
 			const auto* sky = capture.assets.DeepSky().Find(stop.id);
@@ -392,6 +394,9 @@ namespace
 	{
 		std::filesystem::create_directories(root);
 		Capture capture;
+		// Light shafts are screen-wide by design (a backlit extra planet's atmosphere casts rays across the sky), so the
+		// placement invariant below, "extra bodies change only their own region", is checked with shafts off.
+		capture.assets.Settings().lightShafts.enabled = false;
 		const auto route = LoadRoute();
 		const auto findStop = [&](const std::string& id) -> const vega::RouteStop&
 		{

@@ -947,6 +947,7 @@ namespace vega
 			}
 			PlanetParams planet;
 			SetPlanetKind(planet, kind);
+			sky::ResolvePlanetAtmosphere(planet, assets.Settings(), &owner.planet);
 			planet.brightness = settings.planet.brightness * orbit.brightness;
 			planet.saturation = settings.planet.saturation;
 			planet.dither = settings.planet.dither;
@@ -1041,6 +1042,7 @@ namespace vega
 		body.rotationScale = PlanetSpinScale;
 		body.moonSeed = FoldSeed(mLocationSeed) ^ 0x6d2b79f5u;
 		body.visible = mHasPlanet && !(deepSky != nullptr && deepSky->planet.hide);
+		body.authored = deepSky != nullptr ? &deepSky->planet : nullptr;
 		const auto& host = assets.Settings().hostStar;
 		const sf::Vector2f hostCenter = BackdropCenter(output, composition.starAt.x, composition.starAt.y, drift, host.parallax, unitsToPixels);
 		return DrawPlanetBody(assets, pipeline, body, hostCenter, deepSky != nullptr && deepSky->hostStar.hide, timeSeconds, 0);
@@ -1051,6 +1053,7 @@ namespace vega
 		const visual::DeepSkyPlanet& authored = entry.planet;
 		PlanetBodyDescription body;
 		body.visible = !authored.hide;
+		body.authored = &authored;
 		body.kind = authored.kind ? *authored.kind : (entry.orbit && entry.orbit->kind ? *entry.orbit->kind : (index < mPlanetKinds.size() ? mPlanetKinds[index] : mPlanetKind));
 		body.seed = index == 0 ? visual::PlanetParams{}.seed : EntrySurfaceSeed(mLocationSeed, index);
 		body.moonSeed = index == 0 ? FoldSeed(mLocationSeed) ^ 0x6d2b79f5u : EntryMoonSeed(mLocationSeed, index);
@@ -1180,6 +1183,7 @@ namespace vega
 		planet.pixelScale = 1.f;
 		planet.surfacePixelScale = 1.f;
 		visual::SetPlanetKind(planet, body.kind);
+		sky::ResolvePlanetAtmosphere(planet, assets.Settings(), body.authored);
 		planet.seed = body.seed;
 		planet.ring = body.ring;
 		planet.timeSeconds = timeSeconds;
