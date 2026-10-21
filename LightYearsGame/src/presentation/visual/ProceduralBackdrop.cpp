@@ -558,6 +558,8 @@ namespace vega
 			look.saturation = deepSky->gradeSaturation;
 		}
 		pipeline.SetBackgroundLook(look);
+		// Light shafts follow the stop too; a stop without an authored sky returns to the pipeline defaults.
+		pipeline.SetLightShaftLook(sky::LightShaftLookFor(deepSky));
 		const float cap = std::min(settings.tierMaxBrightness[TierIndex(LuminanceTier::Background)] * look.capScale, 1.f);
 		mOrbitRate.reset();
 		// Only resolved entry 0 owns the scene. Legacy assets resolve to entry 0 as well; empty lists keep the generated fallback.
@@ -817,7 +819,7 @@ namespace vega
 		star.color = BlackbodyDisplay(mHostStar.temperatureK);
 		star.intensity = std::max(0.15f, settings.intensity * (1.f - std::exp(-1.5f * irradiance)));
 		star.maxBrightness = maxBrightness;
-		visual::DrawHostStar(assets.Shaders(), pipeline.Target(visual::Layer::Background), star);
+		visual::DrawHostStar(assets.Shaders(), pipeline, star);
 	}
 
 	void ProceduralBackdrop::RebuildStars(const visual::StarFieldSettings& starField, const visual::MilkyWaySettings& band, const visual::DeepSkyStop* clusters, bool mirrored, sf::Vector2f outputSize, unsigned catalogVersion)
@@ -970,16 +972,16 @@ namespace vega
 			// The ring and the moon pass behind the planet on the far side of their orbit and in front of it on the near side.
 			const ColorRamp ramp = PlanetRamp(kind);
 			const unsigned moonSeed = FoldSeed(mLocationSeed) ^ 0x6d2b79f5u;
-			visual::DrawPlanetRing(assets.Shaders(), background, ramp, planet, false);
+			visual::DrawPlanetRing(assets.Shaders(), pipeline, ramp, planet, false);
 			if (orbit.moon)
 			{
-				visual::DrawPlanetMoon(assets.Shaders(), background, planet, moonSeed, timeSeconds, false);
+				visual::DrawPlanetMoon(assets.Shaders(), pipeline, planet, moonSeed, timeSeconds, false);
 			}
-			visual::DrawPlanet(assets.Shaders(), background, ramp, planet);
-			visual::DrawPlanetRing(assets.Shaders(), background, ramp, planet, true);
+			visual::DrawPlanet(assets.Shaders(), pipeline, ramp, planet);
+			visual::DrawPlanetRing(assets.Shaders(), pipeline, ramp, planet, true);
 			if (orbit.moon)
 			{
-				visual::DrawPlanetMoon(assets.Shaders(), background, planet, moonSeed, timeSeconds, true);
+				visual::DrawPlanetMoon(assets.Shaders(), pipeline, planet, moonSeed, timeSeconds, true);
 			}
 			mPlanetCenter = planet.center;
 			mPlanetRadius = planet.radius;
@@ -1221,30 +1223,29 @@ namespace vega
 			return false;
 		}
 		// The orbiting moon is behind the planet in the upper half of its orbit, in front in the lower half.
-		sf::RenderTarget& background = pipeline.Target(visual::Layer::Background);
 		const auto observe = [&](PlanetBodyPass pass) { if (mPlanetBodyObserver) mPlanetBodyObserver(index, pass, planet, body.moonSeed); };
 		const auto ramp = visual::PlanetRamp(body.kind);
 		if (body.ring)
 		{
 			observe(PlanetBodyPass::BackRing);
-			visual::DrawPlanetRing(assets.Shaders(), background, ramp, planet, false);
+			visual::DrawPlanetRing(assets.Shaders(), pipeline, ramp, planet, false);
 		}
 		if (body.moon)
 		{
 			observe(PlanetBodyPass::BackMoon);
-			visual::DrawPlanetMoon(assets.Shaders(), background, planet, body.moonSeed, timeSeconds, false);
+			visual::DrawPlanetMoon(assets.Shaders(), pipeline, planet, body.moonSeed, timeSeconds, false);
 		}
 		observe(PlanetBodyPass::Body);
-		visual::DrawPlanet(assets.Shaders(), background, ramp, planet);
+		visual::DrawPlanet(assets.Shaders(), pipeline, ramp, planet);
 		if (body.ring)
 		{
 			observe(PlanetBodyPass::FrontRing);
-			visual::DrawPlanetRing(assets.Shaders(), background, ramp, planet, true);
+			visual::DrawPlanetRing(assets.Shaders(), pipeline, ramp, planet, true);
 		}
 		if (body.moon)
 		{
 			observe(PlanetBodyPass::FrontMoon);
-			visual::DrawPlanetMoon(assets.Shaders(), background, planet, body.moonSeed, timeSeconds, true);
+			visual::DrawPlanetMoon(assets.Shaders(), pipeline, planet, body.moonSeed, timeSeconds, true);
 		}
 		return true;
 	}
