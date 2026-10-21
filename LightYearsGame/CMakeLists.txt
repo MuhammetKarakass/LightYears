@@ -81,6 +81,9 @@ add_library(${LIGHT_YEARS_GAME_APP_TARGET_NAME} STATIC ${VEGA_GAME_APP_CPP} ${VE
 # Each executable provides its own GetApplication() hook for the engine entry point.
 add_executable(${LIGHT_YEARS_GAME_TARGET_NAME} app/GameMain.cpp)
 target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC ${LIGHT_YEARS_GAME_APP_TARGET_NAME})
+# Sky shaders come from the engine (LightYearsVisual/assets/shaders holds only game overrides); packaged builds
+# ship them next to the executable, Debug reads the engine source tree.
+vega_stage_sky_shaders(${LIGHT_YEARS_GAME_TARGET_NAME})
 
 if(MSVC)
 	# Incremental relinks have left copied inline tag/attribute identities empty at startup.
