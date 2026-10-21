@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -98,8 +99,13 @@ namespace
 
 		sf::Image Frame(vega::ProceduralBackdrop& backdrop, float time, bool shifted)
 		{
+			return Frame(backdrop, time, shifted ? sf::Vector2f{1330.f, 330.f} : sf::Vector2f{960.f, 540.f});
+		}
+
+		sf::Image Frame(vega::ProceduralBackdrop& backdrop, float time, sf::Vector2f camera)
+		{
 			pipeline.BeginFrame();
-			backdrop.Draw(assets, pipeline, world, sf::View{shifted ? sf::Vector2f{1330.f, 330.f} : sf::Vector2f{960.f, 540.f}, {1920.f, 1080.f}}, time);
+			backdrop.Draw(assets, pipeline, world, sf::View{camera, {1920.f, 1080.f}}, time);
 			target.clear(); pipeline.Compose(target); target.display();
 			return target.getTexture().copyToImage();
 		}
@@ -112,6 +118,29 @@ namespace
 		vega::visual::VisualPipeline pipeline;
 		sf::RenderTexture target;
 	};
+
+	// Consecutive frames while the camera flies, to judge temporal stability (flicker, stepping) of the backdrop.
+	int CaptureSequence(const std::filesystem::path& root, const std::string& stopId, float start, float step, int count, sf::Vector2f cameraStep)
+	{
+		std::filesystem::create_directories(root);
+		const auto route = LoadRoute();
+		const auto found = std::find_if(route.Stops().begin(), route.Stops().end(), [&](const auto& stop) { return stop.id == stopId; });
+		Require(found != route.Stops().end(), "Unknown route stop: " + stopId);
+		Capture capture;
+		vega::ProceduralBackdrop backdrop;
+		backdrop.SetRouteStop(*found);
+		const sf::Vector2f origin{960.f, 540.f};
+		capture.Frame(backdrop, 0.f, origin);
+		for (int i = 0; i < count; ++i)
+		{
+			const auto image = capture.Frame(backdrop, start + step * static_cast<float>(i), origin + cameraStep * static_cast<float>(i));
+			char name[32];
+			std::snprintf(name, sizeof(name), "frame-%04d.png", i);
+			Require(image.saveToFile(root / name), std::string("Cannot save ") + name);
+		}
+		std::cout << "Captured " << count << " frames of " << stopId << std::endl;
+		return 0;
+	}
 
 	int CaptureStops(const std::filesystem::path& root, const std::string& selected, float selectedTime, bool selectedShift)
 	{
@@ -583,7 +612,10 @@ int main(int argc, char** argv)
 		if (argc == 3 && std::string{argv[1]} == "--two-body") return TwoBodies(argv[2]);
 		if (argc == 3 && std::string{argv[1]} == "--planets-data") return PlanetData(argv[2]);
 		if (argc == 3 && std::string{argv[1]} == "--editor-geometry") return EditorGeometry(argv[2]);
-		Require(argc == 3 || argc == 6, "Usage: LightYearsBackdropCapture --capture OUTPUT [STOP SECONDS fixed|shifted]");
+		if (argc == 9 && std::string{argv[1]} == "--sequence")
+			return CaptureSequence(argv[2], argv[3], std::stof(argv[4]), std::stof(argv[5]), std::stoi(argv[6]), {std::stof(argv[7]), std::stof(argv[8])});
+		Require(argc == 3 || argc == 6, "Usage: LightYearsBackdropCapture --capture OUTPUT [STOP SECONDS fixed|shifted]"
+			" | --sequence OUTPUT STOP START STEP COUNT CAMERA_DX CAMERA_DY");
 		Require(std::string{argv[1]} == "--capture", "Unknown capture command");
 		return CaptureStops(argv[2], argc == 6 ? argv[3] : "", argc == 6 ? std::stof(argv[4]) : 0.f, argc == 6 && std::string{argv[5]} == "shifted");
 	}
