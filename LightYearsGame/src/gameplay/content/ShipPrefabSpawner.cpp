@@ -98,7 +98,7 @@ namespace vega
 			const auto root = configuredRoot.empty() ? std::filesystem::path{ "LightYearsGame/assets" } : std::filesystem::path{ configuredRoot };
 			if (!ValidateCatalogPrefab(context, root, prefabPath, id, contract, failureReason)) return {};
 			EngineContext::Scope scope{ context };
-			RegisterGameTypes();
+			RegisterGameSceneTypes(context);
 			// Constructor snapshots must reflect today's catalog, not a cached pre-reload realization.
 			PrefabLibrary library{ context, root };
 			const auto resolved = library.Resolve(prefabPath);

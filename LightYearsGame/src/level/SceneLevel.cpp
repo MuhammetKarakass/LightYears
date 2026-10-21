@@ -22,7 +22,7 @@ namespace vega
 
 	void SceneLevel::BeginPlay()
 	{
-		RegisterGameTypes();
+		RegisterGameSceneTypes(GetEngineContext());
 		mLoadResult = SceneSerializer::Load(*this, mScene);
 		if (mScene.is_object() && mScene.contains("settings") && mScene["settings"].is_object())
 		{

@@ -68,6 +68,7 @@ namespace vega
 	{
 		InstallVegaEngineAssets();
 		mApplication = &application;
+		RegisterGameSpawnFactories(application.GetEngineContext());
 		if (mProjectFile.empty()) mProjectFile = ResourceRoot(!editor) / "vega.project.json";
 		if (!editor && std::filesystem::exists(mProjectFile))
 			ProjectSettings::Load(mProjectFile).ApplyCollisionLayers(application.GetEngineContext());
@@ -432,9 +433,9 @@ namespace vega
 		return ProjectWindowSize(editor);
 	}
 
-	void LightYearsGameModule::RegisterTypes()
+	void LightYearsGameModule::RegisterTypes(reflect::TypeRegistry& registry)
 	{
-		RegisterGameTypes();
+		RegisterGameTypes(registry);
 	}
 
 	void LightYearsGameModule::ReloadContent(const std::vector<std::filesystem::path>& paths)

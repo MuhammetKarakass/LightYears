@@ -15,7 +15,7 @@ namespace vega
 		LightYearsGameModule();
 		~LightYearsGameModule() override;
 		const char* Name() const override { return "LightYears"; }
-		void RegisterTypes() override;
+		void RegisterTypes(reflect::TypeRegistry& registry) override;
 		void ReloadContent(const std::vector<std::filesystem::path>& paths) override;
 		void ConfigureProject(const std::filesystem::path& file) override { mProjectFile = file; }
 		void Initialize(Application& application, bool editor) override;

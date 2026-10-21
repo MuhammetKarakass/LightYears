@@ -308,7 +308,7 @@ int RunTests(int argc, char** argv)
 	const auto root = editorPostcheck ? std::filesystem::path{ argv[2] } : artifacts / "assets";
 	if (!editorPostcheck) std::filesystem::copy(source, root, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
 	engine.Assets().SetAssetRootDirectory(root.generic_string() + "/");
-	RegisterGameTypes();
+	RegisterGameSceneTypes(engine);
 	if (!GameContentBootstrap::Register()) { std::cerr << "Dummy prefab bootstrap failed\n"; return 1; }
 	Check(content::ShipContentCatalog::IsLoaded(), "Ship catalog is loaded");
 	if (editorPostcheck) EditorPostcheck(engine, root, argv[3]);

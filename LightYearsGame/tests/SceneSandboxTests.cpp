@@ -55,7 +55,7 @@ int main()
 	vega::EngineContext::Current().Assets().SetAssetRootDirectory(root.generic_string() + "/");
 	vega::script::ScriptRuntime::Get(engineContext).SetRoot(root);
 	vega::script::RegisterScriptTypes(engineContext);
-	RegisterGameTypes();
+	RegisterGameSceneTypes(engineContext);
 	Check(GameContentBootstrap::Register(), "Game content bootstrap failed");
 	ProjectSettings::Load(root / "vega.project.json").ApplyCollisionLayers(engineContext);
 	std::ifstream input{ root / "scenes/sandbox.scene.json" };

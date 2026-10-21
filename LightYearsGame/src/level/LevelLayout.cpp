@@ -202,7 +202,7 @@ namespace vega
 
 	void LevelLayout::RegisterTypesAndContent()
 	{
-		RegisterGameTypes();
+		RegisterGameSceneTypes(EngineContext::Current());
 		Require(GameContentBootstrap::Register(), "game content registration failed");
 		if (!EngineContext::Current().SceneSettings().Find("levelRules")) RegisterGameSceneSettings();
 	}

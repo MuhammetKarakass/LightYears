@@ -146,7 +146,7 @@ int RunTests(int argc, char** argv)
 		Check(valid, "Game validator accepts editor-authored prefab", reason);
 		InstallVegaEngineAssets();
 		context.Assets().SetAssetRootDirectory(root.generic_string() + "/");
-		RegisterGameTypes();
+		RegisterGameSceneTypes(context);
 		const bool bootstrapped = GameContentBootstrap::Register();
 		Check(bootstrapped, "Editor asset copy passes game content bootstrap");
 		Json interceptorDocument;
@@ -183,7 +183,7 @@ int RunTests(int argc, char** argv)
 	const auto artifacts = std::filesystem::path{ SHIP_PREFAB_ARTIFACT_DIR };
 	std::filesystem::create_directories(artifacts);
 	context.Assets().SetAssetRootDirectory(source.generic_string() + "/");
-	RegisterGameTypes();
+	RegisterGameSceneTypes(context);
 	if (!GameContentBootstrap::Register()) { std::cerr << "Content bootstrap failed\n"; return 1; }
 	const auto& definition = content::ShipContentCatalog::GetPlayerFighterDefinition();
 	Check(definition.prefabPath.has_value(), "Fighter selects a prefab");
