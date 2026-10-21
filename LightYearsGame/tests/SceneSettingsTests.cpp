@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include <framework/scene/SceneSettings.h>
 #include <framework/scene/Scene.h>
@@ -21,6 +22,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	using namespace vega;
 	using Json = nlohmann::json;
@@ -59,9 +63,9 @@ int main()
 	Check(!schema.Set(authored, "routeStop", Json(-1), error) && authored == before, "Invalid write changed data");
 	Check(!schema.Set(authored, "future", Json(2), error) && authored == before, "Unknown setting writable");
 	Check(schema.Set(authored, "routeStop", std::nullopt, error) && !authored.contains("routeStop"), "Reset must omit override");
-	World world{ nullptr };
+	World world{ vega::EngineContext::Current() };
 	const auto saved = SceneSerializer::Save(world, authored);
-	World reloaded{ nullptr };
+	World reloaded{ vega::EngineContext::Current() };
 	Check(SceneSerializer::Load(reloaded, saved).warnings.empty(), "Sparse settings scene rejected");
 	Check(SceneSerializer::Save(reloaded, saved["settings"]) == saved && saved["settings"]["future"] == unknown, "Unknown structured setting lost on round trip");
 	Check(!saved["settings"].contains("playerShip") && !saved["settings"].contains("routeStop"), "Save materialized defaults");

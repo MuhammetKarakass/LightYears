@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/EffectLoader.h"
@@ -1282,6 +1283,9 @@ namespace
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	// The editor's acceptance test shares the production loaders without touching
 	// source assets or replacing process-global runtime content catalogs.

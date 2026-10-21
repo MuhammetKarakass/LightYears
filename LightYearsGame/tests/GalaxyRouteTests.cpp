@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "gameplay/galaxy/GalaxyRoute.h"
 
@@ -60,6 +61,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	const std::filesystem::path root = LIGHT_YEARS_PROJECT_SOURCE_DIR;
 	const std::filesystem::path file = root / "LightYearsGame" / "assets" / "content" / "data" / "galaxy_route.json";

@@ -56,7 +56,7 @@ namespace
 		const sf::Vector2f& expectedImpact = {}
 	)
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		ClosedCircuitPresentationProfile profile{};
 		ClosedCircuitFieldActor field{ &world, nullptr, profile };
 		ConfigureField(field, barrierRadius, 1000.f);
@@ -121,8 +121,8 @@ namespace
 
 	bool TestInterceptionGuardsAndDurability()
 	{
-		World world{ nullptr };
-		World otherWorld{ nullptr };
+		World world{ vega::EngineContext::Current() };
+		World otherWorld{ vega::EngineContext::Current() };
 		ClosedCircuitPresentationProfile profile{};
 		AbilityWorldActor projectile{ &world, nullptr };
 		projectile.SetCollisionLayer(vega::GameCollision::EnemyBullet);
@@ -214,8 +214,8 @@ namespace
 
 	bool TestWorldOwnedRegistryAndReplacement()
 	{
-		World world{ nullptr };
-		World otherWorld{ nullptr };
+		World world{ vega::EngineContext::Current() };
+		World otherWorld{ vega::EngineContext::Current() };
 		ClosedCircuitPresentationProfile profile{};
 		ClosedCircuitFieldRegistry* const registry =
 			ClosedCircuitFieldRegistry::GetOrCreate(world);
@@ -293,7 +293,7 @@ namespace
 		ClosedCircuitFieldRegistry::Registration retainedRegistration;
 		shared_ptr<ClosedCircuitFieldActor> retainedField;
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			ClosedCircuitPresentationProfile profile{};
 			const shared_ptr<TestOwner> owner = world.SpawnActor<TestOwner>().lock();
 			retainedField = world.SpawnActor<ClosedCircuitFieldActor>(owner.get(), profile).lock();
@@ -320,7 +320,7 @@ namespace
 
 	bool TestWorldProjectileTickUsesInterceptionService()
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		ClosedCircuitPresentationProfile profile{};
 		const shared_ptr<ClosedCircuitFieldActor> field =
 			world.SpawnActor<ClosedCircuitFieldActor>(nullptr, profile).lock();
@@ -362,7 +362,7 @@ namespace
 	}
 	bool TestRegistryRemovalAndRecreation()
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		ClosedCircuitPresentationProfile profile{};
 		auto owner = world.SpawnActor<TestOwner>().lock();
 		auto actor = world.SpawnActor<ClosedCircuitFieldActor>(owner.get(), profile).lock();
@@ -388,6 +388,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	if (!TestSweptCircleGeometry() ||
 		!TestInterceptionGuardsAndDurability() ||

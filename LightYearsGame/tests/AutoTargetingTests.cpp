@@ -35,8 +35,11 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
-	vega::World world{ nullptr };
+	vega::World world{ vega::EngineContext::Current() };
 	const vega::shared_ptr<TestActor> source = world.SpawnActor<TestActor>().lock();
 	const vega::shared_ptr<TestActor> nearest = world.SpawnActor<TestActor>().lock();
 	const vega::shared_ptr<TestActor> farthest = world.SpawnActor<TestActor>().lock();

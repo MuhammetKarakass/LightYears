@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "framework/Actor.h"
 #include "gameplay/targeting/ActorHitCooldowns.h"
@@ -18,9 +19,12 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
-	vega::Actor firstTarget{ nullptr, "" };
-	vega::Actor secondTarget{ nullptr, "" };
+	vega::Actor firstTarget{ vega::EngineContext::Current() };
+	vega::Actor secondTarget{ vega::EngineContext::Current() };
 	vega::targeting::ActorHitCooldowns cooldowns;
 	cooldowns.RecordHit(firstTarget, 2.f);
 	if (!Expect(cooldowns.GetEntryCount() == 1, "A hit did not create one cooldown entry") ||
@@ -53,12 +57,12 @@ int main()
 
 	unsigned int previousTargetId = 0;
 	{
-		vega::Actor previousTarget{ nullptr, "" };
+		vega::Actor previousTarget{ vega::EngineContext::Current() };
 		previousTargetId = previousTarget.GetUniqueID();
 		cooldowns.RecordHit(previousTarget, 10.f);
 		previousTarget.Destroy();
 	}
-	vega::Actor replacementTarget{ nullptr, "" };
+	vega::Actor replacementTarget{ vega::EngineContext::Current() };
 	if (!Expect(replacementTarget.GetUniqueID() != previousTargetId, "A replacement actor reused the destroyed actor ID") ||
 		!Expect(!cooldowns.IsCoolingDown(replacementTarget, 0.f), "A replacement actor inherited the destroyed actor's cooldown"))
 	{
@@ -67,7 +71,7 @@ int main()
 	cooldowns.PruneExpired(10.f);
 	for (int index = 0; index < 32; ++index)
 	{
-		vega::Actor shortLivedTarget{ nullptr, "" };
+		vega::Actor shortLivedTarget{ vega::EngineContext::Current() };
 		cooldowns.RecordHit(shortLivedTarget, 11.f);
 	}
 	if (!Expect(cooldowns.GetEntryCount() == 32, "Short-lived targets did not create 32 distinct cooldown entries"))

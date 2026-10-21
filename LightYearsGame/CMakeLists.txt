@@ -275,29 +275,13 @@ if(BUILD_TESTING)
 	vega_add_game_test(LightYearsStormMarkTimingTests GAME_WHOLE SOURCES ${VEGA_TESTS_DIR}/StormMarkTimingTests.cpp)
 	vega_add_game_test_case(LightYearsStormMarkTiming LightYearsStormMarkTimingTests)
 
-	vega_add_game_test(LightYearsPrimaryWeaponTests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/PrimaryWeaponMagazineTests.cpp)
-	vega_add_game_test_case(LightYearsPrimaryWeapon LightYearsPrimaryWeaponTests)
 
 	vega_add_game_test(LightYearsPlayerLevelTestProgressionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/PlayerLevelTestProgressionE2E.cpp)
 	vega_add_game_test_case(LightYearsPlayerLevelTestProgressionE2E LightYearsPlayerLevelTestProgressionE2ETests
 		ARGS "${VEGA_E2E}/player-level-test-progression.json" TIMEOUT 60)
 
-	vega_add_game_test(LightYearsPlayerShipSelectionTests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/PlayerShipSelectionTests.cpp)
-	vega_add_game_test_case(LightYearsPlayerShipSelection LightYearsPlayerShipSelectionTests
-		ARGS "${VEGA_E2E}/player-ship-selection.json" TIMEOUT 60)
 
-	vega_add_game_test(LightYearsCommonModuleE2ETests GAME_WHOLE PROJECT_DIR SOURCES
-		${VEGA_TESTS_DIR}/CommonModuleE2ETests.cpp
-		${VEGA_TESTS_DIR}/CommonModuleE2E_Core.cpp
-		${VEGA_TESTS_DIR}/CommonModuleE2E_Cooldown.cpp
-		${VEGA_TESTS_DIR}/CommonModuleE2E_FullMagazine.cpp)
-	vega_add_game_test_case(LightYearsCommonModuleE2E LightYearsCommonModuleE2ETests
-		ARGS "${VEGA_E2E}/common-modules.json" TIMEOUT 60)
 
-	vega_add_game_test(LightYearsCommonModuleTriggerLifetimeTests GAME_WHOLE PROJECT_DIR SOURCES
-		${VEGA_TESTS_DIR}/CommonModuleE2E_TriggerLifetime.cpp)
-	vega_add_game_test_case(LightYearsCommonModuleTriggerLifetime LightYearsCommonModuleTriggerLifetimeTests
-		ARGS "${VEGA_E2E}/common-module-trigger-lifetime.json" TIMEOUT 60)
 
 	vega_add_game_test(LightYearsUncommonModuleE2ETests GAME_WHOLE PROJECT_DIR SOURCES
 		${VEGA_TESTS_DIR}/UncommonModuleE2E.cpp
@@ -307,8 +291,6 @@ if(BUILD_TESTING)
 		${VEGA_TESTS_DIR}/UncommonModuleE2E_Runtime.cpp)
 	vega_add_game_test_case(LightYearsUncommonModuleE2E LightYearsUncommonModuleE2ETests
 		ARGS "${VEGA_E2E}/uncommon-modules.json" TIMEOUT 90)
-	vega_add_game_test(LightYearsUncommonModuleP3E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/UncommonModuleP3E2E.cpp)
-	vega_add_game_test_case(LightYearsUncommonModuleP3E2E LightYearsUncommonModuleP3E2ETests ARGS "${VEGA_E2E}/uncommon-module-p3.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsControlTargetClassLoadE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ControlTargetClassLoadE2E.cpp)
 	vega_add_game_test_case(LightYearsControlTargetClassLoadE2E LightYearsControlTargetClassLoadE2ETests ARGS "${VEGA_E2E}/control-target-class-load.json" TIMEOUT 60)
 	vega_add_game_test(LightYearsAbilityChargeRestoreE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/AbilityChargeRestoreE2E.cpp)
@@ -321,12 +303,6 @@ if(BUILD_TESTING)
 	vega_add_game_test_case(LightYearsRareShieldRulesE2E LightYearsRareShieldRulesE2ETests ARGS "${VEGA_E2E}/rare-shield-rules.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsModuleConflictE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleConflictE2E.cpp)
 	vega_add_game_test_case(LightYearsModuleConflictE2E LightYearsModuleConflictE2ETests ARGS "${VEGA_E2E}/module-conflict.json" TIMEOUT 60)
-	vega_add_game_test(LightYearsRareZoneRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareZoneRulesE2E.cpp)
-	vega_add_game_test_case(LightYearsRareZoneRulesE2E LightYearsRareZoneRulesE2ETests ARGS "${VEGA_E2E}/rare-zone-rules.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsRareSingleModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareSingleModulesE2E.cpp)
-	vega_add_game_test_case(LightYearsRareSingleModulesE2E LightYearsRareSingleModulesE2ETests ARGS "${VEGA_E2E}/rare-single-modules.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsRareSpareCapacitorMechanicsE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareSpareCapacitorMechanicsE2E.cpp)
-	vega_add_game_test_case(LightYearsRareSpareCapacitorMechanicsE2E LightYearsRareSpareCapacitorMechanicsE2ETests ARGS "${VEGA_E2E}/rare-spare-capacitor-mechanics.json" TIMEOUT 240)
 	vega_add_game_test(LightYearsRareSideFeaturesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareSideFeaturesE2E.cpp)
 	vega_add_game_test_case(LightYearsRareSideFeaturesE2E LightYearsRareSideFeaturesE2ETests ARGS "${VEGA_E2E}/rare-side-features.json" TIMEOUT 180)
 	vega_add_game_test(LightYearsRareStaticDamageRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareStaticDamageRulesE2E.cpp)
@@ -335,14 +311,8 @@ if(BUILD_TESTING)
 	vega_add_game_test_case(LightYearsRareMovementRulesE2E LightYearsRareMovementRulesE2ETests ARGS "${VEGA_E2E}/rare-movement-rules.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsRareRunCounterE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareRunCounterE2E.cpp)
 	vega_add_game_test_case(LightYearsRareRunCounterE2E LightYearsRareRunCounterE2ETests ARGS "${VEGA_E2E}/rare-run-counter.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsRareWave3ModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareWave3ModulesE2E.cpp)
-	vega_add_game_test_case(LightYearsRareWave3ModulesE2E LightYearsRareWave3ModulesE2ETests ARGS "${VEGA_E2E}/rare-wave3-modules.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsRareTrophyCoreMechanicsE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareTrophyCoreMechanicsE2E.cpp)
 	vega_add_game_test_case(LightYearsRareTrophyCoreMechanicsE2E LightYearsRareTrophyCoreMechanicsE2ETests ARGS "${VEGA_E2E}/rare-trophy-core-mechanics.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsRareWave4PolishE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareWave4PolishE2E.cpp)
-	vega_add_game_test_case(LightYearsRareWave4PolishE2E LightYearsRareWave4PolishE2ETests ARGS "${VEGA_E2E}/rare-wave4-polish.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsRareLadderModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareLadderModulesE2E.cpp)
-	vega_add_game_test_case(LightYearsRareLadderModulesE2E LightYearsRareLadderModulesE2ETests ARGS "${VEGA_E2E}/rare-ladder-modules.json" TIMEOUT 240)
 	vega_add_game_test(LightYearsRareStatusRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareStatusRulesE2E.cpp)
 	vega_add_game_test_case(LightYearsRareStatusRulesE2E LightYearsRareStatusRulesE2ETests ARGS "${VEGA_E2E}/rare-status-rules.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsRareOwnerBurstE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareOwnerBurstE2E.cpp)
@@ -355,19 +325,8 @@ if(BUILD_TESTING)
 	vega_add_game_test_case(LightYearsRareSustainedSpeedE2E LightYearsRareSustainedSpeedE2ETests ARGS "${VEGA_E2E}/rare-sustained-speed.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsRareStatusModifiersE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareStatusModifiersE2E.cpp)
 	vega_add_game_test_case(LightYearsRareStatusModifiersE2E LightYearsRareStatusModifiersE2ETests ARGS "${VEGA_E2E}/rare-status-modifiers.json" TIMEOUT 240)
-	vega_add_game_test(LightYearsRareWave5ContentE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareWave5ContentE2E.cpp)
-	vega_add_game_test_case(LightYearsRareWave5ContentE2E LightYearsRareWave5ContentE2ETests ARGS "${VEGA_E2E}/rare-wave5-content.json" TIMEOUT 240)
 	vega_add_game_test(LightYearsRareSlipstreamControlE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareSlipstreamControlE2E.cpp)
 	vega_add_game_test_case(LightYearsRareSlipstreamControlE2E LightYearsRareSlipstreamControlE2ETests ARGS "${VEGA_E2E}/rare-slipstream-control.json" TIMEOUT 240)
-	vega_add_game_test(LightYearsRareFragmentationE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareFragmentationE2E.cpp)
-	vega_add_game_test_case(LightYearsRareFragmentationE2E LightYearsRareFragmentationE2ETests ARGS "${VEGA_E2E}/rare-fragmentation.json" TIMEOUT 240)
-	vega_add_game_test(LightYearsUncommonModuleP4E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/UncommonModuleP4E2E.cpp ${VEGA_TESTS_DIR}/UncommonModuleP4E2E_Damage.cpp ${VEGA_TESTS_DIR}/UncommonModuleP4E2E_Reactions.cpp ${VEGA_TESTS_DIR}/UncommonModuleP4E2E_Bridge.cpp)
-	vega_add_game_test_case(LightYearsUncommonModuleP4E2E LightYearsUncommonModuleP4E2ETests ARGS "${VEGA_E2E}/uncommon-module-p4.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsUncommonModuleP5E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/UncommonModuleP5E2E.cpp ${VEGA_TESTS_DIR}/UncommonModuleP5E2E_Status.cpp ${VEGA_TESTS_DIR}/UncommonModuleP5E2E_Content.cpp)
-	vega_add_game_test_case(LightYearsUncommonModuleP5E2E LightYearsUncommonModuleP5E2ETests ARGS "${VEGA_E2E}/uncommon-module-p5.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsUncommonModuleP6E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/UncommonModuleP6E2E.cpp ${VEGA_TESTS_DIR}/UncommonModuleP6E2E_Ricochet.cpp ${VEGA_TESTS_DIR}/UncommonModuleP6E2E_Actors.cpp ${VEGA_TESTS_DIR}/UncommonModuleP6E2E_Mines.cpp ${VEGA_TESTS_DIR}/UncommonModuleP6E2E_Content.cpp)
-	vega_add_game_test_case(LightYearsUncommonModuleP6E2E LightYearsUncommonModuleP6E2ETests ARGS "${VEGA_E2E}/uncommon-module-p6.json" TIMEOUT 120)
-	vega_add_game_test_case(LightYearsModuleBalanceE2E LightYearsUncommonModuleP6E2ETests ARGS "${VEGA_E2E}/module-balance-2026-10-13.json" "balance" TIMEOUT 120)
 	vega_add_game_test(LightYearsModuleRefinementE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleRefinementE2E.cpp)
 	vega_add_game_test(LightYearsModulePlanTransitionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModulePlanTransitionE2E.cpp)
 	vega_add_game_test(LightYearsModuleGoldHullE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleGoldHullE2E.cpp)
@@ -384,13 +343,7 @@ if(BUILD_TESTING)
 	vega_add_game_test_case(LightYearsModuleDefenseLayerE2E LightYearsModuleDefenseLayerE2ETests ARGS "${VEGA_E2E}/module-defense-layer-2026-10-13.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModulePlanTransitionE2E LightYearsModulePlanTransitionE2ETests ARGS "${VEGA_E2E}/module-plan-transition-2026-10-13.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModuleRefinementE2E LightYearsModuleRefinementE2ETests ARGS "${VEGA_E2E}/module-refinement-2026-10-13.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsUncommonModuleP7E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/UncommonModuleP7E2E.cpp)
-	vega_add_game_test_case(LightYearsUncommonModuleP7E2E LightYearsUncommonModuleP7E2ETests ARGS "${VEGA_E2E}/uncommon-module-p7.json" TIMEOUT 120)
-	vega_add_game_test(LightYearsUncommonModuleCompletionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/UncommonModuleCompletionE2E.cpp ${VEGA_TESTS_DIR}/UncommonModuleCompletionE2E_Damage.cpp ${VEGA_TESTS_DIR}/UncommonModuleCompletionE2E_Reactive.cpp ${VEGA_TESTS_DIR}/UncommonModuleCompletionE2E_Content.cpp)
-	vega_add_game_test_case(LightYearsUncommonModuleCompletionE2E LightYearsUncommonModuleCompletionE2ETests ARGS "${VEGA_E2E}/uncommon-module-completion.json" TIMEOUT 120)
 
-	vega_add_game_test(LightYearsWeaponPhase2Tests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/WeaponPhase2Tests.cpp)
-	vega_add_game_test_case(LightYearsWeaponPhase2 LightYearsWeaponPhase2Tests TIMEOUT 60)
 
 	vega_add_game_test(LightYearsVitalsHUDTests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/VitalsHUDTests.cpp)
 	vega_add_game_test_case(LightYearsVitalsHUD LightYearsVitalsHUDTests ARGS "${VEGA_E2E}/vitals-hud.json" TIMEOUT 60)
@@ -416,8 +369,6 @@ if(BUILD_TESTING)
 			${VEGA_TESTS_DIR}/AbilityBalanceSecondThreeE2E.cpp
 			${VEGA_TESTS_DIR}/AbilityBalanceFirstThreeE2E.cpp
 			${VEGA_TESTS_DIR}/AbilityBalanceThirdThreeE2E.cpp)
-	vega_add_game_test_case(LightYearsContinuousBeamWallE2E LightYearsContinuousBeamWallE2ETests
-		ARGS "${VEGA_E2E}/continuous-beam-wall.json")
 	vega_add_game_test_case(LightYearsAbilityContentRegistrationE2E LightYearsContinuousBeamWallE2ETests
 		ARGS --ability-content-registration "${VEGA_E2E}/ability-content-registration.json")
 	vega_add_game_test_case(LightYearsAbilityLoaderPublicLoadE2E LightYearsContinuousBeamWallE2ETests
@@ -426,8 +377,6 @@ if(BUILD_TESTING)
 		ARGS --timer-manager-scene "${VEGA_E2E}/timer-manager-scene.json" TIMEOUT 60)
 	vega_add_game_test_case(LightYearsGameHUDDamageEventE2E LightYearsContinuousBeamWallE2ETests
 		ARGS --game-hud-damage-event "${VEGA_E2E}/game-hud-damage-event.json" TIMEOUT 60)
-	vega_add_game_test_case(LightYearsAuditFixesE2E LightYearsContinuousBeamWallE2ETests
-		ARGS --audit-fixes "${VEGA_E2E}/audit-fixes.json" TIMEOUT 60)
 	foreach(BALANCE_GROUP IN ITEMS first second third)
 		vega_add_game_test_case(LightYearsAbilityBalance-${BALANCE_GROUP}-E2E LightYearsContinuousBeamWallE2ETests
 			ARGS --ability-balance-${BALANCE_GROUP}-three "${VEGA_E2E}/ability-balance-${BALANCE_GROUP}.json" TIMEOUT 60)

@@ -30,7 +30,7 @@ namespace
 	}
 	Json Configuration(const CampaignPlan& plan)
 	{
-		World scratch{ nullptr };
+		World scratch{ vega::EngineContext::Current() };
 		const auto actor = scratch.SpawnActor<CampaignSetupActor>().lock();
 		actor->plan = plan;
 		actor->AddComponent<SceneEntityComponent>("configuration", "Configuration");
@@ -106,6 +106,9 @@ namespace
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	try
 	{
 		vega::EngineContext context;

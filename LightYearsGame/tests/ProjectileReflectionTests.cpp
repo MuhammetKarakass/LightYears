@@ -58,7 +58,7 @@ namespace
 	class TestProjectile final : public vega::Actor, public vega::ProjectileReflectionParticipant
 	{
 	public:
-		explicit TestProjectile(vega::World* world = nullptr) : Actor(world) {}
+		explicit TestProjectile(vega::World* world = nullptr) : Actor(world, "", world ? nullptr : &vega::EngineContext::Current()) {}
 
 		bool CanBeReflected() const override { return true; }
 		bool TryReflectProjectile(const vega::ProjectileReflectionRequest& request) override
@@ -75,7 +75,7 @@ namespace
 	class TestSurface final : public vega::Actor, public vega::ProjectileReflectionSurface
 	{
 	public:
-		explicit TestSurface(vega::Actor& owner) : Actor(nullptr), mOwner(owner) {}
+		explicit TestSurface(vega::Actor& owner) : Actor(owner.GetEngineContext()), mOwner(owner) {}
 
 		bool BuildProjectileReflectionResponse(
 			const vega::Actor&,
@@ -114,8 +114,8 @@ namespace
 
 	bool TestWorldOwnedReceiverRegistry()
 	{
-		vega::World firstWorld{ nullptr };
-		vega::World secondWorld{ nullptr };
+		vega::World firstWorld{ vega::EngineContext::Current() };
+		vega::World secondWorld{ vega::EngineContext::Current() };
 		const vega::shared_ptr<TestReflectionDefender> firstDefender =
 			firstWorld.SpawnActor<TestReflectionDefender>().lock();
 		const vega::shared_ptr<TestReflectionDefender> secondDefender =
@@ -230,7 +230,7 @@ namespace
 		TestReceiver receiver;
 		bool teardownChecked = false;
 		{
-			vega::World world{ nullptr };
+			vega::World world{ vega::EngineContext::Current() };
 			retainedDefender = world.SpawnActor<TestReflectionDefender>().lock();
 			auto projectile = world.SpawnActor<TestAbilityProjectile>().lock();
 			if (!retainedDefender || !projectile) return false;
@@ -252,7 +252,7 @@ namespace
 		if (rejected.IsValid()) return false;
 		bool emptyTeardownChecked = false;
 		{
-			vega::World emptyWorld{ nullptr };
+			vega::World emptyWorld{ vega::EngineContext::Current() };
 			emptyWorld.SpawnActor<RegistryTeardownProbe>(&emptyTeardownChecked);
 		}
 		return emptyTeardownChecked;
@@ -262,12 +262,15 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
-	vega::World reflectionWorld{ nullptr };
+	vega::World reflectionWorld{ vega::EngineContext::Current() };
 	auto& timers = reflectionWorld.GetTimerManager();
 	timers.ClearAllTimers();
 
-	auto owner = std::make_shared<vega::Actor>(nullptr);
+	auto owner = std::make_shared<vega::Actor>(vega::EngineContext::Current());
 	auto surface = std::make_shared<TestSurface>(*owner);
 	auto projectile = std::make_shared<TestProjectile>(&reflectionWorld);
 	projectile->SetVelocity({ 1.f, 0.f });

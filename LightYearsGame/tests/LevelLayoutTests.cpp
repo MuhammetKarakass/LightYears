@@ -111,7 +111,7 @@ namespace
 	}
 	void CheckDummies(HeadlessArena& arena, const Json& fixture)
 	{
-		World original{ nullptr };
+		World original{ vega::EngineContext::Current() };
 		for (const auto& handle : arena.GetActorsByTypeIncludingPending<DummyEnemy>())
 		{
 			const auto dummy = handle.lock();
@@ -180,6 +180,9 @@ namespace
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	try
 	{
 		vega::EngineContext context;

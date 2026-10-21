@@ -4,8 +4,9 @@
 
 namespace vega
 {
-	TimedPresentationActor::TimedPresentationActor(World* world, const sf::Vector2f& worldLocation, float duration, RenderLayer renderLayer)
-		: Actor(world),
+	TimedPresentationActor::TimedPresentationActor(World* world, const sf::Vector2f& worldLocation, float duration, RenderLayer renderLayer,
+		EngineContext* context)
+		: Actor(world, "", context),
 		mDuration(std::max(0.f, duration))
 	{
 		SetActorLocation(worldLocation);

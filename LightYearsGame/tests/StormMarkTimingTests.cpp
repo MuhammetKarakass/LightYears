@@ -56,6 +56,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	using namespace vega;
 	std::string balanceLoadFailure;
@@ -71,7 +74,7 @@ int main()
 		StormMarkPresentationProfile{ sas::ContentId{ StormMarkPresentationIds::LightningBasic } }
 	);
 
-	World world{ nullptr };
+	World world{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>().lock();
 	const shared_ptr<TestCombatant> first = world.SpawnActor<TestCombatant>().lock();
 	const shared_ptr<TestCombatant> second = world.SpawnActor<TestCombatant>().lock();

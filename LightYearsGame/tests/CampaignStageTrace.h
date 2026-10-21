@@ -60,7 +60,7 @@ namespace campaign_test
 	{
 		campaignTestRandom.seed(seed);
 		HeadlessViewport viewport;
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		world.SetRenderViewport(&viewport);
 		auto trace = std::make_shared<Trace>();
 		bool done = false;

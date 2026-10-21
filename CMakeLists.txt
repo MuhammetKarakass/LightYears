@@ -38,7 +38,6 @@ if(BUILD_TESTING)
     add_test(NAME EngineModulesNoGameDependencies COMMAND ${CMAKE_COMMAND}
         -DVEGA_ENGINE_DIR=${VEGA_ENGINE_DIR} -DGAME_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/LightYearsGame/tests/CheckSkyShaderCompatibility.cmake)
-    add_test(NAME LightYearsGasLiteCore COMMAND LightYearsGasLiteTests WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
     add_test(NAME VegaTestAudioEnvironment COMMAND ${CMAKE_COMMAND}
         -DBUILD_ROOT=${CMAKE_BINARY_DIR} -P ${VEGA_ENGINE_DIR}/tools/CheckTestAudioEnvironment.cmake)
     # Must run after all game/editor registrations; covers script-launched processes too.

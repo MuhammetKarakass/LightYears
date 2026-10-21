@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "framework/Actor.h"
 #include "gameplay/HealthComponent.h"
@@ -15,7 +16,9 @@ namespace
 	// Minimal owner for standalone resource components.
 	Actor& TestOwner()
 	{
-		static Actor owner{ nullptr };
+		// Declared first so it is destroyed after the owner.
+		static EngineContext context;
+		static Actor owner{ context };
 		return owner;
 	}
 
@@ -342,6 +345,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	if (!TestTemporalRecallOverhealthAndCryostasisRegeneration() ||
 		!TestShieldHealingAndDamage() ||

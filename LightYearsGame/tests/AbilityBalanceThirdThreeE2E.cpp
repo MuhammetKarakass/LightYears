@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/EngineContext.h"
 #include "attributes/AttributeSystem.h"
 #include "effects/GameplayEffectSpec.h"
 #include "framework/World.h"
@@ -178,7 +179,7 @@ namespace vega
 		OverdriveResult RunOverdriveScenario(int level, bool addOverlappingBoost)
 		{
 			OverdriveResult result;
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<BalanceE2EShip> owner =
 				world.SpawnActor<BalanceE2EShip>().lock();
 			const shared_ptr<BalanceE2ETarget> target =
@@ -316,7 +317,7 @@ namespace vega
 		ExecutionDriveResult RunExecutionDriveScenario()
 		{
 			ExecutionDriveResult result;
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<BalanceE2EShip> owner =
 				world.SpawnActor<BalanceE2EShip>().lock();
 			if (!owner)
@@ -381,7 +382,7 @@ namespace vega
 
 		bool RunMineCooldownScenario(int level, float expectedCooldown, float* outDamage, std::string& error)
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<BalanceE2EShip> owner =
 				world.SpawnActor<BalanceE2EShip>().lock();
 			if (!owner)
@@ -436,7 +437,7 @@ namespace vega
 			result.spawnedExactlyThree = cooldownsMatched;
 			result.levelFifteenDamageMatched = Near(result.mineDamage, 448.f);
 
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<BalanceE2EShip> owner =
 				world.SpawnActor<BalanceE2EShip>().lock();
 			const shared_ptr<BalanceE2ETarget> target =

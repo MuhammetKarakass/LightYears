@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "attributes/AttributeMath.h"
@@ -178,7 +179,7 @@ namespace vega
 			ScenarioResult result;
 			result.tieFirstWallToTarget = tieFirstWallToTarget;
 			result.movedBetweenWallsTargetAfterFirstTick = moveTargetToFrontAfterFirstTick;
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<BeamE2EShip> owner = world.SpawnActor<BeamE2EShip>().lock();
 			const shared_ptr<BeamE2ETarget> frontTarget = world.SpawnActor<BeamE2ETarget>().lock();
 			const shared_ptr<BeamE2ETarget> betweenWallsTarget = world.SpawnActor<BeamE2ETarget>().lock();
@@ -589,6 +590,9 @@ namespace vega
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	using namespace vega;
 	const bool abilityContentRegistrationMode = argc == 3 &&

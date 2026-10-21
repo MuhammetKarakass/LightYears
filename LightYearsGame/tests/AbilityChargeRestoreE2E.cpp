@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
@@ -158,6 +159,9 @@ namespace
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	if (argc != 2) return 2;
 	Report report;

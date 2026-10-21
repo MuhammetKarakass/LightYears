@@ -811,6 +811,9 @@ namespace
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	if (argc != 3 || (std::string{ argv[1] } != "--warning" && std::string{ argv[1] } != "--notification" &&
 		std::string{ argv[1] } != "--encounter" && std::string{ argv[1] } != "--ability" && std::string{ argv[1] } != "--menus"))

@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/ActorComponent.h"
 #include "presentation/ability/common/PresentationColor.h"
 #include "presentation/ability/common/TimedPresentationActor.h"
@@ -38,7 +39,7 @@ namespace
 	{
 	public:
 		ProbeTimedActor(vega::World* world, const sf::Vector2f& worldLocation, float duration, vega::RenderLayer renderLayer, Probe& probe)
-			: TimedPresentationActor(world, worldLocation, duration, renderLayer), mProbe(probe)
+			: TimedPresentationActor(world, worldLocation, duration, renderLayer, world ? nullptr : &vega::EngineContext::Current()), mProbe(probe)
 		{
 			mProbe.component = &AddComponent<TickProbeComponent>();
 		}
@@ -60,6 +61,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	const sf::Color halfAlpha = vega::WithAlpha(sf::Color{ 10, 20, 30, 200 }, 0.5f);
 	const sf::Color overAlpha = vega::WithAlpha(sf::Color{ 10, 20, 30, 200 }, 2.f);
 	const sf::Color zeroAlpha = vega::WithAlpha(sf::Color{ 10, 20, 30, 200 }, -1.f);

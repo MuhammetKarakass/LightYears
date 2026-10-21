@@ -46,6 +46,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::EngineContext engineContext;
 	vega::EngineContext::Scope contextScope{ engineContext };
 	vega::InstallVegaEngineAssets();
@@ -61,7 +64,7 @@ int main()
 	std::ifstream input{ root / "scenes/sandbox.scene.json" };
 	Json scene;
 	input >> scene;
-	World world{ nullptr };
+	World world{ vega::EngineContext::Current() };
 	const auto result = SceneSerializer::Load(world, scene);
 	for (const auto& warning : result.warnings) std::cerr << warning << '\n';
 	Check(result.spawned == 7 && result.warnings.empty(), "Sandbox must load seven entities without warnings");
@@ -119,7 +122,7 @@ int main()
 			Check(reopened.dump(1, '\t') + '\n' == original, "LightYears collision prefab bytes changed on round trip");
 		}
 	}
-	World roundTrip{ nullptr };
+	World roundTrip{ vega::EngineContext::Current() };
 	Check(SceneSerializer::Load(roundTrip, saved).warnings.empty() && SceneSerializer::Save(roundTrip, scene["settings"]) == saved, "Game scene round trip changed supported data");
 	const auto copiedSprite = roundTrip.GetActorsByTypeIncludingPending<SpriteActor>()[0].lock();
 	copiedSprite->BeginPlayInternal();
@@ -137,7 +140,7 @@ int main()
 	Check(shipProperty->construction, "Dummy Ship must be a construction property");
 	Check(!shipProperty->SetValue(dummy.get(), shipIds[0]), "Dummy construction-only Ship edit must be refused");
 	Check(shipProperty->SetValue(dummy.get(), authoredShip) && dummy->GetShip() == authoredShip, "Dummy construction-only Ship reapplied idempotently");
-	World edited{ nullptr };
+	World edited{ vega::EngineContext::Current() };
 	auto editedData = SceneSerializer::Save(world, scene["settings"]);
 	editedData["entities"][1]["properties"]["Ship"] = shipIds[0];
 	// Explicit component overrides take precedence over a selected ship's
@@ -175,7 +178,7 @@ int main()
 	auto emptyLevel = std::make_shared<HeadlessSceneLevel>(nullptr, emptyScene);
 	emptyLevel->BeginPlayInternal();
 	Check(emptyLevel->Respawn().spawnLocation == sf::Vector2f{ 3000.f, 1500.f }, "No PlayerStart must use the arena default spot");
-	World componentWorld{ nullptr };
+	World componentWorld{ vega::EngineContext::Current() };
 	const auto componentActor = componentWorld.SpawnActor<SpriteActor>().lock();
 	componentActor->AddComponent<SceneEntityComponent>("", "Composition test");
 	for (const auto& name : { "HealthComponent", "ShieldComponent", "EnergyComponent", "LightComponent", "CollisionComponent" })
@@ -187,7 +190,7 @@ int main()
 	componentActor->FindComponent<HealthComponent>()->SetMaxHealth(42.f);
 	Check(componentActor->RemoveComponent(*componentActor->FindComponent<SpriteComponent>()), "SpriteActor must support sprite removal");
 	const auto composition = SceneSerializer::Save(componentWorld);
-	World compositionRoundTrip{ nullptr };
+	World compositionRoundTrip{ vega::EngineContext::Current() };
 	Check(SceneSerializer::Load(compositionRoundTrip, composition).warnings.empty() && SceneSerializer::Save(compositionRoundTrip) == composition,
 		"Game addable components and removed sprite must round trip exactly");
 	for (const auto& name : { "MovementComponent", "PlayerMovementComponent", "ScriptComponent" })

@@ -1,4 +1,5 @@
 #include "gameConfigs/CollisionLayers.h"
+#include "framework/EngineContext.h"
 #include "attributes/AttributeMath.h"
 #include "framework/World.h"
 #include "framework/SpriteComponent.h"
@@ -243,7 +244,7 @@ namespace vega
 
 				// Hull Shock exercises the shipped focus/charge path and its real
 				// shared damage resolver against a live opposing SpaceShip.
-				World hullWorld{ nullptr };
+				World hullWorld{ vega::EngineContext::Current() };
 				const shared_ptr<BalanceE2EShip> hullOwner = hullWorld.SpawnActor<BalanceE2EShip>(100.f).lock();
 				const shared_ptr<BalanceE2EShip> hullTarget = hullWorld.SpawnActor<BalanceE2EShip>().lock();
 				if (!hullOwner || !hullTarget) throw std::runtime_error("Hull Shock E2E actor spawn failed");
@@ -281,7 +282,7 @@ namespace vega
 
 			// Glacial Pressure tests the real cone blast, push window, collision
 			// damage, and transfer of the moving ship's CURRENT Cryo stack count.
-			World glacialWorld{ nullptr };
+			World glacialWorld{ vega::EngineContext::Current() };
 			const shared_ptr<BalanceE2EShip> glacialOwner = glacialWorld.SpawnActor<BalanceE2EShip>(100.f).lock();
 			const shared_ptr<BalanceE2EShip> movingTarget = glacialWorld.SpawnActor<BalanceE2EShip>().lock();
 			const shared_ptr<BalanceE2EShip> collisionTarget = glacialWorld.SpawnActor<BalanceE2EShip>().lock();
@@ -352,7 +353,7 @@ namespace vega
 
 			// The shipped Orbital Drones behavior spawns live actors. Contact calls
 			// then exercise the actor's production hit gate and shared damage path.
-			World orbitalWorld{ nullptr };
+			World orbitalWorld{ vega::EngineContext::Current() };
 			const shared_ptr<BalanceE2EShip> orbitalOwner = orbitalWorld.SpawnActor<BalanceE2EShip>(100.f).lock();
 			const shared_ptr<BalanceE2EShip> continuousTarget = orbitalWorld.SpawnActor<BalanceE2EShip>().lock();
 			const shared_ptr<BalanceE2EShip> reentryTarget = orbitalWorld.SpawnActor<BalanceE2EShip>().lock();

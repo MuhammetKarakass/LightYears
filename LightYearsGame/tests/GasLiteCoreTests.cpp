@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "framework/MathUtility.h"
 #include "gameFramework/LightYearsAssets.h"
@@ -466,7 +467,7 @@ namespace
 		bool includeDamageTypes = true
 	)
 	{
-		vega::World world{ nullptr };
+		vega::World world{ vega::EngineContext::Current() };
 		const vega::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(1000.f).lock();
 		if (!owner)
 		{
@@ -525,7 +526,7 @@ namespace
 
 	float MeasureHighLuckElectricBonusChainRate(int shotCount)
 	{
-		vega::World world{ nullptr };
+		vega::World world{ vega::EngineContext::Current() };
 		const vega::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(1000000.f).lock();
 		if (!owner)
 		{
@@ -660,7 +661,7 @@ namespace
 
 	float MeasureBeamSustainedDps(float attackSpeed, float duration)
 	{
-		vega::World world{ nullptr };
+		vega::World world{ vega::EngineContext::Current() };
 		const vega::shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>(100000.f).lock();
 		const vega::shared_ptr<TestCombatant> target = world.SpawnActor<TestCombatant>(100000.f).lock();
 		if (!owner || !target || duration <= 0.f)
@@ -726,6 +727,9 @@ int RunGameHUDPlayerRestartTests();
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	using namespace vega;
 	if (argc == 2 && std::string{ argv[1] } == "--player-lifetime") return RunPlayerShipLifetimeTests();
@@ -1390,7 +1394,7 @@ int main(int argc, char** argv)
 		return Fail("Ability validator accepted an undeclared family level modifier");
 	}
 
-	World nullPulseWorld{ nullptr };
+	World nullPulseWorld{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> nullPulseOwner =
 		nullPulseWorld.SpawnActor<TestCombatant>(1000.f).lock();
 	const shared_ptr<TestCombatant> nullPulseTarget =
@@ -1630,7 +1634,7 @@ int main(int argc, char** argv)
 	// activation/lifecycle path in a live player world. The second press is
 	// intentionally attempted twice: the first one is rejected before one
 	// second, the second one is accepted after the shared minimum has elapsed.
-	World directionalBarrierWorld{ nullptr };
+	World directionalBarrierWorld{ vega::EngineContext::Current() };
 	const shared_ptr<SpaceShip> directionalBarrierOwner =
 		directionalBarrierWorld.SpawnActor<SpaceShip>(
 		ShipData::Ship_Player_Fighter
@@ -1808,7 +1812,7 @@ int main(int argc, char** argv)
 	// The actor owns only formation motion and lifetime. This direct lifecycle
 	// test keeps it independent from input/UI while proving four equal phases,
 	// owner following, and automatic duration cleanup.
-	World orbitalDronesWorld{ nullptr };
+	World orbitalDronesWorld{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> orbitalDronesOwner =
 		orbitalDronesWorld.SpawnActor<TestCombatant>(1000.f).lock();
 	if (!orbitalDronesOwner)
@@ -1888,7 +1892,7 @@ int main(int argc, char** argv)
 	AreaTelegraphVisualDefinition lifecycleTelegraphDefinition;
 	lifecycleTelegraphDefinition.completionFeedbackDuration = 0.1f;
 	{
-		World timedTelegraphWorld{ nullptr };
+		World timedTelegraphWorld{ vega::EngineContext::Current() };
 		timedTelegraphWorld.SpawnActor<AreaTelegraphActor>(
 			AreaTelegraphActor::SpawnParams{
 				{ 0.f, 0.f },
@@ -1906,7 +1910,7 @@ int main(int argc, char** argv)
 		}
 	}
 	{
-		World externalTelegraphWorld{ nullptr };
+		World externalTelegraphWorld{ vega::EngineContext::Current() };
 		const shared_ptr<AreaTelegraphActor> externalTelegraph =
 			externalTelegraphWorld.SpawnActor<AreaTelegraphActor>(
 				AreaTelegraphActor::SpawnParams{
@@ -3033,7 +3037,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Valid heat feature was rejected");
 	}
-	World heatTestWorld{ nullptr };
+	World heatTestWorld{ vega::EngineContext::Current() };
 	Actor heatTestOwner{ &heatTestWorld };
 	const List<GameplayTag> noDamageTags;
 	const PrimaryWeaponExecutionContext heatContext{
@@ -3129,7 +3133,7 @@ int main(int argc, char** argv)
 	}
 	PrimaryWeaponExecutionSystem::EndFire(continuousBeamContext, continuousBeamRuntime);
 
-	World continuousBeamDamageWorld{ nullptr };
+	World continuousBeamDamageWorld{ vega::EngineContext::Current() };
 	const weak_ptr<Actor> continuousBeamSourceWeak = continuousBeamDamageWorld.SpawnActor<Actor>();
 	const shared_ptr<Actor> continuousBeamSource = continuousBeamSourceWeak.lock();
 	const weak_ptr<TestCombatant> continuousBeamTargetWeak = continuousBeamDamageWorld.SpawnActor<TestCombatant>();
@@ -3273,7 +3277,7 @@ int main(int argc, char** argv)
 	}
 	PrimaryWeaponExecutionSystem::EndFire(unlockedHeatContext, unlockedProgressionRuntime);
 
-	World liveProgressionWorld{ nullptr };
+	World liveProgressionWorld{ vega::EngineContext::Current() };
 	Actor liveProgressionOwner{ &liveProgressionWorld };
 	LightYearsAbilitySystemComponent liveProgressionAbilities{
 		liveProgressionOwner
@@ -3416,7 +3420,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Sun Beam strike actor accepted a missing presentation profile");
 	}
-	World sunBeamSpawnWorld{ nullptr };
+	World sunBeamSpawnWorld{ vega::EngineContext::Current() };
 	Actor sunBeamOwner{ &sunBeamSpawnWorld };
 	weak_ptr<AbilityWorldActor> spawnedSunBeam = AbilityActorRegistry::Spawn(
 		AbilityActorSpawnContext{
@@ -3445,7 +3449,7 @@ int main(int argc, char** argv)
 	}
 
 	const sf::View defaultView{ sf::FloatRect{ { 0.f, 0.f }, { 800.f, 600.f } } };
-	World cameraShakeWorld{ nullptr };
+	World cameraShakeWorld{ vega::EngineContext::Current() };
 	const shared_ptr<Actor> cameraShakeActor = cameraShakeWorld.SpawnActor<Actor>().lock();
 	if (!cameraShakeActor)
 	{
@@ -3468,7 +3472,7 @@ int main(int argc, char** argv)
 		return Fail("Camera shake did not cleanly return to rest");
 	}
 
-	World cameraFollowWorld{ nullptr };
+	World cameraFollowWorld{ vega::EngineContext::Current() };
 	const weak_ptr<Actor> cameraFollowTargetWeak = cameraFollowWorld.SpawnActor<Actor>();
 	const shared_ptr<Actor> cameraFollowTarget = cameraFollowTargetWeak.lock();
 	if (!cameraFollowTarget)
@@ -3631,7 +3635,7 @@ int main(int argc, char** argv)
 		}
 	};
 
-	World timingWorld{ nullptr };
+	World timingWorld{ vega::EngineContext::Current() };
 	Actor timingOwner{ &timingWorld };
 	timingOwner.SetCollisionLayer(vega::GameCollision::Player);
 	weak_ptr<TestCombatant> timingTargetWeak = timingWorld.SpawnActor<TestCombatant>();
@@ -3702,7 +3706,7 @@ int main(int argc, char** argv)
 		return Fail("Sun Beam or telegraph remained after recovery completed");
 	}
 
-	World stressWorld{ nullptr };
+	World stressWorld{ vega::EngineContext::Current() };
 	Actor stressOwner{ &stressWorld };
 	stressOwner.SetCollisionLayer(vega::GameCollision::Player);
 	List<weak_ptr<AbilityWorldActor>> stressBeams;
@@ -4086,7 +4090,7 @@ int main(int argc, char** argv)
 		return Fail("Combat damage did not flow through barrier, armor, and health");
 	}
 
-	World weaponCadenceWorld{ nullptr };
+	World weaponCadenceWorld{ vega::EngineContext::Current() };
 	Actor weaponCadenceOwner{ &weaponCadenceWorld };
 	LightYearsAbilitySystemComponent weaponCadenceAbilities{
 		weaponCadenceOwner
@@ -4177,7 +4181,7 @@ int main(int argc, char** argv)
 		return Fail("Primary weapon fired while the shared action lock was active");
 	}
 
-	World sweptProjectileWorld{ nullptr };
+	World sweptProjectileWorld{ vega::EngineContext::Current() };
 	Actor sweptProjectileOwner{ &sweptProjectileWorld };
 	sweptProjectileOwner.SetCollisionLayer(vega::GameCollision::Player);
 	const shared_ptr<TestCombatant> sweptProjectileTarget =
@@ -4222,11 +4226,11 @@ int main(int argc, char** argv)
 	// A reflection must move the projectile out of the surface before the
 	// same-surface lock starts. Without that separation, the next tick can
 	// interpret the still-overlapping wall as a normal projectile impact.
-	World crystalReflectionWorld{ nullptr };
+	World crystalReflectionWorld{ vega::EngineContext::Current() };
 	// A stationary enemy must be displaced when Lance moves across it. Testing
 	// only an enemy's requested movement misses the owner-following wall case.
 	{
-		World wallWorld{ nullptr };
+		World wallWorld{ vega::EngineContext::Current() };
 		auto owner = wallWorld.SpawnActor<TestCombatant>().lock();
 		auto target = wallWorld.SpawnActor<DummyEnemy>(ShipData::Ship_Enemy_Hexagon).lock();
 		owner->SetCollisionLayer(vega::GameCollision::Player);
@@ -4289,7 +4293,7 @@ int main(int argc, char** argv)
 	// into the player ship. A compatible hostile projectile must be reflected
 	// before it resolves damage, then stop reflecting after the one-second window.
 	{
-	World returnProtocolWorld{ nullptr };
+	World returnProtocolWorld{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> returnProtocolDefender =
 		returnProtocolWorld.SpawnActor<TestCombatant>().lock();
 	const shared_ptr<TestCombatant> returnProtocolAttacker =
@@ -4385,7 +4389,7 @@ int main(int argc, char** argv)
 	}
 	}
 
-	World electricArcWorld{ nullptr };
+	World electricArcWorld{ vega::EngineContext::Current() };
 	Actor electricArcOwner{ &electricArcWorld };
 	electricArcOwner.SetCollisionLayer(vega::GameCollision::Player);
 	LightYearsAbilitySystemComponent electricArcAbilities{
@@ -4468,7 +4472,7 @@ int main(int argc, char** argv)
 		return Fail("Electric arc high-Luck extra-chain rate did not converge near the 35 percent cap");
 	}
 
-	World emptyArcWorld{ nullptr };
+	World emptyArcWorld{ vega::EngineContext::Current() };
 	Actor emptyArcOwner{ &emptyArcWorld };
 	emptyArcOwner.SetCollisionLayer(vega::GameCollision::Player);
 	PrimaryWeaponRuntimeState emptyArcRuntime;
@@ -4497,7 +4501,7 @@ int main(int argc, char** argv)
 		return Fail("Electric arc launcher did not show a placeholder arc without targets");
 	}
 
-	World cryoWaveWorld{ nullptr };
+	World cryoWaveWorld{ vega::EngineContext::Current() };
 	Actor cryoWaveOwner{ &cryoWaveWorld };
 	cryoWaveOwner.SetCollisionLayer(vega::GameCollision::Player);
 	const shared_ptr<TestCombatant> leftCryoWaveTarget =
@@ -4566,7 +4570,7 @@ int main(int argc, char** argv)
 	}
 	PrimaryWeaponExecutionSystem::EndFire(cryoWaveContext, cryoWaveRuntime);
 
-	World shotgunImpactWorld{ nullptr };
+	World shotgunImpactWorld{ vega::EngineContext::Current() };
 	const weak_ptr<TestCombatant> shotgunSourceWeak = shotgunImpactWorld.SpawnActor<TestCombatant>();
 	const weak_ptr<TestCombatant> shotgunTargetWeak = shotgunImpactWorld.SpawnActor<TestCombatant>();
 	const shared_ptr<TestCombatant> shotgunSource = shotgunSourceWeak.lock();
@@ -5035,7 +5039,7 @@ int main(int argc, char** argv)
 		return rockets.size() == 1 ? rockets.front().lock() : shared_ptr<RocketProjectileActor>{};
 	};
 
-	World baselineRocketWorld{ nullptr };
+	World baselineRocketWorld{ vega::EngineContext::Current() };
 	TestCombatant baselineRocketOwner{ &baselineRocketWorld, 1000.f };
 	const shared_ptr<RocketProjectileActor> baselineRocket = SpawnRocket(
 		baselineRocketWorld,
@@ -5074,7 +5078,7 @@ int main(int argc, char** argv)
 		return Fail("Basic Rocket did not travel along its resolved aim direction");
 	}
 
-	World cursorTargetRocketWorld{ nullptr };
+	World cursorTargetRocketWorld{ vega::EngineContext::Current() };
 	TestCombatant cursorTargetRocketOwner{ &cursorTargetRocketWorld, 1000.f };
 	cursorTargetRocketOwner.SetCollisionLayer(vega::GameCollision::Player);
 	cursorTargetRocketOwner.SetActorLocation({ 0.f, 0.f });
@@ -5137,7 +5141,7 @@ int main(int argc, char** argv)
 		return Fail("Cursor-targeted Rocket did not clean up its projectile and telegraph");
 	}
 
-	World attackPowerRocketWorld{ nullptr };
+	World attackPowerRocketWorld{ vega::EngineContext::Current() };
 	TestCombatant attackPowerRocketOwner{ &attackPowerRocketWorld, 1000.f };
 	const shared_ptr<RocketProjectileActor> attackPowerRocket = SpawnRocket(
 		attackPowerRocketWorld,
@@ -5151,7 +5155,7 @@ int main(int argc, char** argv)
 		return Fail("Basic Rocket did not apply AttackPower x1.25 scaling");
 	}
 
-	World irrelevantRocketWorld{ nullptr };
+	World irrelevantRocketWorld{ vega::EngineContext::Current() };
 	TestCombatant irrelevantRocketOwner{ &irrelevantRocketWorld, 1000.f };
 	const shared_ptr<RocketProjectileActor> irrelevantRocket = SpawnRocket(
 		irrelevantRocketWorld,
@@ -5169,7 +5173,7 @@ int main(int argc, char** argv)
 
 	for (int level = 1; level <= 15; ++level)
 	{
-		World levelRocketWorld{ nullptr };
+		World levelRocketWorld{ vega::EngineContext::Current() };
 		TestCombatant levelRocketOwner{ &levelRocketWorld, 1000.f };
 		const shared_ptr<RocketProjectileActor> levelRocket = SpawnRocket(
 			levelRocketWorld,
@@ -5208,7 +5212,7 @@ int main(int argc, char** argv)
 		return Fail("AbilityHaste did not reduce Basic Rocket final cooldown");
 	}
 
-	World explosionRocketWorld{ nullptr };
+	World explosionRocketWorld{ vega::EngineContext::Current() };
 	TestCombatant explosionRocketOwner{ &explosionRocketWorld, 1000.f };
 	const shared_ptr<TestCombatant> directTarget =
 		explosionRocketWorld.SpawnActor<TestCombatant>(1000.f).lock();
@@ -5266,7 +5270,7 @@ int main(int argc, char** argv)
 		return Fail("Basic Rocket impact visual was not cleaned up after its configured duration");
 	}
 
-	World rangeRocketWorld{ nullptr };
+	World rangeRocketWorld{ vega::EngineContext::Current() };
 	TestCombatant rangeRocketOwner{ &rangeRocketWorld, 1000.f };
 	const shared_ptr<TestCombatant> rangeTarget =
 		rangeRocketWorld.SpawnActor<TestCombatant>(1000.f).lock();
@@ -5351,7 +5355,7 @@ int main(int argc, char** argv)
 			: shared_ptr<RailBurstProjectileActor>{};
 	};
 
-	World railBurstWorld{ nullptr };
+	World railBurstWorld{ vega::EngineContext::Current() };
 	TestCombatant railBurstOwner{ &railBurstWorld, 1000.f };
 	const shared_ptr<TestCombatant> firstRailTarget =
 		railBurstWorld.SpawnActor<TestCombatant>(1000.f).lock();
@@ -5430,7 +5434,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Astral Surge shipped definition is missing");
 	}
-	World astralSurgeWorld{ nullptr };
+	World astralSurgeWorld{ vega::EngineContext::Current() };
 	TestCombatant astralSurgeOwner{ &astralSurgeWorld, 1000.f };
 	astralSurgeOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
 	astralSurgeOwner.SetCollisionLayer(vega::GameCollision::Player);
@@ -5489,7 +5493,7 @@ int main(int argc, char** argv)
 	{
 		// The ability instance owns only focus. Release hands the bounded movement
 		// and piercing phase to a world actor, so input release cannot cancel it.
-		World energySpearWorld{ nullptr };
+		World energySpearWorld{ vega::EngineContext::Current() };
 		const shared_ptr<TestCombatant> energySpearOwner =
 			energySpearWorld.SpawnActor<TestCombatant>(1000.f).lock();
 		const shared_ptr<TestCombatant> energySpearTarget =
@@ -5646,7 +5650,7 @@ int main(int argc, char** argv)
 
 	// Exercise the generic activation/action-spawn path used by the player Q
 	// binding without involving player-only asset initialization.
-	World crescentReaverWorld{ nullptr };
+	World crescentReaverWorld{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> crescentReaverOwner =
 		crescentReaverWorld.SpawnActor<TestCombatant>(100000.f).lock();
 	const shared_ptr<TestCombatant> crescentReaverTarget =
@@ -5783,7 +5787,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Overdrive Core shipped definition is not aligned with Ability4/R");
 	}
-	World overdriveWorld{ nullptr };
+	World overdriveWorld{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> overdriveOwner =
 		overdriveWorld.SpawnActor<TestCombatant>(100000.f).lock();
 	const shared_ptr<TestCombatant> overdriveTarget =
@@ -5869,7 +5873,7 @@ int main(int argc, char** argv)
 		// gameplay test runs from the repository root, so point that manager at
 		// the same asset directory used by the game before spawning a ship.
 		vega::EngineContext::Current().Assets().SetAssetRootDirectory("LightYearsGame/assets/");
-		World realOverdriveWorld{ nullptr };
+		World realOverdriveWorld{ vega::EngineContext::Current() };
 	const shared_ptr<PlayerSpaceShip> realOverdriveOwner =
 		realOverdriveWorld.SpawnActor<PlayerSpaceShip>().lock();
 	const shared_ptr<DummyEnemy> realOverdriveDummy =
@@ -6013,7 +6017,7 @@ int main(int argc, char** argv)
 			: shared_ptr<GravityAnomalyProjectileActor>{};
 	};
 
-	World gravityCursorWorld{ nullptr };
+	World gravityCursorWorld{ vega::EngineContext::Current() };
 	TestCombatant gravityCursorOwner{ &gravityCursorWorld, 1000.f };
 	gravityCursorOwner.SetActorLocation({ 0.f, 0.f });
 	gravityCursorOwner.SetActorRotation(90.f);
@@ -6088,7 +6092,7 @@ int main(int argc, char** argv)
 		return field;
 	};
 
-	World gravityFieldWorld{ nullptr };
+	World gravityFieldWorld{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> gravityCaster =
 		gravityFieldWorld.SpawnActor<TestCombatant>(1000.f).lock();
 	const shared_ptr<TestCombatant> gravityPlayerTarget =
@@ -6169,7 +6173,7 @@ int main(int argc, char** argv)
 	// A real player is world-owned, so entering the field also queues and runs the
 	// effect visual. Keep this covered separately from the world-less lifecycle
 	// check above: that path cannot expose actor-spawn/lifecycle regressions.
-	World gravityLivePlayerWorld{ nullptr };
+	World gravityLivePlayerWorld{ vega::EngineContext::Current() };
 	const shared_ptr<PlayerSpaceShip> gravityLivePlayer =
 		gravityLivePlayerWorld.SpawnActor<PlayerSpaceShip>().lock();
 	if (!gravityLivePlayer)
@@ -6293,7 +6297,7 @@ int main(int argc, char** argv)
 		return Fail("GameplayEffect movement slow did not cleanly restore movement");
 	}
 
-	World gravitySourceWorld{ nullptr };
+	World gravitySourceWorld{ vega::EngineContext::Current() };
 	const shared_ptr<TestCombatant> gravitySourceOwner =
 		gravitySourceWorld.SpawnActor<TestCombatant>(1000.f).lock();
 	const shared_ptr<TestCombatant> gravitySourceTarget =
@@ -6348,11 +6352,11 @@ int main(int argc, char** argv)
 		return Fail("Gravity Anomaly field cleanup left an expired effect active");
 	}
 
-	World baselineGravityWorld{ nullptr };
+	World baselineGravityWorld{ vega::EngineContext::Current() };
 	TestCombatant baselineGravityOwner{ &baselineGravityWorld, 1000.f };
 	const shared_ptr<GravityAnomalyProjectileActor> baselineGravityProjectile =
 		SpawnGravityProjectile(baselineGravityWorld, baselineGravityOwner, 1, 0.f);
-	World scaledGravityWorld{ nullptr };
+	World scaledGravityWorld{ vega::EngineContext::Current() };
 	TestCombatant scaledGravityOwner{ &scaledGravityWorld, 1000.f };
 	const shared_ptr<GravityAnomalyProjectileActor> scaledGravityProjectile =
 		SpawnGravityProjectile(scaledGravityWorld, scaledGravityOwner, 1, 100.f);
@@ -6392,7 +6396,7 @@ int main(int argc, char** argv)
 		return Fail("Gravity Anomaly MaxHealth scaling affected values other than radius and duration");
 	}
 
-	World levelGravityWorld{ nullptr };
+	World levelGravityWorld{ vega::EngineContext::Current() };
 	TestCombatant levelGravityOwner{ &levelGravityWorld, 1000.f };
 	const shared_ptr<GravityAnomalyProjectileActor> levelGravityProjectile =
 		SpawnGravityProjectile(levelGravityWorld, levelGravityOwner, 15, 0.f);
@@ -7186,7 +7190,7 @@ int main(int argc, char** argv)
 	// definition, where the target-specific Duration coefficient used to be
 	// lost before the resolver was reached.
 	{
-		World echoGravityWorld{ nullptr };
+		World echoGravityWorld{ vega::EngineContext::Current() };
 		TestCombatant echoGravityOwner{ &echoGravityWorld, 1000.f };
 		echoGravityOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
 		echoGravityOwner.SetActorRotation(90.f);
@@ -7339,7 +7343,7 @@ int main(int argc, char** argv)
 
 	// 4. World Combat Simulation Test (Damage & Cone Target Filtering & Thermal Ignite Stacks)
 	{
-		vega::World world{ nullptr };
+		vega::World world{ vega::EngineContext::Current() };
 		const vega::shared_ptr<TestCombatant> shooter = world.SpawnActor<TestCombatant>(100.f).lock();
 		const vega::shared_ptr<TestCombatant> targetInCone = world.SpawnActor<TestCombatant>(100.f).lock();
 		const vega::shared_ptr<TestCombatant> targetOutsideAngle = world.SpawnActor<TestCombatant>(100.f).lock();
@@ -7442,7 +7446,7 @@ int main(int argc, char** argv)
 	}
 
 	{
-		World relayProjectileWorld{ nullptr };
+		World relayProjectileWorld{ vega::EngineContext::Current() };
 		const shared_ptr<TestCombatant> relayProjectileOwner =
 			relayProjectileWorld.SpawnActor<TestCombatant>(1000.f).lock();
 		if (!relayProjectileOwner)
@@ -7501,7 +7505,7 @@ int main(int argc, char** argv)
 		// Relay Prism must consume the source exactly once and preserve the
 		// projectile state that is meaningful after conversion. This exercises
 		// the shared ProjectileRelayParticipant path with a real primary projectile.
-		World relayWorld{ nullptr };
+		World relayWorld{ vega::EngineContext::Current() };
 		const shared_ptr<TestCombatant> relayOwner =
 			relayWorld.SpawnActor<TestCombatant>(1000.f).lock();
 		if (!relayOwner)
@@ -7633,7 +7637,7 @@ int main(int argc, char** argv)
 		// Ion Storm is a delivery projectile that creates a field at its
 		// destination, so Relay Prism must let it pass instead of consuming it
 		// without a compatible relay clone.
-		World ionRelayWorld{ nullptr };
+		World ionRelayWorld{ vega::EngineContext::Current() };
 		const shared_ptr<TestCombatant> ionRelayOwner =
 			ionRelayWorld.SpawnActor<TestCombatant>(1000.f).lock();
 		if (!ionRelayOwner)
@@ -7676,7 +7680,7 @@ int main(int argc, char** argv)
 		// Crescent Reaver keeps a family-local cached launch velocity. Relay Prism
 		// must therefore prove both cardinality and scatter: four spawned clones
 		// with one shared velocity would render and behave like a single projectile.
-		World crescentRelayWorld{ nullptr };
+		World crescentRelayWorld{ vega::EngineContext::Current() };
 		const shared_ptr<TestCombatant> crescentRelayOwner =
 			crescentRelayWorld.SpawnActor<TestCombatant>(1000.f).lock();
 		if (!crescentRelayOwner)
@@ -7813,7 +7817,7 @@ int main(int argc, char** argv)
 		// lifetime must still have enough time to travel from the Prism to its
 		// own maximum range. The source's remaining lifetime is intentionally
 		// shorter than that delivery time in this regression scenario.
-		World rocketRelayWorld{ nullptr };
+		World rocketRelayWorld{ vega::EngineContext::Current() };
 		const shared_ptr<TestCombatant> rocketRelayOwner =
 			rocketRelayWorld.SpawnActor<TestCombatant>(1000.f).lock();
 		if (!rocketRelayOwner)
@@ -7952,7 +7956,7 @@ int main(int argc, char** argv)
 			return Fail("Ember Swarm definition did not match Milestone 1 contract");
 		}
 
-		World emberSwarmWorld{ nullptr };
+		World emberSwarmWorld{ vega::EngineContext::Current() };
 		const shared_ptr<SpaceShip> emberSwarmOwner =
 			emberSwarmWorld.SpawnActor<SpaceShip>(
 				ShipData::Ship_Player_Fighter
@@ -8071,7 +8075,7 @@ int main(int argc, char** argv)
 
 		// 1. Travel no damage test
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> target =
@@ -8139,7 +8143,7 @@ int main(int argc, char** argv)
 
 		// 2. Pulse thermal + one Ignite request + damage calculation test
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> target =
@@ -8208,7 +8212,7 @@ int main(int argc, char** argv)
 
 		// 3. Under-cap preference and batch-reservation test
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> targetCapped =
@@ -8274,7 +8278,7 @@ int main(int argc, char** argv)
 
 		// 4. Single target capped fallback test
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> soleTarget =
@@ -8336,7 +8340,7 @@ int main(int argc, char** argv)
 
 		// 5. Leash / death / expiry cleanup test
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> target =
@@ -8555,7 +8559,7 @@ int main(int argc, char** argv)
 
 		// 3. Activation has NO health, shield, regen, or damage effect
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			if (!owner)
@@ -8635,7 +8639,7 @@ int main(int argc, char** argv)
 		// 5. Qualifying owner kill creates exactly one kit at target death snapshot location;
 		// invalid events (non-owner source, target not killed, target not enemy, non-finite loc) do NOT create kit.
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> nonOwner =
@@ -8812,7 +8816,7 @@ int main(int argc, char** argv)
 
 		// 6. Kit survives ability end; end blocks future kits; kit expires at 10s
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<SpaceShip> owner =
 				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			if (!owner)
@@ -8882,7 +8886,7 @@ int main(int argc, char** argv)
 
 		// 7. Healing math, clamp, full health retains kit, no shield/regen mutation
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<PlayerSpaceShip> player =
 				world.SpawnActor<HeadlessTestPlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			if (!player)
@@ -9014,7 +9018,7 @@ int main(int argc, char** argv)
 
 		// 8. Pre-existing player-owned source case
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<PlayerSpaceShip> player =
 				world.SpawnActor<HeadlessTestPlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> enemy =

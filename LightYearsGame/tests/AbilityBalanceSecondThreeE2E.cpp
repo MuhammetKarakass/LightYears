@@ -244,7 +244,7 @@ namespace vega
 			result.expectedDamage = expectedDamage;
 			result.expectedAppliedDamage = expectedAppliedDamage;
 			AbilityBalanceE2EApplication application;
-			World world{ targetAtMouse ? &application : nullptr };
+			World world{ targetAtMouse ? &application : nullptr, &application.GetEngineContext() };
 			const shared_ptr<AbilityBalanceE2EShip> owner = world.SpawnActor<AbilityBalanceE2EShip>().lock();
 			const shared_ptr<AbilityBalanceE2EShip> target = world.SpawnActor<AbilityBalanceE2EShip>().lock();
 			if (!owner || !target)

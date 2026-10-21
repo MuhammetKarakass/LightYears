@@ -16,8 +16,9 @@
 
 namespace vega
 {
+	// Headless levels (tests, validation) have no application; they use the bound scope explicitly.
 	GameLevel::GameLevel(Application* owningApp):
-		World(owningApp),
+		World(owningApp, owningApp ? nullptr : EngineContext::TryCurrent()),
 		mHUDControllers{}
 	{
 	}

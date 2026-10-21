@@ -10,7 +10,9 @@ namespace vega
 	class TimedPresentationActor : public Actor
 	{
 	public:
-		TimedPresentationActor(World* world, const sf::Vector2f& worldLocation, float duration, RenderLayer renderLayer = RenderLayer::WorldVfx);
+		// Like Actor, an ownerless instance (world == nullptr) needs an explicit context.
+		TimedPresentationActor(World* world, const sf::Vector2f& worldLocation, float duration, RenderLayer renderLayer = RenderLayer::WorldVfx,
+			EngineContext* context = nullptr);
 
 		void Tick(float deltaTime) final override;
 

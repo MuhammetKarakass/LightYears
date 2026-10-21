@@ -6,8 +6,9 @@
 
 namespace vega
 {
+	// Headless levels (tests, validation) have no application; they use the bound scope explicitly.
 	MainMenuLevel::MainMenuLevel(Application* owningApplication):
-		World(owningApplication)
+		World(owningApplication, owningApplication ? nullptr : EngineContext::TryCurrent())
 	{
 		mMainMenuHUD = SpawnHUD<MainMenuHUD>();
 	}

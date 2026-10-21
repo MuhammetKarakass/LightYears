@@ -293,7 +293,7 @@ namespace vega
 		{
 			std::cout << "[TEST 9B]" << std::endl;
 			// Two weapons and two active abilities share one generic loadout.
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<TestCombatant> combatant = world.SpawnActor<TestCombatant>().lock();
 			if (!combatant) return Fail("Mixed loadout test combatant could not be spawned") ? 0 : 1;
 			const weak_ptr<Object> weakCombatant = combatant->GetWeakPtr();
@@ -423,7 +423,7 @@ namespace vega
 				ShouldActivateEnemySlot(pulseRule, { false, 100.f, 1.f }))
 				return Fail("Behavior fire or zero-distance decision violated its contract") ? 0 : 1;
 
-			World targetWorld{ nullptr };
+			World targetWorld{ vega::EngineContext::Current() };
 			const shared_ptr<TestCombatant> source = targetWorld.SpawnActor<TestCombatant>().lock();
 			source->SetCollisionLayer(vega::GameCollision::Enemy);
 			source->SetCollisionMask(vega::GameCollision::Player);
@@ -445,7 +445,7 @@ namespace vega
 			pulseProfile.slotRules.push_back({ sas::AbilitySlot::Ability1, EnemySlotInputMode::Pulse, false, 0.f, 0.f, -1.f, 0.25f, 0 });
 			EnemyBehaviorRuntime behaviorRuntime;
 			if (!behaviorRuntime.Initialize(pulseProfile)) return Fail("Failed to initialize pulse behavior runtime") ? 0 : 1;
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const shared_ptr<TestCombatant> source = world.SpawnActor<TestCombatant>().lock();
 			source->SetCollisionLayer(vega::GameCollision::Enemy);
 			source->SetCollisionMask(vega::GameCollision::Player);
@@ -519,7 +519,7 @@ namespace vega
 		std::cout << "[TEST 1]" << std::endl;
 		// 1. Enemy runtime AP and EP default to 0
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant enemyCombatant{ &world };
 			EnemyRuntime enemyRuntime{ enemyCombatant.GetCombatRuntime() };
 			std::string initError;
@@ -545,7 +545,7 @@ namespace vega
 		std::cout << "[TEST 2]" << std::endl;
 		// 2. Damage formula: AuthoredBase * EncounterMultiplier * OutgoingMultiplier
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant attacker{ &world };
 			TestCombatant target{ &world };
 			EnemyRuntime attackerRuntime{ attacker.GetCombatRuntime() };
@@ -564,7 +564,7 @@ namespace vega
 		std::cout << "[TEST 3]" << std::endl;
 		// 3. AuthoredBase = 10, Encounter = 1.5, Outgoing = 0.8 => 12.0
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant attacker{ &world };
 			TestCombatant target{ &world };
 			EnemyRuntime attackerRuntime{ attacker.GetCombatRuntime() };
@@ -584,7 +584,7 @@ namespace vega
 		std::cout << "[TEST 4]" << std::endl;
 		// 4. Player armor mitigation applies correctly to enemy damage
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant attacker{ &world };
 			TestCombatant target{ &world };
 			EnemyRuntime attackerRuntime{ attacker.GetCombatRuntime() };
@@ -605,7 +605,7 @@ namespace vega
 		std::cout << "[TEST 5]" << std::endl;
 		// 5. Outgoing multiplier of 0 results in 0 resolved damage
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant attacker{ &world };
 			TestCombatant target{ &world };
 			EnemyRuntime attackerRuntime{ attacker.GetCombatRuntime() };
@@ -625,7 +625,7 @@ namespace vega
 		std::cout << "[TEST 6]" << std::endl;
 		// 6. Temporary damage protection blocks enemy damage
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant attacker{ &world };
 			TestCombatant target{ &world };
 			EnemyRuntime attackerRuntime{ attacker.GetCombatRuntime() };
@@ -646,7 +646,7 @@ namespace vega
 		std::cout << "[TEST 7]" << std::endl;
 		// 7. Profile swapping: Profile A to Profile B cleanly swaps handles
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime() };
 
@@ -695,7 +695,7 @@ namespace vega
 		std::cout << "[TEST 8]" << std::endl;
 		// 8. Preflight slot collision validation preserves old profile
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime() };
 
@@ -730,7 +730,7 @@ namespace vega
 		std::cout << "[TEST 9]" << std::endl;
 		// 9. Multi-ability binding and level configuration
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime() };
 
@@ -757,7 +757,7 @@ namespace vega
 		std::cout << "[TEST 9A]" << std::endl;
 		// 9A. Ability-only profiles grant active abilities without a weapon.
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime() };
 			EnemyCombatProfile abilityOnly{ "EnemyCombat.Test.AbilityOnly", {}, {}, EnemyPowerScalingPolicy::Allowed, false };
@@ -779,7 +779,7 @@ namespace vega
 		std::cout << "[TEST 9C]" << std::endl;
 		// 9C. Empty loadouts are valid only when contact-only combat is enabled.
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime() };
 			EnemyCombatProfile contactOnly{ "EnemyCombat.Test.ContactOnly", {}, {}, EnemyPowerScalingPolicy::Disabled, true };
@@ -814,7 +814,7 @@ namespace vega
 		std::cout << "[TEST 10]" << std::endl;
 		// 10. Representative enemy fire spawns actual PrimaryWeaponProjectileActor
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			std::shared_ptr<EnemyActor> shooter = content::SpawnEnemy(
 				world,
 				EnemyIds::ApproachGunnerBasic,
@@ -841,7 +841,7 @@ namespace vega
 
 		std::cout << "[TEST Encounter Waves]" << std::endl;
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			List<std::string> spawnedIds;
 			EncounterWaveRuntime runtime;
 			if (!SameSnapshot(runtime.BuildSnapshot(), EncounterWaveSnapshot{}))
@@ -1069,7 +1069,7 @@ namespace vega
 
 		std::cout << "[TEST Encounter Endless Progression Curve]" << std::endl;
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			EncounterWaveRuntime endlessRuntime;
 			if (!endlessRuntime.Start({
 				{ { { sas::ContentId{ EnemyIds::ApproachGunnerBasic }, 2, 0.f } }, 0.f },
@@ -1143,7 +1143,7 @@ namespace vega
 
 		std::cout << "[TEST Encounter Endless Template Cycling]" << std::endl;
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			EncounterWaveRuntime cyclingRuntime;
 			List<EnemySpawnContext> cyclingContexts;
 			List<List<std::string>> cyclingWaves;
@@ -1211,7 +1211,7 @@ namespace vega
 
 		std::cout << "[TEST Encounter Concurrent Spawn Cap]" << std::endl;
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			EncounterWaveRuntime cappedRuntime;
 			if (!cappedRuntime.Start({ { { { sas::ContentId{ EnemyIds::ApproachGunnerBasic }, 5, 0.f } }, 0.f } },
 				[&](const sas::ContentId& enemyId, size_t spawnIndex, const EnemySpawnContext& context)
@@ -1786,7 +1786,7 @@ namespace vega
 			const float targetDistances[] = { 700.f, 400.f, 900.f };
 			for (size_t index = 0; index < 3; ++index)
 			{
-				World world{ nullptr };
+				World world{ vega::EngineContext::Current() };
 				const std::shared_ptr<EnemyActor> enemy = content::SpawnEnemy(
 					world, enemyIds[index], { 1000.f, 1000.f }).lock();
 				const std::shared_ptr<TestCombatant> target = world.SpawnActor<TestCombatant>().lock();
@@ -1834,7 +1834,7 @@ namespace vega
 		std::cout << "[TEST 11]" << std::endl;
 		// 11. Faz 1: First handle removal failure test (Adapter injection)
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			MockEnemyAbilityOperations mockOps{ combatant.GetCombatRuntime() };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime(), &mockOps };
@@ -1870,7 +1870,7 @@ namespace vega
 		std::cout << "[TEST 12]" << std::endl;
 		// 12. Faz 1: Middle and last handle removal failure triggering rollback
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			MockEnemyAbilityOperations mockOps{ combatant.GetCombatRuntime() };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime(), &mockOps };
@@ -1912,7 +1912,7 @@ namespace vega
 		std::cout << "[TEST 13]" << std::endl;
 		// 13. Faz 1: Rollback failure transitions runtime to Faulted state
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			MockEnemyAbilityOperations mockOps{ combatant.GetCombatRuntime() };
 			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime(), &mockOps };
@@ -1963,7 +1963,7 @@ namespace vega
 		std::cout << "[TEST 15]" << std::endl;
 		// 15. Faz 1: External abilities are preserved across all operations
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			auto& asc = combatant.GetAbilitySystemComponent();
 
@@ -2009,7 +2009,7 @@ namespace vega
 		std::cout << "[TEST 15A]" << std::endl;
 		// 15A. External ID conflicts are rejected before the old loadout is removed.
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			auto& asc = combatant.GetAbilitySystemComponent();
 			const GameAbilityDefinition* externalDefinition = content::AbilityContentCatalog::FindById("Ability.Movement.Dash.Basic");
@@ -2039,7 +2039,7 @@ namespace vega
 		std::cout << "[TEST 15B]" << std::endl;
 		// 15B. A later grant failure removes all new handles and restores the old loadout.
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			TestCombatant combatant{ &world };
 			auto& asc = combatant.GetAbilitySystemComponent();
 			const GameAbilityDefinition* externalDefinition = content::AbilityContentCatalog::FindById("Ability.Defense.Shield.Basic");
@@ -2078,7 +2078,7 @@ namespace vega
 		std::cout << "[TEST 16]" << std::endl;
 		// 16. Faz 3: Failed profile enemy destroys actor on BeginPlay
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const ShipDefinition* ship = content::ShipContentCatalog::FindById(
 				"Ship.Enemy.ApproachGunner.Basic"
 			);
@@ -2112,7 +2112,7 @@ namespace vega
 		std::cout << "[TEST 16B]" << std::endl;
 		// 16B. Behavior and contact-only initialization failures roll back combat state.
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const ShipDefinition* ship = content::ShipContentCatalog::FindById("Ship.Enemy.ApproachGunner.Basic");
 			const EnemyCombatProfile* combatProfile = content::EnemyCombatProfileCatalog::FindById("EnemyCombat.ApproachGunner.Basic");
 			if (!ship || !combatProfile) return Fail("Failed to find rollback test enemy content") ? 0 : 1;
@@ -2135,7 +2135,7 @@ namespace vega
 		std::cout << "[TEST 17]" << std::endl;
 		// 17. Faz 3: Unready enemy does not shoot or apply contact damage
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const ShipDefinition* ship = content::ShipContentCatalog::FindById(
 				"Ship.Enemy.ApproachGunner.Basic"
 			);
@@ -2171,7 +2171,7 @@ namespace vega
 		std::cout << "[TEST 17A]" << std::endl;
 		// Enemy spawn context owns progression; neutral variation preserves exact level math.
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			const ShipDefinition* ship = content::ShipContentCatalog::FindById("Ship.Enemy.ApproachGunner.Basic");
 			if (!ship) return Fail("Progression test ship was not found") ? 0 : 1;
 			EnemyCombatProfile progressionProfile;

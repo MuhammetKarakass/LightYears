@@ -89,8 +89,8 @@ namespace
 
 	bool TestRuntimeActorDeduplicationAndWorldIsolation()
 	{
-		World firstWorld{ nullptr };
-		World secondWorld{ nullptr };
+		World firstWorld{ vega::EngineContext::Current() };
+		World secondWorld{ vega::EngineContext::Current() };
 		const shared_ptr<TestPortalAnchor> firstA = Spawn<TestPortalAnchor>(firstWorld);
 		const shared_ptr<TestPortalAnchor> firstB = Spawn<TestPortalAnchor>(firstWorld);
 		const shared_ptr<TestPortalAnchor> secondA = Spawn<TestPortalAnchor>(secondWorld);
@@ -135,7 +135,7 @@ namespace
 
 	bool TestTransferAndReentryTiming()
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		const shared_ptr<TestPortalAnchor> firstPortal = Spawn<TestPortalAnchor>(world);
 		const shared_ptr<TestPortalAnchor> secondPortal = Spawn<TestPortalAnchor>(world);
 		const shared_ptr<TestPortalParticipant> participant = Spawn<TestPortalParticipant>(world);
@@ -203,7 +203,7 @@ namespace
 	bool TestWorldAddressReuseWithRetainedRuntimeActor()
 	{
 		std::optional<World> worldStorage;
-		worldStorage.emplace(nullptr);
+		worldStorage.emplace(vega::EngineContext::Current());
 		World* const originalAddress = &*worldStorage;
 		const shared_ptr<TestPortalAnchor> firstA = Spawn<TestPortalAnchor>(*originalAddress);
 		const shared_ptr<TestPortalAnchor> firstB = Spawn<TestPortalAnchor>(*originalAddress);
@@ -231,7 +231,7 @@ namespace
 		}
 
 		worldStorage.reset();
-		worldStorage.emplace(nullptr);
+		worldStorage.emplace(vega::EngineContext::Current());
 		World& reusedWorld = *worldStorage;
 		if (!Expect(&reusedWorld == originalAddress, "The test World address was not reused"))
 		{
@@ -256,6 +256,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	const bool passed = TestRuntimeActorDeduplicationAndWorldIsolation() &&
 		TestTransferAndReentryTiming() &&

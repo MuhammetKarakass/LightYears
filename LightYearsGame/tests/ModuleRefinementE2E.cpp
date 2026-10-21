@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
@@ -177,6 +178,9 @@ namespace
 }
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	if (argc != 2 && !(argc == 3 && std::string{ argv[2] } == "cfg")) return 2;
 	Report report;

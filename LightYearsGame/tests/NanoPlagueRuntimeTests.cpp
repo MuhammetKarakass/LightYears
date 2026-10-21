@@ -68,8 +68,8 @@ namespace
 
 	bool TestWorldOwnedRegistryReuseAndIsolation()
 	{
-		World firstWorld{ nullptr };
-		World secondWorld{ nullptr };
+		World firstWorld{ vega::EngineContext::Current() };
+		World secondWorld{ vega::EngineContext::Current() };
 		NanoPlaguePresentationProfile profile{};
 		const shared_ptr<TestCombatant> firstOwner = firstWorld.SpawnActor<TestCombatant>().lock();
 		const shared_ptr<TestCombatant> secondOwner = secondWorld.SpawnActor<TestCombatant>().lock();
@@ -98,8 +98,8 @@ namespace
 
 	bool TestRejectsUnmanagedAndForeignOwners()
 	{
-		World world{ nullptr };
-		World otherWorld{ nullptr };
+		World world{ vega::EngineContext::Current() };
+		World otherWorld{ vega::EngineContext::Current() };
 		NanoPlaguePresentationProfile profile{};
 		TestCombatant unmanagedOwner{ &world };
 		const shared_ptr<TestCombatant> foreignOwner = otherWorld.SpawnActor<TestCombatant>().lock();
@@ -117,7 +117,7 @@ namespace
 
 	bool TestRegistrationReplacementKeepsNewestGeneration()
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		NanoPlaguePresentationProfile profile{};
 		const shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>().lock();
 		if (!Expect(static_cast<bool>(owner), "Could not spawn the registration test owner")) return false;
@@ -148,7 +148,7 @@ namespace
 
 	bool TestInfectionRefreshAndDeathSpread()
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		NanoPlaguePresentationProfile profile{};
 		const shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>().lock();
 		const shared_ptr<TestCombatant> infectedTarget = world.SpawnActor<TestCombatant>().lock();
@@ -200,7 +200,7 @@ namespace
 
 	bool TestOwnerDestructionStopsDamageAndClearsInfection()
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		NanoPlaguePresentationProfile profile{};
 		const shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>().lock();
 		const shared_ptr<TestCombatant> target = world.SpawnActor<TestCombatant>().lock();
@@ -230,7 +230,7 @@ namespace
 		shared_ptr<NanoPlagueControllerActor> retainedController;
 		shared_ptr<TestCombatant> retainedTarget;
 		{
-			World world{ nullptr };
+			World world{ vega::EngineContext::Current() };
 			NanoPlaguePresentationProfile profile{};
 			const shared_ptr<TestCombatant> owner = world.SpawnActor<TestCombatant>().lock();
 			if (!Expect(static_cast<bool>(owner), "Could not spawn the teardown test owner")) return false;
@@ -258,7 +258,7 @@ namespace
 	}
 	bool TestRegistryRemovalAndRecreation()
 	{
-		World world{ nullptr };
+		World world{ vega::EngineContext::Current() };
 		NanoPlaguePresentationProfile profile{};
 		auto owner = world.SpawnActor<TestCombatant>().lock();
 		auto actor = world.SpawnActor<NanoPlagueControllerActor>(owner.get(), profile).lock();
@@ -284,6 +284,9 @@ namespace
 
 int main()
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	if (!TestWorldOwnedRegistryReuseAndIsolation() ||
 		!TestRejectsUnmanagedAndForeignOwners() ||

@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP5E2E.h"
 
@@ -490,6 +491,9 @@ namespace rare_side_features_e2e
 
 int main(int argc, char** argv)
 {
+	// Setup below runs before any Application exists; applications adopt this binding.
+	vega::EngineContext testContext;
+	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
 	using namespace rare_side_features_e2e;
 	if (argc != 2) return 2;
