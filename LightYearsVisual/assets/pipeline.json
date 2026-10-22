@@ -20,6 +20,14 @@
 	"flash": {
 		"scale": 1.0
 	},
+	"lighting": {
+		"enabled": true,
+		"floor": 0.55,
+		"ambientGain": 2.0,
+		"wrap": 0.3,
+		"bevel": 2.0,
+		"keyIntensity": 1.1
+	},
 	"planet": {
 		"enabled": true,
 		"screenX": 0.88,

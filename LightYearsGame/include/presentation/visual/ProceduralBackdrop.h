@@ -166,6 +166,8 @@ namespace vega
 		visual::galaxy::GalacticPosition mPosition;
 		visual::galaxy::SkyState mSky;
 		visual::HostStar mHostStar;
+		// The stop's key-light look (elevation, intensity); the star's screen position supplies the direction.
+		sky::KeyLightLook mKeyLightLook;
 		// Kind of each planet (palette, bands, clouds), from its own data; mPlanetKind is the first one, the backdrop planet.
 		std::vector<visual::PlanetKind> mPlanetKinds;
 		visual::PlanetKind mPlanetKind = visual::PlanetKind::Terran;

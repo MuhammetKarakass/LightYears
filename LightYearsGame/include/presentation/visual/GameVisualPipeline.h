@@ -57,6 +57,7 @@ namespace vega
 		bool IsActive() const override { return mEnabled && mReady; }
 		void BeginFrame(const World& world, const sf::View& worldView) override;
 		sf::RenderTarget& GetTarget(RenderLayer layer) override;
+		sf::RenderTarget* GetLightTarget(RenderLayer layer) override;
 		bool ReplacesLayer(RenderLayer layer) const override;
 		bool HidesActor(const Actor& actor) const override { return mShips.HidesActor(actor); }
 		void Compose(sf::RenderTarget& window) override;

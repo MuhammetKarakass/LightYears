@@ -186,6 +186,8 @@ namespace vega
 			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mSkyAuthoring ? 0.f : mTime);
 		}
 		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
+		mPipeline->Target(visual::Layer::Lit).setView(snappedView);
+		mPipeline->Target(visual::Layer::Decals).setView(snappedView);
 		{
 			VEGA_PROFILE_SCOPE("VP.Ships");
 			mShips.Draw(world, snappedView, mAssets, *mPipeline, mTime);
@@ -198,8 +200,25 @@ namespace vega
 
 	sf::RenderTarget& GameVisualPipeline::GetTarget(RenderLayer layer)
 	{
-		// Background stays at full resolution; actors keep their sprite colors in the pixel-scaled sprite layer.
-		return mPipeline->Target(layer == RenderLayer::Background ? visual::Layer::Background : visual::Layer::Sprites);
+		// Background stays at full resolution. Ships and other world bodies are lit surfaces; telegraphs stay
+		// readable under them; projectiles and effects are unlit for readability.
+		using visual::Layer;
+		switch (layer)
+		{
+		case RenderLayer::Background: return mPipeline->Target(Layer::Background);
+		case RenderLayer::World: return mPipeline->Target(Layer::Lit);
+		case RenderLayer::GroundDecal: return mPipeline->Target(Layer::Decals);
+		case RenderLayer::WorldFront:
+		case RenderLayer::WorldVfx:
+		case RenderLayer::Foreground: return mPipeline->Target(Layer::Sprites);
+		default: return mPipeline->Target(Layer::Sprites);
+		}
+	}
+
+	sf::RenderTarget* GameVisualPipeline::GetLightTarget(RenderLayer layer)
+	{
+		// An actor's own glows are emissive, not surfaces: drawn unlit under the ships, as they were drawn before the body.
+		return layer == RenderLayer::World ? &mPipeline->Target(visual::Layer::Decals) : nullptr;
 	}
 
 	bool GameVisualPipeline::ReplacesLayer(RenderLayer layer) const

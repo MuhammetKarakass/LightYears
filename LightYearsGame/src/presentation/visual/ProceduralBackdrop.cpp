@@ -558,6 +558,9 @@ namespace vega
 			look.saturation = deepSky->gradeSaturation;
 		}
 		pipeline.SetBackgroundLook(look);
+		// No visible star, a dim neutral light from above.
+		mKeyLightLook = sky::KeyLightLookFor(deepSky);
+		pipeline.SetKeyLight(sky::KeyLight{ {0.f, -0.57f, 0.82f}, {1.f, 1.f, 1.f}, 0.6f * mKeyLightLook.intensity });
 		const float cap = std::min(settings.tierMaxBrightness[TierIndex(LuminanceTier::Background)] * look.capScale, 1.f);
 		mOrbitRate.reset();
 		// Only resolved entry 0 owns the scene. Legacy assets resolve to entry 0 as well; empty lists keep the generated fallback.
@@ -818,6 +821,8 @@ namespace vega
 		star.intensity = std::max(0.15f, settings.intensity * (1.f - std::exp(-1.5f * irradiance)));
 		star.maxBrightness = maxBrightness;
 		visual::DrawHostStar(assets.Shaders(), pipeline, star);
+		// The drawn host star is the scene's key light: direction from the screen centre, colour from the star.
+		pipeline.SetKeyLight(sky::KeyLightFromStar(center, output * 0.5f, mKeyLightLook.elevation, {star.color.x, star.color.y, star.color.z}, star.intensity * mKeyLightLook.intensity));
 	}
 
 	void ProceduralBackdrop::RebuildStars(const visual::StarFieldSettings& starField, const visual::MilkyWaySettings& band, const visual::DeepSkyStop* clusters, bool mirrored, sf::Vector2f outputSize, unsigned catalogVersion)
