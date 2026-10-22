@@ -1,20 +1,65 @@
 #include "framework/MathUtility.h"
 #include "framework/World.h"
 #include "VFX/Explosion.h"
+#include "VFX/ExplosionLights.h"
 #include "VFX/Particle.h"
 #include "framework/SpriteComponent.h"
 #include "framework/PerfMonitor.h"
 
 namespace vega
 {
+	namespace
+	{
+		struct FlashProfile
+		{
+			float radius;
+			float intensity;
+			float lifetime;
+		};
+
+		// Radius and strength of an explosion's flash, by the explosion type; the params-only path uses the Small values.
+		FlashProfile FlashProfileFor(ExplosionType type)
+		{
+			switch (type)
+			{
+			case ExplosionType::Tiny: return { 60.f, 1.0f, 0.35f };
+			case ExplosionType::Small: return { 120.f, 1.6f, 0.35f };
+			case ExplosionType::Medium: return { 180.f, 2.2f, 0.35f };
+			case ExplosionType::Heavy: return { 240.f, 2.8f, 0.35f };
+			case ExplosionType::Plasma: return { 160.f, 2.2f, 0.35f };
+			case ExplosionType::Boss: return { 400.f, 3.5f, 0.6f };
+			case ExplosionType::Environmental: return { 140.f, 1.6f, 0.35f };
+			}
+			return { 120.f, 1.6f, 0.35f };
+		}
+
+		void AddExplosionFlash(const sf::Vector2f& location, const ExplosionParams& params, ExplosionType type)
+		{
+			const FlashProfile profile = FlashProfileFor(type);
+			ExplosionFlash flash;
+			flash.position = location;
+			flash.radius = profile.radius;
+			flash.intensity = profile.intensity;
+			flash.lifetime = profile.lifetime;
+			// The middle of the particle colour ranges is the flash's colour.
+			flash.color = sf::Color(
+				static_cast<std::uint8_t>((params.redRange.min + params.redRange.max) / 2),
+				static_cast<std::uint8_t>((params.greenRange.min + params.greenRange.max) / 2),
+				static_cast<std::uint8_t>((params.blueRange.min + params.blueRange.max) / 2));
+			ExplosionLights::Add(flash);
+		}
+	}
+
 	void Explosion::SpawnExplosion(World* world, const sf::Vector2f& location, ExplosionType type)
 	{
 		ExplosionParams params = GetPreset(type);
+		AddExplosionFlash(location, params, type);
 		SpawnExplosionWithParams(world, location, params);
 	}
 
 	void Explosion::SpawnExplosion(World* world, const sf::Vector2f& location, const ExplosionParams& params)
 	{
+		AddExplosionFlash(location, params, ExplosionType::Small);
 		SpawnExplosionWithParams(world, location, params);
 	}
 

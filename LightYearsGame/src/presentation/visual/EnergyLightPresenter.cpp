@@ -66,6 +66,14 @@ namespace vega
 			glow.intensity = intensity;
 			glow.tier = tier;
 			pipeline.SubmitGlow(glow);
+
+			// The shot also lights nearby hulls: a small point light at the head, dimmer than the glow.
+			sky::PointLight light;
+			light.position = frame.ToPixels(head);
+			light.radius = std::clamp(radius * 9.f * frame.scale, 30.f, 90.f);
+			light.color = { color.r / 255.f, color.g / 255.f, color.b / 255.f };
+			light.intensity = 0.6f * intensity;
+			pipeline.SubmitPointLight(light);
 		}
 	}
 

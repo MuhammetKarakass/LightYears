@@ -316,6 +316,28 @@ namespace vega
 			planet.lightColor = BlackbodyDisplay(star.temperatureK);
 			planet.lightIntensity = std::clamp(0.4f + 0.6f * (1.f - std::exp(-1.5f * irradiance)), 0.4f, 1.2f);
 		}
+
+		// Light reflected from the stop's planet (planetshine): the fill light comes from the planet's direction,
+		// carries its surface colour and strengthens with its apparent size.
+		void SetPlanetshineFill(visual::VisualPipeline& pipeline, const visual::ColorRamp& ramp, sf::Vector2f planetCentre, float planetRadius)
+		{
+			const sf::Vector2f output(pipeline.OutputSize());
+			if (output.y <= 0.f || ramp.Empty())
+			{
+				return;
+			}
+			const sf::Color sample = ramp.Sample(0.7f);
+			const float largest = std::max({ static_cast<float>(sample.r), static_cast<float>(sample.g), static_cast<float>(sample.b) });
+			sf::Vector3f colour{ 1.f, 1.f, 1.f };
+			if (largest > 0.f)
+			{
+				colour = { sample.r / largest, sample.g / largest, sample.b / largest };
+			}
+			// Half white, like the key light's white balance: the eye adapts to the reflected colour.
+			const sf::Vector3f balanced{ 0.5f + 0.5f * colour.x, 0.5f + 0.5f * colour.y, 0.5f + 0.5f * colour.z };
+			const float strength = 0.35f * std::clamp(planetRadius / output.y, 0.f, 1.f);
+			pipeline.SetFillLight(sky::KeyLightFromStar(planetCentre, output * 0.5f, 10.f, balanced, strength));
+		}
 	}
 
 	ProceduralBackdrop::ProceduralBackdrop()
@@ -561,6 +583,8 @@ namespace vega
 		// No visible star, a dim neutral light from above.
 		mKeyLightLook = sky::KeyLightLookFor(deepSky);
 		pipeline.SetKeyLight(sky::KeyLight{ {0.f, -0.57f, 0.82f}, {1.f, 1.f, 1.f}, 0.6f * mKeyLightLook.intensity });
+		// Planetshine is off unless a visible owner planet turns it on while it is drawn below.
+		pipeline.SetFillLight(sky::KeyLight{ {0.f, 0.f, 1.f}, {1.f, 1.f, 1.f}, 0.f });
 		const float cap = std::min(settings.tierMaxBrightness[TierIndex(LuminanceTier::Background)] * look.capScale, 1.f);
 		mOrbitRate.reset();
 		// Only resolved entry 0 owns the scene. Legacy assets resolve to entry 0 as well; empty lists keep the generated fallback.
@@ -979,6 +1003,8 @@ namespace vega
 			// The ring and the moon pass behind the planet on the far side of their orbit and in front of it on the near side.
 			const ColorRamp ramp = PlanetRamp(kind);
 			const unsigned moonSeed = FoldSeed(mLocationSeed) ^ 0x6d2b79f5u;
+			// Light reflected from the visible owner planet (planetshine).
+			SetPlanetshineFill(pipeline, ramp, planet.center, planet.radius);
 			visual::DrawPlanetRing(assets.Shaders(), pipeline, ramp, planet, false);
 			if (orbit.moon)
 			{
@@ -1235,6 +1261,11 @@ namespace vega
 		// The orbiting moon is behind the planet in the upper half of its orbit, in front in the lower half.
 		const auto observe = [&](PlanetBodyPass pass) { if (mPlanetBodyObserver) mPlanetBodyObserver(index, pass, planet, body.moonSeed); };
 		const auto ramp = visual::PlanetRamp(body.kind);
+		if (index == 0)
+		{
+			// Light reflected from the stop's visible owner planet (planetshine).
+			SetPlanetshineFill(pipeline, ramp, planet.center, planet.radius);
+		}
 		if (body.ring)
 		{
 			observe(PlanetBodyPass::BackRing);

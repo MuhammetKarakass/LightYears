@@ -1,12 +1,14 @@
 #include "presentation/visual/GameVisualPipeline.h"
 #include "level/GameSceneSettings.h"
 
+#include "VFX/ExplosionLights.h"
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
 #include "framework/EngineContext.h"
 #include "framework/debug/Log.h"
 #include "framework/debug/Profiler.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <vector>
 
@@ -132,6 +134,8 @@ namespace vega
 
 	void GameVisualPipeline::Update(float deltaSeconds)
 	{
+		// Flashes are aged even while the pipeline is unavailable, so they cannot pile up unsubmitted.
+		ExplosionLights::Update(deltaSeconds);
 		if (!mReady)
 		{
 			return;
@@ -181,9 +185,28 @@ namespace vega
 		// Full-resolution backdrop parallax follows the continuous camera. Pixel ships, sprites and their energy
 		// glows share the snapped view so they stay aligned with each other.
 		const sf::View snappedView = mPipeline->SnapWorldView(worldView);
+		// The same frame the sprite layers use, kept for world-unit light submissions during World::Render.
+		mFrameOrigin = snappedView.getCenter() - snappedView.getSize() * 0.5f;
+		const float viewHeight = snappedView.getSize().y;
+		mFrameScale = viewHeight > 0.f ? static_cast<float>(mPipeline->OutputSize().y) / viewHeight : 1.f;
 		{
 			VEGA_PROFILE_SCOPE("VP.Backdrop");
 			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mSkyAuthoring ? 0.f : mTime);
+		}
+		// Explosion flashes are short-lived lights in world units; each fades to nothing over its lifetime.
+		for (const ExplosionFlash& flash : ExplosionLights::Active())
+		{
+			if (flash.lifetime <= 0.f)
+			{
+				continue;
+			}
+			const float fade = 1.f - std::clamp(flash.age / flash.lifetime, 0.f, 1.f);
+			sky::PointLight light;
+			light.position = (flash.position - mFrameOrigin) * mFrameScale;
+			light.radius = flash.radius * mFrameScale;
+			light.color = { flash.color.r / 255.f, flash.color.g / 255.f, flash.color.b / 255.f };
+			light.intensity = flash.intensity * fade * fade;
+			mPipeline->SubmitPointLight(light);
 		}
 		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
 		mPipeline->Target(visual::Layer::Lit).setView(snappedView);
@@ -219,6 +242,22 @@ namespace vega
 	{
 		// An actor's own glows are emissive, not surfaces: drawn unlit under the ships, as they were drawn before the body.
 		return layer == RenderLayer::World ? &mPipeline->Target(visual::Layer::Decals) : nullptr;
+	}
+
+	void GameVisualPipeline::SubmitLight(const SceneLight& light)
+	{
+		if (!mReady)
+		{
+			return;
+		}
+		// SceneLight is in world units; PointLight is in output pixels through the snapped frame BeginFrame kept.
+		sky::PointLight point;
+		point.position = (light.position - mFrameOrigin) * mFrameScale;
+		point.radius = light.radius * mFrameScale;
+		point.color = { light.color.r / 255.f, light.color.g / 255.f, light.color.b / 255.f };
+		point.intensity = light.intensity;
+		point.height = light.height;
+		mPipeline->SubmitPointLight(point);
 	}
 
 	bool GameVisualPipeline::ReplacesLayer(RenderLayer layer) const

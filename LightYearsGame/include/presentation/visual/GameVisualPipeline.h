@@ -60,6 +60,8 @@ namespace vega
 		sf::RenderTarget* GetLightTarget(RenderLayer layer) override;
 		bool ReplacesLayer(RenderLayer layer) const override;
 		bool HidesActor(const Actor& actor) const override { return mShips.HidesActor(actor); }
+		// Engine lights arrive in world units; the frame's snapped view converts them to output pixels.
+		void SubmitLight(const SceneLight& light) override;
 		void Compose(sf::RenderTarget& window) override;
 
 	private:
@@ -87,5 +89,9 @@ namespace vega
 		bool mEnabled = true;
 		float mTime = 0.f;
 		bool mSkyAuthoring = false;
+		// The snapped view BeginFrame uses for the sprite/world layers: world position of output pixel (0, 0) and output
+		// pixels per world unit. Engine light submissions during World::Render convert through these.
+		sf::Vector2f mFrameOrigin;
+		float mFrameScale = 1.f;
 	};
 }

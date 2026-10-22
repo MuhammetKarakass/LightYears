@@ -26,7 +26,10 @@
 		"ambientGain": 0.5,
 		"wrap": 0.3,
 		"bevel": 2.0,
-		"keyIntensity": 1.6
+		"keyIntensity": 1.6,
+		"worldFloor": 0.8,
+		"maxLights": 256,
+		"debugView": 0
 	},
 	"planet": {
 		"enabled": true,
