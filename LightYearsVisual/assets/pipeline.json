@@ -23,10 +23,10 @@
 	"lighting": {
 		"enabled": true,
 		"floor": 0.55,
-		"ambientGain": 2.0,
+		"ambientGain": 0.5,
 		"wrap": 0.3,
 		"bevel": 2.0,
-		"keyIntensity": 1.1
+		"keyIntensity": 1.6
 	},
 	"planet": {
 		"enabled": true,

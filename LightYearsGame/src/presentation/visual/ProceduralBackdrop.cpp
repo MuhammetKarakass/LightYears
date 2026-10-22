@@ -822,7 +822,10 @@ namespace vega
 		star.maxBrightness = maxBrightness;
 		visual::DrawHostStar(assets.Shaders(), pipeline, star);
 		// The drawn host star is the scene's key light: direction from the screen centre, colour from the star.
-		pipeline.SetKeyLight(sky::KeyLightFromStar(center, output * 0.5f, mKeyLightLook.elevation, {star.color.x, star.color.y, star.color.z}, star.intensity * mKeyLightLook.intensity));
+		// Half white balance: eyes and cameras adapt to the light's colour, so a white hull under an orange star reads warm,
+		// not orange. The star's full colour stays in its disc and glare.
+		const sf::Vector3f balanced{0.5f + 0.5f * star.color.x, 0.5f + 0.5f * star.color.y, 0.5f + 0.5f * star.color.z};
+		pipeline.SetKeyLight(sky::KeyLightFromStar(center, output * 0.5f, mKeyLightLook.elevation, balanced, star.intensity * mKeyLightLook.intensity));
 	}
 
 	void ProceduralBackdrop::RebuildStars(const visual::StarFieldSettings& starField, const visual::MilkyWaySettings& band, const visual::DeepSkyStop* clusters, bool mirrored, sf::Vector2f outputSize, unsigned catalogVersion)
