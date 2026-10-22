@@ -22,7 +22,7 @@
 	},
 	"lighting": {
 		"enabled": true,
-		"floor": 0.55,
+		"floor": 0.65,
 		"ambientGain": 0.5,
 		"wrap": 0.3,
 		"bevel": 2.0,
