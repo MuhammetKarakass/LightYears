@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <cstdlib>
 #include <sstream>
 #include <stdexcept>
 
@@ -20,7 +21,9 @@ namespace
 	using Json = nlohmann::json;
 	using Access = vega::ProceduralBackdropTestAccess;
 	const std::filesystem::path Source{LIGHT_YEARS_PROJECT_SOURCE_DIR};
-	constexpr sf::Vector2u Size{960, 540};
+	// Half the game's 1920x1080 window; LIGHTYEARS_CAPTURE_FULL=1 captures at the full size for visual review of
+	// resolution-dependent passes (light shafts run at half the output). The checks assume the default size.
+	const sf::Vector2u Size = [] { const char* full = std::getenv("LIGHTYEARS_CAPTURE_FULL"); return full && full[0] == '1' ? sf::Vector2u{1920, 1080} : sf::Vector2u{960, 540}; }();
 	constexpr float DegToRad = 0.01745329252f;
 
 	const Json& BodyOf(const Json& trace, std::size_t index)
