@@ -73,6 +73,10 @@
           [
             5,
             "Foreground"
+          ],
+          [
+            6,
+            "WorldEmissive"
           ]
         ],
         "max": null,

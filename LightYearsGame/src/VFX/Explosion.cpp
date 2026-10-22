@@ -227,6 +227,8 @@ namespace vega
 				particle->RandomVelocity(params.speedMin, params.speedMax);
 
 				spriteComponent->GetSprite()->setColor(params.GenerateRandomColor());
+				// Sparks and flames give off light: the emissive layer adds them to the scene so they bloom.
+				particle->SetRenderLayer(RenderLayer::WorldEmissive);
 			}
 		}
 	}

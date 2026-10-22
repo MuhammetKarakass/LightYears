@@ -2904,6 +2904,7 @@
 		},
 		"sgr-a-star": {
 			"_note": "The climax: a closer, wider band behind a bigger black hole.",
+			"colorGrade": { "temperature": 0.12, "gain": [1.03, 1.0, 0.96], "saturation": 1.1, "contrast": 1.1 },
 			"mirror": false,
 			"band": {
 				"width": 0.42,
@@ -3303,6 +3304,7 @@
 		},
 		"gc-far-ice": {
 			"_note": "A small ice world far below, high above the plane: the sky is the scene.",
+			"colorGrade": { "temperature": -0.35, "tint": -0.05, "saturation": 0.9, "contrast": 1.05 },
 			"band": {
 				"cool": [
 					0.35,
@@ -3336,6 +3338,7 @@
 		},
 		"gc-lava-night": {
 			"_note": "The night side of a lava world, its cracks glowing; the star is behind it.",
+			"colorGrade": { "temperature": 0.25, "lift": [0.01, 0.0, -0.01], "saturation": 1.1, "contrast": 1.08 },
 			"band": {
 				"warm": [
 					1.0,
@@ -3373,6 +3376,7 @@
 		},
 		"gc-hot-ceiling": {
 			"_note": "Upside down: a hot Jupiter fills the top of the screen and the sky falls up into it.",
+			"colorGrade": { "temperature": 0.15, "saturation": 1.08, "contrast": 1.05 },
 			"band": {
 				"warm": [
 					1.0,
@@ -3406,6 +3410,7 @@
 		},
 		"gc-blue-ice-giant": {
 			"_note": "An ice giant under a hot blue star, with a thin ring almost edge-on.",
+			"colorGrade": { "temperature": -0.35, "gain": [0.96, 1.0, 1.05], "saturation": 1.05 },
 			"band": {
 				"cool": [
 					0.3,
@@ -3524,6 +3529,7 @@
 		},
 		"gc-red-giant": {
 			"_note": "A swollen red giant rises over a scorched world; the orbit runs backwards so the sky climbs away from the planet.",
+			"colorGrade": { "temperature": 0.3, "tint": 0.05, "lift": [0.015, 0.0, 0.0], "contrast": 1.06 },
 			"band": {
 				"warm": [
 					1.0,

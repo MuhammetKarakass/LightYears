@@ -234,6 +234,7 @@ namespace vega
 		case RenderLayer::WorldFront:
 		case RenderLayer::WorldVfx:
 		case RenderLayer::Foreground: return mPipeline->Target(Layer::Sprites);
+		case RenderLayer::WorldEmissive: return mPipeline->Target(Layer::Emissive);
 		default: return mPipeline->Target(Layer::Sprites);
 		}
 	}

@@ -580,6 +580,8 @@ namespace vega
 			look.saturation = deepSky->gradeSaturation;
 		}
 		pipeline.SetBackgroundLook(look);
+		// The stop's whole-frame grade; without one the pipeline.json grade applies.
+		pipeline.SetColorGrade(deepSky != nullptr ? deepSky->colorGrade : std::nullopt);
 		// No visible star, a dim neutral light from above.
 		mKeyLightLook = sky::KeyLightLookFor(deepSky);
 		pipeline.SetKeyLight(sky::KeyLight{ {0.f, -0.57f, 0.82f}, {1.f, 1.f, 1.f}, 0.6f * mKeyLightLook.intensity });
