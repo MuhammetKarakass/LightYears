@@ -217,8 +217,8 @@ namespace
 					case sf::Keyboard::Key::PageDown: scene.SetGalaxyProgress(scene.GalaxyProgress() - 0.05f); break;
 					case sf::Keyboard::Key::Home: scene.SetGalaxyProgress(scene.GalaxyProgress() + 0.005f); break;
 					case sf::Keyboard::Key::End: scene.SetGalaxyProgress(scene.GalaxyProgress() - 0.005f); break;
-					case sf::Keyboard::Key::Up: s.bloomStrength = std::min(s.bloomStrength + 0.1f, 4.f); break;
-					case sf::Keyboard::Key::Down: s.bloomStrength = std::max(s.bloomStrength - 0.1f, 0.f); break;
+					case sf::Keyboard::Key::Up: s.bloomStrength = std::min(s.bloomStrength + 0.01f, 1.f); break;
+					case sf::Keyboard::Key::Down: s.bloomStrength = std::max(s.bloomStrength - 0.01f, 0.f); break;
 					case sf::Keyboard::Key::V:
 					{
 						int next = virtualHeights[0];

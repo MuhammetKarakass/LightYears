@@ -24,5 +24,6 @@ void main()
 
 	vec3 finalColor = texColor.rgb + glow;
 
-	gl_FragColor = vec4(finalColor, texColor.a);
+	// Float targets do not clamp like the old 8-bit ones did; keep this content's output in [0,1].
+	gl_FragColor = clamp(vec4(finalColor, texColor.a), 0.0, 1.0);
 }

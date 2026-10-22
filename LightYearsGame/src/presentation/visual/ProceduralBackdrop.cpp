@@ -558,8 +558,6 @@ namespace vega
 			look.saturation = deepSky->gradeSaturation;
 		}
 		pipeline.SetBackgroundLook(look);
-		// Light shafts follow the stop too; a stop without an authored sky returns to the pipeline defaults.
-		pipeline.SetLightShaftLook(sky::LightShaftLookFor(deepSky));
 		const float cap = std::min(settings.tierMaxBrightness[TierIndex(LuminanceTier::Background)] * look.capScale, 1.f);
 		mOrbitRate.reset();
 		// Only resolved entry 0 owns the scene. Legacy assets resolve to entry 0 as well; empty lists keep the generated fallback.

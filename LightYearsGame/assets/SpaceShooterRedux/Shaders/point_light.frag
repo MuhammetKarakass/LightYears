@@ -21,7 +21,8 @@ void main()
 
      if (u_is_trail > 0.5 && pos.y < 0.0)
     {
-        gl_FragColor = vec4(0.0);
+        // Float targets do not clamp like the old 8-bit ones did; keep this content's output in [0,1].
+        gl_FragColor = clamp(vec4(0.0), 0.0, 1.0);
         return;
     }
 
@@ -47,5 +48,5 @@ void main()
 	float alpha = 1.0 - smoothstep(innerRadius, 0.5, distance);
 
 	alpha *= lightIntensity;
-	gl_FragColor = vec4(lightColor, alpha);
+	gl_FragColor = clamp(vec4(lightColor, alpha), 0.0, 1.0);
 }

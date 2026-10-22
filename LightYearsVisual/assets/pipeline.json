@@ -9,9 +9,9 @@
 	},
 	"bloom": {
 		"enabled": true,
-		"threshold": 0.2,
-		"strength": 0.5,
-		"levels": 5
+		"strength": 0.08,
+		"levels": 6,
+		"radius": 1.0
 	},
 	"vignette": {
 		"strength": 0.4,
@@ -39,8 +39,7 @@
 		"radiusAt1AU": 0.006,
 		"glowRadius": 0.22,
 		"intensity": 1.0,
-		"parallax": 0.006,
-		"coreBrightness": 1.0
+		"parallax": 0.006
 	},
 	"starField": {
 		"baseCount": 650,

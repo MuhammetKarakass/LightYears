@@ -33,5 +33,6 @@ void main()
 	float waveDist = (r - (1.0 - 0.35 * uHit)) * 9.0;
 	float wave = uHit * exp(-waveDist * waveDist) * 0.25 * inside;
 	float v = uStrength * (body + 0.22 * rim * shimmer + 0.4 * edge * shimmer) + arcHit + wave + uHit * body * 3.0;
-	gl_FragColor = vec4(uColor * v, 1.0);
+	// Float targets do not clamp like the old 8-bit ones did; keep this content's output in [0,1].
+	gl_FragColor = clamp(vec4(uColor * v, 1.0), 0.0, 1.0);
 }

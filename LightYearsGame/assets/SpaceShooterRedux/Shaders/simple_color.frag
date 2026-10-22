@@ -17,5 +17,6 @@ void main()
     
     // 3. Orijinal renk ile bizim rengimizi karýþtýr
     // pixel * customColor -> Gemiyi boyar ama detaylarý korur
-    gl_FragColor = pixel * customColor;
+    // Float targets do not clamp like the old 8-bit ones did; keep this content's output in [0,1].
+    gl_FragColor = clamp(pixel * customColor, 0.0, 1.0);
 }
