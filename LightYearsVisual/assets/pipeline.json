@@ -39,7 +39,8 @@
 		"radiusAt1AU": 0.006,
 		"glowRadius": 0.22,
 		"intensity": 1.0,
-		"parallax": 0.006
+		"parallax": 0.006,
+		"coreBrightness": 1.0
 	},
 	"starField": {
 		"baseCount": 650,
