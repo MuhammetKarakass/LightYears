@@ -241,7 +241,9 @@ namespace
 			Require(singleTrace[0]["pass"] == "back-moon" && singleTrace[1]["pass"] == "body" && singleTrace[2]["pass"] == "front-moon", "Entry 0 submission order changed");
 			const auto primaryCenter = Access::Center(single);
 			Access::Body extra;
-			extra.center = {primaryCenter.x < Size.x / 2.f ? 740.f : 220.f, 405.f};
+			// Near the screen edge away from the owner: an owner placed nearer the middle reaches further, and the
+			// extra body's halo must stay outside the owner region the invariant checks.
+			extra.center = {primaryCenter.x < Size.x / 2.f ? 840.f : 120.f, 405.f};
 			extra.radius = 48.f;
 			extra.kind = vega::visual::PlanetKind::Ice;
 			extra.seed = 71.f;
