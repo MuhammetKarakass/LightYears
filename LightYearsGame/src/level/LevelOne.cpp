@@ -11,6 +11,8 @@
 #include "presentation/hud/notification/NotificationHUDController.h"
 #include "framework/Application.h"
 #include "enemy/ChaosStage.h"
+#include "enemy/EnemyActor.h"
+#include "framework/AudioManager.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
 #include "gameConfigs/GameplayTags.h"
@@ -69,7 +71,10 @@ namespace vega
 
 	void LevelOne::PlayerShipDestroyed(Actor* destroyedActor)
 	{
-		mPlayerSpaceShip = PlayerManager::GetPlayerManager().GetPlayer()->SpawnSpaceShip(this);
+		if (mRestarting) return;
+		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+		if (!player) return;
+		mPlayerSpaceShip = player->SpawnSpaceShip(this);
 		if(!mPlayerSpaceShip.expired())
 		{
 			mPlayerSpaceShip.lock()->onActorDestroyed.BindAction(GetWeakPtr(), &LevelOne::PlayerShipDestroyed);
@@ -226,8 +231,28 @@ namespace vega
 
 	void LevelOne::OnRestartLevel()
 	{
-		GameLevel::OnRestartLevel();
-		GetApplication()->LoadWorld<LevelOne>();
+		if (mRestarting || !GetApplication()) return;
+		mRestarting = true;
+		SetPaused(true);
+		// LoadWorld swaps at the end of the frame. Stop the old run and its callbacks before resetting Players.
+		EndPlayInternal();
+		const auto actors = GetActorsByTypeIncludingPending<Actor>();
+		for (const auto& handle : actors)
+		{
+			if (const auto enemy = std::dynamic_pointer_cast<EnemyActor>(handle.lock()))
+			{
+				enemy->onScoreAwarded.Clear();
+				enemy->onShipXPAwarded.Clear();
+			}
+		}
+		for (const auto& handle : actors)
+		{
+			if (const auto actor = handle.lock()) actor->Destroy();
+		}
+		PlayerManager::GetPlayerManager().Reset();
+		GetEngineContext().Audio().SetMenuMode(false);
+		if (mLayout.fromScene) GetApplication()->LoadWorld<LevelOne>(mLayout.scene, mApplySettings);
+		else GetApplication()->LoadWorld<LevelOne>();
 	}
 }
 

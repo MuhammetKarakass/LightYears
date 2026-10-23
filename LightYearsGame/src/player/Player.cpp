@@ -48,6 +48,7 @@ namespace vega
 
 	Player::~Player()
 	{
+		mModuleCreditLifetime.reset();
 		mShipProgression.onLevelChanged.UnbindAction(mShipLevelChangedHandle);
 		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock()) currentShip->onRunDistanceTraveled.UnbindAction(mRunDistanceHandle);
 		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock())
@@ -510,9 +511,9 @@ namespace vega
 	void Player::ApplyModuleLoadout(PlayerSpaceShip& ship)
 	{
 		ship.GetModuleApplier().SetGoldWallet(mGold);
-		const weak_ptr<Player> weakPlayer = std::dynamic_pointer_cast<Player>(GetWeakPtr().lock());
-		ship.GetModuleApplier().SetRunCounterCreditSink([weakPlayer](std::uint32_t instanceId, double units) { if (const auto player = weakPlayer.lock(); player && !player->GetIsPendingDestroy()) player->mModuleLoadout.AddRunCounterCredit(instanceId, units); });
-		ship.GetModuleApplier().SetKillCreditSink([this](std::uint32_t instanceId, double stacks, double damageBonus) { mModuleLoadout.AddKillCredit(instanceId, stacks, damageBonus); });
+		const std::weak_ptr<bool> lifetime = mModuleCreditLifetime;
+		ship.GetModuleApplier().SetRunCounterCreditSink([this, lifetime](std::uint32_t instanceId, double units) { if (!lifetime.expired()) mModuleLoadout.AddRunCounterCredit(instanceId, units); });
+		ship.GetModuleApplier().SetKillCreditSink([this, lifetime](std::uint32_t instanceId, double stacks, double damageBonus) { if (!lifetime.expired()) mModuleLoadout.AddKillCredit(instanceId, stacks, damageBonus); });
 		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
 		if (!rules) return;
 		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))

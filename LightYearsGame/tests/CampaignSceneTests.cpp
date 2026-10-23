@@ -8,10 +8,26 @@
 #include "player/PlayerSpaceShip.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
+#include "framework/Application.h"
+#include "widget/PauseMenuHUD.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
+
+namespace vega
+{
+	struct ApplicationTestAccess
+	{
+		static void Tick(Application& app, float deltaTime) { app.TickInternal(deltaTime); }
+		static void Pause(Application& app)
+		{
+			sf::Event::KeyPressed key{};
+			key.code = sf::Keyboard::Key::Escape;
+			app.DispatchEvent(sf::Event{ key });
+		}
+	};
+}
 
 namespace
 {
@@ -73,6 +89,63 @@ namespace
 		void CreateHUDControllers() override {}
 		void GameOver() override { gameOver = true; }
 	};
+	void CheckCampaignRestart(const Json& scene)
+	{
+		auto& manager = PlayerManager::GetPlayerManager();
+		manager.Reset();
+		struct ResetGuard { ~ResetGuard() { PlayerManager::GetPlayerManager().Reset(); } } guard;
+		std::string title = "Campaign restart regression";
+		Application app{ { 1920u, 1080u }, 32u, title, sf::Style::None };
+		app.GetRenderWindow().setVisible(false);
+		int settingsApplied = 0;
+		auto old = app.LoadWorld<LevelOne>(scene, [&settingsApplied](const Json&) { ++settingsApplied; }).lock();
+		ApplicationTestAccess::Tick(app, 0.f);
+		ApplicationTestAccess::Tick(app, 0.f);
+		const auto oldShip = old->mPlayerSpaceShip.lock();
+		Check(oldShip && manager.GetPlayer(), "restart fixture begins with a live campaign Player and ship");
+		const auto oldPlayerId = manager.GetPlayer()->GetUniqueID();
+		// Spawn through the real campaign stage, which wires score and XP to the run's Player.
+		old->GetTimerManager().UpdateTimer(5.1f);
+		old->GetTimerManager().UpdateTimer(2.f);
+		const auto enemies = old->GetActorsByTypeIncludingPending<EnemyActor>();
+		Check(!enemies.empty(), "restart fixture has an enemy with real run reward callbacks");
+		const auto oldEnemy = enemies.front().lock();
+		struct RemovalProbe
+		{
+			shared_ptr<PlayerSpaceShip> ship;
+			shared_ptr<EnemyActor> enemy;
+			bool stoppedBeforeReset = false;
+			void Removing(Player*) { stoppedBeforeReset = ship->GetIsPendingDestroy() && enemy->GetIsPendingDestroy(); }
+		} probe{ oldShip, oldEnemy };
+		ApplicationTestAccess::Pause(app);
+		const auto menu = old->GetPauseMenuHUD().lock();
+		Check(old->IsPaused() && menu, "Escape opens the real pause menu");
+		const auto removal = manager.onPlayerAboutToBeDestroyed.BindAction(&probe, &RemovalProbe::Removing);
+		menu->onRestartButtonClicked.Broadcast();
+		manager.onPlayerAboutToBeDestroyed.UnbindAction(removal);
+		Check(probe.stoppedBeforeReset, "restart retires the old ship and enemies before resetting Player");
+		ApplicationTestAccess::Tick(app, 0.2f);
+		auto* fresh = dynamic_cast<LevelOne*>(app.GetCurrentWorld());
+		Check(fresh && fresh != old.get() && manager.GetPlayer() && manager.GetPlayer()->GetUniqueID() != oldPlayerId,
+			"pause-menu restart creates a fresh LevelOne and a new valid Player");
+		Check(fresh->GetLayout().scene == scene && (settingsApplied == 2 || !scene["settings"].contains("routeStop")),
+			"restart retains the active scene and its settings callback");
+		oldEnemy->onScoreAwarded.Broadcast(123);
+		oldEnemy->onShipXPAwarded.Broadcast(123.f);
+		oldShip->onActorDestroyed.Broadcast(oldShip.get());
+		Check(manager.GetPlayer()->GetScore() == 0 && manager.GetPlayer()->GetShipProgression().GetXP() == 0.f && manager.GetPlayer()->GetLifeCount() == 2 && fresh->mPlayerSpaceShip.lock(),
+			"retained old actors cannot award or respawn into the new run");
+		const weak_ptr<LevelOne> oldLifetime = old;
+		old.reset();
+		Check(oldLifetime.expired(), "restart releases the old level even when old actors are retained");
+		ApplicationTestAccess::Tick(app, 3.1f);
+		Check(!fresh->IsPaused() && manager.GetPlayer()->GetLifeCount() == 2, "advancing global timers cannot resume or end the old run");
+		// Exercise the defensive null guard independently of the restart suppression flag.
+		const auto ship = fresh->mPlayerSpaceShip.lock();
+		manager.Reset();
+		ship->Destroy();
+		Check(!manager.GetPlayer(), "ship destruction with no Player is safe and does not recreate one");
+	}
 	Json RunLevel(const Json& scene)
 	{
 		campaignTestRandom.seed(1741);
@@ -287,6 +360,7 @@ int main(int argc, char** argv)
 		playerLevel.reset();
 		PlayerManager::GetPlayerManager().Reset();
 		context.GlobalTimers().ClearAllTimers();
+		CheckCampaignRestart(scene);
 		const auto fallbackRoot = artifacts / "absent-scene-assets";
 		std::filesystem::create_directories(fallbackRoot / "scenes");
 		context.Assets().SetAssetRootDirectory(fallbackRoot.generic_string() + "/");

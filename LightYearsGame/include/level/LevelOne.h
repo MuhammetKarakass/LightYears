@@ -42,6 +42,7 @@ namespace vega
 		SettingsApplier mApplySettings;
 		SceneLoadResult mLoadResult;
 		bool mEditMode = false;
+		bool mRestarting = false;
 		virtual void InitGameStages() override;
 		void PlayerShipDestroyed(Actor* destroyedActor);
 		void ConnectChaosStageToHUD();

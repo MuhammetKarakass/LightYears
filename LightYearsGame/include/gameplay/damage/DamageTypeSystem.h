@@ -32,5 +32,6 @@ namespace vega
 		);
 
 		bool RegisterDamageEffectBehaviors();
+		void BindStatusEffectSource(sas::ActiveGameplayEffect& effect, const sas::GameplayEffectSourceContext& source);
 	}
 }

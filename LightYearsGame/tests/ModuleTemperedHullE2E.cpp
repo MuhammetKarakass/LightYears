@@ -1,6 +1,7 @@
 #include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
+#include "player/PlayerManager.h"
 
 namespace
 {
@@ -28,6 +29,56 @@ namespace
 		explicit CounterBinding(Fixture& fixture) : f{ fixture } { f.ship->GetModuleApplier().SetRunCounterCreditSink([this](std::uint32_t id, double units) { f.report.Check(f.loadout.AddRunCounterCredit(id, units), "counter is credited to its inventory owner"); }); }
 		~CounterBinding() { f.ship->GetModuleApplier().SetRunCounterCreditSink({}); }
 	};
+	void PlayerCounterChecks(Report& report, Application& application)
+	{
+		auto& manager = PlayerManager::GetPlayerManager();
+		manager.Reset();
+		struct ResetGuard { ~ResetGuard() { PlayerManager::GetPlayerManager().Reset(); } } guard;
+		auto level = std::make_shared<HeadlessModuleLevel>(&application);
+		level->BeginPlayInternal();
+		auto& player = manager.CreateNewPlayer();
+		auto ship = player.SpawnSpaceShip(level.get()).lock();
+		report.Check(ship != nullptr && player.GetWeakPtr().expired(), "counter owner is a real manager-owned Player stored by value");
+		level->TickInternal(0.f);
+		const auto rules = player.BuildModuleRules();
+		report.Check(rules.has_value(), "manager Player has module placement rules");
+		const auto id = player.AddModuleToInventory("Module.Defense.TemperedHull.Rare", 0, ModuleRarity::Rare, 1);
+		bool installed = false;
+		for (int rotation = 0; rotation < 4 && !installed; ++rotation)
+			for (int y = 0; y < rules->schematic.height && !installed; ++y)
+				for (int x = 0; x < rules->schematic.width && !installed; ++x)
+					installed = player.TryInstallModule(id, { x, y }, rotation) == ModulePlacementFailure::None;
+		report.Check(id != 0 && installed, "Tempered Hull installs through the Player mutation path");
+		const auto placement = *player.GetModuleLoadout().FindPlacement(id);
+		const auto cast = [&report](PlayerSpaceShip& owner)
+		{
+			auto& asc = owner.GetAbilitySystemComponent();
+			asc.ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			auto definition = *content::AbilityContentCatalog::FindById("Ability.Defense.DirectionalBarrier.Basic");
+			definition.slot = sas::AbilitySlot::Ability1;
+			const auto handle = asc.GrantAbility(definition);
+			auto* ability = asc.GetAbility(handle);
+			report.Check(ability && ability->TryActivate(), "manager ship activates a real Defense ability");
+			if (ability->IsActive()) ability->Cancel(sas::AbilityEndReason::Completed);
+		};
+		cast(*ship);
+		report.Check(player.GetModuleLoadout().GetRunCounter(id) == 1.0, "Defense use credits the Player loadout counter");
+		report.Check(player.TryUninstallModule(id) && player.TryInstallModule(id, placement.origin, placement.rotationQuarterTurns) == ModulePlacementFailure::None,
+			"Player uninstalls and reapplies the same module");
+		report.Check(player.GetModuleLoadout().GetRunCounter(id) == 1.0, "counter survives loadout reapply");
+		cast(*ship);
+		report.Check(player.GetModuleLoadout().GetRunCounter(id) == 2.0, "counter continues from saved credit after reapply");
+		ship->Destroy();
+		ship = player.SpawnSpaceShip(level.get()).lock();
+		report.Check(ship != nullptr && player.GetModuleLoadout().GetRunCounter(id) == 2.0, "counter survives respawn");
+		level->TickInternal(0.f);
+		cast(*ship);
+		report.Check(player.GetModuleLoadout().GetRunCounter(id) == 3.0, "respawned ship credits the same Player loadout");
+		manager.Reset();
+		auto& replacement = manager.CreateNewPlayer();
+		cast(*ship);
+		report.Check(replacement.GetModuleLoadout().GetRevision() == 0, "retained old ship cannot credit a replacement Player");
+	}
 	void ArmorChecks(Report& report, Application& application)
 	{
 		for (int level = 1; level <= 3; ++level)
@@ -86,7 +137,7 @@ int main(int argc, char** argv)
 		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Tempered Hull content registration failed" };
 		std::string title = "Tempered Hull E2E"; Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false);
-		ArmorChecks(report, application); BastionChecks(report, application); MedicChecks(report, application); report.artifact["passed"] = true;
+		ArmorChecks(report, application); BastionChecks(report, application); MedicChecks(report, application); PlayerCounterChecks(report, application); report.artifact["passed"] = true;
 	}
 	catch (const std::exception& error) { report.artifact["error"] = error.what(); std::cerr << error.what() << '\n'; }
 	report.artifact["test"] = "ModuleTemperedHullE2E"; WriteArtifact(argv[1], report.artifact); return report.artifact.value("passed", false) ? 0 : 1;

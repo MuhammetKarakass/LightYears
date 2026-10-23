@@ -2,10 +2,18 @@
 #include "VFX/ExplosionLights.h"
 #include "framework/EngineContext.h"
 #include "framework/World.h"
+#include "framework/AssetManager.h"
+#include "gameplay/content/GameContentBootstrap.h"
+#include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
+#include "spaceShip/SpaceShip.h"
 #include "gameplay/ability/frozenThrong/FrozenThrongHuskActor.h"
 #include "player/Reward.h"
 
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <vector>
@@ -27,6 +35,43 @@ namespace
 	bool NearlyEqual(float actual, float expected)
 	{
 		return std::abs(actual - expected) <= Tolerance;
+	}
+
+	bool TestIgniteOutlivesSource()
+	{
+		World world{ EngineContext::Current() };
+		auto source = world.SpawnActor<Actor>().lock();
+		const auto target = world.SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
+		world.TickInternal(0.f);
+		target->GetShieldComponent().SetMaxShield(0.f);
+		target->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f);
+		DamagePayload payload;
+		payload.igniteStacks = 1;
+		payload.criticalPolicy = DamageCriticalPolicy::Disabled;
+		ApplyCombatDamage(*target, 1.f, source.get(), { DamageTypeSchema::Thermal }, payload);
+		if (!Expect(target->GetAbilitySystemComponent().FindGameplayEffectById(DamageStatusEffectIds::IgniteEffectId) != nullptr, "Thermal hit must apply Ignite")) return false;
+		const weak_ptr<Actor> expiredSource = source;
+		source->Destroy();
+		source.reset();
+		world.CleanCycle();
+		if (!Expect(expiredSource.expired(), "Ignite must not retain its destroyed source")) return false;
+		struct DamageProbe
+		{
+			int ticks = 0;
+			bool sourceless = true;
+			void OnDamage(const DamageContext& context) { ++ticks; sourceless = sourceless && context.source == nullptr; }
+		} probe;
+		const auto binding = target->GetCombatRuntime().onDamageResolved.BindAction(&probe, &DamageProbe::OnDamage);
+		const float before = target->GetHealthComponent().GetHealth();
+		for (int tick = 0; tick < 5; ++tick) target->GetAbilitySystemComponent().Tick(0.1f);
+		target->GetCombatRuntime().onDamageResolved.UnbindAction(binding);
+		const float after = target->GetHealthComponent().GetHealth();
+		std::filesystem::create_directories("build/e2e-artifacts");
+		std::ofstream{ "build/e2e-artifacts/task-134-ignite.json" } << nlohmann::json{
+			{ "sourceExpired", expiredSource.expired() }, { "tickSeconds", 0.5f }, { "damageTicks", probe.ticks },
+			{ "healthBefore", before }, { "healthAfter", after }, { "allTicksSourceless", probe.sourceless } }.dump(2) << '\n';
+		return Expect(after < before, "Ignite must still damage after the source is collected") &&
+			Expect(probe.ticks > 0 && probe.sourceless, "Ignite damage must carry no stale source after collection");
 	}
 
 	bool TestRewardSpeedPassThrough()
@@ -131,7 +176,9 @@ int main()
 	vega::EngineContext testContext;
 	vega::EngineContext::Scope testScope{ testContext };
 	vega::InstallVegaEngineAssets();
-	const bool passed = TestRewardSpeedPassThrough() &&
+	vega::EngineContext::Current().Assets().SetAssetRootDirectory("LightYearsGame/assets/");
+	if (!vega::GameContentBootstrap::Register()) return 1;
+	const bool passed = TestIgniteOutlivesSource() && TestRewardSpeedPassThrough() &&
 		TestHuskPortalTransitSkipsTimeline() &&
 		TestExplosionLightsAreWorldScoped();
 	if (passed)

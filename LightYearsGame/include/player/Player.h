@@ -95,6 +95,8 @@ namespace vega
 		PurchasedAbilityLevels mPurchasedAbilityLevels;
 		PurchasedAbilityLevels mPendingTestAbilityLevels;
 		ModuleLoadout mModuleLoadout;
+		// Players live by value; callback validity must not depend on shared Object ownership.
+		std::shared_ptr<bool> mModuleCreditLifetime = std::make_shared<bool>(true);
 		unsigned int mLifeCount;
 		unsigned int mScore;
 		unsigned int mScrap;

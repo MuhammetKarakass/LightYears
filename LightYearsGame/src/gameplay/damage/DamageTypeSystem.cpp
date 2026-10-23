@@ -22,6 +22,11 @@ namespace vega
 {
 	namespace
 	{
+		struct IgniteSourceContext final : sas::GameplayEffectRuntimeContext
+		{
+			weak_ptr<Actor> source;
+		};
+
 		bool HasDamageType(const List<GameplayTag>& tags, const GameplayTag& type)
 		{
 			for (const GameplayTag& tag : tags)
@@ -208,10 +213,13 @@ namespace vega
 					payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
 					payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 				}
+				// The effect can outlive its source; keep a live source locked for the entire damage dispatch.
+				const auto sourceContext = std::dynamic_pointer_cast<IgniteSourceContext>(effect.runtimeContext);
+				const auto source = sourceContext ? sourceContext->source.lock() : nullptr;
 				ApplyCombatDamage(
 					owner,
 					damage,
-					effect.GetSourceObject<Actor>(),
+					source && !source->GetIsPendingDestroy() ? source.get() : nullptr,
 					{ DamageTypeSchema::Thermal }, payload, {}, {}, DamageDeliveryType::Periodic
 				);
 			}
@@ -683,6 +691,17 @@ namespace vega
 			effect,
 			targetAbilitySystem.GetAttributes()
 		);
+	}
+
+	void DamageTypeSystem::BindStatusEffectSource(sas::ActiveGameplayEffect& effect, const sas::GameplayEffectSourceContext& source)
+	{
+		if (effect.spec.definition.effectId != DamageStatusEffectIds::IgniteEffectId) return;
+		auto context = std::make_shared<IgniteSourceContext>();
+		if (Actor* actor = source.sourceObject ? static_cast<Actor*>(const_cast<void*>(source.sourceObject)) : nullptr)
+		{
+			context->source = actor->GetWeakActor();
+		}
+		effect.runtimeContext = std::move(context);
 	}
 
 	bool DamageTypeSystem::RegisterDamageEffectBehaviors()

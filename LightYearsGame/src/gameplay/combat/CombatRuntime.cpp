@@ -54,6 +54,7 @@ namespace vega
 	{
 		mAbilitySystemComponent.mOwnerClearCompletion = [this] { CompleteClear(); };
 		sas::AbilitySystemComponent::EffectCallbacks callbacks;
+		callbacks.bindSource = &DamageTypeSystem::BindStatusEffectSource;
 		callbacks.addStack =
 			[](sas::ActiveGameplayEffect& effect)
 			{
