@@ -33,10 +33,11 @@ namespace vega
 			return { 120.f, 1.6f, 0.35f };
 		}
 
-		void AddExplosionFlash(const sf::Vector2f& location, const ExplosionParams& params, ExplosionType type)
+		void AddExplosionFlash(World* world, const sf::Vector2f& location, const ExplosionParams& params, ExplosionType type)
 		{
 			const FlashProfile profile = FlashProfileFor(type);
 			ExplosionFlash flash;
+			flash.world = world;
 			flash.position = location;
 			flash.radius = profile.radius;
 			flash.intensity = profile.intensity;
@@ -53,13 +54,13 @@ namespace vega
 	void Explosion::SpawnExplosion(World* world, const sf::Vector2f& location, ExplosionType type)
 	{
 		ExplosionParams params = GetPreset(type);
-		AddExplosionFlash(location, params, type);
+		AddExplosionFlash(world, location, params, type);
 		SpawnExplosionWithParams(world, location, params);
 	}
 
 	void Explosion::SpawnExplosion(World* world, const sf::Vector2f& location, const ExplosionParams& params)
 	{
-		AddExplosionFlash(location, params, ExplosionType::Small);
+		AddExplosionFlash(world, location, params, ExplosionType::Small);
 		SpawnExplosionWithParams(world, location, params);
 	}
 

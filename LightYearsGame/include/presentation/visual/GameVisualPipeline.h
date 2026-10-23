@@ -26,6 +26,8 @@ namespace vega
 	public:
 		// The context supplies the asset root and the dev labels' fonts.
 		explicit GameVisualPipeline(EngineContext& context) : mContext{ context } {}
+		// Explosion flashes are owned by the pipeline's world, not by the process.
+		~GameVisualPipeline() override;
 
 		// Loads shaders, palettes and settings. On failure the pipeline stays inactive and the game renders as before.
 		// colorScript names the palette script to start with; an unknown name keeps the library default.
@@ -93,5 +95,8 @@ namespace vega
 		// pixels per world unit. Engine light submissions during World::Render convert through these.
 		sf::Vector2f mFrameOrigin;
 		float mFrameScale = 1.f;
+		// The world the current flashes belong to. A change clears the flash store
+		// so a destroyed world cannot leave lights for the next one.
+		const World* mRenderedWorld = nullptr;
 	};
 }

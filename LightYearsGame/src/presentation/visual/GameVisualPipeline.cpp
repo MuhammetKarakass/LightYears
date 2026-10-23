@@ -47,6 +47,13 @@ namespace vega
 		return true;
 	}
 
+	GameVisualPipeline::~GameVisualPipeline()
+	{
+		// The flash store is process-wide; dropping the pipeline must not leak
+		// its world's lights into a later world.
+		ExplosionLights::Clear();
+	}
+
 	void GameVisualPipeline::LoadRoute()
 	{
 		if (mRouteAttempted)
@@ -135,7 +142,8 @@ namespace vega
 	void GameVisualPipeline::Update(float deltaSeconds)
 	{
 		// Flashes are aged even while the pipeline is unavailable, so they cannot pile up unsubmitted.
-		ExplosionLights::Update(deltaSeconds);
+		// Only the world this pipeline renders may advance them.
+		ExplosionLights::Update(deltaSeconds, mRenderedWorld);
 		if (!mReady)
 		{
 			return;
@@ -174,6 +182,13 @@ namespace vega
 
 	void GameVisualPipeline::BeginFrame(const World& world, const sf::View& worldView)
 	{
+		// Flashes are spawned with their world pointer. Binding to another world
+		// drops the old store rather than letting its lights bleed into this frame.
+		if (mRenderedWorld != &world)
+		{
+			ExplosionLights::Clear();
+			mRenderedWorld = &world;
+		}
 		if (mWindow->getSize() != mPipeline->OutputSize())
 		{
 			mPipeline->Resize(mWindow->getSize());
@@ -194,7 +209,7 @@ namespace vega
 			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mSkyAuthoring ? 0.f : mTime);
 		}
 		// Explosion flashes are short-lived lights in world units; each fades to nothing over its lifetime.
-		for (const ExplosionFlash& flash : ExplosionLights::Active())
+		for (const ExplosionFlash& flash : ExplosionLights::Active(mRenderedWorld))
 		{
 			if (flash.lifetime <= 0.f)
 			{

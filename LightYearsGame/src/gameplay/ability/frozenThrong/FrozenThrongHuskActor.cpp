@@ -206,6 +206,13 @@ namespace vega
 
 	void FrozenThrongHuskActor::Tick(float deltaTime)
 	{
+		// Portal transit hides and freezes the projectile at the portal service
+		// level. The derived timeline must not keep moving or resolving targets
+		// while the base class treats the actor as suspended.
+		if (IsInPortalTransit())
+		{
+			return;
+		}
 		if (GetIsPendingDestroy())
 		{
 			return;

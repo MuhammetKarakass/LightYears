@@ -264,6 +264,9 @@ if(BUILD_TESTING)
 	vega_add_game_test(LightYearsPortalTransferTests GAME_WHOLE SOURCES ${VEGA_TESTS_DIR}/PortalTransferRuntimeTests.cpp)
 	vega_add_game_test_case(LightYearsPortalTransfer LightYearsPortalTransferTests)
 
+	vega_add_game_test(LightYearsSecondBugHuntFixesTests GAME_WHOLE SOURCES ${VEGA_TESTS_DIR}/SecondBugHuntFixesTests.cpp)
+	vega_add_game_test_case(LightYearsSecondBugHuntFixes LightYearsSecondBugHuntFixesTests)
+
 	vega_add_game_test(LightYearsActorHitCooldownTests
 		SOURCES ${VEGA_TESTS_DIR}/ActorHitCooldownTests.cpp
 		LIBS VegaEngine)

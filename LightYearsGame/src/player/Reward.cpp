@@ -62,7 +62,7 @@ namespace vega
 	}
 	weak_ptr<Reward> CreateReward(World* world, const std::string& texturePath, RewardFunc rewardFunc, float speed)
 	{
-		weak_ptr<Reward> reward = world->SpawnActor<Reward>(texturePath, rewardFunc);
+		weak_ptr<Reward> reward = world->SpawnActor<Reward>(texturePath, rewardFunc, speed);
 		return reward;
 	}
 	void RewardHealth(PlayerSpaceShip* player)
