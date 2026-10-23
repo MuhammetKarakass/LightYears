@@ -211,6 +211,7 @@ namespace vega
 		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
 		mPipeline->Target(visual::Layer::Lit).setView(snappedView);
 		mPipeline->Target(visual::Layer::Decals).setView(snappedView);
+		mPipeline->Target(visual::Layer::Emissive).setView(snappedView);
 		{
 			VEGA_PROFILE_SCOPE("VP.Ships");
 			mShips.Draw(world, snappedView, mAssets, *mPipeline, mTime);
