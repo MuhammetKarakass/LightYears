@@ -235,6 +235,18 @@ namespace vega
 					rule.armorShare = ValueAtLevel(rule.armorShare, rule.armorShareByLevel, level);
 					effects.shieldRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
+				for (std::size_t index = 0; index < package.shieldBatteryRules.size(); ++index)
+				{
+					auto rule = package.shieldBatteryRules[index];
+					rule.reserveFraction = ValueAtLevel(rule.reserveFraction, rule.reserveFractionByLevel, level);
+					effects.shieldBatteryRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
+				for (std::size_t index = 0; index < package.shieldRuptureRules.size(); ++index)
+				{
+					auto rule = package.shieldRuptureRules[index];
+					rule.damageFraction = ValueAtLevel(rule.damageFraction, rule.damageFractionByLevel, level);
+					effects.shieldRuptureRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
 				for (std::size_t index = 0; index < package.movementRules.size(); ++index)
 				{
 					auto rule = package.movementRules[index];

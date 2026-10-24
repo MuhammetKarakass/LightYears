@@ -78,6 +78,10 @@ namespace vega::content
 
 		void ParseShieldRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules);
 
+		void ParseShieldBatteryRules(const Json& object, const std::string& context, int minimumLevelCount, bool sideFeature, ModuleRulePackage& rules);
+
+		void ParseShieldRuptureRules(const Json& object, const std::string& context, int minimumLevelCount, bool sideFeature, ModuleRulePackage& rules);
+
 		void ParseOwnerBurstRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules);
 
 		void ParseOwnerBurstModifiers(const Json& object, const std::string& context, ModuleRulePackage& rules);

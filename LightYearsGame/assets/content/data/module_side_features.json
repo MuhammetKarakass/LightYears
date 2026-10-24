@@ -1648,6 +1648,34 @@
           }
         ]
       }
+    },
+    {
+      "id": "Module.SideFeature.ShieldBattery.CapacitorFocus",
+      "displayName": "Capacitor Focus",
+      "levelCount": 3,
+      "description": "Energy Power gains {owner.0.amountPercent}% of the current reserve, so the bonus shrinks as the reserve is spent.",
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "ShieldReserve",
+            "attributeId": "Owner.Energy.Power",
+            "amount": 0.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.ShieldBattery.UnbrokenStorage",
+      "displayName": "Unbroken Storage",
+      "levelCount": 3,
+      "description": "While the normal shield is full, the reserve keeps filling while you take damage, at {battery.0.damagedFillPercent}% of the normal regeneration rate. The normal shield's recharge delay still applies.",
+      "rules": {
+        "shieldBatteryRules": [
+          {
+            "damagedFillFraction": 0.25
+          }
+        ]
+      }
     }
   ]
 }

@@ -524,6 +524,7 @@ namespace vega
 			if (rule.source == ModuleOwnerAttributeSource::Armor) amount *= armor;
 			if (rule.source == ModuleOwnerAttributeSource::MaxHealthFraction) amount *= health.GetMaxHealth();
 			if (rule.source == ModuleOwnerAttributeSource::PowerEqualize) amount = health.GetHealth() > 0.f ? EpicPowerEqualizeAmount(attributes, mAttributes, id, state.resolved.instanceId, rule.amount) : 0.f;
+			if (rule.source == ModuleOwnerAttributeSource::ShieldReserve) amount = health.GetHealth() > 0.f ? mShip->GetShieldComponent().GetBatteryReserve() * rule.amount : 0.f;
 			if (rule.source == ModuleOwnerAttributeSource::Gold)
 			{
 				amount = goldArmor(rule);

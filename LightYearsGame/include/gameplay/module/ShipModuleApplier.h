@@ -12,6 +12,7 @@
 #include "gameplay/module/generated/ModuleGeneratedRuntime.h"
 #include "gameplay/module/generated/ModuleOwnerBurstRuntime.h"
 #include "gameplay/module/generated/ModuleTargetSlowRuntime.h"
+#include "gameplay/module/rules/ShieldBatteryRuptureRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/ship/ShipRuntime.h"
 
@@ -125,6 +126,7 @@ namespace vega
 		ModuleGeneratedRuntime mGeneratedRuntime;
 		ModuleOwnerBurstRuntime mOwnerBurstRuntime;
 		ModuleTargetSlowRuntime mTargetSlowRuntime;
+		ModuleShieldRuptureRuntime mShieldRuptureRuntime;
 		ModuleRunCounterRuntime mRunCounterRuntime;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;

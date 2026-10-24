@@ -27,6 +27,10 @@ namespace vega
 		// Share of the Armor damage reduction that the shield also takes for the damage it absorbs.
 		float armorShare = 0.f;
 		bool frontRearSplit = false;
+		// Shield Battery: reserve cap as a fraction of Max Shield (0 = no reserve) and the share of the normal regen rate that keeps
+		// filling the reserve during the recharge delay while the normal shield is full.
+		float batteryCapFraction = 0.f;
+		float batteryDamagedFillFraction = 0.f;
 	};
 
 	// Not ticked automatically (mCanEverTick stays false): Tick takes per-frame
@@ -48,6 +52,11 @@ namespace vega
 		void SetModuleBehavior(const ShieldModuleBehavior& behavior);
 		float GetFrontShield() const;
 		float GetRearShield() const;
+		// Shield Battery reserve: kept beyond the normal shield, spent by incoming damage before it, never counted in GetShield().
+		float GetBatteryReserve() const { return mBatteryReserve; }
+		float GetBatteryCap() const { return mModuleBehavior.batteryCapFraction * mMaxShield; }
+		// Fills the reserve while the normal shield is full. Call before Tick, which skips a full normal shield.
+		void TickBatteryReserve(float deltaTime, float regenerationPerSecond, bool allowRecharge);
 		const ShieldModuleBehavior& GetModuleBehavior() const { return mModuleBehavior; }
 
 		void SetMaxShield(float maxShield, bool preserveShieldPercent = false);
@@ -100,6 +109,7 @@ namespace vega
 		TemporaryOvercapLedger mTemporaryOvershields;
 		TemporaryOvercapLedger mModuleShieldLayers;
 		float mModuleTemporaryShield = 0.f;
+		float mBatteryReserve = 0.f;
 		std::unordered_set<std::string> mPassiveRegenBlockers;
 	};
 }

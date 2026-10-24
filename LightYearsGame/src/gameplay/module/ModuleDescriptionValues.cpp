@@ -152,6 +152,18 @@ namespace vega
 			out.Number(key + "continuousRatePercent", rule.continuousRateFractionByLevel.ValueAtLevel(rule.continuousRateFraction, level) * 100.f);
 			out.Number(key + "armorSharePercent", rule.armorShareByLevel.ValueAtLevel(rule.armorShare, level) * 100.f);
 		}
+		for (std::size_t i = 0; i < rules.shieldBatteryRules.size(); ++i)
+		{
+			const auto& rule = rules.shieldBatteryRules[i]; const std::string key = "battery." + std::to_string(i) + ".";
+			out.Number(key + "reservePercent", rule.reserveFractionByLevel.ValueAtLevel(rule.reserveFraction, level) * 100.f);
+			out.Number(key + "damagedFillPercent", rule.damagedFillFraction * 100.f);
+		}
+		for (std::size_t i = 0; i < rules.shieldRuptureRules.size(); ++i)
+		{
+			const auto& rule = rules.shieldRuptureRules[i]; const std::string key = "rupture." + std::to_string(i) + ".";
+			out.Number(key + "damagePercent", rule.damageFractionByLevel.ValueAtLevel(rule.damageFraction, level) * 100.f);
+			out.Number(key + "radius", rule.radius); out.Number(key + "historySeconds", rule.historySeconds);
+		}
 		for (std::size_t i = 0; i < rules.movementRules.size(); ++i)
 		{
 			const auto& rule = rules.movementRules[i]; const std::string key = "movement." + std::to_string(i) + ".";

@@ -158,7 +158,7 @@ namespace vega
 		float durationSeconds = 0.f;
 	};
 	// GoldArmorBonus (side features only): the placement's own Gold Armor bonus times amount; it reads the main Gold rule of the same placement.
-	enum class ModuleOwnerAttributeSource { HealthThreshold, MovementSpeed, HigherPower, Luck, Armor, ArmorHigherPower, ArmorLowerPower, Gold, GoldArmorBonus, MaxHealthFraction, PowerEqualize };
+	enum class ModuleOwnerAttributeSource { HealthThreshold, MovementSpeed, HigherPower, Luck, Armor, ArmorHigherPower, ArmorLowerPower, Gold, GoldArmorBonus, MaxHealthFraction, PowerEqualize, ShieldReserve };
 	struct ModuleOwnerAttributeRule
 	{
 		ModuleOwnerAttributeSource source = ModuleOwnerAttributeSource::HealthThreshold;
@@ -548,6 +548,8 @@ namespace vega
 		float trickleSeconds = 0.f;
 		int trickleCharges = 0;
 	};
+	#include "gameplay/module/rules/ShieldBatteryRuptureRules.h"
+
 	struct ModuleRulePackage
 	{
 		List<ModuleAttributeModifier> attributeModifiers;
@@ -572,6 +574,8 @@ namespace vega
 		List<ModuleMovementFadeRule> movementFadeRules;
 		List<ModuleConditionalMovementRule> conditionalMovementRules;
 		List<ModuleShieldRule> shieldRules;
+		List<ModuleShieldBatteryRule> shieldBatteryRules;
+		List<ModuleShieldRuptureRule> shieldRuptureRules;
 		List<ModuleMovementRule> movementRules;
 		List<ModuleRunCounterRule> runCounterRules;
 		List<ModuleSustainedSpeedRule> sustainedSpeedRules;
@@ -655,6 +659,8 @@ namespace vega
 			if (!visit("generatedRules.trailMines.damage", i, rules.generatedRules.trailMines[i].damageByLevel) || !visit("generatedRules.trailMines.attackPowerCoefficient", i, rules.generatedRules.trailMines[i].attackPowerCoefficientByLevel) || !visit("generatedRules.trailMines.maxActive", i, rules.generatedRules.trailMines[i].maxActiveByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.killExplosions.size(); ++i) if (!visit("generatedRules.killExplosions.maxHealthFraction", i, rules.generatedRules.killExplosions[i].maxHealthFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.annularBursts.size(); ++i) if (!visit("generatedRules.annularBursts.baseDamage", i, rules.generatedRules.annularBursts[i].baseDamageByLevel) || !visit("generatedRules.annularBursts.energyPowerCoefficient", i, rules.generatedRules.annularBursts[i].energyPowerCoefficientByLevel)) return false;
+		for (std::size_t i = 0; i < rules.shieldBatteryRules.size(); ++i) if (!visit("shieldBatteryRules.reserveFraction", i, rules.shieldBatteryRules[i].reserveFractionByLevel)) return false;
+		for (std::size_t i = 0; i < rules.shieldRuptureRules.size(); ++i) if (!visit("shieldRuptureRules.damageFraction", i, rules.shieldRuptureRules[i].damageFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.movementRules.size(); ++i) if (!visit("movementRules.thrustMultiplier", i, rules.movementRules[i].thrustMultiplierByLevel)) return false;
 			for (std::size_t i = 0; i < rules.runCounterRules.size(); ++i)
 				if (!visit("runCounterRules.damagePerStack", i, rules.runCounterRules[i].damagePerStackByLevel) || !visit("runCounterRules.moveSpeedPerStack", i, rules.runCounterRules[i].moveSpeedPerStackByLevel)) return false;

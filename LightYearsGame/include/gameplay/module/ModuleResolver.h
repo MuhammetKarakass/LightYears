@@ -137,6 +137,8 @@ namespace vega
 		List<MovementFade> movementFadeRules;
 		struct ShieldRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleShieldRule rule; };
 		List<ShieldRule> shieldRules;
+		List<ResolvedModuleShieldBatteryRule> shieldBatteryRules;
+		List<ResolvedModuleShieldRuptureRule> shieldRuptureRules;
 		struct MovementRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleMovementRule rule; };
 		List<MovementRule> movementRules;
 		struct SustainedSpeedRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleSustainedSpeedRule rule; };
