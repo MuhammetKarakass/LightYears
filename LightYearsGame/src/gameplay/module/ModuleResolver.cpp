@@ -394,6 +394,7 @@ namespace vega
 					effects.chargeRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), rule.chargePerLevel.ValueAtLevel(0, level), rule.overflowTransfer, rule.trickleSeconds, rule.trickleCharges, neighbourCount, {} });
 				}
 				MergeEpicOffenseRules(effects.epicOffense, package.epicOffense, level);
+				ResolveEpicUtilityMovementRules(effects, package, placement.instanceId, level, sideFeature);
 				if (!placementZone.IsValid()) return;
 				for (std::size_t ruleIndex = 0; ruleIndex < package.zoneEffects.size(); ++ruleIndex)
 				{

@@ -25,7 +25,7 @@ namespace vega
 		void Replace(const List<ResolvedModuleEventAction>& actions, const List<ResolvedModuleOwnerAttributeRule>& attributes, const List<ResolvedModuleEffects::MovementFade>& fades = {});
 		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mGoldWallet = std::move(wallet); }
 		// Called for each kill the owner confirms with a loadout ability (never for module-generated damage).
-		void SetAbilityUseObserver(std::function<void(const List<GameplayTag>&)> observer) { mAbilityUseObserver = std::move(observer); }
+		void SetAbilityUseObserver(std::function<void(const std::string&, const List<GameplayTag>&)> observer) { mAbilityUseObserver = std::move(observer); }
 		void SetKillObserver(std::function<void(sas::AbilitySlot, ControlTargetClass)> observer) { mKillObserver = std::move(observer); }
 		void Tick(float deltaSeconds);
 		// Spare Capacitor trickle rules (side feature). Replace keeps the running interval of an unchanged rule; a removed rule drops its state.
@@ -108,7 +108,7 @@ namespace vega
 		void CancelSmolderFields() noexcept;
 		std::weak_ptr<RunGold> mGoldWallet;
 		std::function<void(sas::AbilitySlot, ControlTargetClass)> mKillObserver;
-		std::function<void(const List<GameplayTag>&)> mAbilityUseObserver;
+		std::function<void(const std::string&, const List<GameplayTag>&)> mAbilityUseObserver;
 		List<Event> mEvents;
 		std::optional<DesiredRules> mPending;
 		std::mt19937 mRandom{ std::random_device{}() };

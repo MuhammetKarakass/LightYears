@@ -10,6 +10,7 @@
 #include "gameplay/module/rules/EpicStatRules.h"
 #include "gameplay/module/rules/EpicDefenseRules.h"
 #include "gameplay/module/rules/EpicOffenseRules.h"
+#include "gameplay/module/rules/EpicUtilityMovementRules.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -588,6 +589,11 @@ namespace vega
 		bool primaryExecutionPriority = false;
 		// Epic Offense rules (Prism Core, Blood Contract and their side features).
 		ModuleEpicOffenseRules epicOffense;
+		// Epic Utility/Movement rules (rules/EpicUtilityMovementRules.h).
+		List<ModuleCascadeRule> cascadeRules;
+		List<ModuleFieldMasteryRule> fieldMasteryRules;
+		List<ModuleAssaultVectorRule> assaultVectorRules;
+		List<ModulePhaseSlipRule> phaseSlipRules;
 		// F1 Parçalama, side features only: the placement may split into one-cell fragments at the largest size. Layout only.
 		// Epic Defense (rules/EpicDefenseRules.h): Last Stand revive is a main package rule; hull-threshold rules are main (cooldown) or side (damage, movement).
 		List<ModuleReviveRule> reviveRules;
@@ -677,6 +683,10 @@ namespace vega
 		for (std::size_t i = 0; i < rules.epicOffense.prismCores.size(); ++i) if (!visit("epicOffense.prismCores.statusDurationMultiplier", i, rules.epicOffense.prismCores[i].statusDurationMultiplierByLevel)) return false;
 		for (std::size_t i = 0; i < rules.epicOffense.bloodContracts.size(); ++i)
 			if (!visit("epicOffense.bloodContracts.fullHealthMultiplier", i, rules.epicOffense.bloodContracts[i].fullHealthMultiplierByLevel) || !visit("epicOffense.bloodContracts.emptyHealthMultiplier", i, rules.epicOffense.bloodContracts[i].emptyHealthMultiplierByLevel)) return false;
+		for (std::size_t i = 0; i < rules.cascadeRules.size(); ++i) if (!visit("cascadeRules.stepBonus", i, rules.cascadeRules[i].stepBonusByLevel)) return false;
+		for (std::size_t i = 0; i < rules.fieldMasteryRules.size(); ++i) if (!visit("fieldMasteryRules.usesPerLevelUp", i, rules.fieldMasteryRules[i].usesPerLevelUpByLevel)) return false;
+		for (std::size_t i = 0; i < rules.assaultVectorRules.size(); ++i) if (!visit("assaultVectorRules.damageBonus", i, rules.assaultVectorRules[i].damageBonusByLevel) || !visit("assaultVectorRules.armorBonus", i, rules.assaultVectorRules[i].armorBonusByLevel)) return false;
+		for (std::size_t i = 0; i < rules.phaseSlipRules.size(); ++i) if (!visit("phaseSlipRules.primaryDamageMultiplier", i, rules.phaseSlipRules[i].primaryDamageMultiplierByLevel)) return false;
 		return true;
 	}
 

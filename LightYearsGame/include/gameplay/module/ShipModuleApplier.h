@@ -14,6 +14,7 @@
 #include "gameplay/module/generated/ModuleOwnerBurstRuntime.h"
 #include "gameplay/module/generated/ModuleTargetSlowRuntime.h"
 #include "gameplay/module/rules/ShieldBatteryRuptureRuntime.h"
+#include "gameplay/module/rules/EpicUtilityMovementRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/module/rules/EpicOffenseRuntime.h"
 #include "gameplay/ship/ShipRuntime.h"
@@ -68,11 +69,16 @@ namespace vega
 		bool IsSystemEnabled(const GameplayTag& systemTag) const;
 		// ModuleSystemGate: a ship that never had a loadout applied is unmanaged and
 		// keeps every system enabled.
-		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const override { return !mHasApplied || IsSystemEnabled(systemTag); }
+		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const override { return (!mHasApplied || IsSystemEnabled(systemTag)) && !mEpicUtilityMovementRuntime.IsSystemLocked(systemTag); }
 		// Presentation read: a ship that never had a loadout applied (no schematic)
 		// is unmanaged and keeps every readout, so legacy flows behave as before.
 		bool IsReadoutEnabled(const GameplayTag& systemTag) const { return !mHasApplied || IsSystemEnabled(systemTag); }
 		const ResolvedModuleEffects& GetResolvedEffects() const { return mResolved; }
+		// Epic Utility/Movement runtime: Field Mastery Scrap lock, level-gain sink for the Player, read access for tests.
+		bool IsScrapUpgradeLocked(const List<GameplayTag>& abilityTags) const { return mEpicUtilityMovementRuntime.IsScrapUpgradeLocked(abilityTags); }
+		void SetAbilityLevelSink(std::function<void(const std::string&, int)> sink) { mEpicUtilityMovementRuntime.SetAbilityLevelSink(std::move(sink)); }
+		const ModuleEpicUtilityMovementRuntime& GetEpicUtilityMovementRuntime() const { return mEpicUtilityMovementRuntime; }
+		ModuleEpicUtilityMovementRuntime& GetEpicUtilityMovementRuntime() { return mEpicUtilityMovementRuntime; }
 		bool HasApplied() const { return mHasApplied; }
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
 		std::size_t GetOwnedHandleCount() const;
@@ -113,7 +119,7 @@ namespace vega
 		};
 
 		void Rebuild();
-		void OnOwnerAbilityUse(const List<GameplayTag>& tags);
+		void OnOwnerAbilityUse(const std::string& abilityId, const List<GameplayTag>& tags);
 		void OnOwnerKill(sas::AbilitySlot slot, ControlTargetClass targetClass);
 		void RefreshKillEffects();
 		void SyncPrimaryWeaponModifiers();
@@ -138,6 +144,7 @@ namespace vega
 		ModuleReviveBonusRuntime mReviveBonus;
 		ModuleEmergencyProtocolRuntime mEmergencyRuntime;
 		ModuleEpicOffenseRuntime mEpicOffenseRuntime;
+		ModuleEpicUtilityMovementRuntime mEpicUtilityMovementRuntime;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;

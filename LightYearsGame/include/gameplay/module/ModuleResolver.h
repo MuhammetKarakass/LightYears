@@ -155,6 +155,7 @@ namespace vega
 		PrimaryWeaponMountProfile primaryMount;
 		// Epic Offense aggregate of every placed Prism Core, Blood Contract and side feature rule.
 		EpicOffenseEffects epicOffense;
+		ResolvedModuleEpicRules epicRules;
 	};
 
 	namespace ModuleResolver
@@ -174,5 +175,8 @@ namespace vega
 
 			// Empty-cell and ability-slot counts read layoutPlacements (installed, rebooting included); effects follow activePlacements.
 			ResolvedModuleEffects Resolve(const ModuleRulesContext& rules, const List<ModulePlacement>& activePlacements, const List<ModulePlacement>& layoutPlacements);
+
+		// Epic Utility/Movement rules of one package at the placement's effective level (rules/EpicUtilityMovementResolve.cpp).
+		void ResolveEpicUtilityMovementRules(ResolvedModuleEffects& effects, const ModuleRulePackage& package, std::uint32_t instanceId, int level, bool sideFeature);
 	}
 }

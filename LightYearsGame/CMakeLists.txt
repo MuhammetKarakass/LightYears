@@ -357,6 +357,8 @@ if(BUILD_TESTING)
 	vega_add_game_test_case(LightYearsEpicPrimaryModulesE2E LightYearsEpicPrimaryModulesE2ETests ARGS "${VEGA_E2E}/epic-primary-modules.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsModuleDefenseLayerE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleDefenseLayerE2E.cpp)
 	vega_add_game_test_case(LightYearsModuleDefenseLayerE2E LightYearsModuleDefenseLayerE2ETests ARGS "${VEGA_E2E}/module-defense-layer-2026-10-13.json" TIMEOUT 120)
+	vega_add_game_test(LightYearsEpicUtilityMovementModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/EpicUtilityMovementModulesE2E.cpp)
+	vega_add_game_test_case(LightYearsEpicUtilityMovementModulesE2E LightYearsEpicUtilityMovementModulesE2ETests ARGS "${VEGA_E2E}/epic-utility-movement-modules-2026-10-24.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModulePlanTransitionE2E LightYearsModulePlanTransitionE2ETests ARGS "${VEGA_E2E}/module-plan-transition-2026-10-13.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModuleRefinementE2E LightYearsModuleRefinementE2ETests ARGS "${VEGA_E2E}/module-refinement-2026-10-13.json" TIMEOUT 120)
 

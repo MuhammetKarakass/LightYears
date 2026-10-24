@@ -373,6 +373,14 @@ namespace vega
 		}
 
 		const GameAbilityDefinition& definition = ability->GetDefinition();
+		if (ship->GetModuleApplier().IsScrapUpgradeLocked(definition.abilityTags))
+		{
+			if (failureReason)
+			{
+				*failureReason = "Field Mastery levels Utility abilities through use; Scrap upgrades are locked.";
+			}
+			return false;
+		}
 		if (!definition.HasScrapCostToReachLevel(targetLevel))
 		{
 			if (failureReason)
@@ -515,6 +523,7 @@ namespace vega
 		ship.GetModuleApplier().SetRunCounterCreditSink([this, lifetime](std::uint32_t instanceId, double units) { if (!lifetime.expired()) mModuleLoadout.AddRunCounterCredit(instanceId, units); });
 		ship.GetModuleApplier().SetKillCreditSink([this, lifetime](std::uint32_t instanceId, double stacks, double damageBonus) { if (!lifetime.expired()) mModuleLoadout.AddKillCredit(instanceId, stacks, damageBonus); });
 		ship.GetModuleApplier().SetReviveSpentSink([this, lifetime](std::uint32_t instanceId) { if (!lifetime.expired()) mModuleLoadout.AddReviveChargeSpent(instanceId); });
+		ship.GetModuleApplier().SetAbilityLevelSink([this, lifetime](const std::string& abilityId, int level) { if (lifetime.expired()) return; const auto found = mPurchasedAbilityLevels.find(abilityId); if (found != mPurchasedAbilityLevels.end()) found->second = level; else mPurchasedAbilityLevels.emplace(abilityId, level); });
 		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
 		if (!rules) return;
 		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))

@@ -4179,6 +4179,175 @@
       ]
     },
     {
+      "id": "Module.Utility.CascadeReactor.Epic",
+      "displayName": "Cascade Reactor",
+      "family": "Ability.Utility",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "description": "Each loadout ability use from a different family than the previous one advances a chain of up to three steps. Each step adds 20% outgoing damage at Level 1 to the powered use. The window is 5 sec and every valid use refreshes it; repeating a family or letting the window lapse resets the chain.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "cascadeRules": [
+            {
+              "stepBonus": [
+                0.2,
+                0.22,
+                0.24
+              ],
+              "maxSteps": 3,
+              "windowSeconds": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.FieldMastery.Epic",
+      "displayName": "Field Mastery",
+      "family": "Ability.Utility",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "description": "Each Utility ability keeps its own use counter. Every 15 uses grant that ability one permanent run level, with no cap beyond its own maximum. While installed, Utility abilities cannot be upgraded with Scrap.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "fieldMasteryRules": [
+            {
+              "usesPerLevelUp": [
+                15,
+                14,
+                13
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "fieldMasteryRules": [
+            {
+              "usesPerLevelUp": [
+                15,
+                14,
+                13
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.FieldMastery.KnowledgeTransfer"
+      ]
+    },
+    {
+      "id": "Module.Movement.AssaultVector.Epic",
+      "displayName": "Assault Vector",
+      "family": "Ability.Movement",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "description": "Moving toward the nearest enemy within 900 units adds 15% outgoing damage at Level 1. Moving away from it adds 20 Armor at Level 1. Sideways or very slow movement gives neither.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "assaultVectorRules": [
+            {
+              "damageBonus": [
+                0.15,
+                0.18,
+                0.21
+              ],
+              "armorBonus": [
+                20,
+                25,
+                30
+              ],
+              "targetRange": 900,
+              "minimumCosine": 0.5,
+              "minimumSpeed": 100
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.PhaseSlip.Epic",
+      "displayName": "Phase Slip",
+      "family": "Ability.Movement",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "description": "When Afterburner starts, enemy hits pass through the ship for 0.35 sec while Primary and loadout abilities are locked. The first Primary hit after the phase detonates an area of 120 units for 2x Primary damage. 6 sec cooldown.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "phaseSlipRules": [
+            {
+              "phaseSeconds": 0.35,
+              "cooldownSeconds": 6,
+              "explosionRadius": 120,
+              "primaryDamageMultiplier": [
+                2,
+                2,
+                2
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "Module.Utility.ReleaseValve.Rare",
       "displayName": "Release Valve",
       "family": "Ability.Utility",

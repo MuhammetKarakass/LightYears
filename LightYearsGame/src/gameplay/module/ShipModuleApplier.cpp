@@ -88,11 +88,12 @@ namespace vega
 		, mReviveBonus{ abilities }
 		, mEmergencyRuntime{ abilities, combatRuntime }
 		, mEpicOffenseRuntime{ abilities, combatRuntime }
+		, mEpicUtilityMovementRuntime{ abilities, combatRuntime }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
 		mAbilities.SetModuleSystemGate(this);
-		mReactiveRuntime.SetAbilityUseObserver([this](const List<GameplayTag>& tags) { OnOwnerAbilityUse(tags); });
+		mReactiveRuntime.SetAbilityUseObserver([this](const std::string& abilityId, const List<GameplayTag>& tags) { OnOwnerAbilityUse(abilityId, tags); });
 		mReactiveRuntime.SetKillObserver([this](sas::AbilitySlot slot, ControlTargetClass targetClass) { OnOwnerKill(slot, targetClass); });
 	}
 
@@ -229,6 +230,7 @@ namespace vega
 		if (!mShuttingDown) mOwnerBurstRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mShieldRuptureRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mEpicOffenseRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mEpicUtilityMovementRuntime.Tick(deltaSeconds);
 		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
@@ -291,6 +293,7 @@ namespace vega
 		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->GetMovementComponent().SetModuleMovementRule(movement.thrustBonus, movement.equalizeDirections);
 		mGeneratedRuntime.Replace(mResolved.generatedRules);
 		mOwnerBurstRuntime.Replace(mResolved.ownerBurstRules);
+		mEpicUtilityMovementRuntime.Replace(mResolved.epicRules);
 		mTargetSlowRuntime.Replace(mResolved.targetSlowRules);
 		mShieldRuptureRuntime.Replace(mResolved.shieldRuptureRules);
 		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) mRunCounterRuntime.Replace(active, mLookup, mResolved, &ship->GetRuntimeModifiers());
@@ -309,10 +312,11 @@ namespace vega
 		mAbilities.CancelAbilitiesUnavailableByModules();
 	}
 
-	void ShipModuleApplier::OnOwnerAbilityUse(const List<GameplayTag>& tags)
+	void ShipModuleApplier::OnOwnerAbilityUse(const std::string& abilityId, const List<GameplayTag>& tags)
 	{
 		if (mShuttingDown || !mHasApplied) return;
 		mEpicOffenseRuntime.OnOwnerAbilityUse(tags);
+		mEpicUtilityMovementRuntime.OnAbilityUse(abilityId, tags);
 		bool changed = false;
 		for (auto& placement : mPlacements)
 		{
