@@ -1633,6 +1633,63 @@
           ]
         }
       }
+    },
+    {
+      "id": "Module.SideFeature.PrismCore.StormCapacitor",
+      "displayName": "Storm Capacitor",
+      "description": "Each Q, E, F and R use charges a storm. At {storm.0.chargesRequired} charges, your next Primary hit discharges it onto {storm.0.targetCount} random enemies within {storm.0.radius} units, each taking {storm.0.damage} damage and {storm.0.electricStacks} Electric stacks.",
+      "levelCount": 3,
+      "rules": {
+        "stormCapacitorRules": [
+          {
+            "chargesRequired": 4,
+            "targetCount": 3,
+            "electricStacks": 2,
+            "radius": 500,
+            "damage": 15
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.PrismCore.AlternatingCurrent",
+      "displayName": "Alternating Current",
+      "description": "A direct ability hit deals +{alternating.0.bonusPercent}% damage when its damage type differs from your previous direct ability hit on the same enemy. Damage over time does not change the sequence.",
+      "levelCount": 3,
+      "rules": {
+        "alternatingCurrentRules": [
+          {
+            "damageMultiplier": 1.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.BloodContract.ClotArmor",
+      "displayName": "Clot Armor",
+      "description": "Each Offense use grants {clot.0.armorPerCost} Armor for every point of health it spent, lasting {clot.0.seconds} seconds. A new grant replaces the previous one.",
+      "levelCount": 3,
+      "rules": {
+        "clotArmorRules": [
+          {
+            "armorPerCost": 3,
+            "seconds": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.BloodContract.DebtCollection",
+      "displayName": "Debt Collection",
+      "description": "The heal window after an Offense hit becomes {debt.0.healWindowSeconds} seconds.",
+      "levelCount": 3,
+      "rules": {
+        "debtCollectionRules": [
+          {
+            "healWindowSeconds": 7
+          }
+        ]
+      }
     }
   ]
 }

@@ -20,6 +20,7 @@ namespace vega
 	void VisitModuleDescriptionValues(const ModuleRulePackage& rules, int level, const ModuleDescriptionValueVisitor& visitor)
 	{
 		const NumericValues out{ visitor };
+		VisitEpicOffenseDescriptionValues(rules.epicOffense, level, visitor);
 		for (const auto& entry : rules.attributeModifiers) out.Modifier(entry.modifier, entry.magnitudeByLevel, level);
 		for (const auto& entry : rules.abilityModifiers) out.Modifier(entry.modifier, entry.magnitudeByLevel, level);
 		for (std::size_t i = 0; i < rules.triggerBuffs.size(); ++i)

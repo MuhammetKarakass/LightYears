@@ -148,6 +148,8 @@ namespace vega
 		List<ResolvedModuleKillDamageRule> killDamageRules;
 		List<ResolvedModuleKillSource> killSources;
 		List<ResolvedModuleChargeRule> chargeRules;
+		// Epic Offense aggregate of every placed Prism Core, Blood Contract and side feature rule.
+		EpicOffenseEffects epicOffense;
 	};
 
 	namespace ModuleResolver

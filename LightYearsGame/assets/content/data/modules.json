@@ -3283,6 +3283,152 @@
       ]
     },
     {
+      "id": "Module.Offense.PrismCore.Epic",
+      "displayName": "Prism Core",
+      "description": "Every Offense use advances a Thermal, Cryo, Electric, Kinetic cycle. Its hits apply the cycle status as {prism.0.extraStacks} extra stack on top of their own status, and that status lasts x{prism.0.durationMultiplier} as long.",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "prismCoreRules": [
+            {
+              "statusDurationMultiplier": [
+                1.0,
+                1.15,
+                1.3
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "prismCoreRules": [
+            {
+              "statusDurationMultiplier": [
+                1.0,
+                1.15,
+                1.3
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.PrismCore.StormCapacitor",
+        "Module.SideFeature.PrismCore.AlternatingCurrent"
+      ],
+      "sharedPools": []
+    },
+    {
+      "id": "Module.Offense.BloodContract.Epic",
+      "displayName": "Blood Contract",
+      "description": "Every Offense use spends {blood.0.costPercent}% of your current health; it never reduces you below 1 health and bypasses your shield. An enemy hit by an Offense ability that dies within {blood.0.healWindowSeconds} seconds heals you {blood.0.healPercent}% of your MaxHealth. Offense damage rises as your health falls: +{blood.0.fullBonusPercent}% at full health and +{blood.0.emptyBonusPercent}% near zero.",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "bloodContractRules": [
+            {
+              "costFraction": 0.06,
+              "healFraction": 0.01,
+              "healWindowSeconds": 4,
+              "fullHealthMultiplier": [
+                1.2,
+                1.25,
+                1.3
+              ],
+              "emptyHealthMultiplier": [
+                1.7,
+                1.75,
+                1.8
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "bloodContractRules": [
+            {
+              "costFraction": 0.06,
+              "healFraction": 0.01,
+              "healWindowSeconds": 4,
+              "fullHealthMultiplier": [
+                1.2,
+                1.25,
+                1.3
+              ],
+              "emptyHealthMultiplier": [
+                1.7,
+                1.75,
+                1.8
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.BloodContract.ClotArmor",
+        "Module.SideFeature.BloodContract.DebtCollection"
+      ],
+      "sharedPools": []
+    },
+    {
       "id": "Module.Utility.SpareCapacitor.Rare",
       "displayName": "Spare Capacitor",
       "description": "Adjacent abilities gain extra charges: +1 at level 1, +2 at level 2, +3 at level 3. Bigger sizes reach more adjacent abilities (1, 2 or 3). Cooldowns are unchanged.",

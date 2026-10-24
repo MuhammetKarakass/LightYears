@@ -84,6 +84,7 @@ namespace vega
 		, mOwnerBurstRuntime{ abilities }
 		, mTargetSlowRuntime{ abilities }
 		, mRunCounterRuntime{ combatRuntime }
+		, mEpicOffenseRuntime{ abilities, combatRuntime }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -109,6 +110,7 @@ namespace vega
 		mOwnerBurstRuntime.Replace({});
 		mTargetSlowRuntime.Replace({});
 		mRunCounterRuntime.Clear();
+		mEpicOffenseRuntime.Shutdown();
 		mTriggerBuffRuleApplier.Reset();
 		mAbilityRuleApplier.Reset();
 		mCooldownRuleApplier.Reset();
@@ -213,6 +215,7 @@ namespace vega
 		if (!mShuttingDown) mShieldReflectionRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mGeneratedRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mOwnerBurstRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mEpicOffenseRuntime.Tick(deltaSeconds);
 		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
@@ -241,6 +244,8 @@ namespace vega
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
 		mCombatRuntime.SetModuleStatusRules(mResolved.statusRules);
+		mCombatRuntime.SetEpicOffenseEffects(mResolved.epicOffense);
+		mEpicOffenseRuntime.Replace();
 
 		// Modifiers that stay identical keep their handles and new ones are added before
 		// stale ones are removed, so a reapply never dips a max value below both the old
@@ -285,6 +290,7 @@ namespace vega
 	void ShipModuleApplier::OnOwnerAbilityUse(const List<GameplayTag>& tags)
 	{
 		if (mShuttingDown || !mHasApplied) return;
+		mEpicOffenseRuntime.OnOwnerAbilityUse(tags);
 		bool changed = false;
 		for (auto& placement : mPlacements)
 		{

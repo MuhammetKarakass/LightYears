@@ -3,6 +3,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/module/ModuleAbilitySlots.h"
+#include "gameplay/module/rules/EpicOffenseRuntime.h"
 #include "framework/Actor.h"
 #include "abilities/AbilityEvent.h"
 #include "gameplay/combat/Combatant.h"
@@ -252,6 +253,11 @@ namespace vega
 			}
 		}
 		return false;
+	}
+
+	float CombatRuntime::ResolveEpicOffenseOutgoingMultiplier(Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType)
+	{
+		return ComputeEpicOffenseOutgoingMultiplier(mEpicOffenseState, mEpicOffenseEffects, mOwner, target, sourceAbilityTags, damageTags, deliveryType);
 	}
 
 	void CombatRuntime::SetModuleStatusRules(const ModuleStatusRules& rules)
