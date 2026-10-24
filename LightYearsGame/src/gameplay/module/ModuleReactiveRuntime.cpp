@@ -518,6 +518,7 @@ namespace vega
 			if (rule.source == ModuleOwnerAttributeSource::ArmorHigherPower) { id = attack >= energy ? OwnerAttributeIds::AttackPower : OwnerAttributeIds::EnergyPower; amount *= armor; }
 			if (rule.source == ModuleOwnerAttributeSource::ArmorLowerPower) { id = attack >= energy ? OwnerAttributeIds::EnergyPower : OwnerAttributeIds::AttackPower; amount *= armor; }
 			if (rule.source == ModuleOwnerAttributeSource::Armor) amount *= armor;
+			if (rule.source == ModuleOwnerAttributeSource::ShieldReserve) amount = health.GetHealth() > 0.f ? mShip->GetShieldComponent().GetBatteryReserve() * rule.amount : 0.f;
 			if (rule.source == ModuleOwnerAttributeSource::Gold)
 			{
 				const auto wallet = mGoldWallet.lock(); amount = wallet && health.GetHealth() > 0.f ? std::min(rule.maximumAmount, std::floor(static_cast<float>(wallet->GetAmount()) * rule.amount)) : 0.f;

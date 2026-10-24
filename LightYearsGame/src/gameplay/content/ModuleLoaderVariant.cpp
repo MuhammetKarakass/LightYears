@@ -322,6 +322,7 @@ namespace vega::content
 				else if (source == "ArmorHigherPower") rule.source = ModuleOwnerAttributeSource::ArmorHigherPower;
 				else if (source == "ArmorLowerPower") rule.source = ModuleOwnerAttributeSource::ArmorLowerPower;
 				else if (source == "Gold") rule.source = ModuleOwnerAttributeSource::Gold;
+				else if (source == "ShieldReserve") rule.source = ModuleOwnerAttributeSource::ShieldReserve;
 				else throw std::runtime_error(context + " unknown owner attribute source: " + source);
 				rule.attributeId = sas::AttributeId{ entry.at("attributeId").get<std::string>() };
 				std::string failure;
@@ -393,6 +394,8 @@ namespace vega::content
 				variant.shieldReflections.push_back(rule);
 			}
 			ParseShieldRules(object, context, minimumLevelCount, variant);
+			ParseShieldBatteryRules(object, context, minimumLevelCount, sideFeature, variant);
+			ParseShieldRuptureRules(object, context, minimumLevelCount, sideFeature, variant);
 			ParseMovementRules(object, context, minimumLevelCount, variant);
 			ParseRunCounterRules(object, context, minimumLevelCount, variant);
 			ParseSustainedSpeedRules(object, context, minimumLevelCount, variant, sideFeature);

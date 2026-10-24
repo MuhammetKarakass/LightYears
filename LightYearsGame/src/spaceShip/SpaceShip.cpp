@@ -274,6 +274,7 @@ namespace vega
 			mShieldComponent.ClearRechargeDelay();
 			break;
 		}
+		mShieldComponent.TickBatteryReserve(deltaTime, shieldRegen, allowShieldRecharge);
 		mShieldComponent.Tick(deltaTime, shieldRegen, allowShieldRecharge);
 		mEnergyComponent.Tick(
 			deltaTime,

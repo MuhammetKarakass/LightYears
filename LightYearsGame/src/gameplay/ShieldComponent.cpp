@@ -32,6 +32,7 @@ namespace vega
 	{
 		if (behavior.frontRearSplit != mModuleBehavior.frontRearSplit) mFrontShield = behavior.frontRearSplit ? std::min(mShield, mMaxShield) * .5f : 0.f;
 		mModuleBehavior = behavior;
+		mBatteryReserve = std::min(mBatteryReserve, GetBatteryCap());
 	}
 	float ShieldComponent::GetFrontShield() const { return mModuleBehavior.frontRearSplit ? mFrontShield : std::min(mShield, mMaxShield) * .5f; }
 	float ShieldComponent::GetRearShield() const { return std::max(0.f, std::min(mShield, mMaxShield) - GetFrontShield()); }
@@ -84,6 +85,7 @@ namespace vega
 		}
 		mTemporaryOvershields.Reconcile(mShield, mMaxShield);
 		if (mMaxShield == 0.f) { mModuleShieldLayers.Clear(); mModuleTemporaryShield = 0.f; }
+		mBatteryReserve = std::min(mBatteryReserve, GetBatteryCap());
 
 		if (mShield != previousShield || mMaxShield != previousMaxShield)
 		{
@@ -145,6 +147,15 @@ namespace vega
 		);
 
 		const float multiplier = std::max(0.f, shieldDamageMultiplier);
+		// The battery reserve is spent before the normal shield; the rest of the hit continues through the normal path.
+		const float reserveAbsorbed = std::min(mBatteryReserve, sourceDamage * multiplier);
+		if (reserveAbsorbed > 0.f)
+		{
+			mBatteryReserve -= reserveAbsorbed;
+			const float reserveDamage = reserveAbsorbed / multiplier;
+			onShieldDamaged.Broadcast(reserveAbsorbed, GetShield(), mMaxShield);
+			return reserveDamage + AbsorbDamage(sourceDamage - reserveDamage, shieldDamageMultiplier, 0.f, moduleGenerated, side);
+		}
 		if (GetShield() <= 0.f || multiplier <= 0.f)
 		{
 			return 0.f;
@@ -288,6 +299,20 @@ namespace vega
 		mShield = std::min(mMaxShield, mShield + regeneration * regenerationTime);
 		AdjustPolarNormalShield(previousNormal);
 		BroadcastShieldChanged(previousTotalShield);
+	}
+
+	// The normal shield is full here, so Tick skips it and this call owns the recharge delay. While the delay runs, the reserve
+	// fills at the damaged fill share (0 for the plain battery, so it waits); after the delay it fills at the full rate.
+	void ShieldComponent::TickBatteryReserve(float deltaTime, float regenerationPerSecond, bool allowRecharge)
+	{
+		const float cap = GetBatteryCap();
+		if (cap <= 0.f || deltaTime <= 0.f || !allowRecharge || IsPassiveRegenBlocked() || mShield < mMaxShield) return;
+		const float delayed = std::min(mRechargeDelayRemaining, deltaTime);
+		mRechargeDelayRemaining -= delayed;
+		const float regeneration = std::max(0.f, regenerationPerSecond);
+		const float fill = regeneration * (delayed * mModuleBehavior.batteryDamagedFillFraction + (deltaTime - delayed));
+		if (fill <= 0.f || mBatteryReserve >= cap) return;
+		mBatteryReserve = std::min(cap, mBatteryReserve + fill);
 	}
 
 	void ShieldComponent::BroadcastShieldChanged(float previousShield)

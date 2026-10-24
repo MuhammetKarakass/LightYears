@@ -3868,6 +3868,60 @@
           ]
         }
       ]
+    },
+    {
+      "id": "Module.Defense.ShieldBattery.Rare",
+      "displayName": "Shield Battery",
+      "family": "Ability.Defense",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "description": "While the normal shield is full, regeneration fills a reserve up to {battery.0.reservePercent}% of Max Shield. Incoming damage spends the reserve before the normal shield.",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "shieldBatteryRules": [
+            {
+              "reserveFraction": [0.3, 0.35, 0.4]
+            }
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [0, 1]],
+          "shieldBatteryRules": [
+            {
+              "reserveFraction": [0.3, 0.35, 0.4]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.ShieldBattery.CapacitorFocus",
+        "Module.SideFeature.ShieldBattery.UnbrokenStorage"
+      ]
+    },
+    {
+      "id": "Module.Offense.ShieldRupture.Rare",
+      "displayName": "Shield Rupture",
+      "family": "Ability.Offense",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "description": "Breaking an enemy's shield with damage detonates an Energy blast on it for {rupture.0.damagePercent}% of the shield you removed from it in the last {rupture.0.historySeconds} sec. Radius {rupture.0.radius}. Module blasts do not chain.",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "shieldRuptureRules": [
+            {
+              "damageFraction": 0.5,
+              "radius": 150,
+              "historySeconds": 3
+            }
+          ]
+        }
+      ]
     }
   ]
 }

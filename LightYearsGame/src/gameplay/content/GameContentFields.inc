@@ -333,6 +333,15 @@
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/ownerAttributeRules/*/maximumAmount", R"field([])field", true);
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/ownerAttributeRules/*/maximumAmount/*", R"field(60)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRules/*/frontRearSplit", R"field(true)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldBatteryRules", R"field([])field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldBatteryRules/*", R"field({})field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldBatteryRules/*/reserveFraction", R"field([])field", true);
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldBatteryRules/*/reserveFraction/*", R"field(0.3)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRuptureRules", R"field([])field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRuptureRules/*", R"field({})field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRuptureRules/*/damageFraction", R"field(0.5)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRuptureRules/*/radius", R"field(150)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRuptureRules/*/historySeconds", R"field(3)field");
 		if (schema.type == "ship") Add(schema, "/id", R"field("Ship.Player.Fighter.Basic")field");
 		if (schema.type == "ship") Add(schema, "/health", R"field(250)field");
 		if (schema.type == "ship") Add(schema, "/speed", R"field([])field", true);

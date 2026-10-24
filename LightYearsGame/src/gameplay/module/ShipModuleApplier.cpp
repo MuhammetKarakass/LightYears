@@ -83,6 +83,7 @@ namespace vega
 		, mGeneratedRuntime{ abilities }
 		, mOwnerBurstRuntime{ abilities }
 		, mTargetSlowRuntime{ abilities }
+		, mShieldRuptureRuntime{ abilities }
 		, mRunCounterRuntime{ combatRuntime }
 	{
 		// The applier and the ability system component belong to the same ship and the
@@ -108,6 +109,7 @@ namespace vega
 		mGeneratedRuntime.Replace({});
 		mOwnerBurstRuntime.Replace({});
 		mTargetSlowRuntime.Replace({});
+		mShieldRuptureRuntime.Replace({});
 		mRunCounterRuntime.Clear();
 		mTriggerBuffRuleApplier.Reset();
 		mAbilityRuleApplier.Reset();
@@ -213,6 +215,7 @@ namespace vega
 		if (!mShuttingDown) mShieldReflectionRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mGeneratedRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mOwnerBurstRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mShieldRuptureRuntime.Tick(deltaSeconds);
 		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
@@ -262,12 +265,18 @@ namespace vega
 		SyncChargeBonuses(mResolved.chargeRules);
 		mReactiveRuntime.ReplaceCharge(mResolved.chargeRules);
 		mReactiveRuntime.ReplaceConditionalMovement(mResolved.conditionalMovementRules);
-		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->GetShieldComponent().SetModuleBehavior(ResolveShieldBehavior(mResolved.shieldRules));
+		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner()))
+		{
+			ShieldModuleBehavior shieldBehavior = ResolveShieldBehavior(mResolved.shieldRules);
+			ApplyShieldBatteryBehavior(mResolved.shieldBatteryRules, shieldBehavior);
+			ship->GetShieldComponent().SetModuleBehavior(shieldBehavior);
+		}
 		const ModuleMovementBehavior movement = ResolveMovementBehavior(mResolved.movementRules);
 		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->GetMovementComponent().SetModuleMovementRule(movement.thrustBonus, movement.equalizeDirections);
 		mGeneratedRuntime.Replace(mResolved.generatedRules);
 		mOwnerBurstRuntime.Replace(mResolved.ownerBurstRules);
 		mTargetSlowRuntime.Replace(mResolved.targetSlowRules);
+		mShieldRuptureRuntime.Replace(mResolved.shieldRuptureRules);
 		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) mRunCounterRuntime.Replace(active, mLookup, mResolved, &ship->GetRuntimeModifiers());
 		else mRunCounterRuntime.Replace(active, mLookup, mResolved, nullptr);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
