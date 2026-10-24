@@ -107,6 +107,8 @@ namespace vega::content
 
 		void ParseFragmentation(const Json& object, const std::string& context, ModuleRulePackage& rules, bool sideFeature);
 
+		void ParseEpicDefenseRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules, bool sideFeature);
+
 		ModuleSizeVariant ParseVariant(const Json& object, const std::string& context, int minimumLevelCount, bool defaultAffectedByZoneBonus, bool sideFeature);
 	}
 }

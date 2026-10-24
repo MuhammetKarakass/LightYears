@@ -143,6 +143,11 @@ namespace vega
 		}
 	}
 
+	bool PlayerSpaceShip::TryPreventLethalDamage(float)
+	{
+		return mModuleApplier.TryReviveOwner(*this);
+	}
+
 	void PlayerSpaceShip::OnCombatDamageObserved(const DamageContext& context)
 	{
 		if (context.appliedDamage <= 0.f) return;

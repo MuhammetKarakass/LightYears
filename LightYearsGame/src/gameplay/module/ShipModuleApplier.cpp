@@ -85,6 +85,8 @@ namespace vega
 		, mTargetSlowRuntime{ abilities }
 		, mShieldRuptureRuntime{ abilities }
 		, mRunCounterRuntime{ combatRuntime }
+		, mReviveBonus{ abilities }
+		, mEmergencyRuntime{ abilities, combatRuntime }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -111,6 +113,8 @@ namespace vega
 		mTargetSlowRuntime.Replace({});
 		mShieldRuptureRuntime.Replace({});
 		mRunCounterRuntime.Clear();
+		try { mReviveBonus.Reset(); } catch (...) {}
+		mEmergencyRuntime.Clear();
 		mTriggerBuffRuleApplier.Reset();
 		mAbilityRuleApplier.Reset();
 		mCooldownRuleApplier.Reset();
@@ -211,6 +215,12 @@ namespace vega
 
 	void ShipModuleApplier::Tick(float deltaSeconds)
 	{
+		if (!mShuttingDown) mReviveBonus.Tick(deltaSeconds);
+		if (!mShuttingDown)
+		{
+			const auto* ship = dynamic_cast<const SpaceShip*>(&mAbilities.GetOwner());
+			mEmergencyRuntime.Tick(deltaSeconds, ship ? &ship->GetHealthComponent() : nullptr);
+		}
 		if (!mShuttingDown) mReactiveRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mShieldReflectionRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mGeneratedRuntime.Tick(deltaSeconds);
@@ -280,6 +290,8 @@ namespace vega
 		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) mRunCounterRuntime.Replace(active, mLookup, mResolved, &ship->GetRuntimeModifiers());
 		else mRunCounterRuntime.Replace(active, mLookup, mResolved, nullptr);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
+		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) mEmergencyRuntime.Replace(active, rules, mResolved, &ship->GetRuntimeModifiers());
+		else mEmergencyRuntime.Replace(active, rules, mResolved, nullptr);
 		mGeneratedRuntime.SetRunCounterDamageMultiplier(mRunCounterRuntime.GetDamageMultiplier());
 		bool needsStatusSnapshot = !mResolved.generatedRules.killExplosions.empty();
 		for (const auto& resolved : mResolved.generatedRules.ricochets) needsStatusSnapshot = needsStatusSnapshot || resolved.rule.transferStatus;
@@ -346,6 +358,29 @@ namespace vega
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
+	}
+
+	bool ShipModuleApplier::TryReviveOwner(SpaceShip& owner)
+	{
+		if (mShuttingDown || !mHasApplied) return false;
+		for (ModulePlacement& placement : mPlacements)
+		{
+			if (IsRebooting(placement.instanceId)) continue;
+			const ModuleDefinition* module = mLookup ? mLookup(placement.moduleId) : nullptr;
+			if (!module || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module->sizeVariants.size()) continue;
+			const List<ModuleReviveRule>& reviveRules = module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].reviveRules;
+			if (reviveRules.empty()) continue;
+			const ModuleReviveRule& rule = reviveRules.front();
+			const int level = placement.level + ModuleResolver::FindZoneLevelBonus(mResolved, placement.instanceId);
+			if (placement.reviveChargesSpent >= ResolveEpicLevelValue(rule.chargesByLevel, 0, level)) continue;
+			HealthComponent& health = owner.GetHealthComponent();
+			++placement.reviveChargesSpent;
+			if (mReviveSpentSink) mReviveSpentSink(placement.instanceId);
+			health.ChangeHealth(ResolveEpicLevelValue(rule.healthFractionByLevel, 0.f, level) * health.GetMaxHealth() - health.GetHealth());
+			mReviveBonus.Start(rule.bonusSeconds, rule.bonusMultiplier);
+			return true;
+		}
+		return false;
 	}
 
 	void ShipModuleApplier::SyncModifiers(

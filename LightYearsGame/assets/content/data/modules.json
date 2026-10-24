@@ -3953,6 +3953,60 @@
       ]
     },
     {
+      "id": "Module.Defense.LastStand.Epic",
+      "displayName": "Last Stand",
+      "description": "On lethal damage, revive once with {revive.0.healthPercent}% Max Health ({revive.0.charges} charges at this level). After a revive, Attack Power, Energy Power, Attack Speed and Armor are +{revive.0.bonusPercent}% for {revive.0.bonusSeconds} sec.",
+      "family": "Ability.Defense",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "reviveRules": [
+            {
+              "healthFraction": [0.4, 0.45, 0.5],
+              "charges": [1, 1, 2],
+              "bonusSeconds": 15,
+              "bonusMultiplier": 1.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.EmergencyProtocol.Epic",
+      "displayName": "Emergency Protocol",
+      "description": "While hull health is at or below {threshold.0.healthPercent}%, Q, E, F and R cooldowns recover {threshold.0.cooldownRecoveryPercent}% faster.",
+      "family": "Ability.Defense",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "sizeLadder": [2, 3],
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "healthThresholdRules": [
+            {
+              "healthAtMost": 0.3,
+              "cooldownRecoveryMultiplier": [1.75, 2.0, 2.25]
+            }
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [0, 1]],
+          "healthThresholdRules": [
+            {
+              "healthAtMost": 0.3,
+              "cooldownRecoveryMultiplier": [1.75, 2.0, 2.25]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.EmergencyProtocol.Counterpressure",
+        "Module.SideFeature.EmergencyProtocol.EvacuationRoute"
+      ]
+    },
+    {
       "id": "Module.Defense.GoldPlating.Rare",
       "displayName": "Gold Plating",
       "family": "Ability.Defense",

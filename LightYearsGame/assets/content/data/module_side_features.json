@@ -1650,6 +1650,20 @@
       }
     },
     {
+      "id": "Module.SideFeature.EmergencyProtocol.Counterpressure",
+      "displayName": "Counterpressure",
+      "levelCount": 3,
+      "description": "While health is at or below {threshold.0.healthPercent}%, ability damage is {threshold.0.damagePercent}% higher.",
+      "rules": {
+        "healthThresholdRules": [
+          {
+            "healthAtMost": 0.3,
+            "abilityDamageMultiplier": 1.15
+          }
+        ]
+      }
+    },
+    {
       "id": "Module.SideFeature.ShieldBattery.CapacitorFocus",
       "displayName": "Capacitor Focus",
       "levelCount": 3,
@@ -1673,6 +1687,20 @@
         "shieldBatteryRules": [
           {
             "damagedFillFraction": 0.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.EmergencyProtocol.EvacuationRoute",
+      "displayName": "Evacuation Route",
+      "levelCount": 3,
+      "description": "While health is at or below {threshold.0.healthPercent}%, movement speed is {threshold.0.movementPercent}% higher.",
+      "rules": {
+        "healthThresholdRules": [
+          {
+            "healthAtMost": 0.3,
+            "movementSpeedMultiplier": 1.2
           }
         ]
       }

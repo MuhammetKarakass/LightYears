@@ -132,6 +132,9 @@ namespace vega
 		List<GameplayTag> mAttachedLightTags;
 
 	protected:
+		// Called when the damage left after shields would take health to zero or below. Returning true means the override set health
+		// itself; the lethal remainder is then dropped.
+		virtual bool TryPreventLethalDamage(float) { return false; }
 		virtual float GetMovementSpeedCapMultiplier() const { return 1.f; }
 		virtual float GetMovementTurnCapabilityMultiplier() const { return 1.f; }
 		virtual bool IsAfterburnerRechargeBlocked() const { return false; }

@@ -34,6 +34,8 @@ namespace vega
 		// largest variant's cell count). Only installed placements are fragmented; Uninstall clears both fields.
 		bool fragmented = false;
 		List<sf::Vector2i> fragmentCells;
+		// Last Stand revive charges spent on this placement. Kept with the placement like runCounter; a new run clears it with the loadout.
+		int reviveChargesSpent = 0;
 	};
 
 	// Installed placements plus the not-installed inventory. Every installing
@@ -87,6 +89,8 @@ namespace vega
 			// revision stays put; the applier that consumes it keeps its own copy in step. False for unknown ids.
 			bool AddRunCounterCredit(std::uint32_t instanceId, double units);
 			bool AddKillCredit(std::uint32_t instanceId, double stacks, double damageBonus);
+			// Records one spent Last Stand revive charge. Like kill credit it does not change the layout, so the revision stays put.
+			bool AddReviveChargeSpent(std::uint32_t instanceId);
 			// 0 for unknown ids and for placements without kill credit.
 			double GetKillStacks(std::uint32_t instanceId) const;
 			double GetKillDamageBonus(std::uint32_t instanceId) const;

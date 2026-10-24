@@ -7,6 +7,7 @@
 #include "gameplay/damage/DamageContext.h"
 #include "gameplay/module/ModuleRulePredicates.h"
 #include "gameplay/module/rules/EpicStatRules.h"
+#include "gameplay/module/rules/EpicDefenseRules.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -587,6 +588,9 @@ namespace vega
 		List<ModuleChargeRule> chargeRules;
 		List<EpicFamilyStatRule> familyStatRules;
 		// F1 Parçalama, side features only: the placement may split into one-cell fragments at the largest size. Layout only.
+		// Epic Defense (rules/EpicDefenseRules.h): Last Stand revive is a main package rule; hull-threshold rules are main (cooldown) or side (damage, movement).
+		List<ModuleReviveRule> reviveRules;
+		List<ModuleHealthThresholdRule> healthThresholdRules;
 		bool fragmentation = false;
 	};
 	inline bool operator==(const ModuleRulePackage::ShieldReflection& left, const ModuleRulePackage::ShieldReflection& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }

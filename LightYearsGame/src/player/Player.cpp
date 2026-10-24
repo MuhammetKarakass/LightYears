@@ -514,6 +514,7 @@ namespace vega
 		const std::weak_ptr<bool> lifetime = mModuleCreditLifetime;
 		ship.GetModuleApplier().SetRunCounterCreditSink([this, lifetime](std::uint32_t instanceId, double units) { if (!lifetime.expired()) mModuleLoadout.AddRunCounterCredit(instanceId, units); });
 		ship.GetModuleApplier().SetKillCreditSink([this, lifetime](std::uint32_t instanceId, double stacks, double damageBonus) { if (!lifetime.expired()) mModuleLoadout.AddKillCredit(instanceId, stacks, damageBonus); });
+		ship.GetModuleApplier().SetReviveSpentSink([this, lifetime](std::uint32_t instanceId) { if (!lifetime.expired()) mModuleLoadout.AddReviveChargeSpent(instanceId); });
 		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
 		if (!rules) return;
 		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))

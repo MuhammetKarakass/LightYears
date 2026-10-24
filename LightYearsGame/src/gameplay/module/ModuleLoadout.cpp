@@ -297,6 +297,14 @@ namespace vega
 		return true;
 	}
 
+	bool ModuleLoadout::AddReviveChargeSpent(std::uint32_t instanceId)
+	{
+		ModulePlacement* placement = FindOwnedItem(instanceId);
+		if (!placement) return false;
+		++placement->reviveChargesSpent;
+		return true;
+	}
+
 	double ModuleLoadout::GetKillStacks(std::uint32_t instanceId) const
 	{
 		if (const ModulePlacement* placement = FindPlacement(instanceId)) return placement->killStacks;
