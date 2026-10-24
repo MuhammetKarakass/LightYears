@@ -197,6 +197,7 @@
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldReflections/*/fraction", R"field([])field", true);
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldReflections/*/fraction/*", R"field(0.35)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldReflections/*/durationSeconds", R"field(5)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldReflections/*/electricStacks", R"field(1)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/statusRules", R"field({})field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/statusRules/electricOverrides", R"field([])field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/statusRules/electricOverrides/*", R"field({})field");
@@ -329,7 +330,10 @@
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*", R"field({})field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*/innerRadius", R"field(600)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*/outerRadius", R"field(900)field");
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*/energyPowerCoefficient", R"field(0.4)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*/baseDamage", R"field([])field", true);
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*/baseDamage/*", R"field(50)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*/energyPowerCoefficient", R"field([])field", true);
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/annularBursts/*/energyPowerCoefficient/*", R"field(0.4)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/ownerAttributeRules/*/maximumAmount", R"field([])field", true);
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/ownerAttributeRules/*/maximumAmount/*", R"field(60)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRules/*/frontRearSplit", R"field(true)field");

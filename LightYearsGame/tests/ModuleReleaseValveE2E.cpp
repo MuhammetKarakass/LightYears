@@ -2,11 +2,17 @@
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 #include "gameplay/module/generated/ModuleAnnularBurstActor.h"
+#include "gameplay/module/ModuleResolver.h"
 
 namespace
 {
 	using namespace uncommon_p6_e2e;
-	void CastUtility(Fixture& f)
+	// Release Valve level tables (proposal): base 50 / 57.5 / 65.375 and Energy Power coefficient 0.40 / 0.42 / 0.441.
+		// Past level three each table extends by its last step, as ModuleLevelTable does.
+		float ReleaseExtended(const float (&values)[3], int level) { return level <= 3 ? values[level - 1] : values[2] + (values[2] - values[1]) * static_cast<float>(level - 3); }
+		float ReleaseBase(int level) { static const float values[3] = { 50.f, 57.5f, 65.375f }; return ReleaseExtended(values, level); }
+		float ReleaseCoefficient(int level) { static const float values[3] = { .4f, .42f, .441f }; return ReleaseExtended(values, level); }
+		void CastUtility(Fixture& f)
 	{
 		auto* ability = f.ship->GetAbilitySystemComponent().GetAbilityById("Ability.Utility.CryoBola.Basic"); f.report.Check(ability != nullptr, "fixture uses shipped Utility Cryo Bola");
 		if (ability->IsActive()) ability->Cancel(sas::AbilityEndReason::Completed); ability->Tick(100.f); f.report.Check(ability->TryActivate(), "activate real Utility ability"); if (ability->IsActive()) ability->Cancel(sas::AbilityEndReason::Completed);
@@ -16,24 +22,25 @@ namespace
 		for (int level = 1; level <= 3; ++level)
 		{
 			Fixture f{ report, application }; DamageObserver observer{ *f.ship }; auto& attributes = f.ship->GetAbilitySystemComponent().GetAttributes(); attributes.SetBaseValue(OwnerAttributeIds::EnergyPower, 200.f); attributes.SetBaseValue(OwnerAttributeIds::AttackPower, 2000.f);
-			const auto id = f.Install("Module.Utility.ReleaseValve.Rare", 0, level); List<shared_ptr<SpaceShip>> targets; const List<float> distances{ 0.f, 599.f, 600.f, 750.f, 900.f, 901.f };
+			const auto id = f.Install("Module.Utility.ReleaseValve.Rare", 0, level); const int effective = level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), id); const float ringDamage = ReleaseBase(effective) + ReleaseCoefficient(effective) * 200.f; List<shared_ptr<SpaceShip>> targets; const List<float> distances{ 0.f, 599.f, 600.f, 750.f, 900.f, 901.f };
 			for (float distance : distances) targets.push_back(Enemy(f, distance));
 			CastOffense(f); for (const auto& target : targets) f.Equal("Offense does not fire a Utility ring", 1000.f, target->GetHealthComponent().GetHealth());
 			CastUtility(f);
 			for (std::size_t i = 0; i < targets.size(); ++i)
 			{
-				f.Equal("only the selected 600-900 band takes forty-percent EP", distances[i] >= 600.f && distances[i] <= 900.f ? 920.f : 1000.f, targets[i]->GetHealthComponent().GetHealth());
+				f.Equal("only the selected 600-900 band takes its base plus the EP share", distances[i] >= 600.f && distances[i] <= 900.f ? 1000.f - ringDamage : 1000.f, targets[i]->GetHealthComponent().GetHealth());
 				f.Equal("Release Valve applies no displacement", distances[i], targets[i]->GetActorLocation().x - f.ship->GetActorLocation().x);
 			}
 			report.Check(observer.generated == 3 && observer.allSuppressed, "ring hits cannot trigger module chains or crits"); const auto actors = Actors<ModuleAnnularBurstActor>(f); report.Check(actors.size() == 1, "one Utility activation creates one annular presentation"); actors.front()->Tick(.25f);
-			f.Equal("visual expiration cannot deal a second hit", 920.f, targets[3]->GetHealthComponent().GetHealth()); report.Check(actors.front()->GetIsPendingDestroy(), "annular presentation expires");
-			attributes.SetBaseValue(OwnerAttributeIds::EnergyPower, 300.f); CastUtility(f); f.Equal("ring uses current EP without AP or duplicate scaling", 800.f, targets[3]->GetHealthComponent().GetHealth());
-			f.Remove(id); CastUtility(f); f.Equal("uninstall ends ring damage", 800.f, targets[3]->GetHealthComponent().GetHealth());
+			f.Equal("visual expiration cannot deal a second hit", 1000.f - ringDamage, targets[3]->GetHealthComponent().GetHealth()); report.Check(actors.front()->GetIsPendingDestroy(), "annular presentation expires");
+			attributes.SetBaseValue(OwnerAttributeIds::EnergyPower, 300.f); CastUtility(f); const float secondDamage = ReleaseBase(effective) + ReleaseCoefficient(effective) * 300.f; f.Equal("ring uses current EP without AP or duplicate scaling", 1000.f - ringDamage - secondDamage, targets[3]->GetHealthComponent().GetHealth());
+			f.Remove(id); CastUtility(f); f.Equal("uninstall ends ring damage", 1000.f - ringDamage - secondDamage, targets[3]->GetHealthComponent().GetHealth());
 		}
 	}
 	void ContentChecks(Report& report)
 	{
 		const auto* module = content::ModuleContentCatalog::FindById("Module.Utility.ReleaseValve.Rare"); report.Check(module && module->sizeVariants.size() == 1 && module->sizeVariants.front().shape.cells.size() == 2 && module->sideFeatures.empty() && module->sharedPools.empty(), "Release Valve remains fixed two cells with no sides");
+		report.Check(module && !module->sizeVariants.empty() && !module->sizeVariants.front().generatedRules.annularBursts.empty() && module->sizeVariants.front().generatedRules.annularBursts.front().baseDamageByLevel.values == List<float>{ 50.f, 57.5f, 65.375f } && module->sizeVariants.front().generatedRules.annularBursts.front().energyPowerCoefficientByLevel.values == List<float>{ .4f, .42f, .441f }, "Release Valve carries its base and Energy Power level tables");
 		report.Check(PresentationProfileRegistry<ModuleAnnularBurstPresentationProfile>::Find(ModuleGeneratedPresentationIds::AnnularBurst.ToString()) != nullptr, "typed annular presentation is registered before spawn");
 		report.Check(PresentationProfileRegistry<ModuleExplosionPresentationProfile>::Find(ModuleGeneratedPresentationIds::AnnularBurst.ToString()) == nullptr, "annular presentation cannot resolve as a full disk explosion");
 	}

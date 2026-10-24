@@ -87,7 +87,7 @@ namespace vega
 		for (std::size_t i = 0; i < rules.shieldReflections.size(); ++i)
 		{
 			const auto& rule = rules.shieldReflections[i]; const std::string key = "reflection." + std::to_string(i) + ".";
-			out.Number(key + "percent", rule.fractionByLevel.ValueAtLevel(rule.fraction, level) * 100.f); out.Number(key + "durationSeconds", rule.durationSeconds);
+			out.Number(key + "percent", rule.fractionByLevel.ValueAtLevel(rule.fraction, level) * 100.f); out.Number(key + "durationSeconds", rule.durationSeconds); out.Number(key + "electricStacks", static_cast<float>(rule.electricStacks));
 		}
 		for (std::size_t i = 0; i < rules.statusRules.electricOverrides.size(); ++i)
 		{
@@ -195,7 +195,7 @@ namespace vega
 		for (std::size_t i = 0; i < rules.generatedRules.annularBursts.size(); ++i)
 		{
 			const auto& rule = rules.generatedRules.annularBursts[i]; const std::string key = "annularBurst." + std::to_string(i) + ".";
-			out.Number(key + "innerRadius", rule.innerRadius); out.Number(key + "outerRadius", rule.outerRadius); out.Number(key + "energyPowerPercent", rule.energyPowerCoefficient * 100.f);
+			out.Number(key + "innerRadius", rule.innerRadius); out.Number(key + "outerRadius", rule.outerRadius); out.Number(key + "baseDamage", rule.baseDamageByLevel.ValueAtLevel(rule.baseDamage, level)); out.Number(key + "energyPowerPercent", rule.energyPowerCoefficientByLevel.ValueAtLevel(rule.energyPowerCoefficient, level) * 100.f);
 		}
 		for (std::size_t i = 0; i < rules.generatedRules.speedLances.size(); ++i)
 		{

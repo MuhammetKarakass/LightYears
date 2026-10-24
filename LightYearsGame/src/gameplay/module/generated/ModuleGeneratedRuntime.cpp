@@ -161,7 +161,7 @@ namespace vega
 				if (profile) for (auto& state : mAnnularBursts)
 				{
 					const auto lease = state.lease; const auto rule = state.rule; Prune(lease);
-					const float damage = std::max(0.f, mAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)) * rule.energyPowerCoefficient;
+					const float damage = rule.baseDamage + std::max(0.f, mAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)) * rule.energyPowerCoefficient;
 					const auto actor = mShip->GetWorld()->SpawnActor<ModuleAnnularBurstActor>(mShip->GetWeakActor(), *profile, lease, rule.innerRadius, rule.outerRadius).lock();
 					if (actor) { actor->SetActorLocation(mShip->GetActorLocation()); lease->actors.push_back(actor); actor->Detonate(damage); }
 					if (mPending || !lease->active || mShip->GetIsPendingDestroy()) return;

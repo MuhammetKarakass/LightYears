@@ -509,6 +509,9 @@ namespace vega
 		const float armor = std::max(0.f, attributes.GetCurrentValue(OwnerAttributeIds::Armor));
 		const auto& health = mShip->GetHealthComponent();
 		const float fraction = health.GetMaxHealth() > 0.f ? health.GetHealth() / health.GetMaxHealth() : 1.f;
+		const auto wallet = mGoldWallet.lock();
+		const bool alive = health.GetHealth() > 0.f;
+		const auto goldArmor = [&wallet, alive](const ModuleOwnerAttributeRule& goldRule) { return wallet && alive ? std::min(goldRule.maximumAmount, std::floor(static_cast<float>(wallet->GetAmount()) * goldRule.amount)) : 0.f; };
 		for (auto& state : mAttributes)
 		{
 			const auto& rule = state.resolved.rule;
@@ -520,7 +523,12 @@ namespace vega
 			if (rule.source == ModuleOwnerAttributeSource::Armor) amount *= armor;
 			if (rule.source == ModuleOwnerAttributeSource::Gold)
 			{
-				const auto wallet = mGoldWallet.lock(); amount = wallet && health.GetHealth() > 0.f ? std::min(rule.maximumAmount, std::floor(static_cast<float>(wallet->GetAmount()) * rule.amount)) : 0.f;
+				amount = goldArmor(rule);
+			}
+			if (rule.source == ModuleOwnerAttributeSource::GoldArmorBonus)
+			{
+				amount = 0.f;
+				for (const auto& other : mAttributes) if (other.resolved.instanceId == state.resolved.instanceId && other.resolved.rule.source == ModuleOwnerAttributeSource::Gold) amount += goldArmor(other.resolved.rule) * rule.amount;
 			}
 			if (rule.source == ModuleOwnerAttributeSource::Luck) amount = health.GetHealth() > 0.f ? std::max(0.f, attributes.GetCurrentValueExcludingModifiers(OwnerAttributeIds::Luck, excluded)) * rule.amount : 0.f;
 			if (rule.source == ModuleOwnerAttributeSource::MovementSpeed)

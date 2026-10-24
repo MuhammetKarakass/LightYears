@@ -3,6 +3,7 @@
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
+#include "gameplay/module/ModuleResolver.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayContracts.h"
 #include "presentation/ability/infernoSpray/InfernoSprayPresentationProfile.h"
 
@@ -111,7 +112,7 @@ namespace
 		auto definition = *authored; definition.slot = sas::AbilitySlot::Ability3;
 		auto& asc = f.ship->GetAbilitySystemComponent();
 		report.Check(asc.RemoveAbility(asc.GetAbility(sas::AbilitySlot::Ability3)->GetHandle()) && asc.GrantAbility(definition).IsValid(), "remaining ability is shipped Inferno Spray");
-		f.Install("Module.Utility.TripleCore.Rare");
+		const auto core = f.Install("Module.Utility.TripleCore.Rare"); const float coreMultiplier = 1.2f + .05f * static_cast<float>(1 + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), core)); const auto* tripleModule = content::ModuleContentCatalog::FindById("Module.Utility.TripleCore.Rare"); report.Check(tripleModule && tripleModule->sizeLadderCellCounts == List<int>{ 2, 3 } && tripleModule->sideFeatures.empty() && tripleModule->sharedPools.empty(), "Triple Core is a 2/3 ladder with no side pool yet");
 		enemy->SetActorLocation(f.ship->GetActorLocation() + f.ship->GetActorForwardDirection() * 200.f);
 		asc.AddOwnedTag(GameplayTags::State::Ability::InfernoSpray::Active);
 		const auto spray = [&]()
@@ -129,9 +130,10 @@ namespace
 			const auto slot = AbilitySlotForModuleSystem(f.rules.lookup(placement.moduleId)->systemCategory);
 			if (slot != sas::AbilitySlot::None && slot != sas::AbilitySlot::Ability3) f.Remove(placement.instanceId);
 		}
-		f.Equal("Triple Core boosts the only remaining real Inferno ability", base * 1.25f, spray());
-		f.Equal("Triple Core also boosts the remaining ability projectile boundary", 125.f, Hit(*enemy, f.ship.get(), 100.f, Plain(), sas::ContentId{ definition.abilityId }, definition.abilityTags, DamageDeliveryType::Projectile));
+		f.Equal("Triple Core boosts the only remaining real Inferno ability", base * coreMultiplier, spray());
+		f.Equal("Triple Core also boosts the remaining ability projectile boundary", 100.f * coreMultiplier, Hit(*enemy, f.ship.get(), 100.f, Plain(), sas::ContentId{ definition.abilityId }, definition.abilityTags, DamageDeliveryType::Projectile));
 		f.Equal("Triple Core excludes Primary", 100.f, Hit(*enemy, f.ship.get(), 100.f, Plain(), {}, { GameplayTags::Ability::Primary }));
+			f.Remove(core); const auto large = f.Install("Module.Utility.TripleCore.Rare", 1, 1); const float largeMultiplier = 1.2f + .05f * static_cast<float>(1 + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), large)); f.Equal("three-cell Triple Core keeps the same ability damage multiplier", 100.f * largeMultiplier, Hit(*enemy, f.ship.get(), 100.f, Plain(), sas::ContentId{ definition.abilityId }, definition.abilityTags, DamageDeliveryType::Projectile));
 	}
 	void ProjectileChecks(Report& report, Application& application)
 	{

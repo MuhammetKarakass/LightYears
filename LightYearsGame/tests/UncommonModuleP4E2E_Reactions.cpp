@@ -1,10 +1,16 @@
 #include "UncommonModuleP4E2E.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
+#include "gameplay/module/ModuleResolver.h"
 
 namespace uncommon_p4_e2e
 {
 	namespace
 	{
+		int Electric(const SpaceShip& target)
+		{
+			const auto* effect = target.GetAbilitySystemComponent().FindGameplayEffectById(DamageStatusEffectIds::ElectricEffectId);
+			return effect ? effect->stackCount : 0;
+		}
 		int Cryo(const SpaceShip& target)
 		{
 			const auto* effect = target.GetAbilitySystemComponent().FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId);
@@ -27,9 +33,10 @@ namespace uncommon_p4_e2e
 			bool suppressed = false;
 			bool criticalDisabled = false;
 			float amount = 0.f;
+			bool electric = false;
 			explicit DamageObserver(CombatRuntime& value) : runtime{ value }, handle{ runtime.onDamageResolved.BindAction(this, &DamageObserver::OnDamage) } {}
 			~DamageObserver() { runtime.onDamageResolved.UnbindAction(handle); }
-			void OnDamage(const DamageContext& context) { critical = context.wasCritical; generated = context.payload.skipModuleDamageRules; suppressed = context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed; criticalDisabled = context.payload.criticalPolicy == DamageCriticalPolicy::Disabled; amount = context.originalDamage; }
+			void OnDamage(const DamageContext& context) { electric = !context.damageTags.empty() && context.damageTags.front() == GameplayTags::Damage::Type::Electric; critical = context.wasCritical; generated = context.payload.skipModuleDamageRules; suppressed = context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed; criticalDisabled = context.payload.criticalPolicy == DamageCriticalPolicy::Disabled; amount = context.originalDamage; }
 		};
 	}
 	void ReactionChecks(Report& report, Application& application)
@@ -87,8 +94,9 @@ namespace uncommon_p4_e2e
 			DefenseCast(f);
 			f.ship->GetShieldComponent().ChangeShield(10000.f);
 			ApplyCombatDamage(*f.ship, 10.f, far.get(), {}, Plain());
-			const float reflected = 10.f * (.35f + .05f * (level - 1));
+			const float reflected = 10.f * (.35f + .05f * (level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), reflection) - 1));
 			f.Equal("Reflection uses absorbed shield damage and level", reflected, observer.amount);
+			f.Equal("Electric reflection applies one Electric stack to the reflected target", 1.f, static_cast<float>(Electric(*nearest))); report.Check(observer.electric, "Electric reflection deals Electric damage");
 			report.Check(!observer.critical && observer.criticalDisabled && observer.generated && observer.suppressed, "Reflection disables critical hits and carries chain guard");
 			f.Equal("Reflection picks nearest enemy instead of attacker", 1000.f, far->GetHealthComponent().GetHealth());
 			f.Equal("Reflection cannot trigger Energy Feedback", power, f.Owner(OwnerAttributeIds::EnergyPower));
@@ -97,7 +105,7 @@ namespace uncommon_p4_e2e
 			f.ship->GetModuleApplier().Tick(2.f);
 			const float before = nearest->GetHealthComponent().GetHealth();
 			ApplyCombatDamage(*f.ship, 10.f, far.get(), {}, Plain());
-			f.Equal("Defense reuse refreshes the window", reflected, before - nearest->GetHealthComponent().GetHealth());
+			f.Equal("Defense reuse refreshes the window; the first Electric stack raises the next reflected hit by 3%", reflected * 1.03f, before - nearest->GetHealthComponent().GetHealth());
 			f.ship->GetModuleApplier().Tick(3.01f);
 			const float expired = nearest->GetHealthComponent().GetHealth();
 			ApplyCombatDamage(*f.ship, 10.f, far.get(), {}, Plain());
