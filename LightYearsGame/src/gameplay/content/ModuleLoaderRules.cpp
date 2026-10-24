@@ -10,40 +10,9 @@ namespace vega::content
 {
 	namespace module_loader_detail
 	{
-		// "zoneRules": [{ "kind": "AmplifyZone" | "OutOfZoneMainBonus", "bonus": number or level table }]
-		void ParseZoneRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& package)
+		void RejectZoneRules(const Json& object, const std::string& context)
 		{
-			const Json zoneRules = object.value("zoneRules", Json::array());
-			if (!zoneRules.is_array()) throw std::runtime_error(context + ".zoneRules must be an array");
-			std::size_t index = 0;
-			for (const Json& entry : zoneRules)
-			{
-				const std::string entryContext = context + ".zoneRules[" + std::to_string(index++) + "]";
-				if (!entry.is_object()) throw std::runtime_error(entryContext + " must be an object");
-				for (const auto& field : entry.items())
-				{
-					if (field.key() != "kind" && field.key() != "bonus") throw std::runtime_error(entryContext + " has unknown field: " + field.key());
-				}
-				const std::string kind = entry.at("kind").get<std::string>();
-				ModuleZoneRule rule;
-				if (kind == "AmplifyZone") rule.kind = ModuleZoneRuleKind::AmplifyZone;
-				else if (kind == "OutOfZoneMainBonus") rule.kind = ModuleZoneRuleKind::OutOfZoneMainBonus;
-				else throw std::runtime_error(entryContext + " unknown zone rule kind: " + kind);
-				for (const ModuleZoneRule& existing : package.zoneRules)
-				{
-					if (existing.kind == rule.kind) throw std::runtime_error(entryContext + " duplicates zone rule kind: " + kind);
-				}
-				const bool amplifies = rule.kind == ModuleZoneRuleKind::AmplifyZone;
-				const auto valid = [amplifies](float value)
-				{
-					return amplifies ? (value >= kReferenceZoneBonus && value <= 1.f) : (value > 0.f && value <= 1.f);
-				};
-				const char* message = amplifies ? "must be in [0.25, 1] for AmplifyZone" : "must be in (0, 1] for OutOfZoneMainBonus";
-				rule.bonus = ParseLevelFloat(entry.at("bonus"), entryContext + ".bonus", minimumLevelCount, rule.bonusByLevel);
-				if (!valid(rule.bonus)) throw std::runtime_error(entryContext + ".bonus " + message);
-				ValidateTable(rule.bonusByLevel, entryContext + ".bonus", valid, message);
-				package.zoneRules.push_back(std::move(rule));
-			}
+			if (object.contains("zoneRules")) throw std::runtime_error(context + ".zoneRules is no longer supported");
 		}
 
 		ModuleShieldRegenMode ParseShieldRegenMode(const std::string& value, const std::string& context)

@@ -4,37 +4,37 @@
     {
       "zone": "Module.Zone.Nose",
       "family": "Ability.Primary",
-      "bonus": 0.25
+      "levelBonus": 1
     },
     {
       "zone": "Module.Zone.Wings",
       "family": "Ability.Offense",
-      "bonus": 0.25
+      "levelBonus": 1
     },
     {
       "zone": "Module.Zone.Hull",
       "family": "*",
-      "bonus": 0.1
+      "levelBonus": 2
     },
     {
       "zone": "Module.Zone.Core",
       "family": "Ability.Defense",
-      "bonus": 0.25
+      "levelBonus": 1
     },
     {
       "zone": "Module.Zone.Engine",
       "family": "Ability.Movement",
-      "bonus": 0.25
+      "levelBonus": 1
     },
     {
       "zone": "Module.Zone.Sensor",
       "family": "Ability.Utility",
-      "bonus": 0.25
+      "levelBonus": 1
     },
     {
       "zone": "Module.Zone.AbilityBay",
       "family": "*",
-      "bonus": 0.0
+      "levelBonus": 0
     }
   ],
   "systemZones": {
@@ -2469,68 +2469,6 @@
             "Module.SideFeature.Shared.G1",
             "Module.SideFeature.Shared.G3",
             "Module.SideFeature.Shared.G4"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "Module.Utility.ZoneOverclocker.Rare",
-      "displayName": "Zone Overclocker",
-      "description": "Other modules in this zone get a stronger zone bonus (+{zone.0.bonusPercent}%).",
-      "rarity": "Rare",
-      "levelCount": 3,
-      "family": "Ability.Utility",
-      "sizeLadder": [
-        1
-      ],
-      "sizeVariants": [
-        {
-          "shape": [
-            [
-              0,
-              0
-            ]
-          ],
-          "zoneRules": [
-            {
-              "kind": "AmplifyZone",
-              "bonus": [
-                0.5,
-                0.55,
-                0.6
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "Module.Utility.MisfitWiring.Rare",
-      "displayName": "Misfit Wiring",
-      "description": "Modules outside their own zone work better (+{zone.0.bonusPercent}% main value).",
-      "rarity": "Rare",
-      "levelCount": 3,
-      "family": "Ability.Utility",
-      "sizeLadder": [
-        1
-      ],
-      "sizeVariants": [
-        {
-          "shape": [
-            [
-              0,
-              0
-            ]
-          ],
-          "zoneRules": [
-            {
-              "kind": "OutOfZoneMainBonus",
-              "bonus": [
-                0.25,
-                0.3,
-                0.35
-              ]
-            }
           ]
         }
       ]

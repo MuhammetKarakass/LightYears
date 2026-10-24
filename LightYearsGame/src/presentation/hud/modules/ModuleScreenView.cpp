@@ -37,6 +37,12 @@ namespace vega
 		{
 			return point.x >= origin.x && point.y >= origin.y && point.x < origin.x + size.x && point.y < origin.y + size.y;
 		}
+
+		// zoneLevelBonus is filled only for installed entries, so cargo entries read as their plain level.
+		std::string LevelText(const ModuleEntryView& entry)
+		{
+			return std::to_string(entry.level) + (entry.zoneLevelBonus > 0 ? " (+" + std::to_string(entry.zoneLevelBonus) + ")" : std::string{});
+		}
 		constexpr sf::Vector2f CardSize = ModuleScreenView::CardExtent;
 		constexpr float DragThreshold = 12.f;
 		// Display font matches the encounter banner and also serves as the HUD font (the kenvector face misreads letters at small sizes); module descriptions use a plain sans for reading.
@@ -431,7 +437,7 @@ namespace vega
 		else if (shown)
 		{
 			Label(*root, in, heldEntry ? "HOLDING" : (!shown->cells.empty() ? "INSTALLED" : "CARGO"), 12, AccentDim, kHudFont);
-			LabelRight(*root, { right, in.y - 2.f }, "LEVEL " + std::to_string(shown->level) + " / " + std::to_string(shown->levelCount), 13, InkMuted, kBodyFont);
+			LabelRight(*root, { right, in.y - 2.f }, "LEVEL " + LevelText(*shown) + " / " + std::to_string(shown->levelCount), 13, InkMuted, kBodyFont);
 			const int cells = shown->cellCount > 0 ? shown->cellCount : static_cast<int>(shown->cells.size());
 			std::string detail = shown->rarity + "  /  " + shown->family + "  /  " + std::to_string(cells) + " cells";
 			if (shown->sizeLadder.size() > 1)
@@ -441,10 +447,10 @@ namespace vega
 			}
 			if (heldEntry) detail += "  /  " + std::to_string(vm.heldRotation * 90) + " deg";
 			Label(*root, in + sf::Vector2f{ 0.f, 20.f }, Wrapped(Upper(shown->name), 16, ModuleCardText::DetailWidth, 1, kHudFont), 16, cardAccent, kHudFont);
-			const bool hasBonus = heldEntry && vm.preview.active && vm.preview.legal && vm.preview.bonusPercent > 0;
+			const bool hasBonus = heldEntry && vm.preview.active && vm.preview.legal && vm.preview.zoneLevelBonus > 0;
 			Label(*root, in + sf::Vector2f{ 0.f, 42.f }, Wrapped(detail, 12, ModuleCardText::DetailWidth - (hasBonus ? 60.f : 0.f), 1), 12, InkMuted);
-			if (heldEntry && vm.preview.active && vm.preview.legal && vm.preview.bonusPercent > 0)
-				LabelRight(*root, { right, in.y + 42.f }, "+" + std::to_string(vm.preview.bonusPercent) + "%", 12, Sync, kBodyFont);
+			if (heldEntry && vm.preview.active && vm.preview.legal && vm.preview.zoneLevelBonus > 0)
+				LabelRight(*root, { right, in.y + 42.f }, "+" + std::to_string(vm.preview.zoneLevelBonus) + " Lv", 12, Sync, kBodyFont);
 			Label(*root, in + sf::Vector2f{ 0.f, 62.f }, Wrapped(shown->description, 14, ModuleCardText::DetailWidth, 3), 14, Ink);
 			std::string sideLabel = "NO SIDE FEATURE";
 			sf::Color sideColor = InkMuted;
@@ -534,7 +540,7 @@ namespace vega
 			if (hasDescription) Label(*root, position + sf::Vector2f{ 26.f, 28.f }, Wrapped(item.description, 13, ModuleCardText::InventoryTextWidth, 1), 13, InkMuted);
 			const float rowRight = position.x + InventoryWidth;
 			Label(*root, { rowRight - 270.f, position.y + 7.f }, Upper(item.family), 11, family, kHudFont);
-			LabelRight(*root, { position.x + InventoryWidth, position.y + 7.f }, "L" + std::to_string(item.level), 11, InkMuted, kBodyFont);
+			LabelRight(*root, { position.x + InventoryWidth, position.y + 7.f }, "L" + LevelText(item), 11, InkMuted, kBodyFont);
 			if (item.sideFeatureState != ModuleSideFeatureViewState::None)
 				LabelRight(*root, { position.x + InventoryWidth, position.y + 29.f }, item.sideFeatureState == ModuleSideFeatureViewState::Active ? "+ SIDE" : (item.sideFeatureState == ModuleSideFeatureViewState::Locked ? "LOCKED" : "NO SIDE"), 10, item.sideFeatureState == ModuleSideFeatureViewState::Active ? Sync : InkMuted, kBodyFont);
 			for (int cell = 0; cell < item.cellCount && cell < 8; ++cell)

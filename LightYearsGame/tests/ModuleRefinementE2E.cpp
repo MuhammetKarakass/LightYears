@@ -9,9 +9,9 @@
 namespace
 {
 	using namespace uncommon_p6_e2e;
-	std::uint32_t InstallInZone(Fixture& f, const char* id, const GameplayTag& zone)
+	std::uint32_t InstallInZone(Fixture& f, const char* id, const GameplayTag& zone, int levelValue = 1)
 	{
-		const auto* definition = f.rules.lookup(id); const auto instance = f.loadout.AddToInventory(f.rules, *definition, 0, definition->rarity, 1);
+		const auto* definition = f.rules.lookup(id); const auto instance = f.loadout.AddToInventory(f.rules, *definition, 0, definition->rarity, levelValue);
 		ModulePlacement candidate = *f.loadout.FindInventoryItem(instance);
 		for (int rotation = 0; rotation < 4; ++rotation)
 			for (int y = 0; y < f.rules.schematic.height; ++y)
@@ -66,39 +66,42 @@ namespace
 			const auto placements = f.loadout.GetPlacements();
 			for (const auto& placement : placements) if (f.rules.lookup(placement.moduleId)->systemCategory == GameplayTags::Module::System::Afterburner) f.Remove(placement.instanceId);
 			const float base = f.Owner(OwnerAttributeIds::AttackSpeed);
-			InstallInZone(f, "Module.Movement.MovementRhythm.Uncommon", GameplayTags::Module::Zone::Engine);
-			Move(f, 20.f, .1f); f.Equal("ordinary Movement Rhythm step has its authored AS percentage", base + 3.5f, f.Owner(OwnerAttributeIds::AttackSpeed));
-			const auto amplifier = InstallInZone(f, "Module.Utility.ZoneOverclocker.Rare", GameplayTags::Module::Zone::Engine);
-			Move(f, 20.f, .1f); f.Equal("Overclocker reaches a live owner attribute rule", base + 3.5f * 1.25f, f.Owner(OwnerAttributeIds::AttackSpeed));
-			f.Remove(amplifier); Move(f, 20.f, .1f); f.Equal("removing Overclocker restores the ordinary AS step", base + 3.5f, f.Owner(OwnerAttributeIds::AttackSpeed));
+			const auto wings = InstallInZone(f, "Module.Movement.MovementRhythm.Uncommon", GameplayTags::Module::Zone::Wings);
+			Move(f, 20.f, .1f); f.Equal("Movement Rhythm outside its family zone resolves at level one", base + 3.5f, f.Owner(OwnerAttributeIds::AttackSpeed));
+			report.Check(ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), wings) == 0, "placement outside its family zone has no level bonus");
+			f.Remove(wings);
+			const auto engine = InstallInZone(f, "Module.Movement.MovementRhythm.Uncommon", GameplayTags::Module::Zone::Engine);
+			Move(f, 20.f, .1f); f.Equal("Movement Rhythm in its family zone resolves at level two", base + 4.f, f.Owner(OwnerAttributeIds::AttackSpeed));
+			report.Check(ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), engine) == 1, "family zone placement reports a level bonus of one");
+			f.Remove(engine);
+			const auto hull = InstallInZone(f, "Module.Movement.MovementRhythm.Uncommon", GameplayTags::Module::Zone::Hull);
+			Move(f, 20.f, .1f); f.Equal("Movement Rhythm in Hull resolves at level three", base + 4.5f, f.Owner(OwnerAttributeIds::AttackSpeed));
+			report.Check(ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), hull) == 2, "Hull placement reports a level bonus of two");
+			f.Remove(hull); Move(f, 20.f, .1f); f.Equal("removing Movement Rhythm restores base Attack Speed", base, f.Owner(OwnerAttributeIds::AttackSpeed));
 		}
 		{
 			Fixture f{ report, application };
 			InstallInZone(f, "Module.Offense.HuntClock.Uncommon", GameplayTags::Module::Zone::Wings);
-			InstallInZone(f, "Module.Utility.ZoneOverclocker.Rare", GameplayTags::Module::Zone::Wings);
 			auto& ability = CastOffense(f); const float pending = ability.GetCooldownRemaining();
-			f.Kill(); f.Equal("Overclocker reaches a real family kill refund", pending * (1.f - .05f * 1.25f), ability.GetCooldownRemaining());
+			f.Kill(); f.Equal("Hunt Clock in its family zone refunds its level two fraction", pending * (1.f - .06f), ability.GetCooldownRemaining());
 		}
-		Fixture f{ report, application }; const auto enemy = Enemy(f);
-		const auto lens = f.Install("Module.Primary.PhotonicLens.Uncommon");
-		const auto placed = FindInstalled(f.loadout, lens); const auto zone = f.rules.schematic.GetZoneAt(placed.origin.x, placed.origin.y);
-		f.Equal("Lens level one grants fifty percent to Primary", 150.f, Hit(*enemy, f.ship.get(), 100.f, Plain(), {}, { GameplayTags::Ability::Primary }));
-		const auto* definition = f.rules.lookup("Module.Utility.ZoneOverclocker.Rare");
-		const auto amplifier = f.loadout.AddToInventory(f.rules, *definition, 0, definition->rarity, 1);
-		ModulePlacement candidate = *f.loadout.FindInventoryItem(amplifier); bool installed = false;
-		for (int y = 0; y < f.rules.schematic.height && !installed; ++y)
-			for (int x = 0; x < f.rules.schematic.width && !installed; ++x)
-			{
-				candidate.origin = { x, y };
-				if (f.rules.schematic.GetZoneAt(x, y) != zone || ModulePlacementRules::CanPlace(f.rules, f.loadout, candidate) != ModulePlacementFailure::None) continue;
-				installed = f.loadout.Install(f.rules, amplifier, candidate.origin, 0) == ModulePlacementFailure::None && f.ship->GetModuleApplier().Apply(f.loadout, f.rules);
-			}
-		report.Check(installed, "install the real Overclocker in the Lens zone");
-		f.Equal("Overclocker reaches a Primary impact rule", 162.5f, Hit(*enemy, f.ship.get(), 100.f, Plain(), {}, { GameplayTags::Ability::Primary }));
-		float bonus = 0.f; for (const auto& value : f.ship->GetModuleApplier().GetResolvedEffects().zoneBonuses) if (value.instanceId == lens) bonus = value.bonus;
-		f.Equal("runtime exposes the amplified zone bonus for the module screen", .5f, bonus);
-		f.Remove(amplifier);
-		f.Equal("removing Overclocker restores the ordinary Lens rule", 150.f, Hit(*enemy, f.ship.get(), 100.f, Plain(), {}, { GameplayTags::Ability::Primary }));
+		{
+			Fixture f{ report, application };
+			InstallInZone(f, "Module.Offense.HuntClock.Uncommon", GameplayTags::Module::Zone::Hull, 3);
+			auto& ability = CastOffense(f); const float pending = ability.GetCooldownRemaining();
+			f.Kill(); f.Equal("Hunt Clock level three in Hull extrapolates to level five", pending * (1.f - .09f), ability.GetCooldownRemaining());
+		}
+		{
+			Fixture f{ report, application }; const auto enemy = Enemy(f);
+			const auto lens = InstallInZone(f, "Module.Primary.PhotonicLens.Uncommon", GameplayTags::Module::Zone::Wings);
+			f.Equal("Lens outside its Primary zone resolves at level one", 150.f, Hit(*enemy, f.ship.get(), 100.f, Plain(), {}, { GameplayTags::Ability::Primary }));
+			f.Remove(lens);
+			const auto nose = InstallInZone(f, "Module.Primary.PhotonicLens.Uncommon", GameplayTags::Module::Zone::Nose);
+			f.Equal("Lens in the Primary zone resolves at level two", 153.f, Hit(*enemy, f.ship.get(), 100.f, Plain(), {}, { GameplayTags::Ability::Primary }));
+			f.Remove(nose);
+			InstallInZone(f, "Module.Primary.PhotonicLens.Uncommon", GameplayTags::Module::Zone::Hull);
+			f.Equal("Lens in Hull resolves at level three", 156.f, Hit(*enemy, f.ship.get(), 100.f, Plain(), {}, { GameplayTags::Ability::Primary }));
+		}
 	}
 	void CoreChecks(Report& report, Application& application)
 	{

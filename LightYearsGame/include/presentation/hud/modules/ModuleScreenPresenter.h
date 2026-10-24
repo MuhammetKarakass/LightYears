@@ -61,7 +61,7 @@ namespace vega
 		unsigned int mContentBuildCount{ 0 }, mDescriptionFormatCount{ 0 };
 		unsigned int mPlayerId{ 0 }, mShipId{ 0 };
 		std::uint64_t mLoadoutRevision{ 0 }, mCatalogRevision{ 0 };
-		using DescriptionKey = std::tuple<std::string, int, int, std::string>;
+		using DescriptionKey = std::tuple<std::string, int, int, int, std::string>;
 		std::map<DescriptionKey, std::pair<std::string, std::string>> mDescriptions;
 	};
 }

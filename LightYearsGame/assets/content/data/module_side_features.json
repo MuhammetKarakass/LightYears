@@ -1424,7 +1424,7 @@
     {
       "id": "Module.SideFeature.Shared.F1.Rare",
       "displayName": "Fragmentation F1 Rare",
-      "description": "Fragmentable: at the largest size the module splits into single-cell fragments that can be placed anywhere. Zone bonus is proportional to the fragments in each zone; neighbours count from every fragment.",
+      "description": "Fragmentable: at the largest size the module splits into single-cell fragments that can be placed anywhere. The worst-placed fragment sets the zone level bonus. Neighbours count from every fragment.",
       "poolId": "Module.SidePool.RareFragment",
       "levelCount": 3,
       "rules": {

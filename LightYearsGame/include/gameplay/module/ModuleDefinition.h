@@ -31,7 +31,16 @@ namespace vega
 	struct ModuleLevelTable
 	{
 		List<T> values;
-		T ValueAtLevel(T fallback, int level) const { return level > 0 && static_cast<std::size_t>(level) <= values.size() ? values[static_cast<std::size_t>(level - 1)] : fallback; }
+		// Levels past the authored table extrapolate linearly from its last step.
+		T ValueAtLevel(T fallback, int level) const
+		{
+			if (values.empty() || level <= 0) return fallback;
+			const int count = static_cast<int>(values.size());
+			if (level <= count) return values[static_cast<std::size_t>(level - 1)];
+			if (count == 1) return values.front();
+			const T step = values.back() - values[static_cast<std::size_t>(count - 2)];
+			return values.back() + step * static_cast<T>(level - count);
+		}
 	};
 
 	// Cell offsets relative to the module's own origin; (0,0)-based.
@@ -126,25 +135,6 @@ namespace vega
 		ModuleCooldownScope scope = ModuleCooldownScope::FamilyOfZone;
 		float multiplier = 1.f;
 		ModuleLevelTable<float> multiplierByLevel;
-	};
-
-	enum class ModuleZoneRuleKind
-	{
-		// Other modules of the same zone use bonus / kReferenceZoneBonus times their standard zone bonus.
-		AmplifyZone,
-		// Ship-wide: a module outside its own family's zone takes the largest such bonus installed on the ship as its
-		// main-package zone bonus. Side features keep the standard bonus.
-		OutOfZoneMainBonus
-	};
-
-	// Zone bonus that AmplifyZone values are written against (Nose, Wings, Core, Engine, Sensor).
-	inline constexpr float kReferenceZoneBonus = 0.25f;
-
-	struct ModuleZoneRule
-	{
-		ModuleZoneRuleKind kind = ModuleZoneRuleKind::AmplifyZone;
-		float bonus = 0.f;
-		ModuleLevelTable<float> bonusByLevel;
 	};
 
 	enum class ModuleEventActionKind { RestoreShield, GrantTemporaryShield, ShieldOverflowToHealth, RestoreHealth, RestoreHealthOverTime, RestoreAfterburner, ReduceAllCooldowns, ReduceFamilyCooldowns, ReduceLongestCooldown, RefundUsedCooldown, ApplyNearbyCryo, AwardGold };
@@ -559,7 +549,6 @@ namespace vega
 		List<ModuleTriggerBuff> triggerBuffs;
 		List<ModuleDamageRule> damageRules;
 		List<ModuleZoneEffect> zoneEffects;
-		List<ModuleZoneRule> zoneRules;
 		List<ModuleEventAction> eventActions;
 		List<ModuleOwnerAttributeRule> ownerAttributeRules;
 		struct ShieldReflection
@@ -650,7 +639,6 @@ namespace vega
 		for (std::size_t i = 0; i < rules.statusRules.thermalBursts.size(); ++i) if (!visit("statusRules.thermalBursts.damageFraction", i, rules.statusRules.thermalBursts[i].damageFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.statusRules.kineticConsumes.size(); ++i) if (!visit("statusRules.kineticConsumes.damageMultiplier", i, rules.statusRules.kineticConsumes[i].damageMultiplierByLevel)) return false;
 		for (std::size_t i = 0; i < rules.zoneEffects.size(); ++i) if (!visit("zoneEffects.multiplier", i, rules.zoneEffects[i].multiplierByLevel)) return false;
-		for (std::size_t i = 0; i < rules.zoneRules.size(); ++i) if (!visit("zoneRules.bonus", i, rules.zoneRules[i].bonusByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.ricochets.size(); ++i) if (!visit("generatedRules.ricochets.damageFraction", i, rules.generatedRules.ricochets[i].damageFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.guidedSalvos.size(); ++i) if (!visit("generatedRules.guidedSalvos.damageFraction", i, rules.generatedRules.guidedSalvos[i].damageFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.delayedExplosions.size(); ++i) if (!visit("generatedRules.delayedExplosions.damageFraction", i, rules.generatedRules.delayedExplosions[i].damageFractionByLevel)) return false;
@@ -751,13 +739,17 @@ namespace vega
 			module.sizeVariants[static_cast<std::size_t>(largestIndex)].shape.cells.size();
 	}
 
+	// Largest level bonus a zone entry can add to a module; the resolver clamps the zone level bonus to it.
+	inline constexpr int kMaxZoneLevelBonus = 2;
+
 	struct ModuleZoneEntry
 	{
 		GameplayTag zone;
 		// Family that receives the bonus; ignored when anyFamily is set ("*").
 		GameplayTag family;
 		bool anyFamily = false;
-		float bonus = 0.f;
+		// Levels added to a matching module's level.
+		int levelBonus = 0;
 	};
 
 	struct ModuleSystemZoneEntry

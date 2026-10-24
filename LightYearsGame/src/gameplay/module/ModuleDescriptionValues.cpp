@@ -139,11 +139,6 @@ namespace vega
 			const auto& rule = rules.generatedRules.killExplosions[i]; const std::string key = "burst." + std::to_string(i) + ".";
 			out.Number(key + "healthPercent", rule.maxHealthFractionByLevel.ValueAtLevel(rule.maxHealthFraction, level) * 100.f); out.Number(key + "radius", rule.radius);
 		}
-		for (std::size_t i = 0; i < rules.zoneRules.size(); ++i)
-		{
-			const auto& rule = rules.zoneRules[i]; const std::string key = "zone." + std::to_string(i) + ".";
-			out.Number(key + "bonusPercent", rule.bonusByLevel.ValueAtLevel(rule.bonus, level) * 100.f);
-		}
 		for (std::size_t i = 0; i < rules.shieldRules.size(); ++i)
 		{
 			const auto& rule = rules.shieldRules[i]; const std::string key = "shield." + std::to_string(i) + ".";

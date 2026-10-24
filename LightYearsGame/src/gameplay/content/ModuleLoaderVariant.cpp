@@ -231,7 +231,6 @@ namespace vega::content
 					[](float value) { return value > 0.f && value <= 1.f; }, "must be in (0, 1]");
 				variant.zoneEffects.push_back(std::move(effect));
 			}
-			ParseZoneRules(object, context, minimumLevelCount, variant);
 			const Json actions = object.value("eventActions", Json::array());
 			if (!actions.is_array()) throw std::runtime_error(context + ".eventActions must be an array");
 			for (const Json& entry : actions)

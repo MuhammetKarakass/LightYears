@@ -100,107 +100,9 @@ namespace vega
 					return static_cast<int>(std::count(filled, filled + 4, false));
 				}
 
-				// Multiplier on the standard zone bonus from the largest AmplifyZone rule among the other installed
-			// modules of the same zone. A module never amplifies itself and amplifiers do not stack. 1 when none applies.
-			float AmplifierScale(const ModuleRulesContext& rules, const List<ModulePlacement>& activePlacements, const ModulePlacement& placement, const GameplayTag& zone)
-			{
-				float scale = 1.f;
-				for (const ModulePlacement& other : activePlacements)
-				{
-					if (other.instanceId == placement.instanceId) continue;
-					const InstalledRules installed = FindInstalledRules(rules, other);
-					if (!installed.variant || GetPlacementZone(rules, *installed.module, other) != zone) continue;
-					for (const ModuleZoneRule& rule : installed.variant->zoneRules)
-					{
-						if (rule.kind != ModuleZoneRuleKind::AmplifyZone) continue;
-						scale = std::max(scale, ValueAtLevel(rule.bonus, rule.bonusByLevel, other.level) / kReferenceZoneBonus);
-					}
-				}
-				return scale;
-			}
-
-			// Largest OutOfZoneMainBonus among every installed module at its placed level; 0 when none. The rule is
-			// ship-wide: any out-of-family module takes it, including the module that carries it.
-			float LayoutOutOfZoneMainBonus(const ModuleRulesContext& rules, const List<ModulePlacement>& activePlacements)
-			{
-				float bonus = 0.f;
-				for (const ModulePlacement& placement : activePlacements)
-				{
-					const InstalledRules installed = FindInstalledRules(rules, placement);
-					if (!installed.variant) continue;
-					for (const ModuleZoneRule& rule : installed.variant->zoneRules)
-					{
-						if (rule.kind == ModuleZoneRuleKind::OutOfZoneMainBonus) bonus = std::max(bonus, ValueAtLevel(rule.bonus, rule.bonusByLevel, placement.level));
-					}
-				}
-				return bonus;
-			}
-
 			// Ability shells a fragmented charge module may reach: fragments are not capped (F1 keeps adjacency uncapped), and the four
 			// Q/E/F/R shells are the only ones that exist.
 			constexpr int kAbilityShellCount = 4;
-
-			// Zone bonus of one placement: side feature bonus and main bonus. A whole placement takes its single zone (none when the
-			// cells are mixed). A fragmented placement sums its fragments, each with its own zone, and divides by the cell count, so
-			// every fragment counts 1/N of its zone's bonus.
-			struct ZoneShare
-			{
-				float bonus = 0.f;
-				float mainBonus = 0.f;
-			};
-
-			ZoneShare ComputeZoneShare(const ModuleRulesContext& rules, const ModuleDefinition& module, const List<ModulePlacement>& activePlacements, const ModulePlacement& placement, const GameplayTag& placementZone, const ModuleZoneEntry* placementZoneEntry)
-			{
-				if (!placement.fragmented)
-				{
-					const float standardBonus = placementZoneEntry && (placementZoneEntry->anyFamily || placementZoneEntry->family == module.family)
-						? placementZoneEntry->bonus
-						: 0.f;
-					const float bonus = standardBonus * AmplifierScale(rules, activePlacements, placement, placementZone);
-					// Out-of-zone rules set the main package's bonus only; the side feature keeps the layout bonus.
-					const bool outOfFamilyZone = placementZoneEntry && !(placementZoneEntry->anyFamily || placementZoneEntry->family == module.family);
-					return ZoneShare{ bonus, outOfFamilyZone ? LayoutOutOfZoneMainBonus(rules, activePlacements) : bonus };
-				}
-				const List<sf::Vector2i> cells = ModulePlacementRules::GetCoveredCells(module, placement);
-				if (cells.empty()) return {};
-				ZoneShare total;
-				for (const sf::Vector2i& cell : cells)
-				{
-					const GameplayTag& zone = rules.schematic.GetZoneAt(cell.x, cell.y);
-					const ModuleZoneEntry* entry = zone.IsValid() ? rules.zoneTable.FindZone(zone) : nullptr;
-					if (!entry) continue;
-					if (entry->anyFamily || entry->family == module.family)
-					{
-						const float fragmentBonus = entry->bonus * AmplifierScale(rules, activePlacements, placement, zone);
-						total.bonus += fragmentBonus;
-						total.mainBonus += fragmentBonus;
-					}
-					else total.mainBonus += LayoutOutOfZoneMainBonus(rules, activePlacements);
-				}
-				const float count = static_cast<float>(cells.size());
-				return ZoneShare{ total.bonus / count, total.mainBonus / count };
-			}
-
-			sas::AttributeModifier Scale(sas::AttributeModifier modifier, float bonus)
-			{
-				switch (modifier.operation)
-				{
-				case sas::AttributeModifierOperation::Add:
-					modifier.magnitude *= 1.f + bonus;
-					break;
-				case sas::AttributeModifierOperation::Multiply:
-					modifier.magnitude = 1.f + (modifier.magnitude - 1.f) * (1.f + bonus);
-					break;
-				case sas::AttributeModifierOperation::Override:
-					break;
-				}
-				return modifier;
-			}
-
-			sas::AttributeModifier Apply(const sas::AttributeModifier& modifier, bool scaled, float bonus)
-			{
-				return scaled ? Scale(modifier, bonus) : modifier;
-			}
 
 			// Status rule spans of one placement's main package. A side modifier merges only into the entries that package produced.
 			struct StatusRuleCounts { std::size_t thermal = 0; std::size_t kinetic = 0; std::size_t sustained = 0; };
@@ -234,13 +136,12 @@ namespace vega
 				for (const ModuleSustainedSpeedRule& modifier : side.sustainedSpeedRules)
 					for (std::size_t index = mainBegin.sustained; index < mainEnd.sustained; ++index) MergeSustainedModifier(effects.sustainedSpeedRules[index].rule, modifier);
 			}
-			void ResolvePackage(ResolvedModuleEffects& effects, const ModuleRulePackage& package, const ModuleDefinition& module, const ModulePlacement& placement, int level, float zoneBonus, float amplifierBonus, const GameplayTag& placementZone, const ModuleZoneEntry* placementZoneEntry, bool sideFeature)
+			void ResolvePackage(ResolvedModuleEffects& effects, const ModuleRulePackage& package, const ModuleDefinition& module, const ModulePlacement& placement, int level, int baseLevel, const GameplayTag& placementZone, const ModuleZoneEntry* placementZoneEntry, bool sideFeature)
 			{
 				for (const ModuleAttributeModifier& entry : package.attributeModifiers)
 				{
 					sas::AttributeModifier modifier = entry.modifier;
-					modifier.magnitude = ValueAtLevel(modifier.magnitude, entry.magnitudeByLevel, level);
-					modifier = Apply(modifier, entry.affectedByZoneBonus, zoneBonus);
+					modifier.magnitude = ValueAtLevel(modifier.magnitude, entry.magnitudeByLevel, entry.affectedByZoneBonus ? level : baseLevel);
 					switch (entry.target)
 					{
 					case ModuleAttributeTarget::Owner: effects.ownerModifiers.push_back(modifier); break;
@@ -255,8 +156,8 @@ namespace vega
 					for (const ModuleAbilityModifier& entry : package.abilityModifiers)
 					{
 						sas::AttributeModifier modifier = entry.modifier;
-						modifier.magnitude = ValueAtLevel(modifier.magnitude, entry.magnitudeByLevel, level);
-						rule.attributeModifiers.push_back(Apply(modifier, entry.affectedByZoneBonus, zoneBonus));
+						modifier.magnitude = ValueAtLevel(modifier.magnitude, entry.magnitudeByLevel, entry.affectedByZoneBonus ? level : baseLevel);
+						rule.attributeModifiers.push_back(modifier);
 					}
 					effects.abilityRules.push_back(std::move(rule));
 				}
@@ -268,8 +169,7 @@ namespace vega
 						rule.movementSpeedMultiplierByLevel, level);
 					for (ModuleAttributeModifier& modifier : rule.modifiers)
 					{
-						modifier.modifier.magnitude = ValueAtLevel(modifier.modifier.magnitude, modifier.magnitudeByLevel, level);
-						modifier.modifier = Apply(modifier.modifier, modifier.affectedByZoneBonus, zoneBonus);
+						modifier.modifier.magnitude = ValueAtLevel(modifier.modifier.magnitude, modifier.magnitudeByLevel, modifier.affectedByZoneBonus ? level : baseLevel);
 					}
 					effects.triggerBuffs.push_back({ placement.instanceId, NamespacedRuleIndex(ruleIndex, sideFeature), std::move(rule) });
 				}
@@ -283,10 +183,6 @@ namespace vega
 					rule.activeDurationSeconds = ValueAtLevel(rule.activeDurationSeconds, rule.activeDurationSecondsByLevel, level);
 					rule.maxHealthDamageFraction = ValueAtLevel(rule.maxHealthDamageFraction, rule.maxHealthDamageFractionByLevel, level);
 					rule.perEmptyCellMultiplier = ValueAtLevel(rule.perEmptyCellMultiplier, rule.perEmptyCellMultiplierByLevel, level);
-					if ((!rule.incoming && rule.damageMultiplier > 1.f) || (rule.incoming && rule.damageMultiplier < 1.f)) rule.damageMultiplier = 1.f + (rule.damageMultiplier - 1.f) * (1.f + amplifierBonus);
-					rule.bonusDamageFraction *= 1.f + amplifierBonus;
-					rule.maxHealthDamageFraction *= 1.f + amplifierBonus;
-					rule.perEmptyCellMultiplier *= 1.f + amplifierBonus;
 					effects.damageRules.push_back({ placement.instanceId, NamespacedRuleIndex(ruleIndex, sideFeature), std::move(rule) });
 				}
 				for (std::size_t ruleIndex = 0; ruleIndex < package.targetSlowRules.size(); ++ruleIndex)
@@ -301,7 +197,6 @@ namespace vega
 					rule.amount = ValueAtLevel(rule.amount, rule.amountByLevel, level);
 					rule.chancePerLuck = ValueAtLevel(rule.chancePerLuck, rule.chancePerLuckByLevel, level);
 					rule.targetCount = ValueAtLevel(rule.targetCount, rule.targetCountByLevel, level);
-					if (rule.kind != ModuleEventActionKind::ApplyNearbyCryo && rule.kind != ModuleEventActionKind::AwardGold) rule.amount *= 1.f + amplifierBonus;
 					if (rule.kind == ModuleEventActionKind::ReduceFamilyCooldowns || rule.kind == ModuleEventActionKind::ReduceLongestCooldown) rule.amount = std::min(1.f, rule.amount);
 					effects.eventActions.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
@@ -310,8 +205,6 @@ namespace vega
 					ModuleOwnerAttributeRule rule = package.ownerAttributeRules[index];
 					rule.amount = ValueAtLevel(rule.amount, rule.amountByLevel, level);
 					rule.maximumAmount = ValueAtLevel(rule.maximumAmount, rule.maximumAmountByLevel, level);
-					if (rule.operation == sas::AttributeModifierOperation::Add) rule.amount *= 1.f + amplifierBonus;
-					else if (rule.amount > 1.f) rule.amount = 1.f + (rule.amount - 1.f) * (1.f + amplifierBonus);
 					if (sideFeature && rule.source == ModuleOwnerAttributeSource::ArmorLowerPower)
 					{
 						float conversion = 0.f;
@@ -480,34 +373,36 @@ namespace vega
 						if (!placementZoneEntry || placementZoneEntry->anyFamily || !placementZoneEntry->family.IsValid()) continue;
 						family = placementZoneEntry->family;
 					}
-					const float multiplier = ValueAtLevel(source.multiplier, source.multiplierByLevel, level);
+					const float multiplier = ValueAtLevel(source.multiplier, source.multiplierByLevel, baseLevel);
 					effects.cooldownRules.push_back({ placement.instanceId, NamespacedRuleIndex(ruleIndex, sideFeature),
 						source.zone, source.scope, family, multiplier });
 				}
 			}
 		}
 
-		float GetZoneBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
+		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
 		{
+			const auto zoneLevelBonus = [&rules, &module](const GameplayTag& zone) -> int
+			{
+				const ModuleZoneEntry* entry = zone.IsValid() ? rules.zoneTable.FindZone(zone) : nullptr;
+				return entry && (entry->anyFamily || entry->family == module.family) ? entry->levelBonus : 0;
+			};
+			int bonus = 0;
 			if (placement.fragmented)
 			{
-				// Each fragment contributes its own zone's family bonus, weighted 1/N (the placement's layout bonus, no amplifier).
 				const List<sf::Vector2i> cells = ModulePlacementRules::GetCoveredCells(module, placement);
-				if (cells.empty()) return 0.f;
-				float total = 0.f;
-				for (const sf::Vector2i& cell : cells)
-				{
-					const GameplayTag& zone = rules.schematic.GetZoneAt(cell.x, cell.y);
-					const ModuleZoneEntry* entry = zone.IsValid() ? rules.zoneTable.FindZone(zone) : nullptr;
-					if (entry && (entry->anyFamily || entry->family == module.family)) total += entry->bonus;
-				}
-				return total / static_cast<float>(cells.size());
+				if (cells.empty()) return 0;
+				bonus = kMaxZoneLevelBonus;
+				for (const sf::Vector2i& cell : cells) bonus = std::min(bonus, zoneLevelBonus(rules.schematic.GetZoneAt(cell.x, cell.y)));
 			}
-			const GameplayTag zone = GetPlacementZone(rules, module, placement);
-			if (!zone.IsValid()) return 0.f;
-			const ModuleZoneEntry* entry = rules.zoneTable.FindZone(zone);
-			if (!entry) return 0.f;
-			return (entry->anyFamily || entry->family == module.family) ? entry->bonus : 0.f;
+			else bonus = zoneLevelBonus(GetPlacementZone(rules, module, placement));
+			return std::clamp(bonus, 0, kMaxZoneLevelBonus);
+		}
+
+		int FindZoneLevelBonus(const ResolvedModuleEffects& effects, std::uint32_t instanceId)
+		{
+			for (const ResolvedModuleEffects::ZoneBonus& zone : effects.zoneBonuses) if (zone.instanceId == instanceId) return zone.levelBonus;
+			return 0;
 		}
 
 		int CountEmptyCells(const ModuleRulesContext& rules, const List<ModulePlacement>& placements)
@@ -554,14 +449,11 @@ namespace vega
 					!HasModuleRulePackageLevelCoverage(variant, placement.level)) continue;
 				const GameplayTag placementZone = GetPlacementZone(rules, *module, placement);
 				const ModuleZoneEntry* placementZoneEntry = placementZone.IsValid() ? rules.zoneTable.FindZone(placementZone) : nullptr;
-				const ZoneShare zoneShare = ComputeZoneShare(rules, *module, activePlacements, placement, placementZone, placementZoneEntry);
-				const float bonus = zoneShare.bonus;
-				const float mainBonus = zoneShare.mainBonus;
-				const float amplifierBonus = std::max(0.f, bonus - GetZoneBonus(rules, *module, placement));
-				effects.zoneBonuses.push_back({ placement.instanceId, bonus });
+				const int zoneLevel = GetZoneLevelBonus(rules, *module, placement);
+				effects.zoneBonuses.push_back({ placement.instanceId, zoneLevel });
 
 				const StatusRuleCounts mainBegin = CountStatusRules(effects);
-					ResolvePackage(effects, variant, *module, placement, placement.level, mainBonus, amplifierBonus, placementZone, placementZoneEntry, false);
+					ResolvePackage(effects, variant, *module, placement, placement.level + zoneLevel, placement.level, placementZone, placementZoneEntry, false);
 					const StatusRuleCounts mainEnd = CountStatusRules(effects);
 				// Rolled side stats are never scaled and apply to the owner.
 				for (const sas::AttributeModifier& sideStat : placement.rolledSideStats)
@@ -574,7 +466,7 @@ namespace vega
 					const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup(placement.sideFeatureId);
 					if (IsSideFeatureUsableAtLevel(*module, feature, placement.level))
 						{
-							ResolvePackage(effects, feature->rules, *module, placement, placement.level, bonus, 0.f, placementZone, placementZoneEntry, true);
+							ResolvePackage(effects, feature->rules, *module, placement, placement.level, placement.level, placementZone, placementZoneEntry, true);
 							MergeSideStatusModifiers(effects, feature->rules, mainBegin, mainEnd);
 						}
 				}

@@ -240,11 +240,6 @@
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/trailMines/*/maxActive/*", R"field(12)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/trailMines/*/attackPowerCoefficient", R"field([])field", true);
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/trailMines/*/attackPowerCoefficient/*", R"field(0.3)field");
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneRules", R"field([])field");
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneRules/*", R"field({})field");
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneRules/*/kind", R"field("AmplifyZone")field");
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneRules/*/bonus", R"field([])field", true);
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneRules/*/bonus/*", R"field(0.5)field");
 		if (schema.type == "module") Add(schema, "/conflictsWith", R"field([])field");
 		if (schema.type == "module") Add(schema, "/conflictsWith/*", R"field("Module.Defense.ContinuousFieldGenerator.Rare")field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/shieldRules", R"field([])field");

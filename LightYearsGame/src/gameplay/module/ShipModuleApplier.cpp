@@ -268,8 +268,8 @@ namespace vega
 		mGeneratedRuntime.Replace(mResolved.generatedRules);
 		mOwnerBurstRuntime.Replace(mResolved.ownerBurstRules);
 		mTargetSlowRuntime.Replace(mResolved.targetSlowRules);
-		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) mRunCounterRuntime.Replace(active, mLookup, &ship->GetRuntimeModifiers());
-		else mRunCounterRuntime.Replace(active, mLookup, nullptr);
+		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) mRunCounterRuntime.Replace(active, mLookup, mResolved, &ship->GetRuntimeModifiers());
+		else mRunCounterRuntime.Replace(active, mLookup, mResolved, nullptr);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
 		mGeneratedRuntime.SetRunCounterDamageMultiplier(mRunCounterRuntime.GetDamageMultiplier());
 		bool needsStatusSnapshot = !mResolved.generatedRules.killExplosions.empty();
@@ -290,10 +290,11 @@ namespace vega
 		{
 			if (IsRebooting(placement.instanceId)) continue;
 			const auto* module = mLookup(placement.moduleId); if (!module) continue;
+			const int level = placement.level + ModuleResolver::FindZoneLevelBonus(mResolved, placement.instanceId);
 			for (const auto& rule : module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].runCounterRules)
 			{
 				if (rule.source != ModuleRunCounterSource::AbilityUses || !ModuleTriggerEventTagsMatch({ rule.requiredFamily }, tags)) continue;
-				const double limit = rule.armorCapByLevel.ValueAtLevel(rule.armorCap, placement.level) / rule.armorPerStack * rule.unitsPerStack;
+				const double limit = rule.armorCapByLevel.ValueAtLevel(rule.armorCap, level) / rule.armorPerStack * rule.unitsPerStack;
 				const double next = std::min(limit, placement.runCounter + 1.0), delta = next - placement.runCounter;
 				if (delta <= 0.0) continue;
 				placement.runCounter = next; if (mRunCounterCreditSink) mRunCounterCreditSink(placement.instanceId, delta); changed = true;

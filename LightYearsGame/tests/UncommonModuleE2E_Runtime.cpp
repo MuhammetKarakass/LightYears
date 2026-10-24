@@ -108,11 +108,12 @@ namespace uncommon_module_e2e
 		const float shieldBeforeGlass = CurrentShip(*ship, ShipAttributeIds::MaxShield);
 		const std::uint32_t glassId = AddInstall(report, player, rules, *glass, 1, 1, o2);
 		const ModulePlacement glassPlacement = common_module_e2e::FindInstalled(player.GetModuleLoadout(), glassId);
-		const float glassBonus = ModuleResolver::GetZoneBonus(rules, *glass, glassPlacement);
+		const int glassLevelBonus = ModuleResolver::GetZoneLevelBonus(rules, *glass, glassPlacement);
 		report.Check(player.GetModuleLoadout().FindPlacement(glassId) != nullptr, "Glass Top is installed on the real player ship");
 		const float actualGlassAP = CurrentOwner(*ship, OwnerAttributeIds::AttackPower);
 		const float actualGlassCrit = CurrentOwner(*ship, OwnerAttributeIds::CriticalChance);
-		CheckAttribute(report, "large Glass Top applies level-one AP from the live baseline", attackBeforeGlass + 34.f * (1.f + glassBonus), actualGlassAP);
+		CheckAttribute(report, "large Glass Top applies level-one AP from the live baseline",
+			attackBeforeGlass + glass->sizeVariants[1].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, 1 + glassLevelBonus), actualGlassAP);
 		CheckAttribute(report, "large Glass Top O2 is fixed +8 even inside a zone bonus", critBeforeGlass + 8.f, actualGlassCrit);
 		CheckAttribute(report, "large Glass Top applies a static 16-percent health penalty", healthBeforeGlass * 0.84f,
 			CurrentOwner(*ship, OwnerAttributeIds::MaxHealth));
@@ -125,7 +126,8 @@ namespace uncommon_module_e2e
 		report.Check(player.GetModuleLoadout().GetRevision() == beforeLevelTwo + 1 &&
 			ship->GetModuleApplier().GetAppliedRevision() == player.GetModuleLoadout().GetRevision(),
 			"level mutation advances revision and reapplies the live ship");
-		CheckAttribute(report, "Glass Top level two reads explicit compound AP table", attackBeforeGlass + 39.78f * (1.f + glassBonus),
+		CheckAttribute(report, "Glass Top level two reads explicit compound AP table",
+			attackBeforeGlass + glass->sizeVariants[1].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, 2 + glassLevelBonus),
 			CurrentOwner(*ship, OwnerAttributeIds::AttackPower));
 		CheckAttribute(report, "Glass Top level two keeps its static health penalty", healthBeforeGlass * 0.84f,
 			CurrentOwner(*ship, OwnerAttributeIds::MaxHealth));
@@ -134,7 +136,8 @@ namespace uncommon_module_e2e
 		report.Check(player.GetModuleLoadout().GetRevision() == beforeLevelThree + 1 &&
 			ship->GetModuleApplier().GetAppliedRevision() == player.GetModuleLoadout().GetRevision(),
 			"level three mutation is applied to the active ship");
-		CheckAttribute(report, "Glass Top level three reads its explicit compound AP value", attackBeforeGlass + 46.5426f * (1.f + glassBonus),
+		CheckAttribute(report, "Glass Top level three reads its explicit compound AP value",
+			attackBeforeGlass + glass->sizeVariants[1].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, 3 + glassLevelBonus),
 			CurrentOwner(*ship, OwnerAttributeIds::AttackPower));
 		CheckAttribute(report, "Glass Top level three keeps its static health penalty", healthBeforeGlass * 0.84f,
 			CurrentOwner(*ship, OwnerAttributeIds::MaxHealth));
@@ -166,12 +169,13 @@ namespace uncommon_module_e2e
 		const float smallCritBefore = CurrentOwner(*ship, OwnerAttributeIds::CriticalChance);
 		const std::uint32_t smallGlassId = AddInstall(report, player, rules, *glass, 0, 1, o2);
 		const ModulePlacement smallPlacement = common_module_e2e::FindInstalled(player.GetModuleLoadout(), smallGlassId);
-		const float smallBonus = ModuleResolver::GetZoneBonus(rules, *glass, smallPlacement);
+		const int smallLevelBonus = ModuleResolver::GetZoneLevelBonus(rules, *glass, smallPlacement);
 		CheckAttribute(report, "small Glass Top carries O2 but keeps it locked", smallCritBefore,
 			CurrentOwner(*ship, OwnerAttributeIds::CriticalChance));
 		report.Check(player.GetModuleLoadout().FindPlacement(smallGlassId)->sideFeatureId == o2,
 			"locked side feature remains selected on the small variant");
-		CheckAttribute(report, "small Glass Top real AP is +12 with its resolved zone", smallAPBefore + 12.f * (1.f + smallBonus),
+		CheckAttribute(report, "small Glass Top real AP follows its resolved zone level",
+			smallAPBefore + glass->sizeVariants[0].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, 1 + smallLevelBonus),
 			CurrentOwner(*ship, OwnerAttributeIds::AttackPower));
 		CheckAttribute(report, "small Glass Top applies its static six-percent health penalty", smallHealthBefore * 0.94f,
 			CurrentOwner(*ship, OwnerAttributeIds::MaxHealth));
@@ -181,16 +185,16 @@ namespace uncommon_module_e2e
 		const float doubleFeedEPBase = CurrentOwner(*ship, OwnerAttributeIds::EnergyPower);
 		const std::uint32_t doubleFeedId = AddInstall(report, player, rules, *doubleFeed, 0, 1);
 		const ModulePlacement doubleFeedPlacement = common_module_e2e::FindInstalled(player.GetModuleLoadout(), doubleFeedId);
-		const float doubleFeedBonus = ModuleResolver::GetZoneBonus(rules, *doubleFeed, doubleFeedPlacement);
+		const int doubleFeedLevelBonus = ModuleResolver::GetZoneLevelBonus(rules, *doubleFeed, doubleFeedPlacement);
 		for (int moduleLevel = 1; moduleLevel <= 3; ++moduleLevel)
 		{
 			const std::uint64_t priorRevision = player.GetModuleLoadout().GetRevision();
 			if (moduleLevel > 1) report.Check(player.SetModuleLevel(doubleFeedId, moduleLevel), "Double Feed level mutation succeeds");
-			const float apValues[] = { 15.f, 18.f, 21.f };
-			const float epValues[] = { 23.f, 28.f, 33.f };
-			CheckAttribute(report, "Double Feed level AP matches the real attribute", doubleFeedAPBase + apValues[moduleLevel - 1] * (1.f + doubleFeedBonus),
+			const float apValue = doubleFeed->sizeVariants[0].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, moduleLevel + doubleFeedLevelBonus);
+			const float epValue = doubleFeed->sizeVariants[0].attributeModifiers[1].magnitudeByLevel.ValueAtLevel(0.f, moduleLevel + doubleFeedLevelBonus);
+			CheckAttribute(report, "Double Feed level AP matches the real attribute", doubleFeedAPBase + apValue,
 				CurrentOwner(*ship, OwnerAttributeIds::AttackPower));
-			CheckAttribute(report, "Double Feed level EP matches the real attribute", doubleFeedEPBase + epValues[moduleLevel - 1] * (1.f + doubleFeedBonus),
+			CheckAttribute(report, "Double Feed level EP matches the real attribute", doubleFeedEPBase + epValue,
 				CurrentOwner(*ship, OwnerAttributeIds::EnergyPower));
 			if (moduleLevel > 1) report.Check(player.GetModuleLoadout().GetRevision() == priorRevision + 1 &&
 				ship->GetModuleApplier().GetAppliedRevision() == player.GetModuleLoadout().GetRevision(), "Double Feed level reapply tracks its revision");
@@ -202,14 +206,14 @@ namespace uncommon_module_e2e
 		const float sharpCritChanceBase = CurrentOwner(*ship, OwnerAttributeIds::CriticalChance);
 		const std::uint32_t sharpId = AddInstall(report, player, rules, *sharpScale, 1, 1, o1);
 		const ModulePlacement sharpPlacement = common_module_e2e::FindInstalled(player.GetModuleLoadout(), sharpId);
-		const float sharpBonus = ModuleResolver::GetZoneBonus(rules, *sharpScale, sharpPlacement);
-		const float sharpDamageValues[] = { 0.20f, 0.25f, 0.30f };
+		const int sharpLevelBonus = ModuleResolver::GetZoneLevelBonus(rules, *sharpScale, sharpPlacement);
 		for (int moduleLevel = 1; moduleLevel <= 3; ++moduleLevel)
 		{
 			if (moduleLevel > 1) report.Check(player.SetModuleLevel(sharpId, moduleLevel), "Sharp Scale level mutation succeeds");
-			CheckAttribute(report, "Sharp Scale real critical damage follows level table", sharpCritDamageBase + sharpDamageValues[moduleLevel - 1] * (1.f + sharpBonus),
+			const float critDamage = sharpScale->sizeVariants[1].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, moduleLevel + sharpLevelBonus);
+			CheckAttribute(report, "Sharp Scale real critical damage follows level table", sharpCritDamageBase + critDamage,
 				CurrentOwner(*ship, OwnerAttributeIds::CriticalDamage));
-			CheckAttribute(report, "Sharp Scale critical chance remains fixed without O1 contamination", sharpCritChanceBase + 15.f * (1.f + sharpBonus),
+			CheckAttribute(report, "Sharp Scale critical chance remains fixed without O1 contamination", sharpCritChanceBase + 15.f,
 				CurrentOwner(*ship, OwnerAttributeIds::CriticalChance));
 			CheckAttribute(report, "Sharp Scale O1 side feature adds eight attack power", sharpAttackBase + 8.f,
 				CurrentOwner(*ship, OwnerAttributeIds::AttackPower));

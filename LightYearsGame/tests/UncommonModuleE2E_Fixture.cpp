@@ -266,7 +266,8 @@ namespace uncommon_module_e2e
 		const ModulePlacement placement = common_module_e2e::FindInstalled(fixtureLoadout,
 			fixtureLoadout.GetPlacements().back().instanceId);
 		const std::uint32_t fixtureId = placement.instanceId;
-		const float fixtureBonus = ModuleResolver::GetZoneBonus(fixtureRules, *runtimeModule, placement);
+		const int fixtureLevelBonus = ModuleResolver::GetZoneLevelBonus(fixtureRules, *runtimeModule, placement);
+		const float fixtureAttack = runtimeModule->sizeVariants[1].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, placement.level + fixtureLevelBonus);
 		const ResolvedModuleEffects& effects = ship.GetModuleApplier().GetResolvedEffects();
 		constexpr std::size_t sideNamespace = std::size_t{ 1 } << (std::numeric_limits<std::size_t>::digits - 1);
 		report.Check(effects.triggerBuffs.size() == 2 && effects.triggerBuffs[0].instanceId == fixtureId &&
@@ -278,7 +279,7 @@ namespace uncommon_module_e2e
 			effects.damageRules[1].ruleIndex == sideNamespace,
 			"main and side damage rule index zero occupy separate runtime namespaces");
 		CheckAttribute(report, "main level-two fixture modifier resolves from JSON on the real ship",
-			baseAttack + 4.f * (1.f + fixtureBonus), CurrentOwner(ship, OwnerAttributeIds::AttackPower));
+			baseAttack + fixtureAttack, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
 		CheckAttribute(report, "both active damage windows begin closed", baseDamageMultiplier,
 			ship.GetCombatRuntime().ResolveOutgoingDamagePlan(ship, List<GameplayTag>{ GameplayTags::Ability::Primary }).damageMultiplier);
 		BroadcastAbilityActivated(ship);
@@ -286,7 +287,7 @@ namespace uncommon_module_e2e
 			ship.GetModuleTriggerRuntime().GetActiveModifierHandleCount() == 4,
 			"both namespaced main and side trigger buffs activate on the real ship");
 		CheckAttribute(report, "main and side trigger level tables both modify live attack power",
-			baseAttack + 4.f * (1.f + fixtureBonus) + 4.f + 20.f, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
+			baseAttack + fixtureAttack + 4.f + 20.f, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
 		CheckAttribute(report, "main and side trigger movement multipliers both apply",
 			baseMovement * 1.1f * 1.2f, ship.GetMovementSpeedMultiplier());
 		CheckAttribute(report, "main and side damage windows both multiply real outgoing damage",
@@ -307,7 +308,7 @@ namespace uncommon_module_e2e
 			"live applier remains usable after a failed content reload");
 		BroadcastAbilityActivated(ship);
 		CheckAttribute(report, "failed catalog reload retains the fixture's level-three live value",
-			baseAttack + 5.f * (1.f + fixtureBonus) + 6.f + 30.f, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
+			baseAttack + runtimeModule->sizeVariants[1].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, 3 + fixtureLevelBonus) + 6.f + 30.f, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
 		UninstallFixture(report, fixtureLoadout, fixtureRules, fixtureId, ship);
 		report.Check(ship.GetModuleTriggerRuntime().GetActiveBuffCount() == 0,
 			"removing the temporary package clears both namespaced timed buffs");
@@ -322,12 +323,13 @@ namespace uncommon_module_e2e
 		if (!InstallFixture(report, fixtureLoadout, fixtureRules, *runtimeValueTwin, 1, 2, sideId, ship)) return;
 		const std::uint32_t twinId = fixtureLoadout.GetPlacements().back().instanceId;
 		const ModulePlacement twinPlacement = common_module_e2e::FindInstalled(fixtureLoadout, twinId);
-		const float twinBonus = ModuleResolver::GetZoneBonus(fixtureRules, *runtimeValueTwin, twinPlacement);
+		const int twinLevelBonus = ModuleResolver::GetZoneLevelBonus(fixtureRules, *runtimeValueTwin, twinPlacement);
+		const float twinAttack = runtimeValueTwin->sizeVariants[1].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, twinPlacement.level + twinLevelBonus);
 		CheckAttribute(report, "JSON value twin applies its changed main modifier on the real ship",
-			twinAttackBase + 8.f * (1.f + twinBonus), CurrentOwner(ship, OwnerAttributeIds::AttackPower));
+			twinAttackBase + twinAttack, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
 		BroadcastAbilityActivated(ship);
 		CheckAttribute(report, "JSON value twin changes the live trigger modifier by data only",
-			twinAttackBase + 8.f * (1.f + twinBonus) + 6.f + 20.f, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
+			twinAttackBase + twinAttack + 6.f + 20.f, CurrentOwner(ship, OwnerAttributeIds::AttackPower));
 		CheckAttribute(report, "JSON value twin changes the live damage result by data only",
 			twinDamageBase * 1.2f * 1.3f,
 			ship.GetCombatRuntime().ResolveOutgoingDamagePlan(ship, List<GameplayTag>{ GameplayTags::Ability::Primary }).damageMultiplier);
@@ -342,20 +344,25 @@ namespace uncommon_module_e2e
 		report.Check(fixtureLoadout.SetLevel(fixtureRules, levelFourId, 4) && ship.GetModuleApplier().Apply(fixtureLoadout, fixtureRules),
 			"N=4 loadout mutation reaches level four and reapplies the real ship");
 		const ModulePlacement levelFourPlacement = common_module_e2e::FindInstalled(fixtureLoadout, levelFourId);
-		const float levelFourBonus = ModuleResolver::GetZoneBonus(fixtureRules, *levelFourModule, levelFourPlacement);
-		CheckAttribute(report, "N=4 fixture level four applies real AttackPower", levelFourAPBase + 24.f * (1.f + levelFourBonus),
+		const int levelFourBonus = ModuleResolver::GetZoneLevelBonus(fixtureRules, *levelFourModule, levelFourPlacement);
+		const float levelFourAP = levelFourModule->sizeVariants[0].attributeModifiers[0].magnitudeByLevel.ValueAtLevel(0.f, levelFourPlacement.level + levelFourBonus);
+		const float levelFourEP = levelFourModule->sizeVariants[0].attributeModifiers[1].magnitudeByLevel.ValueAtLevel(0.f, levelFourPlacement.level + levelFourBonus);
+		CheckAttribute(report, "N=4 fixture level four applies real AttackPower", levelFourAPBase + levelFourAP,
 			CurrentOwner(ship, OwnerAttributeIds::AttackPower));
-		CheckAttribute(report, "N=4 fixture level four applies real EnergyPower", levelFourEPBase + 38.f * (1.f + levelFourBonus),
+		CheckAttribute(report, "N=4 fixture level four applies real EnergyPower", levelFourEPBase + levelFourEP,
 			CurrentOwner(ship, OwnerAttributeIds::EnergyPower));
 		UninstallFixture(report, fixtureLoadout, fixtureRules, levelFourId, ship);
 
 		if (!InstallFixture(report, fixtureLoadout, fixtureRules, *movementModule, 0, 2, {}, ship)) return;
 		const std::uint32_t movementId = fixtureLoadout.GetPlacements().back().instanceId;
+		const ModulePlacement movementPlacement = common_module_e2e::FindInstalled(fixtureLoadout, movementId);
+		const int movementLevelBonus = ModuleResolver::GetZoneLevelBonus(fixtureRules, *movementModule, movementPlacement);
 		BroadcastAbilityActivated(ship);
 		report.Check(ship.GetModuleTriggerRuntime().GetActiveBuffCount() == 1,
 			"neutral-first movement table activates from its non-neutral level on the real ship");
-		CheckAttribute(report, "neutral-first movement table applies its level-two multiplier",
-			baseMovement * 1.1f, ship.GetMovementSpeedMultiplier());
+		CheckAttribute(report, "neutral-first movement table applies its effective-level multiplier",
+			baseMovement * movementModule->sizeVariants[0].triggerBuffs[0].movementSpeedMultiplierByLevel.ValueAtLevel(1.f, movementPlacement.level + movementLevelBonus),
+			ship.GetMovementSpeedMultiplier());
 		UninstallFixture(report, fixtureLoadout, fixtureRules, movementId, ship);
 		report.Check(ship.GetModuleTriggerRuntime().GetActiveBuffCount() == 0,
 			"neutral-first movement fixture cleans up its live timed buff");

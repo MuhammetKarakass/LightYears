@@ -116,6 +116,15 @@ namespace common_module_e2e
 		return std::nullopt;
 	}
 
+	// Preference order: own family zone (2), any-family Hull (1), no zone level bonus (0).
+	inline int ZonePreferenceRank(const vega::ModuleRulesContext& rules, const vega::ModuleDefinition& module, const vega::ModulePlacement& placement)
+	{
+		if (vega::ModuleResolver::GetZoneLevelBonus(rules, module, placement) <= 0) return 0;
+		const sf::Vector2i cell = vega::ModulePlacementRules::GetCoveredCells(module, placement).front();
+		const vega::ModuleZoneEntry* entry = rules.zoneTable.FindZone(rules.schematic.GetZoneAt(cell.x, cell.y));
+		return entry && entry->anyFamily ? 1 : 2;
+	}
+
 	inline std::optional<vega::ModulePlacement> FindPlacementWithBestZoneBonus(
 		const vega::ModuleRulesContext& rules,
 		const vega::ModuleLoadout& loadout,
@@ -127,7 +136,7 @@ namespace common_module_e2e
 		candidate.instanceId = instanceId;
 		candidate.moduleId = module.moduleId;
 		std::optional<vega::ModulePlacement> bestPlacement;
-		float bestBonus = -1.f;
+		int bestRank = -1;
 		for (int rotation = 0; rotation < 4; ++rotation)
 		{
 			for (int y = 0; y < rules.schematic.height; ++y)
@@ -137,10 +146,10 @@ namespace common_module_e2e
 					candidate.origin = { x, y };
 					candidate.rotationQuarterTurns = rotation;
 					if (vega::ModulePlacementRules::CanPlace(rules, loadout, candidate) != vega::ModulePlacementFailure::None) continue;
-					const float bonus = vega::ModuleResolver::GetZoneBonus(rules, module, candidate);
-					if (bonus > bestBonus)
+					const int rank = ZonePreferenceRank(rules, module, candidate);
+					if (rank > bestRank)
 					{
-						bestBonus = bonus;
+						bestRank = rank;
 						bestPlacement = candidate;
 					}
 				}

@@ -96,11 +96,6 @@ namespace vega
 			return result.empty() ? name.substr(0, 2) : result;
 		}
 
-		int ToPercent(float bonus)
-		{
-			return static_cast<int>(std::lround(bonus * 100.f));
-		}
-
 		std::string ConflictText(const ModuleRulesContext& rules, const ModuleLoadout& loadout, std::uint32_t installedInstanceId)
 		{
 			const ModulePlacement* placement = loadout.FindPlacement(installedInstanceId);
@@ -123,7 +118,7 @@ namespace vega
 			return conflicts.empty() ? std::string{ ModulePlacementRules::Describe(ModulePlacementFailure::ModuleConflict) } : ConflictText(*rules, loadout, conflicts.front());
 		}
 
-		bool BuildEntry(const ModuleRulesContext& rules, const ModulePlacement& placement, bool installed, const PlayerSpaceShip* ship, std::uint32_t heldId, const std::string& description, const std::string& sideDescription, ModuleEntryView& out)
+		bool BuildEntry(const ModuleRulesContext& rules, const ModulePlacement& placement, bool installed, const PlayerSpaceShip* ship, std::uint32_t heldId, const std::string& description, const std::string& sideDescription, int zoneLevelBonus, ModuleEntryView& out)
 		{
 			const ModuleDefinition* definition = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
 			if (!definition || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= definition->sizeVariants.size()) return false;
@@ -184,13 +179,7 @@ namespace vega
 			if (installed)
 			{
 				out.cells = ModulePlacementRules::GetCoveredCells(*definition, placement);
-				out.bonusPercent = AbilitySlotForModuleSystem(definition->systemCategory) == sas::AbilitySlot::None
-					? ToPercent(ModuleResolver::GetZoneBonus(rules, *definition, placement))
-					: 0;
-				if (ship && AbilitySlotForModuleSystem(definition->systemCategory) == sas::AbilitySlot::None)
-					for (const auto& bonus : ship->GetModuleApplier().GetResolvedEffects().zoneBonuses)
-						if (bonus.instanceId == placement.instanceId) out.bonusPercent = ToPercent(bonus.bonus);
-
+				out.zoneLevelBonus = zoneLevelBonus;
 			}
 			return true;
 		}
@@ -381,7 +370,7 @@ namespace vega
 				const ModuleZoneEntry* entry = zoneTable.FindZone(zone.tag);
 				std::string label = zone.name;
 				if (zone.kind == ModuleZoneKind::AbilityBay) label += "  Q/E/F/R only";
-				else if (entry) label += "  " + (entry->anyFamily ? std::string{ "Any" } : FamilyLabel(entry->family)) + "  +" + std::to_string(ToPercent(entry->bonus)) + "%";
+				else if (entry) label += "  " + (entry->anyFamily ? std::string{ "Any" } : FamilyLabel(entry->family)) + "  +" + std::to_string(entry->levelBonus) + " Lv";
 				legend.push_back({ zone.kind, label });
 			}
 
@@ -391,15 +380,19 @@ namespace vega
 			{
 				const ModuleDefinition* definition = rules->lookup(placement.moduleId);
 				if (!definition || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= definition->sizeVariants.size()) return;
-				const DescriptionKey key{ placement.moduleId.ToString(), placement.variantIndex, placement.level, placement.sideFeatureId.ToString() };
+				// An installed module works at its zone level; the side feature stays at the placement level.
+				const bool abilitySlotModule = AbilitySlotForModuleSystem(definition->systemCategory) != sas::AbilitySlot::None;
+				const int zoneLevelBonus = isInstalled && !abilitySlotModule ? ModuleResolver::GetZoneLevelBonus(*rules, *definition, placement) : 0;
+				const int mainLevel = placement.level + zoneLevelBonus;
+				const DescriptionKey key{ placement.moduleId.ToString(), placement.variantIndex, mainLevel, placement.level, placement.sideFeatureId.ToString() };
 				auto cached = mDescriptions.find(key);
 				if (cached == mDescriptions.end())
 				{
 					++mDescriptionFormatCount;
 					const auto* feature = placement.sideFeatureId.IsValid() && rules->sideFeatureLookup ? rules->sideFeatureLookup(placement.sideFeatureId) : nullptr;
-					cached = mDescriptions.emplace(key, std::make_pair(FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)], placement.level), feature ? FormatModuleSideFeatureDescription(*feature, placement.level) : std::string{})).first;
+					cached = mDescriptions.emplace(key, std::make_pair(FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)], mainLevel), feature ? FormatModuleSideFeatureDescription(*feature, placement.level) : std::string{})).first;
 				}
-				if (BuildEntry(*rules, placement, isInstalled, livingShip, mHeldId, cached->second.first, cached->second.second, entry)) entries.push_back(entry);
+				if (BuildEntry(*rules, placement, isInstalled, livingShip, mHeldId, cached->second.first, cached->second.second, zoneLevelBonus, entry)) entries.push_back(entry);
 			};
 			installed.reserve(loadout.GetPlacements().size());
 			inventory.reserve(loadout.GetInventory().size());
@@ -432,7 +425,6 @@ namespace vega
 			mCatalogRevision = catalogRevision;
 		}
 
-		bool zoneBonusesDirty = false;
 		const auto update = [&](List<ModuleEntryView>& entries, bool isInstalled, UIRevision& listRevision)
 		{
 			bool changed = false;
@@ -442,7 +434,6 @@ namespace vega
 				if (isInstalled) changed |= heldChanged;
 				const bool rebooting = isInstalled && livingShip && livingShip->GetModuleApplier().IsRebooting(view.instanceId);
 				const float remaining = rebooting ? livingShip->GetModuleApplier().GetRebootRemainingSeconds(view.instanceId) : 0.f;
-				zoneBonusesDirty = zoneBonusesDirty || (isInstalled && view.rebooting != rebooting);
 				changed |= SetIfChanged(view.rebooting, rebooting, vm.revision);
 				changed |= SetIfChanged(view.rebootRemaining, std::round(remaining * 10.f) / 10.f, vm.revision);
 				const float fraction = rebooting && zoneTable.rebootDurationSeconds > 0.f ? std::round(std::clamp(1.f - remaining / zoneTable.rebootDurationSeconds, 0.f, 1.f) * 50.f) / 50.f : 0.f;
@@ -465,15 +456,6 @@ namespace vega
 		};
 		update(vm.installed, true, vm.installedRevision);
 		update(vm.inventory, false, vm.inventoryRevision);
-		if (zoneBonusesDirty && livingShip)
-		{
-			bool changed = false;
-			for (ModuleEntryView& view : vm.installed)
-				if (view.family != "Ability")
-					for (const auto& bonus : livingShip->GetModuleApplier().GetResolvedEffects().zoneBonuses)
-						if (bonus.instanceId == view.instanceId) changed |= SetIfChanged(view.bonusPercent, ToPercent(bonus.bonus), vm.revision);
-			if (changed) vm.installedRevision.Bump();
-		}
 
 		ModulePreviewView preview;
 		const ModuleDefinition* heldDefinition = held && rules->lookup ? rules->lookup(held->moduleId) : nullptr;
@@ -496,7 +478,7 @@ namespace vega
 				}
 			preview.legal = failure == ModulePlacementFailure::None || swapsSlots;
 			if (preview.legal && AbilitySlotForModuleSystem(heldDefinition->systemCategory) == sas::AbilitySlot::None)
-				preview.bonusPercent = ToPercent(ModuleResolver::GetZoneBonus(*rules, *heldDefinition, candidate));
+				preview.zoneLevelBonus = ModuleResolver::GetZoneLevelBonus(*rules, *heldDefinition, candidate);
 			else if (!preview.legal && failure == ModulePlacementFailure::ModuleConflict)
 			{
 				preview.conflictingInstanceIds = ModulePlacementRules::FindConflictingInstances(*rules, loadout.GetPlacements(), candidate, heldInstalled ? held->instanceId : 0u);

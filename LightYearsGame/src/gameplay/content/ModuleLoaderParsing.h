@@ -74,7 +74,7 @@ namespace vega::content
 
 		void ValidateDescription(const ModuleDefinition& definition, const std::string& context);
 
-		void ParseZoneRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& package);
+		void RejectZoneRules(const Json& object, const std::string& context);
 
 		void ParseShieldRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules);
 

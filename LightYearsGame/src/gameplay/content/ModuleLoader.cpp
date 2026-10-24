@@ -125,8 +125,10 @@ namespace vega::content
 			std::size_t index = 0;
 			for (const Json& variant : variants)
 			{
+				const std::string variantContext = context + ".sizeVariants[" + std::to_string(index++) + "]";
+				module_loader_detail::RejectZoneRules(variant, variantContext);
 				definition.sizeVariants.push_back(
-					ParseVariant(variant, context + ".sizeVariants[" + std::to_string(index++) + "]", definition.levelCount, true, false)
+					ParseVariant(variant, variantContext, definition.levelCount, true, false)
 				);
 			}
 			if (object.contains("sizeLadder"))
@@ -185,10 +187,12 @@ namespace vega::content
 				{
 					zone.family = ParseTag(family, GameplayTagKind::AbilityCategory, "Zone family");
 				}
-				zone.bonus = ParseFiniteFloat(entry.at("bonus"), "Zone bonus");
-				if (zone.bonus < 0.f)
+				const Json& levelBonus = entry.at("levelBonus");
+				if (!levelBonus.is_number_integer()) throw std::runtime_error("Zone levelBonus must be an integer");
+				zone.levelBonus = levelBonus.get<int>();
+				if (zone.levelBonus < 0 || zone.levelBonus > kMaxZoneLevelBonus)
 				{
-					throw std::runtime_error("Zone bonus must not be negative");
+					throw std::runtime_error("Zone levelBonus must be in [0, 2]");
 				}
 				table.zones.push_back(std::move(zone));
 			}
@@ -248,6 +252,7 @@ namespace vega::content
 	{
 		if (!object.is_object()) throw std::runtime_error(context + " must be an object");
 		if (object.contains("shape")) throw std::runtime_error(context + " rule package must not define a shape");
+		module_loader_detail::RejectZoneRules(object, context);
 		nlohmann::json shapedObject = object;
 		nlohmann::json shape = nlohmann::json::array();
 		shape.push_back(nlohmann::json::array({ 0, 0 }));

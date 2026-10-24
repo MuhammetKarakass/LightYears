@@ -84,7 +84,7 @@ namespace
 		for (int level = 1; level <= 3; ++level)
 		{
 			Fixture f{ report, application }; CounterBinding binding{ f }; const float baseline = f.Owner(OwnerAttributeIds::Armor);
-			const auto id = f.Install("Module.Defense.TemperedHull.Rare", 0, level); const int cap = 20 + 10 * level;
+			const auto id = f.Install("Module.Defense.TemperedHull.Rare", 0, level); const int cap = 20 + 10 * (level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), id));
 			CastOffense(f); f.Equal("Offense does not accumulate Armor", baseline, f.Owner(OwnerAttributeIds::Armor));
 			for (int count = 1; count <= cap + 2; ++count) { CastDefense(f); f.Equal("Armor advances only up to level cap", baseline + static_cast<float>(std::min(count, cap)), f.Owner(OwnerAttributeIds::Armor)); }
 			f.Equal("persistent counter stops at cap", static_cast<float>(cap), static_cast<float>(f.loadout.FindPlacement(id)->runCounter));

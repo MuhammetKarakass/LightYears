@@ -27,7 +27,7 @@ namespace vega
 		int variantIndex{ 0 };
 		// Covered grid cells; filled for installed modules only.
 		List<sf::Vector2i> cells;
-		int bonusPercent{ 0 };
+		int zoneLevelBonus{ 0 };
 		bool rebooting{ false };
 		float rebootRemaining{ 0.f };
 		// 0 just started, 1 finished.
@@ -40,7 +40,7 @@ namespace vega
 		{
 			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && rarity == o.rarity && description == o.description && isSystem == o.isSystem &&
 				level == o.level && levelCount == o.levelCount && sizeLadder == o.sizeLadder && sideFeatureRequiredCells == o.sideFeatureRequiredCells && sideFeatureState == o.sideFeatureState && sideFeatureName == o.sideFeatureName && sideFeatureDescription == o.sideFeatureDescription &&
-				cellCount == o.cellCount && variantIndex == o.variantIndex && cells == o.cells && bonusPercent == o.bonusPercent &&
+				cellCount == o.cellCount && variantIndex == o.variantIndex && cells == o.cells && zoneLevelBonus == o.zoneLevelBonus &&
 				rebooting == o.rebooting && rebootRemaining == o.rebootRemaining && rebootFraction == o.rebootFraction && held == o.held &&
 					conflictingInstanceIds == o.conflictingInstanceIds;
 		}
@@ -59,15 +59,15 @@ namespace vega
 		bool active{ false };
 		List<sf::Vector2i> cells;
 		bool legal{ false };
-		// Zone bonus when legal; 0 means "no label" (never a warning).
-		int bonusPercent{ 0 };
+		// Zone level bonus when legal; 0 means "no label" (never a warning).
+		int zoneLevelBonus{ 0 };
 		std::string message;
 			// Installed instance ids that block the held module at the hovered cell (conflicts only).
 			List<std::uint32_t> conflictingInstanceIds;
 
 		bool operator==(const ModulePreviewView& o) const
 		{
-			return active == o.active && cells == o.cells && legal == o.legal && bonusPercent == o.bonusPercent && message == o.message &&
+			return active == o.active && cells == o.cells && legal == o.legal && zoneLevelBonus == o.zoneLevelBonus && message == o.message &&
 					conflictingInstanceIds == o.conflictingInstanceIds;
 		}
 	};

@@ -190,7 +190,7 @@ namespace rare_side_features_e2e
 					std::string{ "side-feature loader rejects " } + name, Json{ { "error", loaded.error } });
 			};
 			reject("zone-rules", Json{ { "zoneRules", Json::array({ Json{ { "kind", "AmplifyZone" }, { "bonus", 0.3 } } }) } },
-				"zoneRules is not supported on side features");
+				"zoneRules is no longer supported");
 			reject("empty-shield-entry", Json{ { "shieldRules", Json::array({ Json{ { "regenMode", "Normal" } } }) } },
 				"shieldRules entry has no effect");
 			const auto path = root / "side-shield-only.json";

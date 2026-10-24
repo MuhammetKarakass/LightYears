@@ -113,7 +113,7 @@ namespace vega
 	struct ResolvedModuleOwnerBurstRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleOwnerBurstRule rule; float accumulatedArmor = 0.f; };
 	struct ResolvedModuleEffects
 	{
-		struct ZoneBonus { std::uint32_t instanceId; float bonus; };
+		struct ZoneBonus { std::uint32_t instanceId; int levelBonus; };
 		List<ZoneBonus> zoneBonuses;
 		List<sas::AttributeModifier> ownerModifiers;
 		List<sas::AttributeModifier> shipModifiers;
@@ -152,9 +152,12 @@ namespace vega
 
 	namespace ModuleResolver
 	{
-		// Bonus for one placement: the zone bonus when every covered cell lies in
-		// one zone that rewards the module's family (or any family), else 0.
-		float GetZoneBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement);
+		// Level bonus for one placement from its zone: a whole placement takes its single zone (0 when the cells are mixed),
+		// a fragmented placement takes the lowest cell bonus, so its worst fragment decides. Clamped to [0, kMaxZoneLevelBonus].
+		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement);
+
+		// Level bonus recorded for one placement in effects.zoneBonuses; 0 when the placement has no entry.
+		int FindZoneLevelBonus(const ResolvedModuleEffects& effects, std::uint32_t instanceId);
 
 		// Usable schematic cells (zone set, not locked) that no placement covers. Derived from the schematic.
 		int CountEmptyCells(const ModuleRulesContext& rules, const List<ModulePlacement>& placements);

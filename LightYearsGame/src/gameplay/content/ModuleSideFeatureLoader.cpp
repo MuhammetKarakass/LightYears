@@ -125,8 +125,6 @@ namespace vega::content
 					definition.levelCount = static_cast<int>(levelCount);
 				}
 				definition.rules = ModuleLoader::ParseRulePackage(entry.at("rules"), context + ".rules", definition.levelCount, false, true);
-				// Main-package zoneRules feed AmplifierScale and LayoutOutOfZoneMainBonus, which never read side-feature packages.
-				if (!definition.rules.zoneRules.empty()) throw std::runtime_error(context + ".rules.zoneRules is not supported on side features");
 				// Activation bursts may be independent side features; shield and kill bursts patch the main source.
 				if (std::any_of(definition.rules.ownerBurstRules.begin(), definition.rules.ownerBurstRules.end(), [](const ModuleOwnerBurstRule& rule) { return rule.trigger != ModuleTriggerKind::AbilityActivated; })) throw std::runtime_error(context + ".rules.ownerBurstRules side sources require AbilityActivated; other bursts use modifiers");
 				ValidateModuleDescriptionTemplate(definition.description, definition.rules, context);

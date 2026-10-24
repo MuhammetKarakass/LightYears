@@ -12,6 +12,7 @@
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
 #include "presentation/hud/modules/ModuleScreenHUDController.h"
+#include "presentation/hud/modules/ModuleScreenPresenter.h"
 #include "presentation/hud/modules/ModuleScreenView.h"
 
 #include <nlohmann/json.hpp>
@@ -156,7 +157,7 @@ namespace
 				if (placement.moduleId == "Module.Utility.LifeSupportUnit.Standard") lifeSupportInNose = layout.GetZoneAt(placement.origin.x, placement.origin.y) == GameplayTags::Module::Zone::Nose;
 			report.Check(lifeSupportInNose, shipId + " Life Support sits in the Nose");
 		}
-		report.Check(model->legend.size() == 7 && model->legend[0].label == "Nose  Primary  +25%" && model->legend[2].label == "Hull  Any  +10%", "legend lists the seven zones with bonuses",
+		report.Check(model->legend.size() == 7 && model->legend[0].label == "Nose  Primary  +1 Lv" && model->legend[2].label == "Hull  Any  +2 Lv", "legend lists the seven zones with level bonuses",
 			{ { "nose", model->legend[0].label }, { "hull", model->legend[2].label } });
 		report.Check(model->cellZones[1 * 16 + 7] == ModuleZoneKind::Nose && model->cellZones[0] == ModuleZoneKind::None && model->cellZones[6 * 16 + 5] == ModuleZoneKind::Hull && model->cellZones[5 * 16 + 5] == ModuleZoneKind::AbilityBay && model->cellLocked.size() == 160 && model->cellLocked[0 * 16 + 7] != 0 && model->cellLocked[1 * 16 + 7] == 0, "cell zones map the schematic rows");
 		report.Check(model->installed.size() == loadout.GetPlacements().size() && model->inventory.size() == loadout.GetInventory().size() && !model->inventory.empty(),
@@ -175,8 +176,8 @@ namespace
 		presenter->PickUpInventory(tipId);
 		presenter->SetHoverCell(sf::Vector2i{ 7, 1 });
 		level->TickInternal(0.f);
-		report.Check(model->heldInstanceId == tipId && model->preview.active && model->preview.legal && model->preview.bonusPercent == 25 && model->preview.message.empty(),
-			"nose cells give a legal preview with +25%", { { "bonus", model->preview.bonusPercent }, { "cells", CellsJson(model->preview.cells) } });
+		report.Check(model->heldInstanceId == tipId && model->preview.active && model->preview.legal && model->preview.zoneLevelBonus == 1 && model->preview.message.empty(),
+			"nose cells give a legal preview with +1 Lv", { { "zoneLevelBonus", model->preview.zoneLevelBonus },{ "cells", CellsJson(model->preview.cells) } });
 		report.Check(model->preview.cells == List<sf::Vector2i>{ { 7, 1 }, { 8, 1 } }, "preview shows the unrotated shape", CellsJson(model->preview.cells));
 		presenter->RotateHeld();
 		level->TickInternal(0.f);
@@ -185,13 +186,13 @@ namespace
 		presenter->RotateHeld(3);
 		presenter->SetHoverCell(sf::Vector2i{ 5, 6 });
 		level->TickInternal(0.f);
-		report.Check(model->preview.legal && model->preview.bonusPercent == 10, "hull cells give a +10% preview", { { "bonus", model->preview.bonusPercent } });
+		report.Check(model->preview.legal && model->preview.zoneLevelBonus == 2, "hull cells give a +2 Lv preview", { { "zoneLevelBonus", model->preview.zoneLevelBonus } });
 		presenter->SetHoverCell(sf::Vector2i{ 6, 6 });
 		level->TickInternal(0.f);
-		report.Check(model->preview.legal && model->preview.bonusPercent == 0 && model->preview.message.empty(), "a legal cell with no bonus has no label and no warning");
+		report.Check(model->preview.legal && model->preview.zoneLevelBonus == 0 && model->preview.message.empty(), "a legal cell with no bonus has no label and no warning");
 		presenter->SetHoverCell(sf::Vector2i{ 0, 0 });
 		level->TickInternal(0.f);
-		report.Check(model->preview.active && !model->preview.legal && !model->preview.message.empty() && model->preview.bonusPercent == 0, "a void cell previews as illegal with the Describe text",
+		report.Check(model->preview.active && !model->preview.legal && !model->preview.message.empty() && model->preview.zoneLevelBonus == 0, "a void cell previews as illegal with the Describe text",
 			{ { "message", model->preview.message } });
 		// Locked cells show their zone but take nothing.
 		presenter->SetHoverCell(sf::Vector2i{ 7, 0 });
@@ -216,8 +217,8 @@ namespace
 		report.Check(model->installed.size() == installedBefore + 1 && model->heldInstanceId == 0 && !model->preview.active, "view model updates next tick after install");
 		const ModuleEntryView* installedTip = nullptr;
 		for (const ModuleEntryView& entry : model->installed) if (entry.instanceId == tipId) installedTip = &entry;
-		report.Check(installedTip && installedTip->rebooting && installedTip->rebootRemaining > 1.f && installedTip->bonusPercent == 25 && installedTip->cells.size() == 2,
-			"in-combat install shows a rebooting module with its bonus", { { "remaining", installedTip ? installedTip->rebootRemaining : -1.f } });
+		report.Check(installedTip && installedTip->rebooting && installedTip->rebootRemaining > 1.f && installedTip->zoneLevelBonus == 1 && installedTip->cells.size() == 2,
+			"in-combat install shows a rebooting module with its level bonus",{ { "remaining", installedTip ? installedTip->rebootRemaining : -1.f } });
 		ModuleScreenView rebootView{ application.GetEngineContext(), model, presenter };
 		rebootView.Tick(0.f);
 		const auto rebootCargoBuilds = rebootView.GetInventoryRefreshCount();
@@ -254,6 +255,28 @@ namespace
 		level->TickInternal(0.f);
 		report.Check(player.GetModuleLoadout().FindInventoryItem(tipId) != nullptr && model->inventory.size() == inventoryBefore + 1 && model->installed.size() == installedBefore,
 			"module returns to the inventory");
+		// Movement Rhythm has a level table. In a Hull cell (+2 Lv zone bonus) the installed card describes level 3 and the cargo card level 1.
+		const sas::ContentId rhythmModule{ std::string{ "Module.Movement.MovementRhythm.Uncommon" } };
+		const ModuleDefinition* rhythm = content::ModuleContentCatalog::FindById(rhythmModule);
+		report.Check(rhythm && rhythm->sizeVariants.size() > 0, "Movement Rhythm is shipped with a level table");
+		const std::uint32_t rhythmId = player.AddModuleToInventory(rhythmModule, 0, rhythm->rarity);
+		const std::string levelOneText = FormatModuleDescription(*rhythm, rhythm->sizeVariants[0], 1);
+		const std::string effectiveText = FormatModuleDescription(*rhythm, rhythm->sizeVariants[0], 3);
+		report.Check(effectiveText != levelOneText, "the level table changes the Movement Rhythm text between levels 1 and 3");
+		ship->SetInvulnerability(false);
+		ship->ApplyDamage(1.f);
+		report.Check(player.TryInstallModule(rhythmId, sf::Vector2i{ 5, 6 }, 0) == ModulePlacementFailure::None, "Movement Rhythm installs into a free Hull cell");
+		level->TickInternal(0.f);
+		const ModuleEntryView* installedRhythm = nullptr;
+		for (const ModuleEntryView& entry : model->installed) if (entry.instanceId == rhythmId) installedRhythm = &entry;
+		report.Check(installedRhythm && installedRhythm->level == 1 && installedRhythm->zoneLevelBonus == 2 && installedRhythm->rebooting && installedRhythm->description == effectiveText,
+			"installed Hull module describes its effective level while rebooting", { { "description", installedRhythm ? installedRhythm->description : std::string{} }, { "expected", effectiveText } });
+		report.Check(player.TryUninstallModule(rhythmId), "Movement Rhythm returns to cargo");
+		level->TickInternal(0.f);
+		const ModuleEntryView* cargoRhythm = nullptr;
+		for (const ModuleEntryView& entry : model->inventory) if (entry.instanceId == rhythmId) cargoRhythm = &entry;
+		report.Check(cargoRhythm && cargoRhythm->level == 1 && cargoRhythm->zoneLevelBonus == 0 && cargoRhythm->description == levelOneText,
+			"the same module in cargo describes its placement level", { { "description", cargoRhythm ? cargoRhythm->description : std::string{} } });
 
 		// Ability bay: only the Q/E/F/R slot modules fit it, they cannot leave it, and dropping one on another swaps them.
 		{

@@ -26,7 +26,7 @@ namespace vega
 		ModuleRunCounterRuntime& operator=(const ModuleRunCounterRuntime&) = delete;
 
 		// Movement modifiers belong to the owning ship and must stay valid until Clear runs.
-		void Replace(const List<ModulePlacement>& placements, const ModuleLookup& lookup, ShipRuntimeModifiers* movementModifiers)
+		void Replace(const List<ModulePlacement>& placements, const ModuleLookup& lookup, const ResolvedModuleEffects& effects, ShipRuntimeModifiers* movementModifiers)
 		{
 			mMovementModifiers = movementModifiers;
 			List<Source> desired;
@@ -35,14 +35,15 @@ namespace vega
 				const ModuleDefinition* module = lookup ? lookup(placement.moduleId) : nullptr;
 				if (!module || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module->sizeVariants.size()) continue;
 				const List<ModuleRunCounterRule>& rules = module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].runCounterRules;
+				const int level = placement.level + ModuleResolver::FindZoneLevelBonus(effects, placement.instanceId);
 				for (std::size_t index = 0; index < rules.size(); ++index)
 				{
 					const ModuleRunCounterRule& rule = rules[index];
 					if (rule.source != ModuleRunCounterSource::Distance) continue;
 					const int stacks = GetModuleRunCounterStacks(rule, placement.runCounter);
 					if (stacks <= 0) continue;
-					const float damage = 1.f + rule.damagePerStackByLevel.ValueAtLevel(rule.damagePerStack, placement.level) * static_cast<float>(stacks);
-					const float speed = 1.f + rule.moveSpeedPerStackByLevel.ValueAtLevel(rule.moveSpeedPerStack, placement.level) * static_cast<float>(stacks);
+					const float damage = 1.f + rule.damagePerStackByLevel.ValueAtLevel(rule.damagePerStack, level) * static_cast<float>(stacks);
+					const float speed = 1.f + rule.moveSpeedPerStackByLevel.ValueAtLevel(rule.moveSpeedPerStack, level) * static_cast<float>(stacks);
 					if (damage == 1.f && speed == 1.f) continue;
 					desired.push_back({ "ModuleRunCounter." + std::to_string(placement.instanceId) + "." + std::to_string(index), damage, speed });
 				}

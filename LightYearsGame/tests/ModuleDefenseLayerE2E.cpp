@@ -31,9 +31,9 @@ namespace
 	{
 		for (int level = 1; level <= 3; ++level)
 		{
-			const float coefficient = .35f + .05f * level;
 			Fixture f{ report, application }; SetArmor(f, 80.f); SetPower(f, 100.f, 50.f);
 			const auto main = f.Install("Module.Defense.ArmorConversion.Uncommon", 0, level);
+			const float coefficient = .35f + .05f * (level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), main));
 			f.Equal("Armor converts into the higher power", 100.f + 80.f * coefficient, f.Owner(OwnerAttributeIds::AttackPower));
 			f.Equal("main conversion leaves lower power unchanged", 50.f, f.Owner(OwnerAttributeIds::EnergyPower));
 			SetPower(f, 40.f, 100.f);
@@ -42,10 +42,11 @@ namespace
 			SetPower(f, 100.f, 100.f); f.Equal("ties select AP", 100.f + 80.f * coefficient, f.Owner(OwnerAttributeIds::AttackPower));
 			f.Remove(main); f.Equal("uninstall removes conversion", 100.f, f.Owner(OwnerAttributeIds::AttackPower));
 			const auto balanced = f.Install("Module.Defense.ArmorConversion.Uncommon", 1, level, "Module.SideFeature.ArmorConversion.BalancedOutput");
-			f.Equal("Balanced Output chooses EP on a tie", 100.f + 80.f * coefficient * .25f, f.Owner(OwnerAttributeIds::EnergyPower));
-			f.Equal("Balanced Output cannot feed back into AP", 100.f + 80.f * coefficient, f.Owner(OwnerAttributeIds::AttackPower));
-			SetArmor(f, 120.f); f.Equal("Armor changes refresh the main", 100.f + 120.f * coefficient, f.Owner(OwnerAttributeIds::AttackPower));
-			f.Equal("Armor changes refresh the side", 100.f + 120.f * coefficient * .25f, f.Owner(OwnerAttributeIds::EnergyPower)); f.Remove(balanced);
+			const float balancedCoefficient = .35f + .05f * (level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), balanced));
+			f.Equal("Balanced Output chooses EP on a tie", 100.f + 80.f * balancedCoefficient * .25f, f.Owner(OwnerAttributeIds::EnergyPower));
+			f.Equal("Balanced Output cannot feed back into AP", 100.f + 80.f * balancedCoefficient, f.Owner(OwnerAttributeIds::AttackPower));
+			SetArmor(f, 120.f); f.Equal("Armor changes refresh the main", 100.f + 120.f * balancedCoefficient, f.Owner(OwnerAttributeIds::AttackPower));
+			f.Equal("Armor changes refresh the side", 100.f + 120.f * balancedCoefficient * .25f, f.Owner(OwnerAttributeIds::EnergyPower)); f.Remove(balanced);
 			SetArmor(f, 80.f); const float speed = f.Owner(OwnerAttributeIds::AttackSpeed);
 			const auto rapid = f.Install("Module.Defense.ArmorConversion.Uncommon", 1, level, "Module.SideFeature.ArmorConversion.RapidAlloy");
 			f.Equal("eighty Armor grants eight AS points", speed + 8.f, f.Owner(OwnerAttributeIds::AttackSpeed));
