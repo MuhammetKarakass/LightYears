@@ -2,6 +2,7 @@
 
 #include "framework/Core.h"
 #include "gameConfigs/combat/WeaponStructs.h"
+#include "gameplay/weapon/PrimaryWeaponMountProfile.h"
 #include "gameplay/weapon/PrimaryWeaponValidationContract.h"
 
 #include <SFML/System/Vector2.hpp>
@@ -91,6 +92,8 @@ namespace vega
 		// World position of the player's cursor. Empty for AI shooters and for
 		// shots fired without a cursor, so handlers fall back to their own default.
 		std::optional<sf::Vector2f> aimWorldPosition;
+		// Module mount shape of this shot (Turret Mount, Broadside Mount); the default is the plain forward shot.
+		PrimaryWeaponMountProfile mountProfile;
 
 		bool ShouldContinue() const
 		{

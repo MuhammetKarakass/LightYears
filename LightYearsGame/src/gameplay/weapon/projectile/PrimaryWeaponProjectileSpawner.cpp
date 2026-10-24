@@ -2,6 +2,7 @@
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/module/rules/EpicPrimaryRules.h"
 
 #include "framework/Actor.h"
 #include "framework/World.h"
@@ -47,13 +48,7 @@ namespace vega::PrimaryWeaponProjectileSpawner
 {
 	namespace
 	{
-		bool FireProjectile(
-			const PrimaryWeaponExecutionContext& context,
-			const WeaponMuzzleDefinition& muzzle,
-			float localRotationOffset,
-			const sf::Vector2f& carrierVelocity,
-			const shared_ptr<ProjectileImpactBehavior>& impactBehavior
-		)
+		bool FireProjectile(const PrimaryWeaponExecutionContext& context, const WeaponMuzzleDefinition& muzzle, float volleyRotation, float localRotationOffset, const sf::Vector2f& carrierVelocity, const shared_ptr<ProjectileImpactBehavior>& impactBehavior, float damageScale, const sf::Vector2f& lateralOffset)
 		{
 			if (!context.owner.GetWorld())
 			{
@@ -78,17 +73,13 @@ namespace vega::PrimaryWeaponProjectileSpawner
 					spawnedProjectile->SetImpactBehavior(impactBehavior);
 				}
 				const float shotDamage = ResolvePrimaryWeaponShotDamage(context);
-				spawnedProjectile->SetDamage(shotDamage);
+				spawnedProjectile->SetDamage(shotDamage * damageScale);
 				spawnedProjectile->SetDamageTags(context.damageTags);
 				spawnedProjectile->SetShotMetadata(context.shotMetadata);
 				const sf::Vector2f location = context.owner.GetActorLocation() +
-					context.owner.TransformLocalToWorld(muzzle.offset);
+					context.owner.TransformLocalToWorld(muzzle.offset) + lateralOffset;
 				spawnedProjectile->SetActorLocation(location);
-				spawnedProjectile->SetActorRotation(
-					context.owner.GetActorRotation() +
-						muzzle.rotationOffset +
-						localRotationOffset
-				);
+				spawnedProjectile->SetActorRotation(volleyRotation + muzzle.rotationOffset + localRotationOffset);
 				const float projectileSpeed = sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Delivery::Speed,
@@ -119,27 +110,27 @@ namespace vega::PrimaryWeaponProjectileSpawner
 		const float angleStep =
 			count > 1 ? spreadAngle / static_cast<float>(count - 1) : 0.f;
 		const float startAngle = count > 1 ? -spreadAngle * 0.5f : 0.f;
+		const PrimaryWeaponMountProfile& mount = context.mountProfile;
+		// Turret Mount points the forward axis at the chosen enemy; Broadside replaces the forward volley with one per side.
+		const float forwardRotation = EpicPrimaryMounts::FindTurretRotation(context.owner, mount, sas::FindAttributeValue(context.attributes, CommonAttributeIds::Range, 1600.f)).value_or(context.owner.GetActorRotation());
+		const List<float> volleySides = mount.broadside ? List<float>{ 90.f, -90.f } : List<float>{ 0.f };
+		const float damageScale = mount.broadside ? mount.broadsideDamageMultiplier : 1.f;
 		const auto fireFromMuzzle = [&](const WeaponMuzzleDefinition& muzzle)
 		{
-			const sf::Vector2f muzzleFireDirection = RotationToVector(
-				context.owner.GetActorRotation() + muzzle.rotationOffset - 90.f
-			);
-			// Every pellet in this muzzle's volley receives the same ship-motion term.
-			const sf::Vector2f carrierVelocity = ProjectileMotion::ResolveCarrierVelocity(
-				context.owner.GetVelocity(),
-				muzzleFireDirection
-			);
-			for (int index = 0; index < count; ++index)
+			for (const float sideAngle : volleySides)
 			{
-				if (FireProjectile(
-					context,
-					muzzle,
-					startAngle + angleStep * static_cast<float>(index),
-					carrierVelocity,
-					impactBehavior
-				))
+				const float volleyRotation = forwardRotation + sideAngle;
+				// A side volley starts one lateral offset from the ship centre, on the side it fires from.
+				const sf::Vector2f lateralOffset = sideAngle != 0.f ? RotationToVector(volleyRotation) * EpicPrimaryMounts::kBroadsideSpawnOffset : sf::Vector2f{};
+				const sf::Vector2f muzzleFireDirection = RotationToVector(volleyRotation + muzzle.rotationOffset - 90.f);
+				// Every pellet in this muzzle's volley receives the same ship-motion term.
+				const sf::Vector2f carrierVelocity = ProjectileMotion::ResolveCarrierVelocity(context.owner.GetVelocity(), muzzleFireDirection);
+				for (int index = 0; index < count; ++index)
 				{
-					++spawnedCount;
+					if (FireProjectile(context, muzzle, volleyRotation, startAngle + angleStep * static_cast<float>(index), carrierVelocity, impactBehavior, damageScale, lateralOffset))
+					{
+						++spawnedCount;
+					}
 				}
 			}
 		};

@@ -127,6 +127,14 @@ namespace vega
 			return world->GetMouseWorldPosition();
 		}
 
+		// The mount shape applies to the Primary fire only; abilities that fire weapons keep the plain forward shot.
+		PrimaryWeaponMountProfile ResolvePrimaryMountProfile(const AbilityExecutionContext& context)
+		{
+			return context.definition && context.abilitySystem && context.definition->slot == sas::AbilitySlot::PrimaryFire
+				? context.abilitySystem->GetPrimaryMountProfile()
+				: PrimaryWeaponMountProfile{};
+		}
+
 		PrimaryWeaponExecutionContext MakeExecutionContext(
 			Actor& owner,
 			AbilityExecutionContext& context,
@@ -143,7 +151,8 @@ namespace vega
 				nullptr,
 				{},
 				context.shouldContinue,
-				ResolveAimWorldPosition(owner)
+				ResolveAimWorldPosition(owner),
+				ResolvePrimaryMountProfile(context)
 			};
 		}
 

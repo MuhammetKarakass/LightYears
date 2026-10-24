@@ -4,6 +4,7 @@
 #include "gameplay/ability/ScopedAbilityRule.h"
 #include "gameplay/module/ModuleDefinition.h"
 #include "gameplay/module/ModuleLoadout.h"
+#include "gameplay/weapon/PrimaryWeaponMountProfile.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -148,6 +149,8 @@ namespace vega
 		List<ResolvedModuleKillDamageRule> killDamageRules;
 		List<ResolvedModuleKillSource> killSources;
 		List<ResolvedModuleChargeRule> chargeRules;
+		// Ship-wide Primary mount shape (Turret Mount, Broadside Mount), read by the Primary fire path through the ability component.
+		PrimaryWeaponMountProfile primaryMount;
 	};
 
 	namespace ModuleResolver

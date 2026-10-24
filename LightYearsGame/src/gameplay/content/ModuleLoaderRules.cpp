@@ -718,6 +718,51 @@ namespace vega::content
 			}
 		}
 
+		// primaryMountRules (Epic Primary mounts) are main-package only: mode Turret takes no multiplier, mode Broadside requires a positive
+		// per-level damageMultiplier (the coefficient of each side volley). primaryExecutionPriority (Turret side feature) may only be true,
+		// and only in a side package.
+		void ParsePrimaryMountRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules, bool sideFeature)
+		{
+			if (object.contains("primaryExecutionPriority"))
+			{
+				if (!sideFeature) throw std::runtime_error(context + ".primaryExecutionPriority is side-feature only");
+				if (!object.at("primaryExecutionPriority").is_boolean() || !object.at("primaryExecutionPriority").get<bool>())
+					throw std::runtime_error(context + ".primaryExecutionPriority must be true when present");
+				rules.primaryExecutionPriority = true;
+			}
+			const Json entries = object.value("primaryMountRules", Json::array());
+			if (!entries.is_array()) throw std::runtime_error(context + ".primaryMountRules must be an array");
+			const std::set<std::string> allowedKeys{ "mode", "damageMultiplier" };
+			std::size_t index = 0;
+			for (const Json& entry : entries)
+			{
+				const std::string entryContext = context + ".primaryMountRules[" + std::to_string(index++) + "]";
+				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
+				if (!entry.is_object()) throw std::runtime_error(entryContext + " must be an object");
+				for (const auto& field : entry.items())
+					if (!allowedKeys.count(field.key())) throw std::runtime_error(entryContext + " unknown field: " + field.key());
+				if (!entry.contains("mode") || !entry.at("mode").is_string()) throw std::runtime_error(entryContext + ".mode must be Turret or Broadside");
+				const std::string mode = entry.at("mode").get<std::string>();
+				ModulePrimaryMountRule rule;
+				if (mode == "Turret")
+				{
+					if (entry.contains("damageMultiplier")) throw std::runtime_error(entryContext + " Turret takes no damageMultiplier");
+					rule.mode = ModulePrimaryMountMode::Turret;
+				}
+				else if (mode == "Broadside")
+				{
+					if (!entry.contains("damageMultiplier")) throw std::runtime_error(entryContext + ".damageMultiplier is required for Broadside");
+					rule.mode = ModulePrimaryMountMode::Broadside;
+					rule.damageMultiplier = ParseLevelFloat(entry.at("damageMultiplier"), entryContext + ".damageMultiplier", minimumLevelCount, rule.damageMultiplierByLevel);
+					if (!(rule.damageMultiplier > 0.f)) throw std::runtime_error(entryContext + ".damageMultiplier must be positive");
+					for (const float value : rule.damageMultiplierByLevel.values)
+						if (!(value > 0.f)) throw std::runtime_error(entryContext + ".damageMultiplier must be positive");
+				}
+				else throw std::runtime_error(entryContext + ".mode must be Turret or Broadside");
+				rules.primaryMountRules.push_back(rule);
+			}
+		}
+
 		// fragmentation (F1 Parçalama) is a side-feature switch: it may only be true, and only in a side package. A main package never splits.
 		void ParseFragmentation(const Json& object, const std::string& context, ModuleRulePackage& rules, bool sideFeature)
 		{
