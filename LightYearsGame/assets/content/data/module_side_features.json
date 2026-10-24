@@ -1633,6 +1633,21 @@
           ]
         }
       }
+    },
+    {
+      "id": "Module.SideFeature.GoldPlating.GildedFrame",
+      "displayName": "Gilded Frame",
+      "levelCount": 3,
+      "description": "Max Health +{owner.0.amountPercent}% of this module's Gold Armor; recalculated when Gold is spent.",
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "GoldArmorBonus",
+            "attributeId": "Owner.MaxHealth",
+            "amount": 1.0
+          }
+        ]
+      }
     }
   ]
 }

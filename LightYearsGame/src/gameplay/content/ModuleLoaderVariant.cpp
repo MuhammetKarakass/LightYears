@@ -322,6 +322,7 @@ namespace vega::content
 				else if (source == "ArmorHigherPower") rule.source = ModuleOwnerAttributeSource::ArmorHigherPower;
 				else if (source == "ArmorLowerPower") rule.source = ModuleOwnerAttributeSource::ArmorLowerPower;
 				else if (source == "Gold") rule.source = ModuleOwnerAttributeSource::Gold;
+				else if (source == "GoldArmorBonus") rule.source = ModuleOwnerAttributeSource::GoldArmorBonus;
 				else throw std::runtime_error(context + " unknown owner attribute source: " + source);
 				rule.attributeId = sas::AttributeId{ entry.at("attributeId").get<std::string>() };
 				std::string failure;
@@ -330,7 +331,7 @@ namespace vega::content
 				rule.operation = AttributeJsonParser::ParseOperation(entry.value("operation", std::string{ "Add" }), context);
 				const bool ownerAttribute = rule.target == ModuleAttributeTarget::Owner && rule.operation == sas::AttributeModifierOperation::Add &&
 					(rule.attributeId == OwnerAttributeIds::AttackSpeed || rule.attributeId == OwnerAttributeIds::AttackPower || rule.attributeId == OwnerAttributeIds::EnergyPower ||
-						((rule.source == ModuleOwnerAttributeSource::Luck || rule.source == ModuleOwnerAttributeSource::HealthThreshold) && rule.attributeId == OwnerAttributeIds::CriticalChance) || (rule.source == ModuleOwnerAttributeSource::Gold && rule.attributeId == OwnerAttributeIds::Armor));
+						((rule.source == ModuleOwnerAttributeSource::Luck || rule.source == ModuleOwnerAttributeSource::HealthThreshold) && rule.attributeId == OwnerAttributeIds::CriticalChance) || (rule.source == ModuleOwnerAttributeSource::Gold && rule.attributeId == OwnerAttributeIds::Armor) || (rule.source == ModuleOwnerAttributeSource::GoldArmorBonus && rule.attributeId == OwnerAttributeIds::MaxHealth));
 				const bool shipAttribute = rule.target == ModuleAttributeTarget::Ship && rule.operation == sas::AttributeModifierOperation::Multiply && rule.source == ModuleOwnerAttributeSource::HealthThreshold && rule.attributeId == ShipAttributeIds::ShieldRegen;
 				if (!ownerAttribute && !shipAttribute)
 					throw std::runtime_error(context + " unsupported conditional owner attribute");
@@ -348,6 +349,7 @@ namespace vega::content
 					ValidateTable(rule.maximumAmountByLevel, context, [](float value) { return value > 0.f; }, "invalid Gold Armor cap");
 				}
 				if (rule.source == ModuleOwnerAttributeSource::Gold && (!entry.contains("maximumAmount") || rule.attributeId != OwnerAttributeIds::Armor || entry.contains("healthAtMost"))) throw std::runtime_error(context + " Gold requires capped Armor output without health threshold");
+				if (rule.source == ModuleOwnerAttributeSource::GoldArmorBonus && (!sideFeature || entry.contains("maximumAmount") || entry.contains("healthAtMost"))) throw std::runtime_error(context + " GoldArmorBonus is a side-feature source without cap or health threshold");
 				rule.fadeSeconds = entry.contains("fadeSeconds") ? ParseFiniteFloat(entry.at("fadeSeconds"), context) : 0.f;
 				if (rule.fadeSeconds < 0.f || (entry.contains("fadeSeconds") && rule.source != ModuleOwnerAttributeSource::MovementSpeed))
 					throw std::runtime_error(context + " invalid movement fade");
@@ -387,6 +389,8 @@ namespace vega::content
 				rule.fraction = ParseLevelFloat(entry.at("fraction"), context + ".reflection.fraction", minimumLevelCount, rule.fractionByLevel);
 				rule.durationSeconds = ParseFiniteFloat(entry.at("durationSeconds"), context + ".reflection.durationSeconds");
 					rule.damageType = ParseTag(entry.at("damageType"), GameplayTagKind::DamageType, context + " shield reflection damageType");
+				rule.electricStacks = entry.contains("electricStacks") ? ParsePositiveInt(entry.at("electricStacks"), context + " shield reflection electricStacks") : 0;
+				if (rule.electricStacks > 4 || (rule.electricStacks > 0 && rule.damageType != GameplayTags::Damage::Type::Electric)) throw std::runtime_error(context + " invalid shield reflection electric stacks");
 				const auto valid = [](float value) { return value > 0.f; };
 				if (!valid(rule.fraction) || rule.durationSeconds <= 0.f) throw std::runtime_error(context + " invalid shield reflection");
 				ValidateTable(rule.fractionByLevel, context, valid, "invalid shield reflection fraction");
@@ -587,9 +591,15 @@ namespace vega::content
 			}
 			for (const auto& entry : generated.value("annularBursts", Json::array()))
 			{
-				fields(entry, { "innerRadius", "outerRadius", "energyPowerCoefficient" });
-				ModuleAnnularBurstRule rule{ number(entry, "innerRadius"), number(entry, "outerRadius"), number(entry, "energyPowerCoefficient") };
-				if (sideFeature || rule.innerRadius <= 0.f || rule.outerRadius <= rule.innerRadius || rule.energyPowerCoefficient <= 0.f) throw std::runtime_error(context + " annular burst needs an ordered positive ring and Energy Power coefficient; main sources only");
+				fields(entry, { "innerRadius", "outerRadius", "baseDamage", "energyPowerCoefficient" });
+				ModuleAnnularBurstRule rule;
+				rule.innerRadius = number(entry, "innerRadius");
+				rule.outerRadius = number(entry, "outerRadius");
+				rule.baseDamage = entry.contains("baseDamage") ? ParseLevelFloat(entry.at("baseDamage"), context + ".generatedRules.baseDamage", minimumLevelCount, rule.baseDamageByLevel) : 0.f;
+				rule.energyPowerCoefficient = entry.contains("energyPowerCoefficient") ? ParseLevelFloat(entry.at("energyPowerCoefficient"), context + ".generatedRules.energyPowerCoefficient", minimumLevelCount, rule.energyPowerCoefficientByLevel) : 0.f;
+				ValidateTable(rule.baseDamageByLevel, context, [](float value) { return value >= 0.f; }, "annular burst base damage must not be negative");
+				ValidateTable(rule.energyPowerCoefficientByLevel, context, [](float value) { return value > 0.f; }, "annular burst Energy Power coefficient must be positive");
+				if (sideFeature || rule.innerRadius <= 0.f || rule.outerRadius <= rule.innerRadius || (rule.baseDamage <= 0.f && rule.energyPowerCoefficient <= 0.f)) throw std::runtime_error(context + " annular burst needs an ordered positive ring and damage; main sources only");
 				variant.generatedRules.annularBursts.push_back(rule);
 			}
 			for (const auto& entry : generated.value("speedLances", Json::array()))

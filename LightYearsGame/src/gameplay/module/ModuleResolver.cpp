@@ -324,7 +324,13 @@ namespace vega
 					rule.maxHealthFraction = ValueAtLevel(rule.maxHealthFraction, rule.maxHealthFractionByLevel, level);
 					effects.generatedRules.killExplosions.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
-				for (std::size_t index = 0; index < package.generatedRules.annularBursts.size(); ++index) effects.generatedRules.annularBursts.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), package.generatedRules.annularBursts[index] });
+				for (std::size_t index = 0; index < package.generatedRules.annularBursts.size(); ++index)
+				{
+					auto rule = package.generatedRules.annularBursts[index];
+					rule.baseDamage = ValueAtLevel(rule.baseDamage, rule.baseDamageByLevel, level);
+					rule.energyPowerCoefficient = ValueAtLevel(rule.energyPowerCoefficient, rule.energyPowerCoefficientByLevel, level);
+					effects.generatedRules.annularBursts.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
 				for (std::size_t index = 0; index < package.generatedRules.speedLances.size(); ++index) effects.generatedRules.speedLances.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), package.generatedRules.speedLances[index] });
 				for (std::size_t index = 0; index < package.ownerBurstRules.size(); ++index)
 				{

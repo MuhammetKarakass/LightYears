@@ -156,7 +156,8 @@ namespace vega
 		List<GameplayTag> requiredEventTags;
 		float durationSeconds = 0.f;
 	};
-	enum class ModuleOwnerAttributeSource { HealthThreshold, MovementSpeed, HigherPower, Luck, Armor, ArmorHigherPower, ArmorLowerPower, Gold };
+	// GoldArmorBonus (side features only): the placement's own Gold Armor bonus times amount; it reads the main Gold rule of the same placement.
+	enum class ModuleOwnerAttributeSource { HealthThreshold, MovementSpeed, HigherPower, Luck, Armor, ArmorHigherPower, ArmorLowerPower, Gold, GoldArmorBonus };
 	struct ModuleOwnerAttributeRule
 	{
 		ModuleOwnerAttributeSource source = ModuleOwnerAttributeSource::HealthThreshold;
@@ -321,13 +322,17 @@ namespace vega
 		List<GameplayTag> requiredTargetStatuses;
 		ModuleLevelTable<float> maxHealthFractionByLevel;
 	};
+	// Release Valve: damage = baseDamage + energyPowerCoefficient x Energy Power. Both are level tables.
 	struct ModuleAnnularBurstRule
 	{
 		float innerRadius = 0.f;
 		float outerRadius = 0.f;
+		float baseDamage = 0.f;
 		float energyPowerCoefficient = 0.f;
+		ModuleLevelTable<float> baseDamageByLevel;
+		ModuleLevelTable<float> energyPowerCoefficientByLevel;
 	};
-	inline bool operator==(const ModuleAnnularBurstRule& a, const ModuleAnnularBurstRule& b) { const auto& [a0, a1, a2] = a; const auto& [b0, b1, b2] = b; return std::tie(a0, a1, a2) == std::tie(b0, b1, b2); }
+	inline bool operator==(const ModuleAnnularBurstRule& a, const ModuleAnnularBurstRule& b) { return std::tie(a.innerRadius, a.outerRadius, a.baseDamage, a.energyPowerCoefficient, a.baseDamageByLevel.values, a.energyPowerCoefficientByLevel.values) == std::tie(b.innerRadius, b.outerRadius, b.baseDamage, b.energyPowerCoefficient, b.baseDamageByLevel.values, b.energyPowerCoefficientByLevel.values); }
 	struct ModuleSpeedLanceRule
 	{
 		float speedDamageCoefficient = 0.f;
@@ -557,6 +562,8 @@ namespace vega
 			float durationSeconds = 0.f;
 			GameplayTag damageType;
 			ModuleLevelTable<float> fractionByLevel;
+			// Electric reflections only: Electric stacks each reflected hit applies to its target. 0 = none.
+			int electricStacks = 0;
 		};
 		List<ShieldReflection> shieldReflections;
 		ModuleStatusRules statusRules;
@@ -576,7 +583,7 @@ namespace vega
 		// F1 Parçalama, side features only: the placement may split into one-cell fragments at the largest size. Layout only.
 		bool fragmentation = false;
 	};
-	inline bool operator==(const ModuleRulePackage::ShieldReflection& left, const ModuleRulePackage::ShieldReflection& right) { const auto& [a0, a1, a2, a3] = left; const auto& [b0, b1, b2, b3] = right; return std::tie(a0, a1, a2, a3) == std::tie(b0, b1, b2, b3); }
+	inline bool operator==(const ModuleRulePackage::ShieldReflection& left, const ModuleRulePackage::ShieldReflection& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
 
 	struct ModuleSizeVariant : ModuleRulePackage
 	{
@@ -645,6 +652,7 @@ namespace vega
 		for (std::size_t i = 0; i < rules.generatedRules.trailMines.size(); ++i)
 			if (!visit("generatedRules.trailMines.damage", i, rules.generatedRules.trailMines[i].damageByLevel) || !visit("generatedRules.trailMines.attackPowerCoefficient", i, rules.generatedRules.trailMines[i].attackPowerCoefficientByLevel) || !visit("generatedRules.trailMines.maxActive", i, rules.generatedRules.trailMines[i].maxActiveByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.killExplosions.size(); ++i) if (!visit("generatedRules.killExplosions.maxHealthFraction", i, rules.generatedRules.killExplosions[i].maxHealthFractionByLevel)) return false;
+		for (std::size_t i = 0; i < rules.generatedRules.annularBursts.size(); ++i) if (!visit("generatedRules.annularBursts.baseDamage", i, rules.generatedRules.annularBursts[i].baseDamageByLevel) || !visit("generatedRules.annularBursts.energyPowerCoefficient", i, rules.generatedRules.annularBursts[i].energyPowerCoefficientByLevel)) return false;
 		for (std::size_t i = 0; i < rules.movementRules.size(); ++i) if (!visit("movementRules.thrustMultiplier", i, rules.movementRules[i].thrustMultiplierByLevel)) return false;
 			for (std::size_t i = 0; i < rules.runCounterRules.size(); ++i)
 				if (!visit("runCounterRules.damagePerStack", i, rules.runCounterRules[i].damagePerStackByLevel) || !visit("runCounterRules.moveSpeedPerStack", i, rules.runCounterRules[i].moveSpeedPerStackByLevel)) return false;

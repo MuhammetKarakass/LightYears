@@ -2037,7 +2037,7 @@
     {
       "id": "Module.Defense.ReflectionShield.Uncommon",
       "displayName": "Reflection Shield",
-      "description": "After Defense use, reflect {reflection.0.percent}% of shield damage as Energy for {reflection.0.durationSeconds}s. Cannot trigger modules.",
+      "description": "After Defense use, reflect {reflection.0.percent}% of shield damage as Electric for {reflection.0.durationSeconds}s; each reflected hit adds {reflection.0.electricStacks} Electric stack. Cannot trigger modules.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Defense",
@@ -2058,13 +2058,14 @@
           ],
           "shieldReflections": [
             {
-              "damageType": "Damage.Type.Energy",
+              "damageType": "Damage.Type.Electric",
               "fraction": [
                 0.35,
                 0.4,
                 0.45
               ],
-              "durationSeconds": 5
+              "durationSeconds": 5,
+              "electricStacks": 1
             }
           ]
         }
@@ -2601,7 +2602,8 @@
       "levelCount": 3,
       "family": "Ability.Utility",
       "sizeLadder": [
-        2
+        2,
+        3
       ],
       "sizeVariants": [
         {
@@ -2613,6 +2615,33 @@
             [
               1,
               0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "AbilityDirectHit",
+              "requiredEmptyAbilitySlots": 1,
+              "damageMultiplier": [
+                1.25,
+                1.3,
+                1.35
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
             ]
           ],
           "damageRules": [
@@ -3779,7 +3808,7 @@
       "family": "Ability.Utility",
       "rarity": "Rare",
       "levelCount": 3,
-      "description": "Utility use deals {annularBurst.0.energyPowerPercent}% Energy Power as Energy damage in the {annularBurst.0.innerRadius}-{annularBurst.0.outerRadius} ring. No damage inside, no push.",
+      "description": "Utility use deals {annularBurst.0.baseDamage} + {annularBurst.0.energyPowerPercent}% Energy Power as Energy damage in the {annularBurst.0.innerRadius}-{annularBurst.0.outerRadius} ring. No damage inside, no push.",
       "sizeVariants": [
         {
           "shape": [
@@ -3797,7 +3826,16 @@
               {
                 "innerRadius": 600,
                 "outerRadius": 900,
-                "energyPowerCoefficient": 0.4
+                "baseDamage": [
+                  50,
+                  57.5,
+                  65.375
+                ],
+                "energyPowerCoefficient": [
+                  0.4,
+                  0.42,
+                  0.441
+                ]
               }
             ]
           }
@@ -3810,6 +3848,10 @@
       "family": "Ability.Defense",
       "rarity": "Rare",
       "levelCount": 3,
+      "sizeLadder": [
+        2,
+        3
+      ],
       "description": "Each {owner.0.goldPerArmor} Gold currently held grants one Armor, up to {owner.0.maximumAmount}.",
       "sizeVariants": [
         {
@@ -3820,10 +3862,6 @@
             ],
             [
               1,
-              0
-            ],
-            [
-              2,
               0
             ]
           ],
@@ -3839,7 +3877,38 @@
               ]
             }
           ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "ownerAttributeRules": [
+            {
+              "source": "Gold",
+              "attributeId": "Owner.Armor",
+              "amount": 0.1,
+              "maximumAmount": [
+                60,
+                75,
+                90
+              ]
+            }
+          ]
         }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.GoldPlating.GildedFrame"
       ]
     },
     {
@@ -3848,7 +3917,7 @@
       "family": "Ability.Defense",
       "rarity": "Rare",
       "levelCount": 3,
-      "description": "Normal shield capacity is split equally between independent front and rear pools. An empty struck pool exposes the hull. Recharge fills the lower pool first; temporary shield is shared.",
+      "description": "Normal shield capacity +{Ship.Shield.Max.bonusPercent}%, split equally between independent front and rear pools. An empty struck pool exposes the hull. Recharge fills the lower pool first; temporary shield is shared.",
       "sizeVariants": [
         {
           "shape": [
@@ -3860,6 +3929,18 @@
               1,
               0
             ]
+          ],
+          "attributeModifiers": [
+            {
+              "target": "Ship",
+              "attributeId": "Ship.Shield.Max",
+              "operation": "Multiply",
+              "magnitude": [
+                1.05,
+                1.1,
+                1.15
+              ]
+            }
           ],
           "shieldRules": [
             {

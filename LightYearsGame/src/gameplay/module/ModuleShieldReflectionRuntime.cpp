@@ -75,6 +75,7 @@ namespace vega
 			auto payload = DamageTypeSystem::BuildPayload({ state.resolved.rule.damageType });
 			payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 			payload.kineticStacks = 0;
+			payload.electricStacks = state.resolved.rule.electricStacks;
 			payload.skipModuleDamageRules = true;
 			payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
 			ApplyCombatDamage(*nearest, context.shieldDamage * state.resolved.rule.fraction, mShip, { state.resolved.rule.damageType }, payload);

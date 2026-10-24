@@ -1,6 +1,7 @@
 #include "framework/EngineContext.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
+#include "gameplay/module/ModuleResolver.h"
 
 namespace
 {
@@ -10,7 +11,7 @@ namespace
 		for (int level = 1; level <= 3; ++level)
 		{
 			Fixture f{ report, application }; auto& shield = f.ship->GetShieldComponent(); report.Check(f.ship->GetShipRuntime().SetBaseMaxShieldContribution("Test.Polar.Capacity", 400.f - shield.GetMaxShield()), "test capacity uses the canonical ShipRuntime owner"); shield.ChangeShield(400.f); f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f);
-			const auto id = f.Install("Module.Defense.PolarShield.Rare", 0, level); const auto front = Enemy(f), rear = Enemy(f); const auto origin = f.ship->GetActorLocation(), facing = f.ship->GetActorForwardDirection(); front->SetActorLocation(origin + facing * 500.f); rear->SetActorLocation(origin - facing * 500.f); const float health = f.ship->GetHealthComponent().GetHealth();
+			const float capacityBefore = shield.GetMaxShield(); const auto id = f.Install("Module.Defense.PolarShield.Rare", 0, level); const float effective = static_cast<float>(level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), id)); f.Equal("Polar Shield adds its level bonus (+5/+10/+15% proposal) to total normal capacity", capacityBefore * (1.f + .05f * effective), shield.GetMaxShield()); const auto front = Enemy(f), rear = Enemy(f); const auto origin = f.ship->GetActorLocation(), facing = f.ship->GetActorForwardDirection(); front->SetActorLocation(origin + facing * 500.f); rear->SetActorLocation(origin - facing * 500.f); const float health = f.ship->GetHealthComponent().GetHealth();
 			f.Equal("front capacity is half", 200.f, shield.GetFrontShield()); f.Equal("rear capacity is half", 200.f, shield.GetRearShield());
 			Hit(*f.ship, front.get(), 50.f, Plain()); f.Equal("front hit spends only front pool", 150.f, shield.GetFrontShield()); f.Equal("front hit preserves rear pool", 200.f, shield.GetRearShield());
 			Hit(*f.ship, rear.get(), 75.f, Plain()); f.Equal("rear hit preserves front pool", 150.f, shield.GetFrontShield()); f.Equal("rear hit spends rear pool", 125.f, shield.GetRearShield());
@@ -24,11 +25,11 @@ namespace
 	}
 	void SharedLayerChecks(Report& report, Application& application)
 	{
-		Fixture f{ report, application }; auto& shield = f.ship->GetShieldComponent(); report.Check(f.ship->GetShipRuntime().SetBaseMaxShieldContribution("Test.Polar.Capacity", 400.f - shield.GetMaxShield()), "test capacity uses the canonical ShipRuntime owner"); shield.ChangeShield(400.f); f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f); f.Install("Module.Defense.PolarShield.Rare");
+		Fixture f{ report, application }; auto& shield = f.ship->GetShieldComponent(); report.Check(f.ship->GetShipRuntime().SetBaseMaxShieldContribution("Test.Polar.Capacity", 400.f - shield.GetMaxShield()), "test capacity uses the canonical ShipRuntime owner"); shield.ChangeShield(400.f); f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f); f.Install("Module.Defense.PolarShield.Rare"); const float capacity = shield.GetMaxShield();
 		const auto front = Enemy(f), rear = Enemy(f); const auto origin = f.ship->GetActorLocation(), facing = f.ship->GetActorForwardDirection(); front->SetActorLocation(origin + facing * 500.f); rear->SetActorLocation(origin - facing * 500.f);
 		Hit(*f.ship, front.get(), 200.f, Plain()); const float health = f.ship->GetHealthComponent().GetHealth(); shield.GrantModuleTemporaryShield("Test.SharedLayer", 80.f, 6.f); Hit(*f.ship, front.get(), 60.f, Plain()); f.Equal("shared temporary layer protects empty front", health, f.ship->GetHealthComponent().GetHealth()); f.Equal("temporary layer is consumed first", 20.f, shield.GetModuleTemporaryShield()); f.Equal("temporary layer leaves rear normal pool untouched", 200.f, shield.GetRearShield());
 		Hit(*f.ship, rear.get(), 40.f, Plain()); f.Equal("rear also uses the same temporary layer", 0.f, shield.GetModuleTemporaryShield()); f.Equal("only remaining rear damage spends normal rear shield", 180.f, shield.GetRearShield());
-		shield.SetMaxShield(800.f, true); f.Equal("capacity scaling preserves empty front", 0.f, shield.GetFrontShield()); f.Equal("percent-preserving capacity change scales rear", 360.f, shield.GetRearShield()); shield.SetMaxShield(200.f); f.Equal("shrinking capacity clamps each pool independently", 100.f, shield.GetRearShield()); f.Equal("capacity shrink cannot transfer shield into front", 0.f, shield.GetFrontShield());
+		shield.SetMaxShield(800.f, true); f.Equal("capacity scaling preserves empty front", 0.f, shield.GetFrontShield()); f.Equal("percent-preserving capacity change scales rear", 180.f * 800.f / capacity, shield.GetRearShield()); shield.SetMaxShield(200.f); f.Equal("shrinking capacity clamps each pool independently", 100.f, shield.GetRearShield()); f.Equal("capacity shrink cannot transfer shield into front", 0.f, shield.GetFrontShield());
 		shield.SetMaxShield(400.f); shield.ChangeShield(400.f); shield.GrantTemporaryOvershield("Test.LegacyLayer", 80.f, 0.f, 1.f); Hit(*f.ship, front.get(), 250.f, Plain()); f.Equal("legacy overshield remains a shared overcap layer", 30.f, shield.GetFrontShield()); f.Equal("legacy layer protects rear capacity", 200.f, shield.GetRearShield());
 		f.Install("Module.Utility.ZoneCooler.Basic"); f.Equal("reapply cannot reset depleted front", 30.f, shield.GetFrontShield());
 	}
