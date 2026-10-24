@@ -1,6 +1,7 @@
 #include "gameplay/module/ModuleReactiveRuntime.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/module/rules/EpicStatRuleResolution.h"
 #include "spaceShip/SpaceShip.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/damage/DamageTypeSystem.h"
@@ -521,6 +522,8 @@ namespace vega
 			if (rule.source == ModuleOwnerAttributeSource::ArmorHigherPower) { id = attack >= energy ? OwnerAttributeIds::AttackPower : OwnerAttributeIds::EnergyPower; amount *= armor; }
 			if (rule.source == ModuleOwnerAttributeSource::ArmorLowerPower) { id = attack >= energy ? OwnerAttributeIds::EnergyPower : OwnerAttributeIds::AttackPower; amount *= armor; }
 			if (rule.source == ModuleOwnerAttributeSource::Armor) amount *= armor;
+			if (rule.source == ModuleOwnerAttributeSource::MaxHealthFraction) amount *= health.GetMaxHealth();
+			if (rule.source == ModuleOwnerAttributeSource::PowerEqualize) amount = health.GetHealth() > 0.f ? EpicPowerEqualizeAmount(attributes, mAttributes, id, state.resolved.instanceId, rule.amount) : 0.f;
 			if (rule.source == ModuleOwnerAttributeSource::Gold)
 			{
 				amount = goldArmor(rule);
