@@ -7,6 +7,7 @@
 #include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/ModuleRuleAppliers.h"
 #include "gameplay/module/ModuleRunCounterRuntime.h"
+#include "gameplay/module/rules/EpicDefenseRuntime.h"
 #include "gameplay/module/ModuleReactiveRuntime.h"
 #include "gameplay/module/ModuleShieldReflectionRuntime.h"
 #include "gameplay/module/generated/ModuleGeneratedRuntime.h"
@@ -22,6 +23,7 @@
 namespace vega
 {
 	class LightYearsAbilitySystemComponent;
+	class SpaceShip;
 
 	// Turns an installed loadout into live ship state. It owns every handle it
 	// creates and rebuilds from the full desired state on each change. It keeps no
@@ -76,6 +78,10 @@ namespace vega
 		// Receives the kill credit (stacks, damage ratio) the applier grants to a placement; the caller writes it to the loadout.
 		void SetRunCounterCreditSink(std::function<void(std::uint32_t, double)> sink) { mRunCounterCreditSink = std::move(sink); }
 		void SetKillCreditSink(std::function<void(std::uint32_t, double, double)> sink) { mKillCreditSink = std::move(sink); }
+		// Last Stand: receives the placement whenever one of its revive charges is spent; the caller writes it to the loadout.
+		void SetReviveSpentSink(std::function<void(std::uint32_t)> sink) { mReviveSpentSink = std::move(sink); }
+		// Last Stand: spends one revive charge of an active placement and restores the owner's health. False when none is left.
+		bool TryReviveOwner(SpaceShip& owner);
 		void SetRandomSeed(std::uint32_t seed) { mReactiveRuntime.SetRandomSeed(seed); }
 		// Smoldering Remains field from an Ember burst; the reactive runtime owns its lease.
 		void SpawnSmolderingField(const sf::Vector2f& origin, const ModuleThermalBurstRule& rule) { mReactiveRuntime.SpawnSmolderingField(origin, rule); }
@@ -126,6 +132,8 @@ namespace vega
 		ModuleOwnerBurstRuntime mOwnerBurstRuntime;
 		ModuleTargetSlowRuntime mTargetSlowRuntime;
 		ModuleRunCounterRuntime mRunCounterRuntime;
+		ModuleReviveBonusRuntime mReviveBonus;
+		ModuleEmergencyProtocolRuntime mEmergencyRuntime;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;
@@ -143,6 +151,7 @@ namespace vega
 		List<RebootEntry> mReboots;
 		std::function<void(std::uint32_t, double, double)> mKillCreditSink;
 		std::function<void(std::uint32_t, double)> mRunCounterCreditSink;
+		std::function<void(std::uint32_t)> mReviveSpentSink;
 
 		std::uint64_t mAppliedRevision = 0;
 		bool mHasApplied = false;

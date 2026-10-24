@@ -67,6 +67,22 @@ namespace vega
 			const auto& rule = rules.ownerAttributeRules[i]; const std::string key = "owner." + std::to_string(i) + ".";
 			out.Number(key + "amount", rule.amountByLevel.ValueAtLevel(rule.amount, level)); out.Number(key + "amountPercent", rule.amountByLevel.ValueAtLevel(rule.amount, level) * 100.f); out.Number(key + "maximumAmount", rule.maximumAmountByLevel.ValueAtLevel(rule.maximumAmount, level)); if (rule.source == ModuleOwnerAttributeSource::Gold) out.Number(key + "goldPerArmor", 1.f / rule.amountByLevel.ValueAtLevel(rule.amount, level)); out.Number(key + "healthPercent", rule.healthAtMost * 100.f);
 		}
+		for (std::size_t i = 0; i < rules.reviveRules.size(); ++i)
+		{
+			const auto& rule = rules.reviveRules[i]; const std::string key = "revive." + std::to_string(i) + ".";
+			out.Number(key + "healthPercent", ResolveEpicLevelValue(rule.healthFractionByLevel, 0.f, level) * 100.f);
+			out.Number(key + "charges", static_cast<float>(ResolveEpicLevelValue(rule.chargesByLevel, 0, level)));
+			out.Number(key + "bonusSeconds", rule.bonusSeconds); out.Number(key + "bonusPercent", (rule.bonusMultiplier - 1.f) * 100.f);
+		}
+		for (std::size_t i = 0; i < rules.healthThresholdRules.size(); ++i)
+		{
+			const auto& rule = rules.healthThresholdRules[i]; const std::string key = "threshold." + std::to_string(i) + ".";
+			const float cooldown = ResolveEpicLevelValue(rule.cooldownRecoveryMultiplierByLevel, 1.f, level);
+			out.Number(key + "healthPercent", rule.healthAtMost * 100.f);
+			out.Number(key + "cooldownRecoveryPercent", (cooldown - 1.f) * 100.f);
+			out.Number(key + "damagePercent", (rule.abilityDamageMultiplier - 1.f) * 100.f);
+			out.Number(key + "movementPercent", (rule.movementSpeedMultiplier - 1.f) * 100.f);
+		}
 		for (std::size_t i = 0; i < rules.movementFadeRules.size(); ++i) out.Number("movementFade." + std::to_string(i) + ".fadeSeconds", rules.movementFadeRules[i].fadeSeconds);
 		for (std::size_t i = 0; i < rules.statusRules.durationBonuses.size(); ++i)
 		{

@@ -478,6 +478,7 @@ namespace vega
 			mCombatRuntime.ApplyHullDamageMitigation(context);
 
 			const float healthBeforeDamage = mHealthComponent.GetHealth();
+			if (healthBeforeDamage - context.remainingDamage <= 0.f && TryPreventLethalDamage(context.remainingDamage)) context.remainingDamage = 0.f;
 			mHealthComponent.ChangeHealth(-context.remainingDamage);
 			const float healthDamage = std::max(0.f, healthBeforeDamage - mHealthComponent.GetHealth());
 			context.appliedDamage = shieldAbsorbedDamage + healthDamage;

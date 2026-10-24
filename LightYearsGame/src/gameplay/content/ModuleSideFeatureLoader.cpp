@@ -133,7 +133,7 @@ namespace vega::content
 				if (definition.rules.attributeModifiers.empty() && definition.rules.abilityModifiers.empty() &&
 					definition.rules.triggerBuffs.empty() && definition.rules.damageRules.empty() && definition.rules.zoneEffects.empty() &&
 					definition.rules.eventActions.empty() && definition.rules.ownerAttributeRules.empty() && definition.rules.movementFadeRules.empty() && definition.rules.conditionalMovementRules.empty() && definition.rules.shieldReflections.empty() && definition.rules.shieldRules.empty() && definition.rules.statusRules.Empty() && definition.rules.generatedRules.Empty() && definition.rules.targetSlowRules.empty() &&
-					definition.rules.killStackCooldownRules.empty() && definition.rules.killStackDamageRules.empty() && definition.rules.sustainedSpeedRules.empty() && definition.rules.ownerBurstRules.empty() && definition.rules.ownerBurstModifiers.empty() && definition.rules.chargeRules.empty() && !definition.rules.fragmentation)
+					definition.rules.killStackCooldownRules.empty() && definition.rules.killStackDamageRules.empty() && definition.rules.sustainedSpeedRules.empty() && definition.rules.ownerBurstRules.empty() && definition.rules.ownerBurstModifiers.empty() && definition.rules.chargeRules.empty() && definition.rules.reviveRules.empty() && definition.rules.healthThresholdRules.empty() && !definition.rules.fragmentation)
 					throw std::runtime_error(context + " rules must not be empty");
 				result.definitions.push_back(std::move(definition));
 			}
