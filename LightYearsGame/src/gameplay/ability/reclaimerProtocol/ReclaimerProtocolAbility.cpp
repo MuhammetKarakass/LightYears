@@ -133,10 +133,7 @@ namespace vega
 		EmitEvent(context, AbilityData::ReclaimerProtocol::Event::Ended);
 	}
 
-	void ReclaimerProtocolAbility::OnGameplayEvent(
-		GameAbilityBehaviorContext& context,
-		const sas::AbilityEvent& event
-	)
+	void ReclaimerProtocolAbility::OnGameplayEvent(GameAbilityBehaviorContext& context, const sas::AbilityEvent& event)
 	{
 		if (!mActive || event.eventTag != GameplayTags::Event::Combat::KillConfirmed ||
 			event.GetSource<Actor>() != &context.owner)
@@ -172,7 +169,7 @@ namespace vega
 		const float healRatioPerStep = std::max(0.f, Setting(
 			context.definition, AbilityData::ReclaimerProtocol::Setting::HealRatioPerStep, 0.01f));
 		const float healRatio = snapshottedHealRatio +
-			std::max(0.f, maxHealth - maxHealthReference) / maxHealthPerStep * healRatioPerStep;
+			std::max(0.f, maxHealth - maxHealthReference) / maxHealthPerStep * healRatioPerStep * context.definition.mainEffectMultiplier;
 
 		SpawnRepairKitAtLocation(
 			context,

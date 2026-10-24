@@ -121,6 +121,9 @@ namespace
 		target->SetActorLocation(origin + sf::Vector2f{ 300.f, 0.f });
 		neighbour->SetActorLocation(origin + sf::Vector2f{ 340.f, 0.f });
 		chained->SetActorLocation(origin + sf::Vector2f{ 260.f, 0.f });
+		const auto expandedRadiusTarget = Enemy(f), outsideRadiusTarget = Enemy(f);
+		expandedRadiusTarget->SetActorLocation(origin + sf::Vector2f{ 500.f, 0.f });
+		outsideRadiusTarget->SetActorLocation(origin + sf::Vector2f{ 551.f, 0.f });
 		GiveEnemyShield(f, *target, 300.f);
 		GiveEnemyShield(f, *chained, 100.f);
 
@@ -134,6 +137,8 @@ namespace
 		for (const auto& blast : blasts) blast->Tick(0.f);
 		// 50% of the 300 shield lost within the window (100 + 200) is 150, dealt to every enemy in the blast radius.
 		f.Equal("blast deals 50% of the shield lost to the neighbour in radius", 850.f, neighbour->GetHealthComponent().GetHealth());
+		f.Equal("250-radius blast reaches a target 200 units away", 850.f, expandedRadiusTarget->GetHealthComponent().GetHealth());
+		f.Equal("250-radius blast excludes a target 251 units away", 1000.f, outsideRadiusTarget->GetHealthComponent().GetHealth());
 		report.Check(chained->GetShieldComponent().GetShield() <= 0.f, "blast breaks the chained enemy's shield");
 		f.Equal("blast does not chain into another blast", 850.f, neighbour->GetHealthComponent().GetHealth());
 

@@ -466,6 +466,7 @@ namespace vega
 					if (approach.x != 0.f || approach.y != 0.f) impactSide = forward.x * approach.x + forward.y * approach.y >= 0.f ? ShieldImpactSide::Front : ShieldImpactSide::Rear;
 				}
 			}
+			context.incomingShieldDamage = context.remainingDamage * std::max(0.f, context.payload.shieldDamageMultiplier);
 			const float shieldAbsorbedDamage = mShieldComponent.AbsorbDamage(
 				context.remainingDamage,
 				shieldDamageMultiplier,

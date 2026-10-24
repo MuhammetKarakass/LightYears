@@ -6,11 +6,11 @@ namespace
 {
 	using namespace uncommon_p4_e2e;
 
-	// Authored Last Stand tables: charges [1, 1, 2] and revive health [40%, 45%, 50%], both extrapolated past level 3 by the last step.
-	int ExpectedCharges(int level) { return level <= 2 ? 1 : 2 + (level - 3); }
+	// Authored Last Stand tables: charges [1, 1, 2] and revive health [40%, 45%, 50%], charges grow every two levels; health extrapolates linearly.
+	int ExpectedCharges(int level) { return 1 + (level - 1) / 2; }
 	float ExpectedReviveFraction(int level) { return level <= 1 ? .40f : level == 2 ? .45f : .50f + .05f * static_cast<float>(level - 3); }
-	// Emergency Protocol cooldown recovery [x1.75, x2.00, x2.25], extrapolated past level 3 by the last step.
-	float ExpectedRecovery(int level) { return level <= 1 ? 1.75f : level == 2 ? 2.f : 2.25f + .25f * static_cast<float>(level - 3); }
+	// Emergency Protocol adds ten percentage points of recovery per effective level.
+	float ExpectedRecovery(int level) { return 1.5f + .1f * static_cast<float>(level - 1); }
 
 	GameAbility& Defense(Fixture& f)
 	{
@@ -46,6 +46,7 @@ namespace
 			const int effective = level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), id);
 			const int charges = ExpectedCharges(effective);
 			const float baselinePower = f.Owner(OwnerAttributeIds::AttackPower);
+			const float baselineEnergy = f.Owner(OwnerAttributeIds::EnergyPower), baselineAttackSpeed = f.Owner(OwnerAttributeIds::AttackSpeed), baselineArmor = f.Owner(OwnerAttributeIds::Armor);
 			const auto enemy = Enemy(f);
 			for (int use = 1; use <= charges; ++use)
 			{
@@ -53,10 +54,17 @@ namespace
 				report.Check(!f.ship->GetIsPendingDestroy(), "lethal damage revives while a charge remains");
 				f.Equal("revive sets health to the effective-level fraction of Max Health", ExpectedReviveFraction(effective) * maxHealth, health.GetHealth());
 				f.Equal("revive grants the 20% combat bonus", baselinePower * 1.2f, f.Owner(OwnerAttributeIds::AttackPower));
+				f.Equal("revive grants 20% Energy Power", baselineEnergy * 1.2f, f.Owner(OwnerAttributeIds::EnergyPower));
+				f.Equal("revive grants 20% Attack Speed", baselineAttackSpeed * 1.2f, f.Owner(OwnerAttributeIds::AttackSpeed));
+				f.Equal("revive leaves Armor unchanged", baselineArmor, f.Owner(OwnerAttributeIds::Armor));
+				f.Equal("revive increases MaxHealth by 20%", maxHealth * 1.2f, health.GetMaxHealth());
+				health.Regenerate(health.GetMaxHealth());
 				f.ship->GetModuleApplier().Tick(14.9f);
 				f.Equal("combat bonus lasts until 15 seconds", baselinePower * 1.2f, f.Owner(OwnerAttributeIds::AttackPower));
 				f.ship->GetModuleApplier().Tick(.2f);
 				f.Equal("combat bonus ends after 15 seconds", baselinePower, f.Owner(OwnerAttributeIds::AttackPower));
+				f.Equal("MaxHealth returns when the bonus expires", maxHealth, health.GetMaxHealth());
+				f.Equal("excess health clamps to the restored cap", maxHealth, health.GetHealth());
 			}
 			report.Check(f.loadout.FindPlacement(id)->reviveChargesSpent == charges, "every granted charge is recorded as spent");
 			Hit(*f.ship, enemy.get(), 100000.f, Plain());

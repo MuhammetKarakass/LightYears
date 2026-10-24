@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 namespace vega::content
 {
@@ -41,12 +42,68 @@ namespace vega::content
 
 		int ParsePositiveInt(const Json& value, const std::string& context);
 
+		template<typename T>
+		void ParseLevelGrowth(const Json& object, const std::string& field, const std::string& context, ModuleLevelTable<T>& table)
+		{
+			const std::string key = field + "Growth";
+			if (!object.contains(key)) return;
+			const Json& value = object.at(key);
+			if (table.values.empty()) throw std::runtime_error(context + " growth requires a level table");
+			std::string type;
+			if (value.is_string()) type = value.get<std::string>();
+			else if (value.is_object() && value.contains("type") && value.at("type").is_string()) type = value.at("type").get<std::string>();
+			else throw std::runtime_error(context + " growth must be a type string or object with type");
+			if (type == "linear") table.growth = ModuleLevelGrowth::Linear;
+			else if (type == "compound") table.growth = ModuleLevelGrowth::Compound;
+			else if (type == "step") table.growth = ModuleLevelGrowth::Step;
+			else throw std::runtime_error(context + " unknown growth type: " + type);
+			if (value.is_object())
+			{
+				for (auto it = value.begin(); it != value.end(); ++it)
+				{
+					if (it.key() == "type") continue;
+					if (it.key() == "ratio" && type == "compound") table.ratio = ParseFiniteFloat(it.value(), context + " growth ratio");
+					else if (it.key() == "every" && type == "step") table.every = ParsePositiveInt(it.value(), context + " growth every");
+					else if (it.key() == "amount" && type != "linear")
+					{
+						table.amount = ParseFiniteFloat(it.value(), context + " growth amount");
+						if constexpr (std::is_integral_v<T>) if (!it.value().is_number_integer()) throw std::runtime_error(context + " integer table needs integer growth amount");
+					}
+					else throw std::runtime_error(context + " unexpected growth field: " + it.key());
+				}
+			}
+			if (type == "compound")
+			{
+				if (value.is_object() && value.contains("ratio") && table.ratio <= 0.0) throw std::runtime_error(context + " growth ratio must be positive");
+				if (table.ratio == 0.0 && (table.values.size() < 2 || table.values.back() <= 0 || table.values[table.values.size() - 2] <= 0))
+					throw std::runtime_error(context + " compound growth needs a positive ratio or two positive final values");
+			}
+			if (type == "step" && (!value.is_object() || !value.contains("every") || !value.contains("amount")))
+				throw std::runtime_error(context + " step growth requires every and amount");
+		}
+
+		inline float ParseLevelFloat(const Json& object, const std::string& field, const std::string& context, int minimumLevelCount, ModuleLevelTable<float>& table)
+		{
+			const float result = ParseLevelFloat(object.at(field), context, minimumLevelCount, table);
+			ParseLevelGrowth(object, field, context, table);
+			return result;
+		}
+
+		inline int ParsePositiveLevelInt(const Json& object, const std::string& field, const std::string& context, int minimumLevelCount, ModuleLevelTable<int>& table)
+		{
+			const int result = ParsePositiveLevelInt(object.at(field), context, minimumLevelCount, table);
+			ParseLevelGrowth(object, field, context, table);
+			return result;
+		}
+
 		template<typename T, typename Predicate>
 		void ValidateTable(const ModuleLevelTable<T>& table, const std::string& context, Predicate valid, const char* message)
 		{
 			for (const T& value : table.values)
 				if (!valid(value)) throw std::runtime_error(context + " " + message);
 		}
+
+		void ValidateLevelGrowthFields(const Json& object, const std::string& context);
 
 		GameplayTag ParseTag(const Json& value, GameplayTagKind kind, const std::string& context);
 

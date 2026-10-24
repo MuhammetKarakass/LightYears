@@ -279,7 +279,8 @@ namespace vega
 				}
 				for (std::size_t index = 0; index < package.statusRules.primaryStatusPrimers.size(); ++index)
 				{
-					auto rule = package.statusRules.primaryStatusPrimers[index]; rule.instanceId = placement.instanceId; rule.ruleIndex = NamespacedRuleIndex(index, sideFeature);
+					auto rule = package.statusRules.primaryStatusPrimers[index];
+					rule.cooldownSeconds = ValueAtLevel(rule.cooldownSeconds, rule.cooldownSecondsByLevel, level); rule.instanceId = placement.instanceId; rule.ruleIndex = NamespacedRuleIndex(index, sideFeature);
 					effects.statusRules.primaryStatusPrimers.push_back(rule);
 				}
 				for (std::size_t index = 0; index < package.statusRules.electricSpreads.size(); ++index)
@@ -356,7 +357,12 @@ namespace vega
 					rule.energyPowerCoefficient = ValueAtLevel(rule.energyPowerCoefficient, rule.energyPowerCoefficientByLevel, level);
 					effects.generatedRules.annularBursts.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
-				for (std::size_t index = 0; index < package.generatedRules.speedLances.size(); ++index) effects.generatedRules.speedLances.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), package.generatedRules.speedLances[index] });
+				for (std::size_t index = 0; index < package.generatedRules.speedLances.size(); ++index)
+				{
+					auto rule = package.generatedRules.speedLances[index];
+					rule.speedDamageCoefficient = ValueAtLevel(rule.speedDamageCoefficient, rule.speedDamageCoefficientByLevel, level);
+					effects.generatedRules.speedLances.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
 				for (std::size_t index = 0; index < package.ownerBurstRules.size(); ++index)
 				{
 					auto rule = package.ownerBurstRules[index];
@@ -381,7 +387,10 @@ namespace vega
 						continue;
 					}
 					if (source.source != ModuleRunCounterSource::Kill) continue;
-					effects.killRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), ValueAtLevel(source.damagePerStack, source.damagePerStackByLevel, level), source.killWeights, source.adjacentAbilityLimit, {} });
+					const float perStack = ValueAtLevel(source.damagePerStack, source.damagePerStackByLevel, level);
+					const std::optional<float> elite = source.eliteDamagePerKillByLevel.values.empty() ? std::nullopt : std::optional<float>{ source.eliteDamagePerKillByLevel.ValueAtLevel(0.f, level) };
+					const std::optional<float> boss = source.bossDamagePerKillByLevel.values.empty() ? std::nullopt : std::optional<float>{ source.bossDamagePerKillByLevel.ValueAtLevel(0.f, level) };
+					effects.killRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), perStack, source.killWeights, source.adjacentAbilityLimit, {}, elite, boss });
 				}
 				for (std::size_t index = 0; index < package.killStackCooldownRules.size(); ++index)
 					effects.killCooldownRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), package.killStackCooldownRules[index], {} });
@@ -406,7 +415,7 @@ namespace vega
 						if (!placementZoneEntry || placementZoneEntry->anyFamily || !placementZoneEntry->family.IsValid()) continue;
 						family = placementZoneEntry->family;
 					}
-					const float multiplier = ValueAtLevel(source.multiplier, source.multiplierByLevel, baseLevel);
+					const float multiplier = ValueAtLevel(source.multiplier, source.multiplierByLevel, level);
 					effects.cooldownRules.push_back({ placement.instanceId, NamespacedRuleIndex(ruleIndex, sideFeature),
 						source.zone, source.scope, family, multiplier });
 				}

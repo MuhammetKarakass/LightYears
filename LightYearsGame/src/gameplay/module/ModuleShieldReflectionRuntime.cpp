@@ -78,7 +78,7 @@ namespace vega
 			payload.electricStacks = state.resolved.rule.electricStacks;
 			payload.skipModuleDamageRules = true;
 			payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
-			ApplyCombatDamage(*nearest, context.shieldDamage * state.resolved.rule.fraction, mShip, { state.resolved.rule.damageType }, payload);
+			ApplyCombatDamage(*nearest, context.incomingShieldDamage * state.resolved.rule.fraction, mShip, { state.resolved.rule.damageType }, payload);
 		}
 	}
 }

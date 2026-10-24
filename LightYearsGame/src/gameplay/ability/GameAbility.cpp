@@ -139,6 +139,8 @@ namespace vega
 			return false;
 		}
 
+		mDefinition.mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectMultiplier(mDefinition);
+
 		GameAbilityBehaviorContext behaviorContext{
 			mAbilitySystem,
 			*this,

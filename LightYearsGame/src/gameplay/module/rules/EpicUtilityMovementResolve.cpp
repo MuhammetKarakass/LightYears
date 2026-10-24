@@ -15,7 +15,7 @@ namespace vega
 				for (const ModuleAssaultVectorRule& rule : package.assaultVectorRules)
 					effects.epicRules.assaultVectors.push_back({ instanceId, rule.damageBonusByLevel.ValueAtLevel(0.f, level), rule.armorBonusByLevel.ValueAtLevel(0.f, level), rule.targetRange, rule.minimumCosine, rule.minimumSpeed });
 				for (const ModulePhaseSlipRule& rule : package.phaseSlipRules)
-					effects.epicRules.phaseSlips.push_back({ instanceId, rule.phaseSeconds, rule.cooldownSeconds, rule.explosionRadius, rule.primaryDamageMultiplierByLevel.ValueAtLevel(1.f, level) });
+					effects.epicRules.phaseSlips.push_back({ instanceId, rule.phaseSeconds, rule.cooldownSeconds, rule.explosionRadiusByLevel.ValueAtLevel(rule.explosionRadius, level), rule.primaryDamageMultiplierByLevel.ValueAtLevel(1.f, level) });
 			}
 			for (const ModuleFieldMasteryRule& rule : package.fieldMasteryRules)
 				effects.epicRules.fieldMasteries.push_back({ instanceId, rule.usesPerLevelUpByLevel.ValueAtLevel(0, level), rule.transferUses });

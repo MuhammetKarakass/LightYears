@@ -121,10 +121,24 @@ namespace
 		}
 	}
 
+	struct StormDamageObserver
+	{
+		CombatRuntime& runtime;
+		DelegateHandle handle;
+		List<float> hits;
+		explicit StormDamageObserver(CombatRuntime& owner) : runtime{ owner }, handle{ owner.onDamageDealt.BindAction(this, &StormDamageObserver::OnDamage) } {}
+		~StormDamageObserver() { runtime.onDamageDealt.UnbindAction(handle); }
+		void OnDamage(const DamageContext& context)
+		{
+			if (context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed && context.damageTags == List<GameplayTag>{ DamageTypeSchema::Electric }) hits.push_back(context.originalDamage);
+		}
+	};
+
 	void StormChecks(Report& report, Application& application)
 	{
 		Fixture f{ report, application };
 		f.Install(kPrism, 1, 1, kStormSide);
+		StormDamageObserver observer{ f.ship->GetCombatRuntime() };
 		std::vector<decltype(Enemy(f))> enemies;
 		for (int index = 0; index < 5; ++index) enemies.push_back(Enemy(f, 100.f + 20.f * static_cast<float>(index)));
 
@@ -147,6 +161,8 @@ namespace
 			twoStacks += stacks == 2 ? 1 : 0;
 		}
 		report.Check(electrified == 3 && twoStacks == 3, "Storm: discharge strikes three enemies with two Electric stacks each");
+		report.Check(observer.hits.size() == 3, "Storm records one generated damage hit for each discharge target");
+		for (float damage : observer.hits) f.Equal("Storm damage is half of the triggering 10-damage Primary hit", 5.f, damage);
 		report.Check(f.ship->GetCombatRuntime().GetEpicOffenseState().stormCharges == 0, "Storm: discharge spends every charge");
 	}
 
@@ -227,7 +243,7 @@ namespace
 			report.Check(std::fabs(health.GetHealth() - beforeLate) < kTolerance, "Blood: a death after 4 s heals nothing");
 		}
 
-		// Debt Collection widens the window to 7 s.
+		// Debt Collection widens the window to 6 s.
 		{
 			Fixture f{ report, application };
 			f.Install(kBlood, 1, 1, kDebtSide);
@@ -244,7 +260,7 @@ namespace
 			report.Check(std::fabs((health.GetHealth() - beforeHeal) - maximum * 0.01f) < kTolerance, "Blood: Debt Collection keeps a 5 s kill inside the window and heals 1% MaxHealth");
 		}
 
-		// Clot Armor: Armor equal to 3 x the health spent, for 3 s, refreshed by the next grant.
+		// Clot Armor: Armor equal to 2 x the health spent, for 4 s, refreshed by the next grant.
 		{
 			Fixture f{ report, application };
 			f.Install(kBlood, 1, 1, kClotSide);
@@ -253,11 +269,11 @@ namespace
 			const float armorBefore = OwnerArmor(f);
 			const float spent = health.GetHealth() * 0.06f;
 			CastOffense(f);
-			report.Check(std::fabs((OwnerArmor(f) - armorBefore) - spent * 3.f) < kTolerance, "Blood: Clot Armor grants 3 x the health spent");
+			report.Check(std::fabs((OwnerArmor(f) - armorBefore) - spent * 2.f) < kTolerance, "Blood: Clot Armor grants 2 x the health spent");
 			f.ship->GetModuleApplier().Tick(2.f);
-			report.Check(std::fabs((OwnerArmor(f) - armorBefore) - spent * 3.f) < kTolerance, "Blood: Clot Armor still lasts at 2 s");
-			f.ship->GetModuleApplier().Tick(1.5f);
-			report.Check(std::fabs(OwnerArmor(f) - armorBefore) < kTolerance, "Blood: Clot Armor expires after 3 s");
+			report.Check(std::fabs((OwnerArmor(f) - armorBefore) - spent * 2.f) < kTolerance, "Blood: Clot Armor still lasts at 2 s");
+			f.ship->GetModuleApplier().Tick(2.5f);
+			report.Check(std::fabs(OwnerArmor(f) - armorBefore) < kTolerance, "Blood: Clot Armor expires after 4 s");
 		}
 	}
 }

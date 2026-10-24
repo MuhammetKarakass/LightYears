@@ -12,7 +12,7 @@
 		ModuleLevelTable<float> reserveFractionByLevel;
 		float damagedFillFraction = 0.f;
 	};
-	inline bool operator==(const ModuleShieldBatteryRule& left, const ModuleShieldBatteryRule& right) { return left.reserveFraction == right.reserveFraction && left.reserveFractionByLevel.values == right.reserveFractionByLevel.values && left.damagedFillFraction == right.damagedFillFraction; }
+	inline bool operator==(const ModuleShieldBatteryRule& left, const ModuleShieldBatteryRule& right) { return left.reserveFraction == right.reserveFraction && left.reserveFractionByLevel == right.reserveFractionByLevel && left.damagedFillFraction == right.damagedFillFraction; }
 
 	// Shield Rupture: when an owner hit breaks an enemy's shield, an Energy explosion at that enemy deals damageFraction of the shield
 	// the owner removed from it within the last historySeconds, over radius. Module explosions never trigger it.
@@ -20,10 +20,10 @@
 	{
 		float damageFraction = 0.5f;
 		ModuleLevelTable<float> damageFractionByLevel;
-		float radius = 150.f;
+		float radius = 250.f;
 		float historySeconds = 3.f;
 	};
-	inline bool operator==(const ModuleShieldRuptureRule& left, const ModuleShieldRuptureRule& right) { return left.damageFraction == right.damageFraction && left.damageFractionByLevel.values == right.damageFractionByLevel.values && left.radius == right.radius && left.historySeconds == right.historySeconds; }
+	inline bool operator==(const ModuleShieldRuptureRule& left, const ModuleShieldRuptureRule& right) { return left.damageFraction == right.damageFraction && left.damageFractionByLevel == right.damageFractionByLevel && left.radius == right.radius && left.historySeconds == right.historySeconds; }
 
 	struct ResolvedModuleShieldBatteryRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleShieldBatteryRule rule; };
 	struct ResolvedModuleShieldRuptureRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleShieldRuptureRule rule; };

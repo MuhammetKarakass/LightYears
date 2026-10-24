@@ -3,6 +3,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/module/ModuleSideFeature.h"
+#include "spaceShip/SpaceShip.h"
 
 #include <algorithm>
 #include <string>
@@ -35,7 +36,7 @@ namespace vega
 		if (!(seconds > 0.f) || !(multiplier > 1.f)) return;
 		RemoveModifiers();
 		LightYearsAbilitySystemComponent::ModuleAttributeChangeScope scope{ mAbilities };
-		const sas::AttributeId stats[] = { OwnerAttributeIds::AttackPower, OwnerAttributeIds::EnergyPower, OwnerAttributeIds::AttackSpeed, OwnerAttributeIds::Armor };
+		const sas::AttributeId stats[] = { OwnerAttributeIds::AttackPower, OwnerAttributeIds::EnergyPower, OwnerAttributeIds::AttackSpeed, OwnerAttributeIds::MaxHealth };
 		for (const sas::AttributeId& stat : stats)
 		{
 			sas::AttributeModifier modifier;
@@ -46,6 +47,7 @@ namespace vega
 			if (handle.IsValid()) mHandles.push_back(handle);
 		}
 		mRemainingSeconds = seconds;
+		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->RefreshMovementAttributesFromRuntime();
 	}
 
 	void ModuleReviveBonusRuntime::Tick(float deltaSeconds)
@@ -70,6 +72,7 @@ namespace vega
 		List<sas::AttributeModifierHandle> handles = std::move(mHandles);
 		mHandles.clear();
 		for (const sas::AttributeModifierHandle& handle : handles) mAbilities.GetAttributes().RemoveModifier(handle);
+		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->RefreshMovementAttributesFromRuntime();
 	}
 
 	void ModuleEmergencyProtocolRuntime::Replace(const List<ModulePlacement>& activePlacements, const ModuleRulesContext& rules, const ResolvedModuleEffects& effects, ShipRuntimeModifiers* movementModifiers)

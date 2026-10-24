@@ -11,6 +11,7 @@ namespace vega
 	{
 	public:
 		virtual ~ModuleSystemGate() = default;
+		virtual float GetAbilityMainEffectMultiplier(const List<GameplayTag>&) const { return 1.f; }
 		virtual bool IsModuleSystemEnabled(const GameplayTag& systemTag) const = 0;
 	};
 }

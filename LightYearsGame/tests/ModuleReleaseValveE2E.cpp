@@ -7,12 +7,9 @@
 namespace
 {
 	using namespace uncommon_p6_e2e;
-	// Release Valve level tables (proposal): base 50 / 57.5 / 65.375 and Energy Power coefficient 0.40 / 0.42 / 0.441.
-		// Past level three each table extends by its last step, as ModuleLevelTable does.
-		float ReleaseExtended(const float (&values)[3], int level) { return level <= 3 ? values[level - 1] : values[2] + (values[2] - values[1]) * static_cast<float>(level - 3); }
-		float ReleaseBase(int level) { static const float values[3] = { 50.f, 57.5f, 65.375f }; return ReleaseExtended(values, level); }
-		float ReleaseCoefficient(int level) { static const float values[3] = { .4f, .42f, .441f }; return ReleaseExtended(values, level); }
-		void CastUtility(Fixture& f)
+	float ReleaseBase(int level) { float value = 50.f; for (int l = 1; l < level; ++l) value = value * 1.05f + 5.f; return value; }
+	float ReleaseCoefficient(int level) { return .4f * std::pow(1.05f, static_cast<float>(level - 1)); }
+	void CastUtility(Fixture& f)
 	{
 		auto* ability = f.ship->GetAbilitySystemComponent().GetAbilityById("Ability.Utility.CryoBola.Basic"); f.report.Check(ability != nullptr, "fixture uses shipped Utility Cryo Bola");
 		if (ability->IsActive()) ability->Cancel(sas::AbilityEndReason::Completed); ability->Tick(100.f); f.report.Check(ability->TryActivate(), "activate real Utility ability"); if (ability->IsActive()) ability->Cancel(sas::AbilityEndReason::Completed);

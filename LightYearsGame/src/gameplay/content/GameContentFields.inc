@@ -315,14 +315,14 @@
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/eventActions/*/durationSeconds", R"field(6)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/statusRules/primaryStatusPrimers", R"field([])field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/statusRules/primaryStatusPrimers/*", R"field({})field");
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/statusRules/primaryStatusPrimers/*/cooldownSeconds", R"field(1)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/statusRules/primaryStatusPrimers/*/cooldownSeconds", R"field(1)field", true);
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/runCounterRules/*/requiredFamily", R"field("Ability.Defense")field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/runCounterRules/*/armorPerStack", R"field(1)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/runCounterRules/*/armorCap", R"field([])field", true);
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/runCounterRules/*/armorCap/*", R"field(30)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/speedLances", R"field([])field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/speedLances/*", R"field({})field");
-		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/speedLances/*/speedDamageCoefficient", R"field(0.4)field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/speedLances/*/speedDamageCoefficient", R"field(0.4)field", true);
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/speedLances/*/sampleSeconds", R"field(1)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/speedLances/*/projectileSpeed", R"field(1800)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/generatedRules/speedLances/*/range", R"field(900)field");
@@ -517,3 +517,100 @@
 		if (schema.type == "weapon") Add(schema, "/heatDamageRegions/*/damageMultiplier", R"field(1)field");
 		if (schema.type == "weapon") Add(schema, "/heatDamageRegions/*/damageTags", R"field([])field");
 		if (schema.type == "weapon") Add(schema, "/heatDamageRegions/*/damageTags/*", R"field("Damage.Type.Energy")field");
+
+		if (schema.type == "module")
+		{
+			for (const char* name : { "reviveRules", "healthThresholdRules", "cascadeRules", "fieldMasteryRules", "assaultVectorRules", "phaseSlipRules", "prismCoreRules", "bloodContractRules", "stormCapacitorRules", "clotArmorRules", "debtCollectionRules", "primaryMountRules", "familyStatRules" })
+			{
+				const std::string path = std::string{ "/sizeVariants/*/" } + name;
+				Add(schema, path, R"field([])field");
+				Add(schema, path + "/*", R"field({})field");
+			}
+			Add(schema, "/sizeVariants/*/stormCapacitorRules/*/primaryDamageFraction", R"field(0.5)field");
+		}
+
+		if (schema.type == "ability") Add(schema, "/mainEffectAttributes", R"field([])field");
+		if (schema.type == "ability") Add(schema, "/mainEffectAttributes/*", R"field("Common.Damage")field");
+		if (schema.type == "module")
+		{
+			for (const char* tablePath : {
+				"/sizeVariants/*/abilityModifiers/*/magnitude",
+				"/sizeVariants/*/assaultVectorRules/*/armorBonus",
+				"/sizeVariants/*/assaultVectorRules/*/damageBonus",
+				"/sizeVariants/*/attributeModifiers/*/magnitude",
+				"/sizeVariants/*/bloodContractRules/*/emptyHealthMultiplier",
+				"/sizeVariants/*/bloodContractRules/*/fullHealthMultiplier",
+				"/sizeVariants/*/cascadeRules/*/stepBonus",
+				"/sizeVariants/*/chargeRules/*/chargePerLevel",
+				"/sizeVariants/*/conditionalMovementRules/*/multiplier",
+				"/sizeVariants/*/damageRules/*/activeDurationSeconds",
+				"/sizeVariants/*/damageRules/*/bonusDamageFraction",
+				"/sizeVariants/*/damageRules/*/conditionValue",
+				"/sizeVariants/*/damageRules/*/damageMultiplier",
+				"/sizeVariants/*/damageRules/*/maxHealthDamageFraction",
+				"/sizeVariants/*/damageRules/*/openingShotCount",
+				"/sizeVariants/*/damageRules/*/perEmptyCellMultiplier",
+				"/sizeVariants/*/eventActions/*/amount",
+				"/sizeVariants/*/eventActions/*/chancePerLuck",
+				"/sizeVariants/*/eventActions/*/targetCount",
+				"/sizeVariants/*/familyStatRules/*/perModule",
+				"/sizeVariants/*/fieldMasteryRules/*/usesPerLevelUp",
+				"/sizeVariants/*/generatedRules/annularBursts/*/baseDamage",
+				"/sizeVariants/*/generatedRules/annularBursts/*/energyPowerCoefficient",
+				"/sizeVariants/*/generatedRules/delayedExplosions/*/damageFraction",
+				"/sizeVariants/*/generatedRules/guidedSalvos/*/damageFraction",
+				"/sizeVariants/*/generatedRules/killExplosions/*/maxHealthFraction",
+				"/sizeVariants/*/generatedRules/ricochets/*/damageFraction",
+				"/sizeVariants/*/generatedRules/speedLances/*/speedDamageCoefficient",
+				"/sizeVariants/*/generatedRules/trailMines/*/attackPowerCoefficient",
+				"/sizeVariants/*/generatedRules/trailMines/*/damage",
+				"/sizeVariants/*/generatedRules/trailMines/*/maxActive",
+				"/sizeVariants/*/healthThresholdRules/*/cooldownRecoveryMultiplier",
+				"/sizeVariants/*/movementRules/*/thrustMultiplier",
+				"/sizeVariants/*/ownerAttributeRules/*/amount",
+				"/sizeVariants/*/ownerAttributeRules/*/maximumAmount",
+				"/sizeVariants/*/ownerBurstRules/*/damage",
+				"/sizeVariants/*/ownerBurstRules/*/damageFractionOfMaxHealth",
+				"/sizeVariants/*/phaseSlipRules/*/explosionRadius",
+				"/sizeVariants/*/phaseSlipRules/*/primaryDamageMultiplier",
+				"/sizeVariants/*/primaryMountRules/*/damageMultiplier",
+				"/sizeVariants/*/prismCoreRules/*/statusDurationMultiplier",
+				"/sizeVariants/*/reviveRules/*/charges",
+				"/sizeVariants/*/reviveRules/*/healthFraction",
+				"/sizeVariants/*/runCounterRules/*/armorCap",
+				"/sizeVariants/*/runCounterRules/*/bossDamagePerKill",
+				"/sizeVariants/*/runCounterRules/*/damagePerStack",
+				"/sizeVariants/*/runCounterRules/*/eliteDamagePerKill",
+				"/sizeVariants/*/runCounterRules/*/moveSpeedPerStack",
+				"/sizeVariants/*/shieldBatteryRules/*/reserveFraction",
+				"/sizeVariants/*/shieldReflections/*/fraction",
+				"/sizeVariants/*/shieldRules/*/armorShare",
+				"/sizeVariants/*/shieldRules/*/breakRearmFraction",
+				"/sizeVariants/*/shieldRules/*/continuousRateFraction",
+				"/sizeVariants/*/shieldRules/*/speedMultiplierAtMax",
+				"/sizeVariants/*/shieldRuptureRules/*/damageFraction",
+				"/sizeVariants/*/statusRules/cryoFreezes/*/cooldownSeconds",
+				"/sizeVariants/*/statusRules/cryoFreezes/*/durationSeconds",
+				"/sizeVariants/*/statusRules/durationBonuses/*/bonusSeconds",
+				"/sizeVariants/*/statusRules/durationBonuses/*/durationMultiplier",
+				"/sizeVariants/*/statusRules/electricOverrides/*/damageTakenByStack",
+				"/sizeVariants/*/statusRules/kineticConsumes/*/damageMultiplier",
+				"/sizeVariants/*/statusRules/primaryStatusPrimers/*/cooldownSeconds",
+				"/sizeVariants/*/statusRules/thermalBursts/*/damageFraction",
+				"/sizeVariants/*/statusRules/thermalCryoDurationBonuses/*/bonusSeconds",
+				"/sizeVariants/*/sustainedSpeedRules/*/primaryDamageMultiplier",
+				"/sizeVariants/*/triggerBuffs/*/durationSeconds",
+				"/sizeVariants/*/triggerBuffs/*/modifiers/*/magnitude",
+				"/sizeVariants/*/triggerBuffs/*/movementSpeedMultiplier",
+				"/sizeVariants/*/zoneEffects/*/multiplier" })
+			{
+				const std::string path{ tablePath };
+				Add(schema, path, R"field([1, 1, 1])field", true);
+				Add(schema, path + "/*", R"field(1)field");
+				Add(schema, path + "Growth", R"field({"type":"linear"})field");
+				Add(schema, path + "Growth/type", R"field("linear")field");
+				Add(schema, path + "Growth/ratio", R"field(1.05)field");
+				Add(schema, path + "Growth/every", R"field(2)field");
+				Add(schema, path + "Growth/amount", R"field(1)field");
+			}
+		}

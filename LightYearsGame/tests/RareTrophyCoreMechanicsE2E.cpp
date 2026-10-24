@@ -237,6 +237,24 @@ namespace rare_trophy_core_e2e
 			return Ratio(AbilityHit(f, neighbour.id, neighbour.tags), baseline);
 		}
 
+		void ShippedClassChecks(Report& report, Application& application)
+		{
+			for (int level = 1; level <= 3; ++level)
+			{
+				Fixture f{ report, application }; WireKillCredit(f);
+				const auto id = InstallNextTo(f, "Module.Offense.TrophyCore.Rare", GameplayTags::Module::System::AbilitySlot1, level);
+				const int effective = level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), id);
+				const auto neighbour = SlotAbilityOf(f, sas::AbilitySlot::Ability1);
+				const float eliteValues[] = { .03f, .034f, .0375f }, bossValues[] = { .10f, .1125f, .125f };
+				const auto extended = [effective](const float (&values)[3]) { return effective <= 3 ? values[effective - 1] : values[2] + (values[2] - values[1]) * (effective - 3); };
+				AbilityKill(f, neighbour.id, neighbour.tags, ControlTargetClass::Elite);
+				report.CheckValue("shipped elite kill grants its exact level damage quantity", extended(eliteValues), static_cast<float>(f.loadout.GetKillDamageBonus(id)), std::to_string(effective));
+				AbilityKill(f, neighbour.id, neighbour.tags, ControlTargetClass::Boss);
+				report.CheckValue("shipped boss kill adds its exact level damage quantity", extended(eliteValues) + extended(bossValues), static_cast<float>(f.loadout.GetKillDamageBonus(id)), std::to_string(effective));
+				report.CheckValue("class damage growth preserves weighted-kill thresholds", 32.5f, static_cast<float>(f.loadout.GetKillStacks(id)), "elite + boss");
+			}
+		}
+
 		void CoreChecks(Report& report, Application& application)
 		{
 			Fixture f{ report, application };
@@ -582,6 +600,7 @@ int main(int argc, char** argv)
 		report.Check(content::ModuleContentCatalog::LoadFromFiles(modulesPath, sideFeaturesPath, &catalogFailure),
 			"the player's content catalog reads the same trophy fixtures", catalogFailure);
 
+		ShippedClassChecks(report, application);
 		CoreChecks(report, application);
 		LevelChecks(report, application, 2);
 		LevelChecks(report, application, 3);

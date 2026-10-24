@@ -232,6 +232,9 @@ namespace vega
 			state.primaryHandles.push_back(mAbilities.AddPrimaryWeaponModifier(sas::AttributeModifier{ PrimaryWeaponSchema::Projectile::Delivery::Speed, sas::AttributeModifierOperation::Multiply, rule.primarySpeedMultiplier }));
 		if (rule.primaryPierceBonus > 0.f)
 			state.primaryHandles.push_back(mAbilities.AddPrimaryWeaponModifier(sas::AttributeModifier{ PrimaryWeaponSchema::Projectile::Delivery::PierceCount, sas::AttributeModifierOperation::Add, rule.primaryPierceBonus }));
+		state.primaryHandles.push_back(mAbilities.AddPrimaryWeaponModifier({ PrimaryWeaponSchema::Beam::Delivery::Range, sas::AttributeModifierOperation::Multiply, 1.3f }, PrimaryWeaponType::BeamContinuous));
+		state.primaryHandles.push_back(mAbilities.AddPrimaryWeaponModifier({ CommonAttributeIds::Range, sas::AttributeModifierOperation::Multiply, 1.3f }, PrimaryWeaponType::ConeBlast));
+		state.primaryHandles.push_back(mAbilities.AddPrimaryWeaponModifier({ CommonAttributeIds::Range, sas::AttributeModifierOperation::Multiply, 1.3f }, PrimaryWeaponType::ArcElectric));
 		SetSonicDamage(state, true);
 		SetSonicTurn(state, true);
 	}

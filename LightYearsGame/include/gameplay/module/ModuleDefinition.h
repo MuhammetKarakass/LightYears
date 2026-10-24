@@ -197,6 +197,7 @@ namespace vega
 	struct ModulePrimaryStatusPrimerRule
 	{
 		float cooldownSeconds = 1.f;
+		ModuleLevelTable<float> cooldownSecondsByLevel;
 		std::uint32_t instanceId = 0;
 		std::size_t ruleIndex = 0;
 	};
@@ -321,7 +322,7 @@ namespace vega
 		ModuleLevelTable<float> baseDamageByLevel;
 		ModuleLevelTable<float> energyPowerCoefficientByLevel;
 	};
-	inline bool operator==(const ModuleAnnularBurstRule& a, const ModuleAnnularBurstRule& b) { return std::tie(a.innerRadius, a.outerRadius, a.baseDamage, a.energyPowerCoefficient, a.baseDamageByLevel.values, a.energyPowerCoefficientByLevel.values) == std::tie(b.innerRadius, b.outerRadius, b.baseDamage, b.energyPowerCoefficient, b.baseDamageByLevel.values, b.energyPowerCoefficientByLevel.values); }
+	inline bool operator==(const ModuleAnnularBurstRule& a, const ModuleAnnularBurstRule& b) { return std::tie(a.innerRadius, a.outerRadius, a.baseDamage, a.energyPowerCoefficient, a.baseDamageByLevel, a.energyPowerCoefficientByLevel) == std::tie(b.innerRadius, b.outerRadius, b.baseDamage, b.energyPowerCoefficient, b.baseDamageByLevel, b.energyPowerCoefficientByLevel); }
 	struct ModuleSpeedLanceRule
 	{
 		float speedDamageCoefficient = 0.f;
@@ -331,8 +332,9 @@ namespace vega
 		float echoDelaySeconds = 0.f;
 		float echoFraction = 0.f;
 		int firstTargetElectricStacks = 0;
+		ModuleLevelTable<float> speedDamageCoefficientByLevel;
 	};
-	inline bool operator==(const ModuleSpeedLanceRule& a, const ModuleSpeedLanceRule& b) { return std::tie(a.speedDamageCoefficient, a.sampleSeconds, a.projectileSpeed, a.range, a.echoDelaySeconds, a.echoFraction, a.firstTargetElectricStacks) == std::tie(b.speedDamageCoefficient, b.sampleSeconds, b.projectileSpeed, b.range, b.echoDelaySeconds, b.echoFraction, b.firstTargetElectricStacks); }
+	inline bool operator==(const ModuleSpeedLanceRule& a, const ModuleSpeedLanceRule& b) { return std::tie(a.speedDamageCoefficient, a.sampleSeconds, a.projectileSpeed, a.range, a.echoDelaySeconds, a.echoFraction, a.firstTargetElectricStacks, a.speedDamageCoefficientByLevel) == std::tie(b.speedDamageCoefficient, b.sampleSeconds, b.projectileSpeed, b.range, b.echoDelaySeconds, b.echoFraction, b.firstTargetElectricStacks, b.speedDamageCoefficientByLevel); }
 	struct ModuleGeneratedRules
 	{
 		List<ModuleRicochetRule> ricochets;
@@ -370,7 +372,6 @@ namespace vega
 	};
 	// Rule equality decides whether a runtime keeps its state across a reapply. Each operator binds every
 	// field of the rule structurally, so adding a field without extending the comparison fails to compile.
-	template<typename T> bool operator==(const ModuleLevelTable<T>& left, const ModuleLevelTable<T>& right) { return left.values == right.values; }
 	inline bool operator==(const ModuleAttributeModifier& left, const ModuleAttributeModifier& right) { const auto& [a0, a1, a2, a3] = left; const auto& [b0, b1, b2, b3] = right; const auto& [am0, am1, am2, am3] = a1; const auto& [bm0, bm1, bm2, bm3] = b1; return std::tie(a0, a2, a3) == std::tie(b0, b2, b3) && std::tie(am0, am1, am2, am3) == std::tie(bm0, bm1, bm2, bm3); }
 	inline bool operator==(const ModuleTriggerBuff& left, const ModuleTriggerBuff& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
 	inline bool operator==(const ModuleDamageRule& left, const ModuleDamageRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21); }
@@ -427,8 +428,10 @@ namespace vega
 		float armorPerStack = 0.f;
 		float armorCap = 0.f;
 		ModuleLevelTable<float> armorCapByLevel;
+		ModuleLevelTable<float> eliteDamagePerKillByLevel;
+		ModuleLevelTable<float> bossDamagePerKillByLevel;
 	};
-	inline bool operator==(const ModuleRunCounterRule& left, const ModuleRunCounterRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11); }
+	inline bool operator==(const ModuleRunCounterRule& left, const ModuleRunCounterRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13); }
 	// Bounty Mark: every stacksPerStep kill stacks of the placement reduce the cooldown of each adjacent ability by the next
 	// step's reduction (reductionPerStep in order, tailReduction after the list). Reductions add up; the cooldown never falls below
 	// minimumSeconds through this rule.
@@ -620,6 +623,12 @@ namespace vega
 	template<typename Visitor>
 	bool VisitModuleRuleLevelTables(const ModuleRulePackage& rules, Visitor&& visit)
 	{
+		for (std::size_t i = 0; i < rules.runCounterRules.size(); ++i) if (!visit("runCounterRules.eliteDamagePerKill", i, rules.runCounterRules[i].eliteDamagePerKillByLevel) || !visit("runCounterRules.bossDamagePerKill", i, rules.runCounterRules[i].bossDamagePerKillByLevel)) return false;
+		for (std::size_t i = 0; i < rules.reviveRules.size(); ++i) if (!visit("reviveRules.healthFraction", i, rules.reviveRules[i].healthFractionByLevel) || !visit("reviveRules.charges", i, rules.reviveRules[i].chargesByLevel)) return false;
+		for (std::size_t i = 0; i < rules.healthThresholdRules.size(); ++i) if (!visit("healthThresholdRules.cooldownRecoveryMultiplier", i, rules.healthThresholdRules[i].cooldownRecoveryMultiplierByLevel)) return false;
+		for (std::size_t i = 0; i < rules.statusRules.primaryStatusPrimers.size(); ++i) if (!visit("statusRules.primaryStatusPrimers.cooldownSeconds", i, rules.statusRules.primaryStatusPrimers[i].cooldownSecondsByLevel)) return false;
+		for (std::size_t i = 0; i < rules.generatedRules.speedLances.size(); ++i) if (!visit("generatedRules.speedLances.speedDamageCoefficient", i, rules.generatedRules.speedLances[i].speedDamageCoefficientByLevel)) return false;
+		for (std::size_t i = 0; i < rules.phaseSlipRules.size(); ++i) if (!visit("phaseSlipRules.explosionRadius", i, rules.phaseSlipRules[i].explosionRadiusByLevel)) return false;
 		for (std::size_t i = 0; i < rules.runCounterRules.size(); ++i) if (!visit("runCounterRules.armorCap", i, rules.runCounterRules[i].armorCapByLevel)) return false;
 		for (std::size_t i = 0; i < rules.conditionalMovementRules.size(); ++i) if (!visit("conditionalMovementRules.multiplier", i, rules.conditionalMovementRules[i].multiplierByLevel)) return false;
 		for (std::size_t i = 0; i < rules.attributeModifiers.size(); ++i) if (!visit("attributeModifiers.magnitude", i, rules.attributeModifiers[i].magnitudeByLevel)) return false;

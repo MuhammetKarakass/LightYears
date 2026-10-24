@@ -29,14 +29,14 @@ namespace vega::content
 		{
 			const Json entries = object.value("shieldRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".shieldRules must be an array");
-			const std::set<std::string> allowedKeys{ "regenMode", "speedMultiplierAtMax", "minimumSpeed", "continuousRateFraction", "breakRearmFraction", "armorShare", "frontRearSplit" };
+			const std::set<std::string> allowedKeys{ "regenMode", "speedMultiplierAtMax", "speedMultiplierAtMaxGrowth", "minimumSpeed", "continuousRateFraction", "continuousRateFractionGrowth", "breakRearmFraction", "breakRearmFractionGrowth", "armorShare", "armorShareGrowth", "frontRearSplit" };
 			const auto positive = [](float value) { return value > 0.f; };
 			const auto rateFraction = [](float value) { return value > 0.f && value <= 1.f; };
 			const auto unitInterval = [](float value) { return value >= 0.f && value <= 1.f; };
 			const auto parseField = [&context, minimumLevelCount](const Json& entry, const char* key, ModuleLevelTable<float>& table, bool (*valid)(float), const char* requirement)
 			{
 				const std::string fieldContext = context + ".shieldRules." + key;
-				const float value = ParseLevelFloat(entry.at(key), fieldContext, minimumLevelCount, table);
+				const float value = ParseLevelFloat(entry, key, fieldContext, minimumLevelCount, table);
 				if (!valid(value)) throw std::runtime_error(fieldContext + " " + requirement);
 				ValidateTable(table, fieldContext, valid, requirement);
 				return value;
@@ -95,7 +95,7 @@ namespace vega::content
 		{
 			const Json entries = object.value("ownerBurstRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".ownerBurstRules must be an array");
-			const std::set<std::string> allowedKeys{ "trigger", "radius", "damageFractionOfMaxHealth", "damage", "energyPowerCoefficient", "accumulatedArmorCoefficient", "requiredEventTags", "damageType", "igniteStacks", "chargeKills", "chargeRadius", "cooldownSeconds", "pushImpulse", "stunSeconds", "stunImmuneClasses", "echoDelaySeconds", "echoFraction" };
+			const std::set<std::string> allowedKeys{ "trigger", "radius", "damageFractionOfMaxHealth", "damageFractionOfMaxHealthGrowth", "damage", "damageGrowth", "energyPowerCoefficient", "energyPowerCoefficientGrowth", "accumulatedArmorCoefficient", "requiredEventTags", "damageType", "igniteStacks", "chargeKills", "chargeRadius", "cooldownSeconds", "cooldownSecondsGrowth", "pushImpulse", "stunSeconds", "stunImmuneClasses", "echoDelaySeconds", "echoFraction" };
 			const auto positive = [](float value) { return value > 0.f; };
 			const auto nonnegative = [](float value) { return value >= 0.f; };
 			const auto unitInterval = [](float value) { return value >= 0.f && value <= 1.f; };
@@ -131,14 +131,14 @@ namespace vega::content
 				if (hasFraction)
 				{
 					const std::string fractionContext = entryContext + ".damageFractionOfMaxHealth";
-					rule.damageFractionOfMaxHealth = ParseLevelFloat(entry.at("damageFractionOfMaxHealth"), fractionContext, minimumLevelCount, rule.damageFractionOfMaxHealthByLevel);
+					rule.damageFractionOfMaxHealth = ParseLevelFloat(entry, "damageFractionOfMaxHealth", fractionContext, minimumLevelCount, rule.damageFractionOfMaxHealthByLevel);
 					if (!positive(rule.damageFractionOfMaxHealth)) throw std::runtime_error(fractionContext + " must be positive");
 					ValidateTable(rule.damageFractionOfMaxHealthByLevel, fractionContext, positive, "must be positive");
 				}
 				else if (entry.contains("damage"))
 				{
 					const std::string damageContext = entryContext + ".damage";
-					rule.damage = ParseLevelFloat(entry.at("damage"), damageContext, minimumLevelCount, rule.damageByLevel);
+					rule.damage = ParseLevelFloat(entry, "damage", damageContext, minimumLevelCount, rule.damageByLevel);
 					if (!positive(rule.damage)) throw std::runtime_error(damageContext + " must be positive");
 					ValidateTable(rule.damageByLevel, damageContext, positive, "must be positive");
 				}
@@ -257,7 +257,7 @@ namespace vega::content
 		{
 			const Json entries = object.value("movementRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".movementRules must be an array");
-			const std::set<std::string> allowedKeys{ "thrustMultiplier", "equalizeDirections" };
+			const std::set<std::string> allowedKeys{ "thrustMultiplier", "thrustMultiplierGrowth", "equalizeDirections" };
 			const auto valid = [](float value) { return value > 0.f && value <= 1.f; };
 			for (const Json& entry : entries)
 			{
@@ -267,7 +267,7 @@ namespace vega::content
 				if (!entry.contains("thrustMultiplier")) throw std::runtime_error(context + ".movementRules.thrustMultiplier is required");
 				const std::string fieldContext = context + ".movementRules.thrustMultiplier";
 				ModuleMovementRule rule;
-				rule.thrustMultiplier = ParseLevelFloat(entry.at("thrustMultiplier"), fieldContext, minimumLevelCount, rule.thrustMultiplierByLevel);
+				rule.thrustMultiplier = ParseLevelFloat(entry, "thrustMultiplier", fieldContext, minimumLevelCount, rule.thrustMultiplierByLevel);
 				if (!valid(rule.thrustMultiplier)) throw std::runtime_error(fieldContext + " must be in (0, 1]");
 				ValidateTable(rule.thrustMultiplierByLevel, fieldContext, valid, "must be in (0, 1]");
 				if (entry.contains("equalizeDirections"))
@@ -289,7 +289,7 @@ namespace vega::content
 		{
 			const Json entries = object.value("sustainedSpeedRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".sustainedSpeedRules must be an array");
-			const std::set<std::string> allowedKeys{ "speedFraction", "holdSeconds", "primarySpeedMultiplier", "primaryPierceBonus", "primaryDamageMultiplier", "lingerSeconds" };
+			const std::set<std::string> allowedKeys{ "speedFraction", "holdSeconds", "primarySpeedMultiplier", "primaryPierceBonus", "primaryDamageMultiplier", "primaryDamageMultiplierGrowth", "lingerSeconds" };
 			const auto atLeastOne = [](float value) { return value >= 1.f; };
 			const auto nonnegative = [](float value) { return value >= 0.f; };
 			for (const Json& entry : entries)
@@ -338,7 +338,7 @@ namespace vega::content
 				if (entry.contains("primaryDamageMultiplier"))
 				{
 					const std::string fieldContext = context + ".sustainedSpeedRules.primaryDamageMultiplier";
-					rule.primaryDamageMultiplier = ParseLevelFloat(entry.at("primaryDamageMultiplier"), fieldContext, minimumLevelCount, rule.primaryDamageMultiplierByLevel);
+					rule.primaryDamageMultiplier = ParseLevelFloat(entry, "primaryDamageMultiplier", fieldContext, minimumLevelCount, rule.primaryDamageMultiplierByLevel);
 					if (!atLeastOne(rule.primaryDamageMultiplier)) throw std::runtime_error(fieldContext + " must be at least 1");
 					ValidateTable(rule.primaryDamageMultiplierByLevel, fieldContext, atLeastOne, "must be at least 1");
 				}
@@ -407,7 +407,7 @@ namespace vega::content
 				ModuleThermalBurstRule rule;
 				rule.stackThreshold = ParsePositiveInt(entry.at("stackThreshold"), entryContext + ".stackThreshold");
 				if (rule.stackThreshold > kStatusRuleStackCap) throw std::runtime_error(entryContext + ".stackThreshold must be 1 to 4");
-				rule.damageFraction = ParseLevelFloat(entry.at("damageFraction"), entryContext + ".damageFraction", minimumLevelCount, rule.damageFractionByLevel);
+				rule.damageFraction = ParseLevelFloat(entry, "damageFraction", entryContext + ".damageFraction", minimumLevelCount, rule.damageFractionByLevel);
 				if (!positive(rule.damageFraction)) throw std::runtime_error(entryContext + ".damageFraction must be positive");
 				ValidateTable(rule.damageFractionByLevel, entryContext + ".damageFraction", positive, "must be positive");
 				rule.areaRadius = entry.contains("areaRadius") ? ParseFiniteFloat(entry.at("areaRadius"), entryContext + ".areaRadius") : 0.f;
@@ -468,7 +468,7 @@ namespace vega::content
 					rule.normalTargetThreshold = ParsePositiveInt(entry.at("normalTargetThreshold"), entryContext + ".normalTargetThreshold");
 					if (rule.normalTargetThreshold > kStatusRuleStackCap) throw std::runtime_error(entryContext + ".normalTargetThreshold must be 1 to 4");
 				}
-				rule.damageMultiplier = ParseLevelFloat(entry.at("damageMultiplier"), entryContext + ".damageMultiplier", minimumLevelCount, rule.damageMultiplierByLevel);
+				rule.damageMultiplier = ParseLevelFloat(entry, "damageMultiplier", entryContext + ".damageMultiplier", minimumLevelCount, rule.damageMultiplierByLevel);
 				if (!positive(rule.damageMultiplier)) throw std::runtime_error(entryContext + ".damageMultiplier must be positive");
 				ValidateTable(rule.damageMultiplierByLevel, entryContext + ".damageMultiplier", positive, "must be positive");
 				rule.rendFraction = entry.contains("rendFraction") ? ParseFiniteFloat(entry.at("rendFraction"), entryContext + ".rendFraction") : 0.f;
@@ -487,7 +487,7 @@ namespace vega::content
 		{
 			const Json entries = object.value("runCounterRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".runCounterRules must be an array");
-			const std::set<std::string> allowedKeys{ "source", "unitsPerStack", "damagePerStack", "moveSpeedPerStack", "killWeights", "adjacentAbilityLimit", "requiredFamily", "armorPerStack", "armorCap" };
+			const std::set<std::string> allowedKeys{ "source", "unitsPerStack", "damagePerStack", "damagePerStackGrowth", "eliteDamagePerKill", "eliteDamagePerKillGrowth", "bossDamagePerKill", "bossDamagePerKillGrowth", "moveSpeedPerStack", "moveSpeedPerStackGrowth", "killWeights", "adjacentAbilityLimit", "requiredFamily", "armorPerStack", "armorCap", "armorCapGrowth" };
 			const auto nonnegative = [](float value) { return value >= 0.f; };
 			const auto positiveAnywhere = [](float scalar, const ModuleLevelTable<float>& table)
 			{
@@ -507,7 +507,7 @@ namespace vega::content
 				{
 					if (!entry.contains(key)) return 0.f;
 					const std::string fieldContext = entryContext + "." + key;
-					const float value = ParseLevelFloat(entry.at(key), fieldContext, minimumLevelCount, table);
+					const float value = ParseLevelFloat(entry, key, fieldContext, minimumLevelCount, table);
 					if (!nonnegative(value)) throw std::runtime_error(fieldContext + " must be non-negative");
 					ValidateTable(table, fieldContext, nonnegative, "must be non-negative");
 					return value;
@@ -518,7 +518,7 @@ namespace vega::content
 					rule.requiredFamily = ParseTag(entry.at("requiredFamily"), GameplayTagKind::AbilityCategory, entryContext);
 					rule.unitsPerStack = ParseFiniteFloat(entry.at("unitsPerStack"), entryContext);
 					rule.armorPerStack = ParseFiniteFloat(entry.at("armorPerStack"), entryContext);
-					rule.armorCap = ParseLevelFloat(entry.at("armorCap"), entryContext, minimumLevelCount, rule.armorCapByLevel);
+					rule.armorCap = ParseLevelFloat(entry, "armorCap", entryContext, minimumLevelCount, rule.armorCapByLevel);
 					if (rule.requiredFamily == GameplayTags::Ability::Primary || rule.unitsPerStack <= 0.f || rule.armorPerStack <= 0.f || rule.armorCap <= 0.f) throw std::runtime_error(entryContext + " invalid ability-use Armor counter");
 					ValidateTable(rule.armorCapByLevel, entryContext, [](float value) { return value > 0.f; }, "invalid Armor cap");
 					if (entry.contains("damagePerStack") || entry.contains("moveSpeedPerStack") || entry.contains("killWeights")) throw std::runtime_error(entryContext + " mixed ability-use counter");
@@ -531,6 +531,12 @@ namespace vega::content
 					ModuleRunCounterRule kill;
 					kill.source = ModuleRunCounterSource::Kill;
 					kill.damagePerStack = parsePerStack("damagePerStack", kill.damagePerStackByLevel);
+					for (const auto& field : { std::make_pair("eliteDamagePerKill", &kill.eliteDamagePerKillByLevel), std::make_pair("bossDamagePerKill", &kill.bossDamagePerKillByLevel) })
+					{
+						if (!entry.contains(field.first)) continue;
+						if (!entry.at(field.first).is_array()) throw std::runtime_error(entryContext + " class damage must be a level table");
+						parsePerStack(field.first, *field.second);
+					}
 					if (!positiveAnywhere(kill.damagePerStack, kill.damagePerStackByLevel)) throw std::runtime_error(entryContext + ".damagePerStack must be positive");
 					if (!entry.contains("killWeights") || !entry.at("killWeights").is_object()) throw std::runtime_error(entryContext + ".killWeights must be an object");
 					const Json weights = entry.at("killWeights");
@@ -561,7 +567,7 @@ namespace vega::content
 					rules.runCounterRules.push_back(std::move(kill));
 					continue;
 				}
-				if (entry.contains("killWeights") || entry.contains("adjacentAbilityLimit")) throw std::runtime_error(entryContext + " killWeights and adjacentAbilityLimit are for Kill only");
+				if (entry.contains("killWeights") || entry.contains("adjacentAbilityLimit") || entry.contains("eliteDamagePerKill") || entry.contains("bossDamagePerKill")) throw std::runtime_error(entryContext + " killWeights and adjacentAbilityLimit are for Kill only");
 				if (!entry.contains("unitsPerStack")) throw std::runtime_error(entryContext + ".unitsPerStack is required");
 				ModuleRunCounterRule rule;
 				rule.source = ModuleRunCounterSource::Distance;
@@ -624,7 +630,7 @@ namespace vega::content
 		{
 			const Json entries = object.value("killStackDamageRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".killStackDamageRules must be an array");
-			const std::set<std::string> allowedKeys{ "family", "fraction" };
+			const std::set<std::string> allowedKeys{ "family", "fraction", "fractionGrowth" };
 			std::size_t index = 0;
 			for (const Json& entry : entries)
 			{
@@ -649,7 +655,7 @@ namespace vega::content
 		{
 			const Json entries = object.value("chargeRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".chargeRules must be an array");
-			const std::set<std::string> allowedKeys{ "chargePerLevel", "overflowTransfer", "trickleSeconds", "trickleCharges" };
+			const std::set<std::string> allowedKeys{ "chargePerLevel", "chargePerLevelGrowth", "overflowTransfer", "trickleSeconds", "trickleCharges" };
 			std::size_t index = 0;
 			for (const Json& entry : entries)
 			{
@@ -666,7 +672,7 @@ namespace vega::content
 				{
 					if (sideFeature) throw std::runtime_error(entryContext + " chargePerLevel is main-package only");
 					if (!entry.at("chargePerLevel").is_array()) throw std::runtime_error(entryContext + ".chargePerLevel must be a per-level array");
-					ParsePositiveLevelInt(entry.at("chargePerLevel"), entryContext + ".chargePerLevel", minimumLevelCount, rule.chargePerLevel);
+					ParsePositiveLevelInt(entry, "chargePerLevel", entryContext + ".chargePerLevel", minimumLevelCount, rule.chargePerLevel);
 				}
 				else
 				{
@@ -732,7 +738,7 @@ namespace vega::content
 			}
 			const Json entries = object.value("primaryMountRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".primaryMountRules must be an array");
-			const std::set<std::string> allowedKeys{ "mode", "damageMultiplier" };
+			const std::set<std::string> allowedKeys{ "mode", "damageMultiplier", "damageMultiplierGrowth" };
 			std::size_t index = 0;
 			for (const Json& entry : entries)
 			{
@@ -753,7 +759,7 @@ namespace vega::content
 				{
 					if (!entry.contains("damageMultiplier")) throw std::runtime_error(entryContext + ".damageMultiplier is required for Broadside");
 					rule.mode = ModulePrimaryMountMode::Broadside;
-					rule.damageMultiplier = ParseLevelFloat(entry.at("damageMultiplier"), entryContext + ".damageMultiplier", minimumLevelCount, rule.damageMultiplierByLevel);
+					rule.damageMultiplier = ParseLevelFloat(entry, "damageMultiplier", entryContext + ".damageMultiplier", minimumLevelCount, rule.damageMultiplierByLevel);
 					if (!(rule.damageMultiplier > 0.f)) throw std::runtime_error(entryContext + ".damageMultiplier must be positive");
 					for (const float value : rule.damageMultiplierByLevel.values)
 						if (!(value > 0.f)) throw std::runtime_error(entryContext + ".damageMultiplier must be positive");

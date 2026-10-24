@@ -655,7 +655,7 @@ namespace vega
 				spreadContext.payload.kineticStacks = 0;
 				spreadContext.payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
 				DamageTypeSystem::ApplyStatusEffects(combatant->GetAbilitySystemComponent(), spreadContext);
-				ApplyCombatDamage(*victim, effects.stormDamage, context.source, { DamageTypeSchema::Electric }, MakeModuleGeneratedDamagePayload(0, DamageSourceScalingPolicy::Normal), {}, {}, DamageDeliveryType::Area, nullptr);
+				ApplyCombatDamage(*victim, context.remainingDamage * effects.stormPrimaryDamageFraction, context.source, { DamageTypeSchema::Electric }, MakeModuleGeneratedDamagePayload(0, DamageSourceScalingPolicy::AlreadyResolved), {}, {}, DamageDeliveryType::Area, nullptr);
 				++struck;
 			}
 		}

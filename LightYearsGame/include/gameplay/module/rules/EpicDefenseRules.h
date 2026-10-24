@@ -1,30 +1,20 @@
 #pragma once
 
-#include "framework/Core.h"
+#include "gameplay/module/ModuleLevelTable.h"
 
 #include <cstddef>
 
 namespace vega
 {
-	// Per-level value of an Epic Defense rule. Entries start at level 1; levels past the last entry extrapolate linearly from the
-	// last step, as ModuleLevelTable does. An empty list yields the fallback.
 	template<typename T>
-	T ResolveEpicLevelValue(const List<T>& values, T fallback, int level)
-	{
-		if (values.empty() || level <= 0) return fallback;
-		const int count = static_cast<int>(values.size());
-		if (level <= count) return values[static_cast<std::size_t>(level - 1)];
-		if (count == 1) return values.front();
-		const T step = values.back() - values[static_cast<std::size_t>(count - 2)];
-		return values.back() + step * static_cast<T>(level - count);
-	}
+	T ResolveEpicLevelValue(const ModuleLevelTable<T>& table, T fallback, int level) { return table.ValueAtLevel(fallback, level); }
 
 	// Last Stand (main package). Lethal damage revives the ship while charges remain: health is set to healthFractionByLevel of
 	// MaxHealth. The combat stats are multiplied by bonusMultiplier for bonusSeconds after each revive.
 	struct ModuleReviveRule
 	{
-		List<float> healthFractionByLevel;
-		List<int> chargesByLevel;
+		ModuleLevelTable<float> healthFractionByLevel;
+		ModuleLevelTable<int> chargesByLevel;
 		float bonusSeconds = 0.f;
 		float bonusMultiplier = 1.f;
 	};
@@ -35,7 +25,7 @@ namespace vega
 	struct ModuleHealthThresholdRule
 	{
 		float healthAtMost = 0.f;
-		List<float> cooldownRecoveryMultiplierByLevel;
+		ModuleLevelTable<float> cooldownRecoveryMultiplierByLevel;
 		float abilityDamageMultiplier = 1.f;
 		float movementSpeedMultiplier = 1.f;
 	};

@@ -18,6 +18,7 @@ namespace vega::content
 	{
 		ModuleSizeVariant ParseVariant(const Json& object, const std::string& context, int minimumLevelCount, bool defaultAffectedByZoneBonus, bool sideFeature)
 		{
+			ValidateLevelGrowthFields(object, context);
 			ModuleSizeVariant variant;
 			variant.shape = ParseShape(object.at("shape"), context + ".shape");
 			std::size_t index = 0;
@@ -45,12 +46,11 @@ namespace vega::content
 				ModuleTriggerBuff buff;
 				buff.trigger = ParseTriggerKind(entry.at("trigger").get<std::string>());
 				if (buff.trigger == ModuleTriggerKind::None) throw std::runtime_error(entryContext + " trigger must not be None");
-				buff.durationSeconds = ParseLevelFloat(
-					entry.at("durationSeconds"), entryContext + ".durationSeconds", minimumLevelCount, buff.durationSecondsByLevel);
+				buff.durationSeconds = ParseLevelFloat(entry, "durationSeconds", entryContext + ".durationSeconds", minimumLevelCount, buff.durationSecondsByLevel);
 				if (buff.durationSeconds <= 0.f) throw std::runtime_error(entryContext + " durationSeconds must be positive");
 				ValidateTable(buff.durationSecondsByLevel, entryContext + ".durationSeconds", [](float value) { return value > 0.f; }, "must be positive");
 				buff.movementSpeedMultiplier = entry.contains("movementSpeedMultiplier")
-					? ParseLevelFloat(entry.at("movementSpeedMultiplier"), entryContext + ".movementSpeedMultiplier", minimumLevelCount,
+					? ParseLevelFloat(entry, "movementSpeedMultiplier", entryContext + ".movementSpeedMultiplier", minimumLevelCount,
 						buff.movementSpeedMultiplierByLevel)
 					: 1.f;
 				if (buff.movementSpeedMultiplier <= 0.f) throw std::runtime_error(entryContext + " movementSpeedMultiplier must be positive");
@@ -85,19 +85,18 @@ namespace vega::content
 				{
 					if (rule.condition != ModuleDamageCondition::FullMagazineShot)
 						throw std::runtime_error(entryContext + " openingShotCount requires FullMagazineShot and an integer");
-					rule.openingShotCount = ParsePositiveLevelInt(
-						entry.at("openingShotCount"), entryContext + ".openingShotCount", minimumLevelCount, rule.openingShotCountByLevel);
+					rule.openingShotCount = ParsePositiveLevelInt(entry, "openingShotCount", entryContext + ".openingShotCount", minimumLevelCount, rule.openingShotCountByLevel);
 				}
 				if (entry.contains("bonusCriticalPolicy"))
 					rule.bonusCriticalPolicy = ParseCriticalPolicy(entry.at("bonusCriticalPolicy").get<std::string>());
 				rule.conditionValue = entry.contains("conditionValue")
-					? ParseLevelFloat(entry.at("conditionValue"), entryContext + ".conditionValue", minimumLevelCount, rule.conditionValueByLevel)
+					? ParseLevelFloat(entry, "conditionValue", entryContext + ".conditionValue", minimumLevelCount, rule.conditionValueByLevel)
 					: 0.f;
 				rule.damageMultiplier = entry.contains("damageMultiplier")
-					? ParseLevelFloat(entry.at("damageMultiplier"), entryContext + ".damageMultiplier", minimumLevelCount, rule.damageMultiplierByLevel)
+					? ParseLevelFloat(entry, "damageMultiplier", entryContext + ".damageMultiplier", minimumLevelCount, rule.damageMultiplierByLevel)
 					: 1.f;
 				rule.bonusDamageFraction = entry.contains("bonusDamageFraction")
-					? ParseLevelFloat(entry.at("bonusDamageFraction"), entryContext + ".bonusDamageFraction", minimumLevelCount,
+					? ParseLevelFloat(entry, "bonusDamageFraction", entryContext + ".bonusDamageFraction", minimumLevelCount,
 						rule.bonusDamageFractionByLevel)
 					: 0.f;
 				if (rule.damageMultiplier <= 0.f) throw std::runtime_error(entryContext + " damageMultiplier must be positive");
@@ -113,7 +112,7 @@ namespace vega::content
 						throw std::runtime_error(entryContext + " perEmptyCellMultiplier requires an outgoing Always rule");
 					if (entry.contains("damageMultiplier"))
 						throw std::runtime_error(entryContext + " perEmptyCellMultiplier cannot be combined with damageMultiplier");
-					rule.perEmptyCellMultiplier = ParseLevelFloat(entry.at("perEmptyCellMultiplier"), entryContext + ".perEmptyCellMultiplier", minimumLevelCount,
+					rule.perEmptyCellMultiplier = ParseLevelFloat(entry, "perEmptyCellMultiplier", entryContext + ".perEmptyCellMultiplier", minimumLevelCount,
 						rule.perEmptyCellMultiplierByLevel);
 					if (rule.perEmptyCellMultiplier <= 0.f) throw std::runtime_error(entryContext + " perEmptyCellMultiplier must be positive");
 					ValidateTable(rule.perEmptyCellMultiplierByLevel, entryContext + ".perEmptyCellMultiplier", [](float value) { return value > 0.f; }, "must be positive");
@@ -136,7 +135,7 @@ namespace vega::content
 				{
 					if (rule.condition != ModuleDamageCondition::AdjacentAbilityDirectHit || rule.incoming)
 						throw std::runtime_error(entryContext + " MaxHealth damage requires outgoing adjacency");
-					rule.maxHealthDamageFraction = ParseLevelFloat(entry.at("maxHealthDamageFraction"), entryContext, minimumLevelCount, rule.maxHealthDamageFractionByLevel);
+					rule.maxHealthDamageFraction = ParseLevelFloat(entry, "maxHealthDamageFraction", entryContext, minimumLevelCount, rule.maxHealthDamageFractionByLevel);
 					const auto positive = [](float value) { return value > 0.f; };
 					if (!positive(rule.maxHealthDamageFraction)) throw std::runtime_error(entryContext + " invalid MaxHealth damage fraction");
 					ValidateTable(rule.maxHealthDamageFractionByLevel, entryContext, positive, "invalid MaxHealth damage fraction");
@@ -189,8 +188,7 @@ namespace vega::content
 				if (rule.activeWhileTrigger != ModuleTriggerKind::None)
 				{
 					if (!entry.contains("activeDurationSeconds")) throw std::runtime_error(entryContext + " active trigger requires activeDurationSeconds");
-					rule.activeDurationSeconds = ParseLevelFloat(
-						entry.at("activeDurationSeconds"), entryContext + ".activeDurationSeconds", minimumLevelCount,
+					rule.activeDurationSeconds = ParseLevelFloat(entry, "activeDurationSeconds", entryContext + ".activeDurationSeconds", minimumLevelCount,
 						rule.activeDurationSecondsByLevel);
 					if (rule.activeDurationSeconds <= 0.f) throw std::runtime_error(entryContext + " activeDurationSeconds must be positive");
 					ValidateTable(rule.activeDurationSecondsByLevel, entryContext + ".activeDurationSeconds",
@@ -224,7 +222,7 @@ namespace vega::content
 				effect.zone = ParseTag(entry.at("zone"), GameplayTagKind::ModuleZone, entryContext + ".zone");
 				if (!seenZones.insert(effect.zone.name).second) throw std::runtime_error(entryContext + " duplicates zone effect: " + effect.zone.name);
 				effect.scope = ParseCooldownScope(entry.at("scope").get<std::string>());
-				effect.multiplier = ParseLevelFloat(entry.at("multiplier"), entryContext + ".multiplier", minimumLevelCount, effect.multiplierByLevel);
+				effect.multiplier = ParseLevelFloat(entry, "multiplier", entryContext + ".multiplier", minimumLevelCount, effect.multiplierByLevel);
 				if (effect.multiplier <= 0.f || effect.multiplier > 1.f)
 					throw std::runtime_error(entryContext + " multiplier must be in (0, 1]");
 				ValidateTable(effect.multiplierByLevel, entryContext + ".multiplier",
@@ -262,7 +260,7 @@ namespace vega::content
 				if (!abilityRestore && action.trigger != (refund ? ModuleTriggerKind::AbilityActivated : cryo ? ModuleTriggerKind::DamageTaken : ModuleTriggerKind::KillConfirmed))
 					throw std::runtime_error(context + " incompatible event action trigger");
 				action.requiredEventTags = ParseRequiredEventTags(entry.value("requiredEventTags", Json::array()), action.trigger, context + ".eventActions.requiredEventTags");
-				action.amount = ParseLevelFloat(entry.at("amount"), context + ".eventActions.amount", minimumLevelCount, action.amountByLevel);
+				action.amount = ParseLevelFloat(entry, "amount", context + ".eventActions.amount", minimumLevelCount, action.amountByLevel);
 				const bool seconds = action.kind == ModuleEventActionKind::ReduceAllCooldowns;
 				const auto validAmount = [seconds, cryo, gold = action.kind == ModuleEventActionKind::AwardGold](float value) { return value > 0.f && ((cryo || gold) ? value <= static_cast<float>(std::numeric_limits<int>::max() / 2) && std::floor(value) == value : seconds || value <= 1.f); };
 				if (!validAmount(action.amount)) throw std::runtime_error(context + " invalid event action amount");
@@ -286,7 +284,7 @@ namespace vega::content
 				if (entry.contains("chancePerLuck"))
 				{
 					if (!refund) throw std::runtime_error(context + " chancePerLuck requires RefundUsedCooldown");
-					action.chancePerLuck = ParseLevelFloat(entry.at("chancePerLuck"), context, minimumLevelCount, action.chancePerLuckByLevel);
+					action.chancePerLuck = ParseLevelFloat(entry, "chancePerLuck", context, minimumLevelCount, action.chancePerLuckByLevel);
 					if (action.chancePerLuck <= 0.f) throw std::runtime_error(context + " chancePerLuck must be positive");
 					ValidateTable(action.chancePerLuckByLevel, context, [](float value) { return value > 0.f; }, "chancePerLuck must be positive");
 				}
@@ -295,7 +293,7 @@ namespace vega::content
 				{
 					action.radius = ParseFiniteFloat(entry.at("radius"), context + ".radius");
 					action.cooldownSeconds = ParseFiniteFloat(entry.at("cooldownSeconds"), context + ".cooldownSeconds");
-					action.targetCount = ParsePositiveLevelInt(entry.at("targetCount"), context + ".targetCount", minimumLevelCount, action.targetCountByLevel);
+					action.targetCount = ParsePositiveLevelInt(entry, "targetCount", context + ".targetCount", minimumLevelCount, action.targetCountByLevel);
 					if (action.radius <= 0.f || action.cooldownSeconds <= 0.f || action.everyCount != 1)
 						throw std::runtime_error(context + " nearby Cryo requires positive radius/cooldown and everyCount=1");
 				}
@@ -342,12 +340,12 @@ namespace vega::content
 				if ((rule.source == ModuleOwnerAttributeSource::MovementSpeed || rule.source == ModuleOwnerAttributeSource::Luck) && entry.contains("healthAtMost"))
 					throw std::runtime_error(context + " movement scaling does not accept a health threshold");
 				if (rule.healthAtMost <= 0.f || rule.healthAtMost > 1.f) throw std::runtime_error(context + " invalid owner health threshold");
-				rule.amount = ParseLevelFloat(entry.at("amount"), context, minimumLevelCount, rule.amountByLevel);
+				rule.amount = ParseLevelFloat(entry, "amount", context, minimumLevelCount, rule.amountByLevel);
 				if (rule.amount <= 0.f) throw std::runtime_error(context + " owner attribute amount must be positive");
 				ValidateTable(rule.amountByLevel, context, [](float value) { return value > 0.f; }, "owner attribute amount must be positive");
 				if (entry.contains("maximumAmount"))
 				{
-					rule.maximumAmount = ParseLevelFloat(entry.at("maximumAmount"), context, minimumLevelCount, rule.maximumAmountByLevel);
+					rule.maximumAmount = ParseLevelFloat(entry, "maximumAmount", context, minimumLevelCount, rule.maximumAmountByLevel);
 					if (rule.source != ModuleOwnerAttributeSource::Gold || rule.maximumAmount <= 0.f) throw std::runtime_error(context + " maximumAmount requires positive Gold-based output");
 					ValidateTable(rule.maximumAmountByLevel, context, [](float value) { return value > 0.f; }, "invalid Gold Armor cap");
 				}
@@ -370,7 +368,7 @@ namespace vega::content
 				if (!entry.is_object() || entry.size() != 2 || !entry.contains("condition") || !entry.contains("multiplier")) throw std::runtime_error(context + " invalid conditional movement rule");
 				ModuleConditionalMovementRule rule;
 				if (entry.at("condition") != "OwnerShieldOverMax") throw std::runtime_error(context + " unsupported conditional movement condition");
-				rule.multiplier = ParseLevelFloat(entry.at("multiplier"), context, minimumLevelCount, rule.multiplierByLevel);
+				rule.multiplier = ParseLevelFloat(entry, "multiplier", context, minimumLevelCount, rule.multiplierByLevel);
 				if (rule.multiplier <= 1.f) throw std::runtime_error(context + " movement multiplier must exceed one");
 				ValidateTable(rule.multiplierByLevel, context, [](float value) { return value > 1.f; }, "invalid conditional movement multiplier");
 				variant.conditionalMovementRules.push_back(rule);
@@ -389,7 +387,7 @@ namespace vega::content
 			for (const Json& entry : reflections)
 			{
 				ModuleRulePackage::ShieldReflection rule;
-				rule.fraction = ParseLevelFloat(entry.at("fraction"), context + ".reflection.fraction", minimumLevelCount, rule.fractionByLevel);
+				rule.fraction = ParseLevelFloat(entry, "fraction", context + ".reflection.fraction", minimumLevelCount, rule.fractionByLevel);
 				rule.durationSeconds = ParseFiniteFloat(entry.at("durationSeconds"), context + ".reflection.durationSeconds");
 					rule.damageType = ParseTag(entry.at("damageType"), GameplayTagKind::DamageType, context + " shield reflection damageType");
 				rule.electricStacks = entry.contains("electricStacks") ? ParsePositiveInt(entry.at("electricStacks"), context + " shield reflection electricStacks") : 0;
@@ -432,7 +430,7 @@ namespace vega::content
 			};
 			for (const Json& entry : statusRules.value("electricOverrides", Json::array()))
 			{
-				validateStatusFields(entry, { "damageTakenByStack" });
+				validateStatusFields(entry, { "damageTakenByStack", "damageTakenByStackGrowth" });
 				ModuleElectricStatusRule rule;
 				const auto& values = entry.at("damageTakenByStack");
 				if (!values.is_array() || values.empty()) throw std::runtime_error(context + " electric stack table must not be empty");
@@ -440,6 +438,7 @@ namespace vega::content
 				{
 					ModuleLevelTable<float> table;
 					const float base = ParseLevelFloat(value, context + ".electric.damageTakenByStack", minimumLevelCount, table);
+					ParseLevelGrowth(entry, "damageTakenByStack", context, table);
 					if (base < 0.f) throw std::runtime_error(context + " invalid electric bonus");
 					ValidateTable(table, context, nonnegative, "invalid electric bonus");
 					rule.damageTakenByStack.push_back(base);
@@ -449,14 +448,15 @@ namespace vega::content
 			}
 			for (const Json& entry : statusRules.value("primaryStatusPrimers", Json::array()))
 			{
-				validateStatusFields(entry, { "cooldownSeconds" });
-				ModulePrimaryStatusPrimerRule rule; rule.cooldownSeconds = ParseFiniteFloat(entry.at("cooldownSeconds"), context);
+				validateStatusFields(entry, { "cooldownSeconds", "cooldownSecondsGrowth" });
+				ModulePrimaryStatusPrimerRule rule; rule.cooldownSeconds = ParseLevelFloat(entry, "cooldownSeconds", context, minimumLevelCount, rule.cooldownSecondsByLevel);
+				ValidateTable(rule.cooldownSecondsByLevel, context, positive, "invalid status primer cooldown");
 				if (rule.cooldownSeconds <= 0.f) throw std::runtime_error(context + " invalid status primer cooldown");
 				variant.statusRules.primaryStatusPrimers.push_back(rule);
 			}
 			for (const Json& entry : statusRules.value("electricSpreads", Json::array()))
 			{
-				validateStatusFields(entry, { "threshold", "radius", "stacks", "targetCount", "cooldownSeconds" });
+				validateStatusFields(entry, { "threshold", "radius", "stacks", "targetCount", "targetCountGrowth", "cooldownSeconds", "cooldownSecondsGrowth" });
 				ModuleElectricSpreadRule rule;
 				rule.threshold = ParsePositiveInt(entry.at("threshold"), context);
 				rule.radius = ParseFiniteFloat(entry.at("radius"), context);
@@ -469,10 +469,10 @@ namespace vega::content
 			for (const Json& entry : statusRules.value("cryoFreezes", Json::array()))
 			{
 				ModuleCryoFreezeRule rule;
-				validateStatusFields(entry, { "threshold", "durationSeconds", "cooldownSeconds", "normalTargetsOnly" });
+				validateStatusFields(entry, { "threshold", "durationSeconds", "durationSecondsGrowth", "cooldownSeconds", "cooldownSecondsGrowth", "normalTargetsOnly" });
 				rule.threshold = ParsePositiveInt(entry.at("threshold"), context + ".freeze.threshold");
-				rule.durationSeconds = ParseLevelFloat(entry.at("durationSeconds"), context, minimumLevelCount, rule.durationSecondsByLevel);
-				rule.cooldownSeconds = ParseLevelFloat(entry.at("cooldownSeconds"), context, minimumLevelCount, rule.cooldownSecondsByLevel);
+				rule.durationSeconds = ParseLevelFloat(entry, "durationSeconds", context, minimumLevelCount, rule.durationSecondsByLevel);
+				rule.cooldownSeconds = ParseLevelFloat(entry, "cooldownSeconds", context, minimumLevelCount, rule.cooldownSecondsByLevel);
 				rule.normalTargetsOnly = entry.value("normalTargetsOnly", true);
 				if (!positive(rule.durationSeconds) || !positive(rule.cooldownSeconds)) throw std::runtime_error(context + " invalid freeze timing");
 				ValidateTable(rule.durationSecondsByLevel, context, positive, "invalid freeze duration");
@@ -483,13 +483,13 @@ namespace vega::content
 			{
 				for (const Json& entry : statusRules.value(key, Json::array()))
 				{
-					validateStatusFields(entry, { "bonusSeconds", "durationMultiplier" });
+					validateStatusFields(entry, { "bonusSeconds", "bonusSecondsGrowth", "durationMultiplier", "durationMultiplierGrowth" });
 					ModuleStatusDurationRule rule;
-					if (entry.contains("bonusSeconds")) rule.bonusSeconds = ParseLevelFloat(entry.at("bonusSeconds"), context, minimumLevelCount, rule.bonusSecondsByLevel);
+					if (entry.contains("bonusSeconds")) rule.bonusSeconds = ParseLevelFloat(entry, "bonusSeconds", context, minimumLevelCount, rule.bonusSecondsByLevel);
 					if (entry.contains("durationMultiplier"))
 					{
 						if (std::string{ key } != "durationBonuses") throw std::runtime_error(context + " duration multiplier is general-only");
-						rule.durationMultiplier = ParseLevelFloat(entry.at("durationMultiplier"), context, minimumLevelCount, rule.durationMultiplierByLevel);
+						rule.durationMultiplier = ParseLevelFloat(entry, "durationMultiplier", context, minimumLevelCount, rule.durationMultiplierByLevel);
 						ValidateTable(rule.durationMultiplierByLevel, context, [](float value) { return value >= 1.f; }, "invalid status duration multiplier");
 					}
 					if (rule.bonusSeconds < 0.f || rule.durationMultiplier < 1.f || (rule.bonusSeconds == 0.f && rule.durationMultiplier == 1.f)) throw std::runtime_error(context + " invalid status duration bonus");
@@ -535,7 +535,7 @@ namespace vega::content
 			const auto fraction = [&context, minimumLevelCount](const Json& entry, const char* key, ModuleLevelTable<float>& table)
 			{
 				if (!entry.contains(key)) return 0.f;
-				const float value = ParseLevelFloat(entry.at(key), context + ".generatedRules." + key, minimumLevelCount, table);
+				const float value = ParseLevelFloat(entry, key, context + ".generatedRules." + key, minimumLevelCount, table);
 				const auto valid = [](float v) { return v > 0.f && v <= 1.f; };
 				if (!valid(value)) throw std::runtime_error(context + " generated damage fraction must be in (0,1]");
 				ValidateTable(table, context, valid, "generated fraction must be in (0,1]");
@@ -543,7 +543,7 @@ namespace vega::content
 			};
 			for (const auto& entry : generated.value("ricochets", Json::array()))
 			{
-				fields(entry, { "damageFraction", "range", "secondaryFraction", "transferStatus" });
+				fields(entry, { "damageFraction", "damageFractionGrowth", "range", "secondaryFraction", "transferStatus" });
 				ModuleRicochetRule rule;
 				rule.damageFraction = fraction(entry, "damageFraction", rule.damageFractionByLevel);
 				rule.range = number(entry, "range");
@@ -554,7 +554,7 @@ namespace vega::content
 			}
 			for (const auto& entry : generated.value("guidedSalvos", Json::array()))
 			{
-				fields(entry, { "damageFraction", "projectileCount", "speed", "lifetime", "targetRange", "maxActive", "damageType" });
+				fields(entry, { "damageFraction", "damageFractionGrowth", "projectileCount", "speed", "lifetime", "targetRange", "maxActive", "maxActiveGrowth", "damageType" });
 				ModuleGuidedSalvoRule rule;
 				rule.damageFraction = fraction(entry, "damageFraction", rule.damageFractionByLevel);
 				rule.projectileCount = count(entry, "projectileCount"); rule.speed = number(entry, "speed"); rule.lifetime = number(entry, "lifetime"); rule.targetRange = number(entry, "targetRange"); rule.maxActive = count(entry, "maxActive");
@@ -565,7 +565,7 @@ namespace vega::content
 			}
 			for (const auto& entry : generated.value("delayedExplosions", Json::array()))
 			{
-				fields(entry, { "damageFraction", "delaySeconds", "radius", "maxActive" });
+				fields(entry, { "damageFraction", "damageFractionGrowth", "delaySeconds", "radius", "maxActive", "maxActiveGrowth" });
 				ModuleDelayedExplosionRule rule;
 				rule.damageFraction = fraction(entry, "damageFraction", rule.damageFractionByLevel);
 				rule.delaySeconds = number(entry, "delaySeconds"); rule.radius = number(entry, "radius"); rule.maxActive = count(entry, "maxActive");
@@ -574,23 +574,23 @@ namespace vega::content
 			}
 			for (const auto& entry : generated.value("trailMines", Json::array()))
 			{
-				fields(entry, { "damage", "attackPowerCoefficient", "spacing", "windowSeconds", "fuseSeconds", "radius", "maxActive", "additionalLimit", "cryoStacks", "damageType" });
+				fields(entry, { "damage", "damageGrowth", "attackPowerCoefficient", "attackPowerCoefficientGrowth", "spacing", "windowSeconds", "fuseSeconds", "radius", "maxActive", "maxActiveGrowth", "additionalLimit", "cryoStacks", "damageType" });
 				ModuleTrailMineRule rule;
 				if (entry.contains("damage"))
 				{
-					rule.damage = ParseLevelFloat(entry.at("damage"), context, minimumLevelCount, rule.damageByLevel);
+					rule.damage = ParseLevelFloat(entry, "damage", context, minimumLevelCount, rule.damageByLevel);
 					if (!positive(rule.damage)) throw std::runtime_error(context + " mine damage must be positive");
 					ValidateTable(rule.damageByLevel, context, positive, "mine damage must be positive");
 				}
 				if (entry.contains("attackPowerCoefficient"))
 				{
-					rule.attackPowerCoefficient = ParseLevelFloat(entry.at("attackPowerCoefficient"), context, minimumLevelCount, rule.attackPowerCoefficientByLevel);
+					rule.attackPowerCoefficient = ParseLevelFloat(entry, "attackPowerCoefficient", context, minimumLevelCount, rule.attackPowerCoefficientByLevel);
 					const auto nonNegative = [](float value) { return std::isfinite(value) && value >= 0.f; };
 					if (rule.damage <= 0.f || !nonNegative(rule.attackPowerCoefficient)) throw std::runtime_error(context + " mine AP coefficient requires damage and must be non-negative");
 					ValidateTable(rule.attackPowerCoefficientByLevel, context, nonNegative, "mine AP coefficient must be non-negative");
 				}
 				rule.spacing = number(entry, "spacing"); rule.windowSeconds = number(entry, "windowSeconds"); rule.fuseSeconds = number(entry, "fuseSeconds"); rule.radius = number(entry, "radius");
-				if (entry.contains("maxActive")) rule.maxActive = ParsePositiveLevelInt(entry.at("maxActive"), context, minimumLevelCount, rule.maxActiveByLevel);
+				if (entry.contains("maxActive")) rule.maxActive = ParsePositiveLevelInt(entry, "maxActive", context, minimumLevelCount, rule.maxActiveByLevel);
 				rule.additionalLimit = count(entry, "additionalLimit"); rule.cryoStacks = count(entry, "cryoStacks");
 				if (rule.damage > 0.f) rule.damageType = ParseTag(entry.at("damageType"), GameplayTagKind::DamageType, context + " trail mine damageType");
 				else if (entry.contains("damageType")) throw std::runtime_error(context + " trail mine damageType requires damage");
@@ -601,12 +601,12 @@ namespace vega::content
 			}
 			for (const auto& entry : generated.value("annularBursts", Json::array()))
 			{
-				fields(entry, { "innerRadius", "outerRadius", "baseDamage", "energyPowerCoefficient" });
+				fields(entry, { "innerRadius", "outerRadius", "baseDamage", "baseDamageGrowth", "energyPowerCoefficient", "energyPowerCoefficientGrowth" });
 				ModuleAnnularBurstRule rule;
 				rule.innerRadius = number(entry, "innerRadius");
 				rule.outerRadius = number(entry, "outerRadius");
-				rule.baseDamage = entry.contains("baseDamage") ? ParseLevelFloat(entry.at("baseDamage"), context + ".generatedRules.baseDamage", minimumLevelCount, rule.baseDamageByLevel) : 0.f;
-				rule.energyPowerCoefficient = entry.contains("energyPowerCoefficient") ? ParseLevelFloat(entry.at("energyPowerCoefficient"), context + ".generatedRules.energyPowerCoefficient", minimumLevelCount, rule.energyPowerCoefficientByLevel) : 0.f;
+				rule.baseDamage = entry.contains("baseDamage") ? ParseLevelFloat(entry, "baseDamage", context + ".generatedRules.baseDamage", minimumLevelCount, rule.baseDamageByLevel) : 0.f;
+				rule.energyPowerCoefficient = entry.contains("energyPowerCoefficient") ? ParseLevelFloat(entry, "energyPowerCoefficient", context + ".generatedRules.energyPowerCoefficient", minimumLevelCount, rule.energyPowerCoefficientByLevel) : 0.f;
 				ValidateTable(rule.baseDamageByLevel, context, [](float value) { return value >= 0.f; }, "annular burst base damage must not be negative");
 				ValidateTable(rule.energyPowerCoefficientByLevel, context, [](float value) { return value > 0.f; }, "annular burst Energy Power coefficient must be positive");
 				if (sideFeature || rule.innerRadius <= 0.f || rule.outerRadius <= rule.innerRadius || (rule.baseDamage <= 0.f && rule.energyPowerCoefficient <= 0.f)) throw std::runtime_error(context + " annular burst needs an ordered positive ring and damage; main sources only");
@@ -614,16 +614,18 @@ namespace vega::content
 			}
 			for (const auto& entry : generated.value("speedLances", Json::array()))
 			{
-				fields(entry, { "speedDamageCoefficient", "sampleSeconds", "projectileSpeed", "range", "echoDelaySeconds", "echoFraction", "firstTargetElectricStacks" });
+				fields(entry, { "speedDamageCoefficient", "speedDamageCoefficientGrowth", "sampleSeconds", "projectileSpeed", "range", "echoDelaySeconds", "echoFraction", "firstTargetElectricStacks" });
 				ModuleSpeedLanceRule rule;
-				rule.speedDamageCoefficient = number(entry, "speedDamageCoefficient"); rule.sampleSeconds = number(entry, "sampleSeconds"); rule.projectileSpeed = number(entry, "projectileSpeed"); rule.range = number(entry, "range");
+				rule.speedDamageCoefficient = entry.contains("speedDamageCoefficient") ? ParseLevelFloat(entry, "speedDamageCoefficient", context, minimumLevelCount, rule.speedDamageCoefficientByLevel) : 0.f;
+				ValidateTable(rule.speedDamageCoefficientByLevel, context, positive, "invalid speed damage coefficient");
+				rule.sampleSeconds = number(entry, "sampleSeconds"); rule.projectileSpeed = number(entry, "projectileSpeed"); rule.range = number(entry, "range");
 				rule.echoDelaySeconds = number(entry, "echoDelaySeconds"); rule.echoFraction = number(entry, "echoFraction"); rule.firstTargetElectricStacks = count(entry, "firstTargetElectricStacks");
 				if ((rule.speedDamageCoefficient > 0.f && (rule.sampleSeconds <= 0.f || rule.projectileSpeed <= 0.f || rule.range <= 0.f)) || ((rule.echoDelaySeconds > 0.f) != (rule.echoFraction > 0.f)) || rule.echoFraction > 1.f || (rule.speedDamageCoefficient == 0.f && rule.echoFraction == 0.f && rule.firstTargetElectricStacks == 0)) throw std::runtime_error(context + " incomplete Speed Lance rule");
 				variant.generatedRules.speedLances.push_back(rule);
 			}
 			for (const auto& entry : generated.value("killExplosions", Json::array()))
 			{
-				fields(entry, { "maxHealthFraction", "radius", "maxActive", "damageType", "presentationId", "requiredTargetStatuses" });
+				fields(entry, { "maxHealthFraction", "maxHealthFractionGrowth", "radius", "maxActive", "maxActiveGrowth", "damageType", "presentationId", "requiredTargetStatuses" });
 				ModuleKillExplosionRule rule;
 				rule.maxHealthFraction = fraction(entry, "maxHealthFraction", rule.maxHealthFractionByLevel);
 				rule.radius = number(entry, "radius"); rule.maxActive = count(entry, "maxActive");

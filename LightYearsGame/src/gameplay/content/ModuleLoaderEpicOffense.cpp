@@ -51,12 +51,12 @@ namespace vega::content
 			for (const Json& entry : EpicEntries(object, context, "prismCoreRules"))
 			{
 				const std::string entryContext = context + ".prismCoreRules[" + std::to_string(index++) + "]";
-				RejectUnknownFields(entry, entryContext, { "extraStacks", "statusDurationMultiplier" });
+				RejectUnknownFields(entry, entryContext, { "extraStacks", "statusDurationMultiplier", "statusDurationMultiplierGrowth" });
 				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
 				if (!entry.contains("statusDurationMultiplier")) throw std::runtime_error(entryContext + ".statusDurationMultiplier is required");
 				ModulePrismCoreRule rule;
 				rule.extraStacks = BoundedInt(entry, "extraStacks", 1, 4, entryContext);
-				rule.statusDurationMultiplier = ParseLevelFloat(entry.at("statusDurationMultiplier"), entryContext + ".statusDurationMultiplier", minimumLevelCount, rule.statusDurationMultiplierByLevel);
+				rule.statusDurationMultiplier = ParseLevelFloat(entry, "statusDurationMultiplier", entryContext + ".statusDurationMultiplier", minimumLevelCount, rule.statusDurationMultiplierByLevel);
 				ValidateTable(rule.statusDurationMultiplierByLevel, entryContext + ".statusDurationMultiplier", [](float value) { return value > 0.f; }, "must be positive");
 				if (rule.statusDurationMultiplier <= 0.f) throw std::runtime_error(entryContext + ".statusDurationMultiplier must be positive");
 				rules.prismCores.push_back(std::move(rule));
@@ -66,18 +66,15 @@ namespace vega::content
 			for (const Json& entry : EpicEntries(object, context, "stormCapacitorRules"))
 			{
 				const std::string entryContext = context + ".stormCapacitorRules[" + std::to_string(index++) + "]";
-				RejectUnknownFields(entry, entryContext, { "chargesRequired", "targetCount", "electricStacks", "radius", "damage" });
+				RejectUnknownFields(entry, entryContext, { "chargesRequired", "targetCount", "targetCountGrowth", "electricStacks", "radius", "primaryDamageFraction" });
 				if (!sideFeature) throw std::runtime_error(entryContext + " is side-feature only");
 				ModuleStormCapacitorRule rule;
 				rule.chargesRequired = BoundedInt(entry, "chargesRequired", rule.chargesRequired, 10, entryContext);
 				rule.targetCount = BoundedInt(entry, "targetCount", rule.targetCount, 10, entryContext);
 				rule.electricStacks = BoundedInt(entry, "electricStacks", rule.electricStacks, 4, entryContext);
 				rule.radius = PositiveFloat(entry, "radius", rule.radius, entryContext);
-				if (entry.contains("damage"))
-				{
-					rule.damage = ParseFiniteFloat(entry.at("damage"), entryContext + ".damage");
-					if (rule.damage < 0.f) throw std::runtime_error(entryContext + ".damage must not be negative");
-				}
+				rule.primaryDamageFraction = PositiveFloat(entry, "primaryDamageFraction", rule.primaryDamageFraction, entryContext);
+				if (rule.primaryDamageFraction > 1.f) throw std::runtime_error(entryContext + " primaryDamageFraction must be in (0,1]");
 				rules.stormCapacitors.push_back(rule);
 			}
 
@@ -85,7 +82,7 @@ namespace vega::content
 			for (const Json& entry : EpicEntries(object, context, "alternatingCurrentRules"))
 			{
 				const std::string entryContext = context + ".alternatingCurrentRules[" + std::to_string(index++) + "]";
-				RejectUnknownFields(entry, entryContext, { "damageMultiplier" });
+				RejectUnknownFields(entry, entryContext, { "damageMultiplier", "damageMultiplierGrowth" });
 				if (!sideFeature) throw std::runtime_error(entryContext + " is side-feature only");
 				ModuleAlternatingCurrentRule rule;
 				rule.damageMultiplier = PositiveFloat(entry, "damageMultiplier", rule.damageMultiplier, entryContext);
@@ -96,7 +93,7 @@ namespace vega::content
 			for (const Json& entry : EpicEntries(object, context, "bloodContractRules"))
 			{
 				const std::string entryContext = context + ".bloodContractRules[" + std::to_string(index++) + "]";
-				RejectUnknownFields(entry, entryContext, { "costFraction", "healFraction", "healWindowSeconds", "fullHealthMultiplier", "emptyHealthMultiplier" });
+				RejectUnknownFields(entry, entryContext, { "costFraction", "healFraction", "healWindowSeconds", "fullHealthMultiplier", "fullHealthMultiplierGrowth", "emptyHealthMultiplier", "emptyHealthMultiplierGrowth" });
 				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
 				if (!entry.contains("fullHealthMultiplier") || !entry.contains("emptyHealthMultiplier")) throw std::runtime_error(entryContext + " needs fullHealthMultiplier and emptyHealthMultiplier");
 				ModuleBloodContractRule rule;
@@ -108,8 +105,8 @@ namespace vega::content
 					if (rule.healFraction < 0.f || rule.healFraction >= 1.f) throw std::runtime_error(entryContext + ".healFraction must be in [0, 1)");
 				}
 				rule.healWindowSeconds = PositiveFloat(entry, "healWindowSeconds", rule.healWindowSeconds, entryContext);
-				rule.fullHealthMultiplier = ParseLevelFloat(entry.at("fullHealthMultiplier"), entryContext + ".fullHealthMultiplier", minimumLevelCount, rule.fullHealthMultiplierByLevel);
-				rule.emptyHealthMultiplier = ParseLevelFloat(entry.at("emptyHealthMultiplier"), entryContext + ".emptyHealthMultiplier", minimumLevelCount, rule.emptyHealthMultiplierByLevel);
+				rule.fullHealthMultiplier = ParseLevelFloat(entry, "fullHealthMultiplier", entryContext + ".fullHealthMultiplier", minimumLevelCount, rule.fullHealthMultiplierByLevel);
+				rule.emptyHealthMultiplier = ParseLevelFloat(entry, "emptyHealthMultiplier", entryContext + ".emptyHealthMultiplier", minimumLevelCount, rule.emptyHealthMultiplierByLevel);
 				ValidateTable(rule.fullHealthMultiplierByLevel, entryContext + ".fullHealthMultiplier", [](float value) { return value > 0.f; }, "must be positive");
 				ValidateTable(rule.emptyHealthMultiplierByLevel, entryContext + ".emptyHealthMultiplier", [](float value) { return value > 0.f; }, "must be positive");
 				if (rule.fullHealthMultiplier <= 0.f || rule.emptyHealthMultiplier <= 0.f) throw std::runtime_error(entryContext + " multipliers must be positive");

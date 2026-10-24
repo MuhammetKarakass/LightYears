@@ -21,14 +21,15 @@ namespace
 		for (int level = 1; level <= 3; ++level)
 		{
 			Fixture f{ report, application }; DamageObserver observer{ *f.ship }; const auto id = f.Install("Module.Movement.SpeedLance.Rare", 0, level);
+			const float expectedDamage = 500.f * (.4f + .05f * (level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), id) - 1));
 			CastOffense(f); Sample(f); report.Check(Actors<ModuleSpeedLanceActor>(f).empty(), "Offense cannot open a lance window");
 			CastMovement(f); Move(f, 25.f, .25f); Move(f, 125.f, .25f); Move(f, 50.f, .25f);
 			report.Check(Actors<ModuleSpeedLanceActor>(f).empty(), "lance waits for the full one-second sample"); Move(f, 0.f, .25f); const auto lance = Lance(f);
-			f.Equal("damage uses peak speed rather than final speed", 200.f, lance->GetDamage()); f.Equal("900 range at 1800 speed lasts half a second", .5f, lance->GetLifeTime());
+			f.Equal("damage uses peak speed rather than final speed", expectedDamage, lance->GetDamage()); f.Equal("900 range at 1800 speed lasts half a second", .5f, lance->GetLifeTime());
 			for (int index = 0; index < 8; ++index)
 			{
-				const auto enemy = Target(f, 50.f + index * 50.f); lance->OnActorBeginOverlap(enemy.get()); f.Equal("all pierced targets take full damage", 800.f, enemy->GetHealthComponent().GetHealth());
-				lance->OnActorBeginOverlap(enemy.get()); f.Equal("each target can be hit only once per lance", 800.f, enemy->GetHealthComponent().GetHealth());
+				const auto enemy = Target(f, 50.f + index * 50.f); lance->OnActorBeginOverlap(enemy.get()); f.Equal("all pierced targets take full damage", 1000.f - expectedDamage, enemy->GetHealthComponent().GetHealth());
+				lance->OnActorBeginOverlap(enemy.get()); f.Equal("each target can be hit only once per lance", 1000.f - expectedDamage, enemy->GetHealthComponent().GetHealth());
 			}
 			report.Check(observer.generated == 8 && observer.allSuppressed, "lance hits suppress module recursion and critical rolls");
 			const auto origin = lance->GetActorLocation(); lance->Tick(.6f); const auto distance = lance->GetActorLocation() - origin;
@@ -38,19 +39,19 @@ namespace
 	}
 	void SweepChecks(Report& report, Application& application)
 	{
-		Fixture f{ report, application }; f.Install("Module.Movement.SpeedLance.Rare"); CastMovement(f); Sample(f); const auto lance = Lance(f); const auto origin = lance->GetActorLocation(), direction = lance->GetActorForwardDirection();
+		Fixture f{ report, application }; const auto id = f.Install("Module.Movement.SpeedLance.Rare"); const float expectedDamage = 500.f * (.4f + .05f * ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), id)); CastMovement(f); Sample(f); const auto lance = Lance(f); const auto origin = lance->GetActorLocation(), direction = lance->GetActorForwardDirection();
 		List<shared_ptr<SpaceShip>> targets; for (float distance : { 100.f, 400.f, 850.f, 950.f }) { const auto target = Target(f); target->SetActorLocation(origin + direction * distance); targets.push_back(target); }
-		lance->Tick(.6f); for (std::size_t i = 0; i < targets.size(); ++i) f.Equal("swept collision pierces in-range targets without tunneling", i < 3 ? 800.f : 1000.f, targets[i]->GetHealthComponent().GetHealth());
+		lance->Tick(.6f); for (std::size_t i = 0; i < targets.size(); ++i) f.Equal("swept collision pierces in-range targets without tunneling", i < 3 ? 1000.f - expectedDamage : 1000.f, targets[i]->GetHealthComponent().GetHealth());
 	}
 	void SideChecks(Report& report, Application& application)
 	{
 		Fixture echo{ report, application }; const auto id = echo.Install("Module.Movement.SpeedLance.Rare", 1, 1, "Module.SideFeature.SpeedLance.EchoLance"); CastMovement(echo); Sample(echo); const auto first = Lance(echo); const auto direction = first->GetActorForwardDirection();
 		echo.ship->SetActorRotation(echo.ship->GetActorRotation() + 90.f); echo.ship->GetModuleApplier().Tick(.39f); report.Check(Actors<ModuleSpeedLanceActor>(echo).size() == 1, "Echo waits four tenths of a second"); echo.ship->GetModuleApplier().Tick(.02f);
-		const auto lances = Actors<ModuleSpeedLanceActor>(echo); report.Check(lances.size() == 2, "Echo creates the second lance"); const auto second = lances.back(); echo.Equal("Echo retains half of original peak damage", 100.f, second->GetDamage()); echo.Equal("Echo retains original forward x", direction.x, second->GetActorForwardDirection().x); echo.Equal("Echo retains original forward y", direction.y, second->GetActorForwardDirection().y);
+		const auto lances = Actors<ModuleSpeedLanceActor>(echo); report.Check(lances.size() == 2, "Echo creates the second lance"); const auto second = lances.back(); echo.Equal("Echo retains half of original peak damage", first->GetDamage() * .5f, second->GetDamage()); echo.Equal("Echo retains original forward x", direction.x, second->GetActorForwardDirection().x); echo.Equal("Echo retains original forward y", direction.y, second->GetActorForwardDirection().y);
 		const auto enemy = Target(echo); first->OnActorBeginOverlap(enemy.get()); second->OnActorBeginOverlap(enemy.get()); echo.Equal("each lance has its own target hit budget", 700.f, enemy->GetHealthComponent().GetHealth());
 		echo.Remove(id); report.Check(first->GetIsPendingDestroy() && second->GetIsPendingDestroy(), "uninstall destroys both leased lances");
 		Fixture charged{ report, application }; charged.Install("Module.Movement.SpeedLance.Rare", 1, 1, "Module.SideFeature.SpeedLance.ChargedLance"); CastMovement(charged); Sample(charged); const auto lance = Lance(charged); const auto near = Target(charged), far = Target(charged, 100.f);
-		lance->OnActorBeginOverlap(near.get()); lance->OnActorBeginOverlap(far.get()); charged.Equal("Charged Lance adds two Electric to first target", 2.f, static_cast<float>(Stacks(*near, DamageStatusEffectIds::ElectricEffectId))); charged.Equal("subsequent targets receive no Electric", 0.f, static_cast<float>(Stacks(*far, DamageStatusEffectIds::ElectricEffectId))); charged.Equal("Charged keeps original first-target damage", 800.f, near->GetHealthComponent().GetHealth()); charged.Equal("Charged keeps full piercing damage", 800.f, far->GetHealthComponent().GetHealth());
+		lance->OnActorBeginOverlap(near.get()); lance->OnActorBeginOverlap(far.get()); charged.Equal("Charged Lance adds two Electric to first target", 2.f, static_cast<float>(Stacks(*near, DamageStatusEffectIds::ElectricEffectId))); charged.Equal("subsequent targets receive no Electric", 0.f, static_cast<float>(Stacks(*far, DamageStatusEffectIds::ElectricEffectId))); charged.Equal("Charged keeps original first-target damage", 1000.f - lance->GetDamage(), near->GetHealthComponent().GetHealth()); charged.Equal("Charged keeps full piercing damage", 1000.f - lance->GetDamage(), far->GetHealthComponent().GetHealth());
 		Fixture small{ report, application }; small.Install("Module.Movement.SpeedLance.Rare", 0, 1, "Module.SideFeature.SpeedLance.ChargedLance"); CastMovement(small); Sample(small); const auto clean = Target(small); Lance(small)->OnActorBeginOverlap(clean.get()); small.Equal("two-cell side remains locked", 0.f, static_cast<float>(Stacks(*clean, DamageStatusEffectIds::ElectricEffectId)));
 	}
 	void ContentChecks(Report& report)

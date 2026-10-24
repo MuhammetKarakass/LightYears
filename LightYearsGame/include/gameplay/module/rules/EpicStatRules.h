@@ -3,27 +3,13 @@
 #include "attributes/AttributeSystem.h"
 #include "framework/Core.h"
 #include "gameplay/module/ModuleRulePredicates.h"
+#include "gameplay/module/ModuleLevelTable.h"
 
 #include <cstddef>
 
 namespace vega
 {
-	// Level table of the Epic stat rules. Same contract as ModuleLevelTable: levels past the authored entries extrapolate
-	// linearly from the last step. Kept separate because ModuleDefinition.h includes this header before its own tables.
-	struct EpicLevelTable
-	{
-		List<float> values;
-
-		float ValueAtLevel(float fallback, int level) const
-		{
-			if (values.empty() || level <= 0) return fallback;
-			const int count = static_cast<int>(values.size());
-			if (level <= count) return values[static_cast<std::size_t>(level - 1)];
-			if (count == 1) return values.front();
-			const float step = values.back() - values[static_cast<std::size_t>(count - 2)];
-			return values.back() + step * static_cast<float>(level - count);
-		}
-	};
+	using EpicLevelTable = ModuleLevelTable<float>;
 
 	enum class EpicFamilyStatTarget
 	{

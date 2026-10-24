@@ -21,6 +21,19 @@ namespace vega
 	{
 		const NumericValues out{ visitor };
 		VisitEpicOffenseDescriptionValues(rules.epicOffense, level, visitor);
+		for (std::size_t i = 0; i < rules.cascadeRules.size(); ++i)
+		{
+			const auto& rule = rules.cascadeRules[i]; const std::string key = "cascade." + std::to_string(i) + ".";
+			out.Number(key + "stepBonusPercent", rule.stepBonusByLevel.ValueAtLevel(0.f, level) * 100.f);
+			out.Number(key + "maxSteps", static_cast<float>(rule.maxSteps)); out.Number(key + "windowSeconds", rule.windowSeconds);
+		}
+		for (std::size_t i = 0; i < rules.phaseSlipRules.size(); ++i)
+		{
+			const auto& rule = rules.phaseSlipRules[i]; const std::string key = "phaseSlip." + std::to_string(i) + ".";
+			out.Number(key + "phaseSeconds", rule.phaseSeconds); out.Number(key + "cooldownSeconds", rule.cooldownSeconds);
+			out.Number(key + "explosionRadius", rule.explosionRadiusByLevel.ValueAtLevel(rule.explosionRadius, level));
+			out.Number(key + "primaryDamageMultiplier", rule.primaryDamageMultiplierByLevel.ValueAtLevel(1.f, level));
+		}
 		for (const auto& entry : rules.attributeModifiers) out.Modifier(entry.modifier, entry.magnitudeByLevel, level);
 		for (const auto& entry : rules.abilityModifiers) out.Modifier(entry.modifier, entry.magnitudeByLevel, level);
 		for (std::size_t i = 0; i < rules.triggerBuffs.size(); ++i)
@@ -100,7 +113,7 @@ namespace vega
 			const auto& rule = rules.statusRules.durationBonuses[i];
 			out.Number("statusDuration." + std::to_string(i) + ".increasePercent", (rule.durationMultiplierByLevel.ValueAtLevel(rule.durationMultiplier, level) - 1.f) * 100.f);
 		}
-		for (std::size_t i = 0; i < rules.statusRules.primaryStatusPrimers.size(); ++i) out.Number("statusPrimer." + std::to_string(i) + ".cooldownSeconds", rules.statusRules.primaryStatusPrimers[i].cooldownSeconds);
+		for (std::size_t i = 0; i < rules.statusRules.primaryStatusPrimers.size(); ++i) out.Number("statusPrimer." + std::to_string(i) + ".cooldownSeconds", rules.statusRules.primaryStatusPrimers[i].cooldownSecondsByLevel.ValueAtLevel(rules.statusRules.primaryStatusPrimers[i].cooldownSeconds, level));
 		for (std::size_t i = 0; i < rules.statusRules.electricSpreads.size(); ++i)
 		{
 			const auto& rule = rules.statusRules.electricSpreads[i]; const auto key = "electricSpread." + std::to_string(i) + ".";
@@ -192,8 +205,8 @@ namespace vega
 			if (rule.source == ModuleRunCounterSource::Kill)
 			{
 				const float perStack = rule.damagePerStackByLevel.ValueAtLevel(rule.damagePerStack, level);
-				out.Number(key + "elitePercent", perStack * rule.killWeights.elite * 100.f);
-				out.Number(key + "bossPercent", perStack * rule.killWeights.boss * 100.f);
+				out.Number(key + "elitePercent", rule.eliteDamagePerKillByLevel.ValueAtLevel(perStack * rule.killWeights.elite, level) * 100.f);
+				out.Number(key + "bossPercent", rule.bossDamagePerKillByLevel.ValueAtLevel(perStack * rule.killWeights.boss, level) * 100.f);
 			}
 			out.Number(key + "armorPerStack", rule.armorPerStack); out.Number(key + "armorCap", rule.armorCapByLevel.ValueAtLevel(rule.armorCap, level));
 			out.Number(key + "unitsPerStack", rule.unitsPerStack);
@@ -241,7 +254,7 @@ namespace vega
 		for (std::size_t i = 0; i < rules.generatedRules.speedLances.size(); ++i)
 		{
 			const auto& rule = rules.generatedRules.speedLances[i]; const std::string key = "speedLance." + std::to_string(i) + ".";
-			out.Number(key + "speedDamageCoefficient", rule.speedDamageCoefficient); out.Number(key + "sampleSeconds", rule.sampleSeconds); out.Number(key + "projectileSpeed", rule.projectileSpeed); out.Number(key + "range", rule.range);
+			out.Number(key + "speedDamageCoefficient", rule.speedDamageCoefficientByLevel.ValueAtLevel(rule.speedDamageCoefficient, level)); out.Number(key + "sampleSeconds", rule.sampleSeconds); out.Number(key + "projectileSpeed", rule.projectileSpeed); out.Number(key + "range", rule.range);
 			out.Number(key + "echoDelaySeconds", rule.echoDelaySeconds); out.Number(key + "echoPercent", rule.echoFraction * 100.f); out.Number(key + "firstTargetElectricStacks", static_cast<float>(rule.firstTargetElectricStacks));
 		}
 		for (std::size_t i = 0; i < rules.ownerBurstRules.size(); ++i)

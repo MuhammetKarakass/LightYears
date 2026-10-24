@@ -28,14 +28,14 @@ namespace vega
 	};
 
 	// Storm Capacitor (side feature): Q/E/F/R uses charge up to chargesRequired. The next eligible Primary hit discharges the charges
-	// onto targetCount random opposing combatants in radius: each takes damage and electricStacks Electric stacks.
+	// onto targetCount random opposing combatants in radius: each takes primaryDamageFraction of the triggering hit and electricStacks Electric stacks.
 	struct ModuleStormCapacitorRule
 	{
 		int chargesRequired = 4;
 		int targetCount = 3;
 		int electricStacks = 2;
 		float radius = 500.f;
-		float damage = 15.f;
+		float primaryDamageFraction = 0.5f;
 	};
 
 	// Alternating Current (side feature): a direct ability hit on an enemy whose previous direct ability hit had another damage type
@@ -63,14 +63,14 @@ namespace vega
 	// The grant refreshes and replaces the previous one; it does not stack.
 	struct ModuleClotArmorRule
 	{
-		float armorPerCost = 3.f;
-		float seconds = 3.f;
+		float armorPerCost = 2.f;
+		float seconds = 4.f;
 	};
 
 	// Debt Collection (side feature of Blood Contract): the heal window becomes healWindowSeconds.
 	struct ModuleDebtCollectionRule
 	{
-		float healWindowSeconds = 7.f;
+		float healWindowSeconds = 6.f;
 	};
 
 	// Package-level list of Epic Offense rules, one entry per declared rule.
@@ -102,7 +102,7 @@ namespace vega
 		int stormTargetCount = 0;
 		int stormElectricStacks = 0;
 		float stormRadius = 0.f;
-		float stormDamage = 0.f;
+		float stormPrimaryDamageFraction = 0.f;
 
 		bool alternatingCurrent = false;
 		float alternatingMultiplier = 1.f;

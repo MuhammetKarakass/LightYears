@@ -68,6 +68,26 @@ namespace vega::content
 			return ParsePositiveLevelInt(value, context, 0, unused);
 		}
 
+		void ValidateLevelGrowthFields(const Json& object, const std::string& context)
+		{
+			if (object.is_array())
+			{
+				for (const auto& entry : object) ValidateLevelGrowthFields(entry, context);
+				return;
+			}
+			if (!object.is_object()) return;
+			for (const auto& entry : object.items())
+			{
+				const auto& key = entry.key();
+				if (key.size() > 6 && key.compare(key.size() - 6, 6, "Growth") == 0)
+				{
+					const std::string field = key.substr(0, key.size() - 6);
+					if (!object.contains(field) || !object.at(field).is_array()) throw std::runtime_error(context + " " + key + " requires a sibling level table");
+				}
+				else ValidateLevelGrowthFields(entry.value(), context + "." + key);
+			}
+		}
+
 		GameplayTag ParseTag(const Json& value, GameplayTagKind kind, const std::string& context)
 		{
 			if (!value.is_string())
@@ -188,7 +208,7 @@ namespace vega::content
 			sas::AttributeModifier modifier{
 				sas::AttributeId{ object.at("attributeId").get<std::string>() },
 				AttributeJsonParser::ParseOperation(object.at("operation").get<std::string>(), context),
-				ParseLevelFloat(object.at("magnitude"), context + ".magnitude", minimumLevelCount, magnitudeByLevel),
+				ParseLevelFloat(object, "magnitude", context + ".magnitude", minimumLevelCount, magnitudeByLevel),
 				object.value("priority", 0)
 			};
 			std::string failure;

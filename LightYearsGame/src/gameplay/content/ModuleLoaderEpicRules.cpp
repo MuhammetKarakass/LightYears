@@ -11,10 +11,10 @@ namespace vega::content
 		namespace
 		{
 			// Per-level float table that must be an array of levelCount entries (a scalar would not reach the table).
-			void ParseLevelFloats(const Json& value, const std::string& context, int minimumLevelCount, ModuleLevelTable<float>& table)
+			void ParseLevelFloats(const Json& object, const std::string& field, const std::string& context, int minimumLevelCount, ModuleLevelTable<float>& table)
 			{
-				if (!value.is_array()) throw std::runtime_error(context + " must be a per-level array");
-				ParseLevelFloat(value, context, minimumLevelCount, table);
+				if (!object.at(field).is_array()) throw std::runtime_error(context + " must be a per-level array");
+				ParseLevelFloat(object, field, context, minimumLevelCount, table);
 				ValidateTable(table, context, [](float number) { return number >= 0.f; }, "must not be negative");
 			}
 		}
@@ -29,7 +29,7 @@ namespace vega::content
 				const std::string entryContext = context + ".cascadeRules[" + std::to_string(index++) + "]";
 				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
 				ModuleCascadeRule rule;
-				ParseLevelFloats(entry.at("stepBonus"), entryContext + ".stepBonus", minimumLevelCount, rule.stepBonusByLevel);
+				ParseLevelFloats(entry, "stepBonus", entryContext + ".stepBonus", minimumLevelCount, rule.stepBonusByLevel);
 				rule.maxSteps = ParsePositiveInt(entry.at("maxSteps"), entryContext + ".maxSteps");
 				rule.windowSeconds = ParseFiniteFloat(entry.at("windowSeconds"), entryContext + ".windowSeconds");
 				if (rule.windowSeconds <= 0.f) throw std::runtime_error(entryContext + " needs a positive window");
@@ -50,7 +50,7 @@ namespace vega::content
 				{
 					if (sideFeature) throw std::runtime_error(entryContext + ".usesPerLevelUp is main-package only");
 					if (!entry.at("usesPerLevelUp").is_array()) throw std::runtime_error(entryContext + ".usesPerLevelUp must be a per-level array");
-					(void)ParsePositiveLevelInt(entry.at("usesPerLevelUp"), entryContext + ".usesPerLevelUp", minimumLevelCount, rule.usesPerLevelUpByLevel);
+					(void)ParsePositiveLevelInt(entry, "usesPerLevelUp", entryContext + ".usesPerLevelUp", minimumLevelCount, rule.usesPerLevelUpByLevel);
 				}
 				else
 				{
@@ -69,12 +69,12 @@ namespace vega::content
 				const std::string entryContext = context + ".assaultVectorRules[" + std::to_string(index++) + "]";
 				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
 				ModuleAssaultVectorRule rule;
-				ParseLevelFloats(entry.at("damageBonus"), entryContext + ".damageBonus", minimumLevelCount, rule.damageBonusByLevel);
-				ParseLevelFloats(entry.at("armorBonus"), entryContext + ".armorBonus", minimumLevelCount, rule.armorBonusByLevel);
+				ParseLevelFloats(entry, "damageBonus", entryContext + ".damageBonus", minimumLevelCount, rule.damageBonusByLevel);
+				ParseLevelFloats(entry, "armorBonus", entryContext + ".armorBonus", minimumLevelCount, rule.armorBonusByLevel);
 				rule.targetRange = ParseFiniteFloat(entry.at("targetRange"), entryContext + ".targetRange");
 				rule.minimumCosine = ParseFiniteFloat(entry.at("minimumCosine"), entryContext + ".minimumCosine");
 				rule.minimumSpeed = ParseFiniteFloat(entry.at("minimumSpeed"), entryContext + ".minimumSpeed");
-				if (rule.targetRange <= 0.f || rule.minimumCosine <= 0.f || rule.minimumCosine > 1.f || rule.minimumSpeed < 0.f) throw std::runtime_error(entryContext + " has invalid target range, direction cosine or speed");
+				if (rule.targetRange <= 0.f || rule.minimumCosine < 0.f || rule.minimumCosine > 1.f || rule.minimumSpeed < 0.f) throw std::runtime_error(entryContext + " has invalid target range, direction cosine or speed");
 				rules.assaultVectorRules.push_back(rule);
 			}
 
@@ -88,8 +88,9 @@ namespace vega::content
 				ModulePhaseSlipRule rule;
 				rule.phaseSeconds = ParseFiniteFloat(entry.at("phaseSeconds"), entryContext + ".phaseSeconds");
 				rule.cooldownSeconds = ParseFiniteFloat(entry.at("cooldownSeconds"), entryContext + ".cooldownSeconds");
-				rule.explosionRadius = ParseFiniteFloat(entry.at("explosionRadius"), entryContext + ".explosionRadius");
-				ParseLevelFloats(entry.at("primaryDamageMultiplier"), entryContext + ".primaryDamageMultiplier", minimumLevelCount, rule.primaryDamageMultiplierByLevel);
+				rule.explosionRadius = ParseLevelFloat(entry, "explosionRadius", entryContext + ".explosionRadius", minimumLevelCount, rule.explosionRadiusByLevel);
+				ValidateTable(rule.explosionRadiusByLevel, entryContext, [](float value) { return value > 0.f; }, "radius must be positive");
+				ParseLevelFloats(entry, "primaryDamageMultiplier", entryContext + ".primaryDamageMultiplier", minimumLevelCount, rule.primaryDamageMultiplierByLevel);
 				if (rule.phaseSeconds <= 0.f || rule.cooldownSeconds <= 0.f || rule.explosionRadius <= 0.f) throw std::runtime_error(entryContext + " needs positive phase, cooldown and radius");
 				rules.phaseSlipRules.push_back(rule);
 			}

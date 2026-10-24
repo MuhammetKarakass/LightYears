@@ -15,7 +15,7 @@ namespace vega::content
 			const Json entries = object.value("familyStatRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".familyStatRules must be an array");
 			if (sideFeature && !entries.empty()) throw std::runtime_error(context + " familyStatRules is only allowed on the main package");
-			const std::set<std::string> allowedKeys{ "family", "target", "attributeId", "operation", "perModule", "reduce", "doubleOnAbilityUse", "durationSeconds" };
+			const std::set<std::string> allowedKeys{ "family", "target", "attributeId", "operation", "perModule", "perModuleGrowth", "reduce", "doubleOnAbilityUse", "durationSeconds", "durationSecondsGrowth" };
 			std::size_t index = 0;
 			for (const Json& entry : entries)
 			{
@@ -40,11 +40,11 @@ namespace vega::content
 				const Json& perModule = entry.at("perModule");
 				if (!perModule.is_array()) throw std::runtime_error(entryContext + " perModule must be a level table");
 				ModuleLevelTable<float> table;
-				ParseLevelFloat(perModule, entryContext + " perModule", minimumLevelCount, table);
+				ParseLevelFloat(entry, "perModule", entryContext + " perModule", minimumLevelCount, table);
 				if (table.values.size() < static_cast<std::size_t>(minimumLevelCount)) throw std::runtime_error(entryContext + " perModule must cover every level");
 				for (const float value : table.values)
 					if (!(value > 0.f)) throw std::runtime_error(entryContext + " perModule must be positive");
-				rule.perModuleByLevel.values = table.values;
+				rule.perModuleByLevel = std::move(table);
 
 				rule.reduce = entry.value("reduce", false);
 				if (rule.reduce && rule.operation != sas::AttributeModifierOperation::Multiply) throw std::runtime_error(entryContext + " reduce requires Multiply");

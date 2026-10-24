@@ -264,7 +264,11 @@
           "damageRules": [
             {
               "condition": "PrimaryShotOnly",
-              "damageMultiplier": 1.3
+              "damageMultiplier": [
+                1.3,
+                1.34,
+                1.38
+              ]
             }
           ]
         }
@@ -372,7 +376,11 @@
             {
               "condition": "FullMagazineShot",
               "openingShotCount": 3,
-              "damageMultiplier": 1.3
+              "damageMultiplier": [
+                1.3,
+                1.34,
+                1.38
+              ]
             }
           ]
         }
@@ -400,7 +408,11 @@
               "target": "Owner",
               "attributeId": "Owner.AttackPower",
               "operation": "Add",
-              "magnitude": 15.0
+              "magnitude": [
+                15,
+                17,
+                19
+              ]
             }
           ]
         }
@@ -523,7 +535,11 @@
               "target": "Owner",
               "attributeId": "Owner.Armor",
               "operation": "Add",
-              "magnitude": 30.0
+              "magnitude": [
+                30,
+                34,
+                38
+              ]
             }
           ]
         }
@@ -603,13 +619,21 @@
               "target": "Owner",
               "attributeId": "Owner.MoveSpeedHorizontal",
               "operation": "Add",
-              "magnitude": 2.2
+              "magnitude": [
+                2.2,
+                2.5,
+                2.8
+              ]
             },
             {
               "target": "Owner",
               "attributeId": "Owner.MoveSpeedVertical",
               "operation": "Add",
-              "magnitude": 2.2
+              "magnitude": [
+                2.2,
+                2.5,
+                2.8
+              ]
             }
           ]
         }
@@ -902,14 +926,18 @@
               "requiredEventTags": [
                 "Ability.Offense"
               ],
-              "durationSeconds": 3.0,
+              "durationSeconds": 3,
               "modifiers": [
                 {
                   "target": "Owner",
                   "attributeId": "Owner.AttackSpeed",
                   "operation": "Add",
-                  "magnitude": 15.0,
-                  "affectedByZoneBonus": false
+                  "magnitude": [
+                    15,
+                    17,
+                    19
+                  ],
+                  "affectedByZoneBonus": true
                 }
               ]
             }
@@ -937,12 +965,16 @@
           "damageRules": [
             {
               "condition": "PrimaryShotOnly",
-              "damageMultiplier": 1.0,
-              "bonusDamageFraction": 0.3,
+              "damageMultiplier": 1,
+              "bonusDamageFraction": [
+                0.3,
+                0.34,
+                0.38
+              ],
               "bonusDamageType": "Damage.Type.Energy",
               "bonusCriticalPolicy": "Disabled",
               "activeWhileTrigger": "ShieldBroken",
-              "activeDurationSeconds": 5.0
+              "activeDurationSeconds": 5
             }
           ]
         }
@@ -967,14 +999,18 @@
               "requiredEventTags": [
                 "Damage.Type.Energy"
               ],
-              "durationSeconds": 4.0,
+              "durationSeconds": 4,
               "modifiers": [
                 {
                   "target": "Owner",
                   "attributeId": "Owner.Energy.Power",
                   "operation": "Add",
-                  "magnitude": 16.0,
-                  "affectedByZoneBonus": false
+                  "magnitude": [
+                    16,
+                    18,
+                    20
+                  ],
+                  "affectedByZoneBonus": true
                 }
               ]
             }
@@ -1002,8 +1038,12 @@
           "triggerBuffs": [
             {
               "trigger": "DamageTaken",
-              "durationSeconds": 2.0,
-              "movementSpeedMultiplier": 1.25
+              "durationSeconds": 2,
+              "movementSpeedMultiplier": [
+                1.25,
+                1.28,
+                1.31
+              ]
             }
           ]
         }
@@ -1030,7 +1070,11 @@
             {
               "condition": "TargetHealthAtMost",
               "conditionValue": 0.25,
-              "damageMultiplier": 1.2
+              "damageMultiplier": [
+                1.2,
+                1.23,
+                1.26
+              ]
             }
           ]
         }
@@ -1057,27 +1101,47 @@
             {
               "zone": "Module.Zone.Wings",
               "scope": "FamilyOfZone",
-              "multiplier": 0.79
+              "multiplier": [
+                0.79,
+                0.77,
+                0.75
+              ]
             },
             {
               "zone": "Module.Zone.Core",
               "scope": "FamilyOfZone",
-              "multiplier": 0.79
+              "multiplier": [
+                0.79,
+                0.77,
+                0.75
+              ]
             },
             {
               "zone": "Module.Zone.Engine",
               "scope": "FamilyOfZone",
-              "multiplier": 0.79
+              "multiplier": [
+                0.79,
+                0.77,
+                0.75
+              ]
             },
             {
               "zone": "Module.Zone.Sensor",
               "scope": "FamilyOfZone",
-              "multiplier": 0.79
+              "multiplier": [
+                0.79,
+                0.77,
+                0.75
+              ]
             },
             {
               "zone": "Module.Zone.Hull",
               "scope": "AllActiveNonPrimary",
-              "multiplier": 0.9
+              "multiplier": [
+                0.9,
+                0.89,
+                0.88
+              ]
             }
           ]
         }
@@ -1122,10 +1186,14 @@
               "attributeId": "Owner.AttackPower",
               "operation": "Add",
               "magnitude": [
-                12.0,
+                12,
                 14.04,
                 16.4268
-              ]
+              ],
+              "magnitudeGrowth": {
+                "type": "compound",
+                "ratio": 1.17
+              }
             },
             {
               "target": "Owner",
@@ -1157,10 +1225,14 @@
               "attributeId": "Owner.AttackPower",
               "operation": "Add",
               "magnitude": [
-                34.0,
+                34,
                 39.78,
                 46.5426
-              ]
+              ],
+              "magnitudeGrowth": {
+                "type": "compound",
+                "ratio": 1.17
+              }
             },
             {
               "target": "Owner",
@@ -2181,14 +2253,10 @@
                 "threshold": 4,
                 "durationSeconds": [
                   1,
-                  1.3,
-                  1.6
+                  1.2,
+                  1.4
                 ],
-                "cooldownSeconds": [
-                  8,
-                  7,
-                  6
-                ],
+                "cooldownSeconds": 7,
                 "normalTargetsOnly": true
               }
             ]
@@ -3029,7 +3097,7 @@
     {
       "id": "Module.Movement.EscapeVelocity.Rare",
       "displayName": "Escape Velocity",
-      "description": "Reach top speed and your shots go sonic. After {sonic.0.holdSeconds} sec of uninterrupted flight above {sonic.0.speedPercent}% of max speed, the ship goes sonic: Primary projectiles travel {sonic.0.primarySpeedMultiplier} times as fast, pierce {sonic.0.primaryPierceBonus} more target and deal {sonic.0.primaryDamagePercent}% more damage. Ends when you slow down.",
+      "description": "Reach top speed and your shots go sonic. After {sonic.0.holdSeconds} sec of uninterrupted flight above {sonic.0.speedPercent}% of max speed, the ship goes sonic: Primary projectiles travel {sonic.0.primarySpeedMultiplier} times as fast, pierce {sonic.0.primaryPierceBonus} more target and deal {sonic.0.primaryDamagePercent}% more damage. Ends when you slow down. With a beam or cone Primary, sonic also increases beam length or cone range by 30%. With a beam or cone Primary, sonic also increases beam length or cone range by 30%.",
       "rarity": "Rare",
       "levelCount": 3,
       "family": "Ability.Movement",
@@ -3275,7 +3343,17 @@
                 "miniboss": 7.5,
                 "boss": 25
               },
-              "adjacentAbilityLimit": 3
+              "adjacentAbilityLimit": 3,
+              "eliteDamagePerKill": [
+                0.03,
+                0.034,
+                0.0375
+              ],
+              "bossDamagePerKill": [
+                0.1,
+                0.1125,
+                0.125
+              ]
             }
           ]
         },
@@ -3308,7 +3386,17 @@
                 "miniboss": 7.5,
                 "boss": 25
               },
-              "adjacentAbilityLimit": 3
+              "adjacentAbilityLimit": 3,
+              "eliteDamagePerKill": [
+                0.03,
+                0.034,
+                0.0375
+              ],
+              "bossDamagePerKill": [
+                0.1,
+                0.1125,
+                0.125
+              ]
             }
           ]
         }
@@ -3363,13 +3451,17 @@
               "damage": [
                 60,
                 69,
-                78
+                79.35
               ],
               "energyPowerCoefficient": 0.4,
               "damageType": "Damage.Type.Thermal",
               "igniteStacks": 4,
               "chargeKills": 10,
-              "chargeRadius": 300
+              "chargeRadius": 300,
+              "damageGrowth": {
+                "type": "compound",
+                "ratio": 1.15
+              }
             }
           ]
         },
@@ -3395,13 +3487,17 @@
               "damage": [
                 60,
                 69,
-                78
+                79.35
               ],
               "energyPowerCoefficient": 0.4,
               "damageType": "Damage.Type.Thermal",
               "igniteStacks": 4,
               "chargeKills": 10,
-              "chargeRadius": 300
+              "chargeRadius": 300,
+              "damageGrowth": {
+                "type": "compound",
+                "ratio": 1.15
+              }
             }
           ]
         }
@@ -3786,7 +3882,11 @@
             {
               "trigger": "AbilityActivated",
               "kind": "RestoreShield",
-              "amount": 0.1,
+              "amount": [
+                0.1,
+                0.115,
+                0.13
+              ],
               "requiredEventTags": [
                 "Ability.Defense"
               ]
@@ -3798,7 +3898,7 @@
     {
       "id": "Module.Defense.BraceReflex.Basic",
       "displayName": "Brace Reflex",
-      "description": "Defense ability use grants Armor +25 for 4 seconds; refreshes without stacking.",
+      "description": "Defense ability use grants Armor +{Owner.Armor} for {trigger.0.durationSeconds} seconds; refreshes without stacking.",
       "family": "Ability.Defense",
       "sizeVariants": [
         {
@@ -3824,7 +3924,12 @@
                   "target": "Owner",
                   "attributeId": "Owner.Armor",
                   "operation": "Add",
-                  "magnitude": 25
+                  "magnitude": [
+                    25,
+                    28,
+                    31
+                  ],
+                  "affectedByZoneBonus": true
                 }
               ]
             }
@@ -3937,7 +4042,11 @@
             {
               "trigger": "AbilityActivated",
               "kind": "GrantTemporaryShield",
-              "amount": 0.2,
+              "amount": [
+                0.2,
+                0.23,
+                0.26
+              ],
               "durationSeconds": 6,
               "requiredEventTags": [
                 "Ability.Defense"
@@ -3964,7 +4073,11 @@
             {
               "trigger": "AbilityActivated",
               "kind": "GrantTemporaryShield",
-              "amount": 0.2,
+              "amount": [
+                0.2,
+                0.23,
+                0.26
+              ],
               "durationSeconds": 6,
               "requiredEventTags": [
                 "Ability.Defense"
@@ -4013,7 +4126,11 @@
           "statusRules": {
             "primaryStatusPrimers": [
               {
-                "cooldownSeconds": 1
+                "cooldownSeconds": [
+                  1,
+                  0.9,
+                  0.8
+                ]
               }
             ]
           }
@@ -4128,7 +4245,11 @@
           "generatedRules": {
             "speedLances": [
               {
-                "speedDamageCoefficient": 0.4,
+                "speedDamageCoefficient": [
+                  0.4,
+                  0.45,
+                  0.5
+                ],
                 "sampleSeconds": 1,
                 "projectileSpeed": 1800,
                 "range": 900
@@ -4154,7 +4275,11 @@
           "generatedRules": {
             "speedLances": [
               {
-                "speedDamageCoefficient": 0.4,
+                "speedDamageCoefficient": [
+                  0.4,
+                  0.45,
+                  0.5
+                ],
                 "sampleSeconds": 1,
                 "projectileSpeed": 1800,
                 "range": 900
@@ -4184,7 +4309,7 @@
       "family": "Ability.Utility",
       "rarity": "Epic",
       "levelCount": 3,
-      "description": "Each loadout ability use from a different family than the previous one advances a chain of up to three steps. Each step adds 20% outgoing damage at Level 1 to the powered use. The window is 5 sec and every valid use refreshes it; repeating a family or letting the window lapse resets the chain.",
+      "description": "Each loadout ability use from a different family advances a chain of up to {cascade.0.maxSteps} steps. Each step adds {cascade.0.stepBonusPercent}% to the powered ability's main effect amount: damage, healing, shield, movement distance/speed or utility strength. Duration, radius, range and cooldown are unchanged. {cascade.0.windowSeconds} sec window; repeating a family or timeout resets the chain.",
       "sizeVariants": [
         {
           "shape": [
@@ -4306,7 +4431,7 @@
                 30
               ],
               "targetRange": 900,
-              "minimumCosine": 0.5,
+              "minimumCosine": 0,
               "minimumSpeed": 100
             }
           ]
@@ -4319,7 +4444,7 @@
       "family": "Ability.Movement",
       "rarity": "Epic",
       "levelCount": 3,
-      "description": "When Afterburner starts, enemy hits pass through the ship for 0.35 sec while Primary and loadout abilities are locked. The first Primary hit after the phase detonates an area of 120 units for 2x Primary damage. 6 sec cooldown.",
+      "description": "When Afterburner starts, the ship phases for {phaseSlip.0.phaseSeconds} sec while Primary and loadout abilities are locked. The first Primary hit after the phase detonates an area of {phaseSlip.0.explosionRadius} units for {phaseSlip.0.primaryDamageMultiplier}x Primary damage. {phaseSlip.0.cooldownSeconds} sec cooldown.",
       "sizeVariants": [
         {
           "shape": [
@@ -4336,11 +4461,15 @@
             {
               "phaseSeconds": 0.35,
               "cooldownSeconds": 6,
-              "explosionRadius": 120,
+              "explosionRadius": [
+                120,
+                130,
+                140
+              ],
               "primaryDamageMultiplier": [
                 2,
-                2,
-                2
+                2.25,
+                2.5
               ]
             }
           ]
@@ -4380,7 +4509,16 @@
                   0.4,
                   0.42,
                   0.441
-                ]
+                ],
+                "baseDamageGrowth": {
+                  "type": "compound",
+                  "ratio": 1.05,
+                  "amount": 5
+                },
+                "energyPowerCoefficientGrowth": {
+                  "type": "compound",
+                  "ratio": 1.05
+                }
               }
             ]
           }
@@ -4390,19 +4528,41 @@
     {
       "id": "Module.Defense.LastStand.Epic",
       "displayName": "Last Stand",
-      "description": "On lethal damage, revive once with {revive.0.healthPercent}% Max Health ({revive.0.charges} charges at this level). After a revive, Attack Power, Energy Power, Attack Speed and Armor are +{revive.0.bonusPercent}% for {revive.0.bonusSeconds} sec.",
+      "description": "On lethal damage, revive once with {revive.0.healthPercent}% Max Health ({revive.0.charges} charges at this level). After a revive, Attack Power, Energy Power, Attack Speed and Max Health are +{revive.0.bonusPercent}% for {revive.0.bonusSeconds} sec.",
       "family": "Ability.Defense",
       "rarity": "Epic",
       "levelCount": 3,
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "reviveRules": [
             {
-              "healthFraction": [0.4, 0.45, 0.5],
-              "charges": [1, 1, 2],
+              "healthFraction": [
+                0.4,
+                0.45,
+                0.5
+              ],
+              "charges": [
+                1,
+                1,
+                2
+              ],
               "bonusSeconds": 15,
-              "bonusMultiplier": 1.2
+              "bonusMultiplier": 1.2,
+              "chargesGrowth": {
+                "type": "step",
+                "every": 2,
+                "amount": 1
+              }
             }
           ]
         }
@@ -4415,23 +4575,56 @@
       "family": "Ability.Defense",
       "rarity": "Epic",
       "levelCount": 3,
-      "sizeLadder": [2, 3],
+      "sizeLadder": [
+        2,
+        3
+      ],
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "healthThresholdRules": [
             {
               "healthAtMost": 0.3,
-              "cooldownRecoveryMultiplier": [1.75, 2.0, 2.25]
+              "cooldownRecoveryMultiplier": [
+                1.5,
+                1.6,
+                1.7
+              ]
             }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [0, 1]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
           "healthThresholdRules": [
             {
               "healthAtMost": 0.3,
-              "cooldownRecoveryMultiplier": [1.75, 2.0, 2.25]
+              "cooldownRecoveryMultiplier": [
+                1.5,
+                1.6,
+                1.7
+              ]
             }
           ]
         }
@@ -4535,9 +4728,9 @@
               "attributeId": "Ship.Shield.Max",
               "operation": "Multiply",
               "magnitude": [
-                1.05,
-                1.1,
-                1.15
+                1.04,
+                1.08,
+                1.12
               ]
             }
           ],
@@ -4592,11 +4785,24 @@
       "description": "Breaking an enemy's shield with damage detonates an Energy blast on it for {rupture.0.damagePercent}% of the shield you removed from it in the last {rupture.0.historySeconds} sec. Radius {rupture.0.radius}. Module blasts do not chain.",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "shieldRuptureRules": [
             {
-              "damageFraction": 0.5,
-              "radius": 150,
+              "damageFraction": [
+                0.5,
+                0.55,
+                0.6
+              ],
+              "radius": 250,
               "historySeconds": 3
             }
           ]

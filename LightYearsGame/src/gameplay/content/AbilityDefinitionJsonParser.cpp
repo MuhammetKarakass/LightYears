@@ -498,6 +498,36 @@ namespace vega::content::ability_loader_detail
 					loaded.definition.invocationOutputAttributes.push_back(attrId);
 				}
 			}
+			if (object.contains("mainEffectAttributes"))
+			{
+				const Json& outputAttrsJson = object.at("mainEffectAttributes");
+				if (!outputAttrsJson.is_array())
+				{
+					throw std::runtime_error(
+						"Ability '" + loaded.id + "': mainEffectAttributes must be an array"
+					);
+				}
+				loaded.definition.mainEffectAttributes.clear();
+				for (const Json& item : outputAttrsJson)
+				{
+					if (!item.is_string() || item.get<std::string>().empty())
+					{
+						throw std::runtime_error(
+							"Ability '" + loaded.id + "': mainEffectAttributes entries must be non-empty strings"
+						);
+					}
+					const sas::AttributeId attrId{ item.get<std::string>() };
+					std::string idFailure;
+					if (!AttributeIdSchema::Validate(attrId, &idFailure))
+					{
+						throw std::runtime_error(
+							"Ability '" + loaded.id + "' invalid mainEffectAttribute ID '" +
+							std::string{ attrId.GetName() } + "': " + idFailure
+						);
+					}
+					loaded.definition.mainEffectAttributes.push_back(attrId);
+				}
+			}
 			if (object.contains("effectSpecs"))
 			{
 				loaded.definition.effectSpecs = ParseEffectSpecs(object.at("effectSpecs"));

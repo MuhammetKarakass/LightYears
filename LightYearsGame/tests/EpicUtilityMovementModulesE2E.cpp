@@ -78,6 +78,17 @@ namespace
 		Move(f, -100.f, .25f);
 		f.Equal("moving away from the enemy clears the damage bonus", 0.f, Epic(f).GetAssaultDamageBonus());
 		f.Equal("moving away from the enemy adds the Level 1 Armor bonus", 20.f, Epic(f).GetAssaultArmorBonus());
+		for (float x : { 10.f, 0.f, -10.f })
+		{
+			const sf::Vector2f velocity{ x, 150.f };
+			enemy->SetActorLocation(f.ship->GetActorLocation() + velocity * .1f + sf::Vector2f{ 500.f, 0.f });
+			const auto source = f.ship->GetUniqueID();
+			report.Check(movement::MovementInfluenceService::SetForcedMovement(*f.ship, { source, velocity, 1 }), "Assault direction test moves through the real component");
+			f.ship->GetMovementComponent().Tick(.1f); f.ship->GetModuleApplier().Tick(.1f);
+			movement::MovementInfluenceService::RemoveSource(*f.ship, source);
+			f.Equal("the entire forward half-plane including perpendicular grants damage", x >= 0.f ? .15f : 0.f, Epic(f).GetAssaultDamageBonus());
+			f.Equal("only the reverse half-plane grants Armor", x < 0.f ? 20.f : 0.f, Epic(f).GetAssaultArmorBonus());
+		}
 		Move(f, 0.f, .25f);
 		f.Equal("standing still gives neither bonus (damage)", 0.f, Epic(f).GetAssaultDamageBonus());
 		f.Equal("standing still gives neither bonus (Armor)", 0.f, Epic(f).GetAssaultArmorBonus());

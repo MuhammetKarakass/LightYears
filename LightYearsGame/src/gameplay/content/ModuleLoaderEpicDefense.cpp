@@ -22,13 +22,13 @@ namespace vega::content
 				if (sideFeature) throw std::runtime_error(entryContext + " revive is a main package rule");
 				if (!entry.at("healthFraction").is_array() || !entry.at("charges").is_array()) throw std::runtime_error(entryContext + " healthFraction and charges must be level tables");
 				ModuleLevelTable<float> healthTable;
-				ParseLevelFloat(entry.at("healthFraction"), entryContext + ".healthFraction", minimumLevelCount, healthTable);
+				ParseLevelFloat(entry, "healthFraction", entryContext + ".healthFraction", minimumLevelCount, healthTable);
 				ValidateTable(healthTable, entryContext + ".healthFraction", [](float value) { return value > 0.f && value <= 1.f; }, "must be in (0, 1]");
 				ModuleLevelTable<int> chargeTable;
-				ParsePositiveLevelInt(entry.at("charges"), entryContext + ".charges", minimumLevelCount, chargeTable);
+				ParsePositiveLevelInt(entry, "charges", entryContext + ".charges", minimumLevelCount, chargeTable);
 				ModuleReviveRule rule;
-				rule.healthFractionByLevel = healthTable.values;
-				rule.chargesByLevel = chargeTable.values;
+				rule.healthFractionByLevel = std::move(healthTable);
+				rule.chargesByLevel = std::move(chargeTable);
 				rule.bonusSeconds = ParseFiniteFloat(entry.at("bonusSeconds"), entryContext + ".bonusSeconds");
 				if (rule.bonusSeconds <= 0.f) throw std::runtime_error(entryContext + " bonusSeconds must be positive");
 				rule.bonusMultiplier = ParseFiniteFloat(entry.at("bonusMultiplier"), entryContext + ".bonusMultiplier");
@@ -55,9 +55,9 @@ namespace vega::content
 					if (sideFeature) throw std::runtime_error(entryContext + " cooldown recovery is a main package rule");
 					if (!entry.at("cooldownRecoveryMultiplier").is_array()) throw std::runtime_error(entryContext + ".cooldownRecoveryMultiplier must be a level table");
 					ModuleLevelTable<float> table;
-					ParseLevelFloat(entry.at("cooldownRecoveryMultiplier"), entryContext + ".cooldownRecoveryMultiplier", minimumLevelCount, table);
+					ParseLevelFloat(entry, "cooldownRecoveryMultiplier", entryContext + ".cooldownRecoveryMultiplier", minimumLevelCount, table);
 					ValidateTable(table, entryContext + ".cooldownRecoveryMultiplier", [](float value) { return value > 1.f; }, "must exceed one");
-					rule.cooldownRecoveryMultiplierByLevel = table.values;
+					rule.cooldownRecoveryMultiplierByLevel = std::move(table);
 				}
 				if (hasDamage)
 				{

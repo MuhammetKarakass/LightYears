@@ -76,7 +76,7 @@ namespace
 			f.Install("Module.Utility.FrostLock.Uncommon");
 			StatusHit(*target, f.ship.get(), DamageTypeSchema::Cryo, 4);
 			f.Equal("Frozen duration is extended", 1.2f, Effect(*target, DamageStatusEffectIds::CryoFrozenEffectId)->spec.duration);
-			f.Equal("freeze cooldown is not extended", 8.f, Effect(*target, DamageStatusEffectIds::CryoFreezeCooldownEffectId)->spec.duration);
+			f.Equal("freeze cooldown is not extended", 7.f, Effect(*target, DamageStatusEffectIds::CryoFreezeCooldownEffectId)->spec.duration);
 			f.Remove(module); StatusHit(*target, f.ship.get(), DamageTypeSchema::Electric);
 			f.Equal("removal restores base duration", base, Effect(*target, DamageStatusEffectIds::ElectricEffectId)->spec.duration);
 		}
@@ -99,8 +99,10 @@ namespace
 	void DefenseChecks(Report& report, Application& application)
 	{
 		Fixture f{ report, application };
-		f.Install("Module.Defense.BarrierRecharge.Basic");
-		f.Install("Module.Defense.BraceReflex.Basic");
+		const auto recharge = f.Install("Module.Defense.BarrierRecharge.Basic");
+		const auto brace = f.Install("Module.Defense.BraceReflex.Basic");
+		const auto& effects = f.ship->GetModuleApplier().GetResolvedEffects();
+		const int rechargeLevel = 1 + ModuleResolver::FindZoneLevelBonus(effects, recharge), braceLevel = 1 + ModuleResolver::FindZoneLevelBonus(effects, brace);
 		auto& shield = f.ship->GetShieldComponent(); shield.ChangeShield(-shield.GetMaxShield());
 		const float armor = f.Owner(OwnerAttributeIds::Armor);
 		CastOffense(f); f.Equal("Offense does not refill Defense shield", 0.f, shield.GetShield());
@@ -111,8 +113,8 @@ namespace
 		auto* ability = asc.GetAbility(sas::AbilitySlot::Ability1);
 		report.Check(ability && std::any_of(ability->GetDefinition().abilityTags.begin(), ability->GetDefinition().abilityTags.end(), [](const GameplayTag& tag) { return tag == GameplayTags::Ability::Defense; }), "fixture uses a real Defense ability");
 		report.Check(ability->TryActivate(), "activate real Defense ability");
-		f.Equal("Defense replenishes ten percent MaxShield", shield.GetMaxShield() * .1f, shield.GetShield());
-		f.Equal("Defense supplies temporary Armor", armor + 25.f, f.Owner(OwnerAttributeIds::Armor));
+		f.Equal("Defense replenishes the effective-level fraction of MaxShield", shield.GetMaxShield() * (.1f + .015f * (rechargeLevel - 1)), shield.GetShield());
+		f.Equal("Defense supplies effective-level temporary Armor", armor + 25.f + 3.f * (braceLevel - 1), f.Owner(OwnerAttributeIds::Armor));
 		f.ship->GetModuleTriggerRuntime().Tick(4.1f);
 		f.Equal("temporary Armor expires", armor, f.Owner(OwnerAttributeIds::Armor));
 	}

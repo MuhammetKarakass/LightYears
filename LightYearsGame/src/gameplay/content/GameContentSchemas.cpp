@@ -35,14 +35,19 @@ namespace vega::content
 
 		void Add(ContentTypeSchema& schema, const std::string& path, const char* example, bool curve = false)
 		{
-			if (std::any_of(schema.fields.begin(), schema.fields.end(), [&](const auto& f) { return f.path == path; })) return;
+			const auto existing = std::find_if(schema.fields.begin(), schema.fields.end(), [&](const auto& f) { return f.path == path; });
+			if (existing != schema.fields.end())
+			{
+				if (curve) existing->kind = FieldKind::Curve;
+				return;
+			}
 			ContentField field = sas::MakeContentField(path, example, curve);
 			const auto key = path.substr(path.find_last_of('/') + 1);
 			const auto& value = field.defaultValue;
 			field.category = path.find("/progression") == 0 ? "Progression" : path.find("/settings") == 0 ? "Behavior" :
 				path.find("/attributes") == 0 || path.find("/modifiers") == 0 ? "Attributes" : "Definition";
 			field.tooltip = "Authored " + path + ". Validated by the game content loader and definition validators.";
-			if (path == "/invocationOutputAttributes/*") field.kind = FieldKind::Attribute;
+			if ((path == "/invocationOutputAttributes/*" || path == "/mainEffectAttributes/*")) field.kind = FieldKind::Attribute;
 			if (key == "moduleId" || path == "/conflictsWith/*") field.referenceType = "module";
 			if (key == "weaponId" || key == "primaryWeaponId") field.referenceType = "weapon";
 			if (!field.referenceType.empty()) field.kind = FieldKind::Reference;

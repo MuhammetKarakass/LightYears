@@ -44,11 +44,7 @@ namespace vega::AbilityActionAttributeResolver
 			return value;
 		}
 
-		float ResolveAttributeValue(
-			AbilityExecutionContext& context,
-			const PrimaryWeaponDefinition* weaponDefinition,
-			const sas::GameplayAttribute& attribute
-		)
+		float ResolveAttributeValue(AbilityExecutionContext& context, const PrimaryWeaponDefinition* weaponDefinition, const sas::GameplayAttribute& attribute)
 		{
 			if (!context.abilitySystem || !context.definition)
 			{
@@ -72,7 +68,7 @@ namespace vega::AbilityActionAttributeResolver
 			{
 				// Module primary-weapon modifiers enter the weapon branch here only.
 				value = context.abilitySystem->ApplyPrimaryWeaponModifiers(
-					sas::GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue }
+					sas::GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue }, weaponDefinition->weaponType
 				);
 			}
 			value = sas::ApplyAttributeScalings(
@@ -96,6 +92,8 @@ namespace vega::AbilityActionAttributeResolver
 				context.definition->levelScalingRules,
 				context.abilitySystem->GetAttributes()
 			);
+			if (!weaponDefinition && std::find(context.definition->mainEffectAttributes.begin(), context.definition->mainEffectAttributes.end(), attribute.id) != context.definition->mainEffectAttributes.end())
+				value *= context.definition->mainEffectMultiplier;
 			// Echo power applies only to declared output channels. Applying it to
 			// every resolved number made fixed delivery data slower/shorter and
 			// shrank Relay Prism even though Prism size is not level-scaled.

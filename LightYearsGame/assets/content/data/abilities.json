@@ -3,6 +3,7 @@
   "abilities": [
     {
       "id": "Ability.Movement.Dash.Basic",
+      "mainEffectAttributes": ["Ability.Movement.Dash.MoveSpeedScale"],
       "cooldown": 9.0,
       "duration": 0.24,
       "maxCharges": 1,
@@ -35,6 +36,7 @@
     },
     {
       "id": "Ability.Defense.Shield.Basic",
+      "mainEffectAttributes": ["Effect.BarrierCapacity"],
       "cooldown": 10.0,
       "duration": 5.0,
       "maxCharges": 1,
@@ -108,6 +110,7 @@
     },
     {
       "id": "Ability.Movement.PhaseDrift.Basic",
+      "mainEffectAttributes": ["Ability.Movement.PhaseDrift.MovementSpeedBonus"],
       "cooldown": 16.0,
       "duration": 3.5,
       "maxCharges": 1,
@@ -149,6 +152,7 @@
     },
     {
       "id": "Ability.Defense.ShieldHarvest.Basic",
+      "mainEffectAttributes": ["Common.Damage","Ability.Defense.ShieldHarvest.ShieldPerEnemy"],
       "cooldown": 14.0,
       "duration": 1.5,
       "maxCharges": 1,
@@ -292,6 +296,7 @@
     },
     {
       "id": "Ability.Offense.GlacialPressure.Basic",
+      "mainEffectAttributes": ["Ability.Offense.GlacialPressure.InitialDamage","Ability.Offense.GlacialPressure.CollisionDamage","Ability.Offense.GlacialPressure.EnergyPowerInitialScale","Ability.Offense.GlacialPressure.EnergyPowerCollisionScale","Ability.Offense.GlacialPressure.MaxHealthCollisionScale","Ability.Offense.GlacialPressure.PushDistance"],
       "cooldown": 10.0,
       "duration": 1.0,
       "maxCharges": 1,
@@ -632,6 +637,7 @@
     },
     {
       "id": "Ability.Utility.GravityAnomaly.Basic",
+      "mainEffectAttributes": ["AbilityActor.GravityAnomaly.Field.PullStrength","AbilityActor.GravityAnomaly.Field.SlowMagnitude"],
       "cooldown": 13.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -785,6 +791,7 @@
     },
     {
       "id": "Ability.Offense.OverdriveCore.Basic",
+      "mainEffectAttributes": ["Common.Damage","Ability.Offense.OverdriveCore.AttackSpeedBoostBase"],
       "cooldown": 10.0,
       "duration": 6.0,
       "maxCharges": 1,
@@ -893,6 +900,7 @@
     },
     {
       "id": "Ability.Utility.NullPulse.Basic",
+      "mainEffectAttributes": ["Common.Damage","Ability.Utility.NullPulse.EnergyPowerDamageScale"],
       "cooldown": 12.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -944,6 +952,7 @@
     },
     {
       "id": "Ability.Offense.ExecutionDrive.Basic",
+      "mainEffectAttributes": ["Ability.Offense.ExecutionDrive.FlatAttackPowerBonus","Ability.Offense.ExecutionDrive.AttackPowerScale","Ability.Offense.ExecutionDrive.MoveSpeedBonus"],
       "cooldown": 14.0,
       "duration": 5.0,
       "maxCharges": 1,
@@ -999,6 +1008,7 @@
     },
     {
       "id": "Ability.Utility.RelayPrism.Basic",
+      "mainEffectAttributes": ["Ability.Utility.RelayPrism.BaseTransfer","Ability.Utility.RelayPrism.EnergyPowerScale"],
       "cooldown": 10.0,
       "duration": 4.0,
       "maxCharges": 1,
@@ -1085,6 +1095,7 @@
     },
     {
       "id": "Ability.Utility.VoidGate.Basic",
+      "mainEffectAttributes": [],
       "cooldown": 12.0,
       "duration": 7.0,
       "maxCharges": 1,
@@ -1145,6 +1156,7 @@
     },
     {
       "id": "Ability.Utility.EchoProtocol.Basic",
+      "mainEffectAttributes": ["Ability.Utility.EchoProtocol.PowerBase","Ability.Utility.EchoProtocol.PowerPerLevel","Ability.Utility.EchoProtocol.EnergyPowerScale","Ability.Utility.EchoProtocol.EnergyPowerScalePerLevel"],
       "cooldown": 18.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -1180,6 +1192,7 @@
     },
     {
       "id": "Ability.Offense.MineLayer.Basic",
+      "mainEffectAttributes": ["Common.Damage","AbilityActor.MineLayer.Mine.KnockbackStrength"],
       "cooldown": 9.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -1596,6 +1609,7 @@
     },
     {
       "id": "Ability.Movement.EnergySpear.Basic",
+      "mainEffectAttributes": ["Ability.Movement.EnergySpear.MinimumDistance","Ability.Movement.EnergySpear.EnergyPowerDistanceScale","Ability.Movement.EnergySpear.TravelSpeed","Common.Damage","Common.Range"],
       "cooldown": 10.0,
       "duration": 1.5,
       "maxCharges": 1,
@@ -1767,6 +1781,7 @@
     },
     {
       "id": "Ability.Defense.DirectionalBarrier.Basic",
+      "mainEffectAttributes": [],
       "cooldown": 12.0,
       "duration": 1.5,
       "maxCharges": 1,
@@ -2177,6 +2192,7 @@
     },
     {
       "id": "Ability.Defense.Cryostasis.Basic",
+      "mainEffectAttributes": ["Ability.Defense.Cryostasis.BaseIceHealth","Ability.Defense.Cryostasis.IceHealthMaxHealthScale","Ability.Defense.Cryostasis.BaseHealthRegenPerSecond","Ability.Defense.Cryostasis.HealthRegenMaxHealthScale","Ability.Defense.Cryostasis.BaseAfterburnerRecoveryPerSecond","Ability.Defense.Cryostasis.AfterburnerRecoveryEnergyPowerScale"],
       "cooldown": 22.0,
       "duration": 5.0,
       "maxCharges": 1,
@@ -2267,6 +2283,7 @@
     },
     {
       "id": "Ability.Utility.FrostMaelstrom.Basic",
+      "mainEffectAttributes": ["Ability.Utility.FrostMaelstrom.EnergyPowerDamageScale","Ability.Utility.FrostMaelstrom.PullStrength","Common.Damage"],
       "cooldown": 14.0,
       "duration": 6.0,
       "maxCharges": 1,
@@ -2589,6 +2606,7 @@
     },
     {
       "id": "Ability.Offense.CombatSentry.Basic",
+      "mainEffectAttributes": ["AbilityActor.CombatSentry.Turret.BaseDamage","AbilityActor.CombatSentry.Turret.OwnerAttackPowerScale"],
       "damageTags": [
         "Damage.Type.Photonic"
       ],
@@ -2713,6 +2731,7 @@
     },
     {
       "id": "Ability.Offense.NanoPlague.Basic",
+      "mainEffectAttributes": ["Common.Damage","Ability.Offense.NanoPlague.EnergyPowerTickScale"],
       "cooldown": 8.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -2777,6 +2796,7 @@
     },
     {
       "id": "Ability.Defense.ReturnProtocol.Basic",
+      "mainEffectAttributes": ["Ability.Defense.ReturnProtocol.BaseReflectDamageMultiplier","Ability.Defense.ReturnProtocol.AttackPowerScale","Ability.Defense.ReturnProtocol.EnergyPowerScale"],
       "cooldown": 14.0,
       "duration": 1.0,
       "maxCharges": 1,
@@ -2839,6 +2859,7 @@
     },
     {
       "id": "Ability.Defense.TemporalRecall.Basic",
+      "mainEffectAttributes": ["Ability.Defense.TemporalRecall.BaseRecovery","Ability.Defense.TemporalRecall.MaxHealthRecoveryScale","Ability.Defense.TemporalRecall.EnergyPowerRecoveryScale"],
       "cooldown": 18.0,
       "duration": 1.0,
       "maxCharges": 1,
@@ -2916,6 +2937,7 @@
     },
     {
       "id": "Ability.Defense.TimeSlip.Basic",
+      "mainEffectAttributes": [],
       "cooldown": 18.0,
       "duration": 3.0,
       "maxCharges": 1,
@@ -2965,6 +2987,7 @@
     },
     {
       "id": "Ability.Defense.CrystalBarricade.Basic",
+      "mainEffectAttributes": ["AbilityActor.CrystalBarricade.Wall.BaseContactDamage","AbilityActor.CrystalBarricade.Wall.EnergyPowerContactScale","AbilityActor.CrystalBarricade.Wall.BaseRicochetMultiplier"],
       "damageTags": [
         "Damage.Type.Photonic"
       ],
@@ -3404,6 +3427,7 @@
     },
     {
       "id": "Ability.Defense.ClosedCircuit.Basic",
+      "mainEffectAttributes": ["Ability.Defense.ClosedCircuit.BaseBarrierHealth","Ability.Defense.ClosedCircuit.EnergyPowerBarrierHealthScale"],
       "cooldown": 14.0,
       "duration": 0.2,
       "maxCharges": 1,
@@ -3457,6 +3481,7 @@
     },
     {
       "id": "Ability.Defense.IroncladProtocol.Basic",
+      "mainEffectAttributes": ["Ability.Defense.IroncladProtocol.MinigunBaseDamage","Ability.Defense.IroncladProtocol.MinigunAttackPowerScale","Ability.Defense.IroncladProtocol.BaseDamageReduction","Ability.Defense.IroncladProtocol.MaxHealthDamageReductionScale"],
       "cooldown": 22.0,
       "duration": 10.0,
       "maxCharges": 1,
@@ -3538,6 +3563,7 @@
     },
     {
       "id": "Ability.Movement.VectorSync.Basic",
+      "mainEffectAttributes": [],
       "cooldown": 10.0,
       "duration": 5.0,
       "maxCharges": 1,
@@ -3560,6 +3586,7 @@
     },
     {
       "id": "Ability.Movement.ZeroDrag.Basic",
+      "mainEffectAttributes": ["Ability.Movement.ZeroDrag.ThrustBonus"],
       "cooldown": 12.0,
       "duration": 4.5,
       "maxCharges": 1,
@@ -3622,6 +3649,7 @@
     },
     {
       "id": "Ability.Defense.TemporalConvergence.Basic",
+      "mainEffectAttributes": ["Ability.Defense.TemporalConvergence.BaseShield","Ability.Defense.TemporalConvergence.SlowFraction"],
       "cooldown": 13.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -3731,6 +3759,7 @@
     },
     {
       "id": "Ability.Utility.FoldspaceArena.Basic",
+      "mainEffectAttributes": ["Common.Damage","Ability.Utility.FoldspaceArena.EnergyPowerDamageScale"],
       "cooldown": 17.0,
       "duration": 10.0,
       "maxCharges": 1,
@@ -3841,6 +3870,7 @@
     },
     {
       "id": "Ability.Utility.CryoBola.Basic",
+      "mainEffectAttributes": ["Common.Damage","AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale"],
       "cooldown": 13.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -3923,6 +3953,7 @@
     },
     {
       "id": "Ability.Movement.LanceDrive.Basic",
+      "mainEffectAttributes": ["Ability.Movement.LanceDrive.BaseDamage","Ability.Movement.LanceDrive.SpeedDamageConversion","Ability.Movement.LanceDrive.TopSpeedBonus","Ability.Movement.LanceDrive.ThrustBonus"],
       "cooldown": 15.0,
       "duration": 6.0,
       "maxCharges": 1,
@@ -4024,6 +4055,7 @@
     },
     {
       "id": "Ability.Offense.InertialWake.Basic",
+      "mainEffectAttributes": ["Ability.Offense.InertialWake.TopSpeedBonus","Ability.Offense.InertialWake.ThrustBonus","AbilityActor.InertialWake.Wake.BaseKnockbackSpeed","AbilityActor.InertialWake.Wake.KnockbackPerEffectiveRatio"],
       "cooldown": 16.0,
       "duration": 8.0,
       "maxCharges": 1,
@@ -4158,6 +4190,7 @@
     },
     {
       "id": "Ability.Defense.ShieldGraft.Basic",
+      "mainEffectAttributes": ["Ability.Defense.ShieldGraft.ConversionRatio","Ability.Defense.ShieldGraft.EnergyPowerScale"],
       "cooldown": 12.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -4249,6 +4282,7 @@
     },
     {
       "id": "Ability.Defense.ReclaimerProtocol.Basic",
+      "mainEffectAttributes": ["Ability.Defense.ReclaimerProtocol.HealRatio"],
       "cooldown": 16.0,
       "duration": 6.0,
       "maxCharges": 1,

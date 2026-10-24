@@ -66,6 +66,10 @@ namespace vega
 		// does not change whether an attribute is an invocation output.
 		// Initialized by default to { Common.Damage } to preserve existing baseline behavior.
 		List<sas::AttributeId> invocationOutputAttributes = { CommonAttributeIds::Damage };
+		// Quantities amplified by ability power (Cascade): no delivery geometry, duration or cooldown.
+		List<sas::AttributeId> mainEffectAttributes = { CommonAttributeIds::Damage };
+		// Captured before behavior activation; the committed use advances the chain only after success.
+		float mainEffectMultiplier = 1.f;
 		// Level progression scaling rules materialized during RebuildDefinitionForLevel.
 		// Kept separate from base scalingRules so execution order is explicit and deterministic.
 		List<sas::AttributeScalingRule> levelScalingRules;

@@ -74,6 +74,8 @@ namespace vega
 		float absorbedDamage = 0.f;
 		// Shield resource lost by this hit, excluding barrier/other absorption.
 		float shieldDamage = 0.f;
+		// Damage arriving at an active shield before shield Armor sharing (Impact Redirector).
+		float incomingShieldDamage = 0.f;
 		float mitigatedDamage = 0.f;
 		float modifiedDamage = 0.f;
 		float appliedDamage = 0.f;

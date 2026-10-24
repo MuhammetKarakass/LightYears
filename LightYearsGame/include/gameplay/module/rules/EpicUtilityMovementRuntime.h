@@ -45,6 +45,7 @@ namespace vega
 		// Field Mastery: Utility abilities cannot be upgraded with Scrap while the module is installed.
 		bool IsScrapUpgradeLocked(const List<GameplayTag>& abilityTags) const;
 
+		float GetNextCascadeMultiplier(const List<GameplayTag>& tags) const;
 		int GetCascadeStep(std::uint32_t instanceId) const;
 		float GetUseCount(const std::string& abilityId) const;
 		bool IsPhaseActive() const { return mPhaseRemaining > 0.f; }
@@ -60,7 +61,6 @@ namespace vega
 			GameplayTag lastFamily;
 			int step = 0;
 			float remainingSeconds = 0.f;
-			float appliedMultiplier = 1.f;
 		};
 
 		struct UseCounter
@@ -79,8 +79,6 @@ namespace vega
 		void OnEvent(const sas::AbilityEvent& event);
 		void TickCascades(float deltaSeconds);
 		void AdvanceCascade(CascadeState& state, const GameplayTag& family);
-		void ApplyCascadeModifier(CascadeState& state, const ResolvedModuleCascadeRule& rule, const GameplayTag& family);
-		void RemoveCascadeModifier(CascadeState& state);
 		void TickPhase(float deltaSeconds);
 		void StartPhase();
 		void EndPhase();

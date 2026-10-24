@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace vega
@@ -50,6 +51,8 @@ namespace vega
 		ModuleKillWeights weights;
 		int adjacentAbilityLimit{ 2 };
 		List<GameplayTag> adjacentAbilitySystems;
+		std::optional<float> eliteDamagePerKill;
+		std::optional<float> bossDamagePerKill;
 	};
 	struct ResolvedModuleKillCooldownRule
 	{

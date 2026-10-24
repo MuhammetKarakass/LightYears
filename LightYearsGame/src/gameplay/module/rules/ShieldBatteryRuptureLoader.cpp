@@ -16,7 +16,7 @@ namespace vega::content
 			const Json entries = object.value("shieldBatteryRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".shieldBatteryRules must be an array");
 			const auto unitRange = [](float value) { return value > 0.f && value <= 1.f; };
-			const std::set<std::string> allowedKeys = sideFeature ? std::set<std::string>{ "damagedFillFraction" } : std::set<std::string>{ "reserveFraction" };
+			const std::set<std::string> allowedKeys = sideFeature ? std::set<std::string>{ "damagedFillFraction" } : std::set<std::string>{ "reserveFraction", "reserveFractionGrowth" };
 			for (std::size_t index = 0; index < entries.size(); ++index)
 			{
 				const Json& entry = entries[index];
@@ -35,7 +35,7 @@ namespace vega::content
 				{
 					if (!entry.contains("reserveFraction")) throw std::runtime_error(entryContext + ".reserveFraction is required");
 					const std::string fieldContext = entryContext + ".reserveFraction";
-					rule.reserveFraction = ParseLevelFloat(entry.at("reserveFraction"), fieldContext, minimumLevelCount, rule.reserveFractionByLevel);
+					rule.reserveFraction = ParseLevelFloat(entry, "reserveFraction", fieldContext, minimumLevelCount, rule.reserveFractionByLevel);
 					if (!unitRange(rule.reserveFraction)) throw std::runtime_error(fieldContext + " must be in (0, 1]");
 					ValidateTable(rule.reserveFractionByLevel, fieldContext, unitRange, "must be in (0, 1]");
 				}
@@ -51,7 +51,7 @@ namespace vega::content
 			if (!entries.is_array()) throw std::runtime_error(context + ".shieldRuptureRules must be an array");
 			if (sideFeature && !entries.empty()) throw std::runtime_error(context + ".shieldRuptureRules is valid only on the main package");
 			const auto positive = [](float value) { return value > 0.f; };
-			const std::set<std::string> allowedKeys{ "damageFraction", "radius", "historySeconds" };
+			const std::set<std::string> allowedKeys{ "damageFraction", "damageFractionGrowth", "radius", "historySeconds" };
 			for (std::size_t index = 0; index < entries.size(); ++index)
 			{
 				const Json& entry = entries[index];
@@ -63,7 +63,7 @@ namespace vega::content
 					if (!entry.contains(key)) throw std::runtime_error(entryContext + "." + key + " is required");
 				ModuleShieldRuptureRule rule;
 				const std::string fractionContext = entryContext + ".damageFraction";
-				rule.damageFraction = ParseLevelFloat(entry.at("damageFraction"), fractionContext, minimumLevelCount, rule.damageFractionByLevel);
+				rule.damageFraction = ParseLevelFloat(entry, "damageFraction", fractionContext, minimumLevelCount, rule.damageFractionByLevel);
 				if (!positive(rule.damageFraction)) throw std::runtime_error(fractionContext + " must be positive");
 				ValidateTable(rule.damageFractionByLevel, fractionContext, positive, "must be positive");
 				rule.radius = ParseFiniteFloat(entry.at("radius"), entryContext + ".radius");

@@ -21,7 +21,7 @@ namespace vega
 			effects.stormTargetCount = std::max(effects.stormTargetCount, rule.targetCount);
 			effects.stormElectricStacks = std::max(effects.stormElectricStacks, rule.electricStacks);
 			effects.stormRadius = std::max(effects.stormRadius, rule.radius);
-			effects.stormDamage = std::max(effects.stormDamage, rule.damage);
+			effects.stormPrimaryDamageFraction = std::max(effects.stormPrimaryDamageFraction, rule.primaryDamageFraction);
 		}
 		for (const ModuleAlternatingCurrentRule& rule : rules.alternatingCurrents)
 		{
@@ -69,7 +69,7 @@ namespace vega
 			visitor(key + "targetCount", static_cast<float>(rule.targetCount));
 			visitor(key + "electricStacks", static_cast<float>(rule.electricStacks));
 			visitor(key + "radius", rule.radius);
-			visitor(key + "damage", rule.damage);
+			visitor(key + "primaryDamagePercent", rule.primaryDamageFraction * 100.f);
 		}
 		for (std::size_t i = 0; i < rules.alternatingCurrents.size(); ++i)
 		{

@@ -234,8 +234,8 @@ namespace rare_sustained_speed_e2e
 				Json{ { "speed", sonic.speed }, { "pierce", sonic.pierce }, { "damage", sonic.damage }, { "baseDamage", base.damage } });
 			FullShotChecks(report, f, plain, 1.10f, "a full sonic Primary shot deals x1.10 of the unruled shot");
 			report.Check(Near(AbilityDamage(*f.ship), abilityBefore) && abilityBefore >= 0.f, "ability damage is unchanged while sonic (Primary-only)");
-			report.Check(f.ship->GetModuleApplier().GetOwnedHandleCount() == handlesIdle + 3,
-				"sonic holds exactly three Primary modifiers on the applier count",
+			report.Check(f.ship->GetModuleApplier().GetOwnedHandleCount() == handlesIdle + 6,
+				"sonic holds exactly six Primary modifiers on the applier count",
 				Json{ { "idle", handlesIdle }, { "sonic", f.ship->GetModuleApplier().GetOwnedHandleCount() } });
 
 			// The speed drops: no linger on this rule, so sonic ends on the next tick.
@@ -250,6 +250,34 @@ namespace rare_sustained_speed_e2e
 			report.Check(SameValues(ResolvePrimary(*f.ship), base), "a short dip resets the hold: 1.9 sec after the dip is not sonic");
 			Drive(f, kFastSpeed, 1);
 			report.Check(SonicOn(base, ResolvePrimary(*f.ship)), "2 sec after the dip is sonic again");
+		}
+
+		void DeliveryRangeChecks(Report& report, Application& application)
+		{
+			Fixture f{ report, application };
+			f.ship->SetMovementMode(ShipMovementMode::ThrustDrift);
+			const auto id = f.Install("Module.Movement.EscapeVelocity.Rare");
+			const auto* primary = f.ship->GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::PrimaryFire);
+			AbilityExecutionContext context{ &f.ship->GetAbilitySystemComponent(), &primary->GetDefinition(), nullptr, nullptr };
+			const auto resolve = [&](const char* weaponId, const sas::AttributeId& range)
+			{
+				const auto* weapon = content::WeaponContentCatalog::FindById(weaponId);
+				report.Check(weapon != nullptr, "sonic range uses shipped weapon content", weaponId);
+				return sas::FindAttributeValue(AbilityActionAttributeResolver::ResolveAttributes(context, weapon, weapon->attributes), range, -1.f);
+			};
+			const float beam = resolve("Weapon.Beam.ContinuousHeatLaser.Basic", PrimaryWeaponSchema::Beam::Delivery::Range);
+			const float cone = resolve("Weapon.Cone.RapidShotgun.Basic", CommonAttributeIds::Range);
+			const float arc = resolve("Weapon.Arc.ElectricLauncher.Basic", CommonAttributeIds::Range);
+			const float wave = resolve("Weapon.Wave.CryoProjector.Basic", CommonAttributeIds::Range);
+			Drive(f, kFastSpeed, 20);
+			report.CheckValue("sonic extends beam length by 30%", beam * 1.3f, resolve("Weapon.Beam.ContinuousHeatLaser.Basic", PrimaryWeaponSchema::Beam::Delivery::Range), "beam while sonic");
+			report.CheckValue("sonic extends cone range by 30%", cone * 1.3f, resolve("Weapon.Cone.RapidShotgun.Basic", CommonAttributeIds::Range), "cone while sonic");
+			report.CheckValue("sonic extends instant electric arc reach by 30%", arc * 1.3f, resolve("Weapon.Arc.ElectricLauncher.Basic", CommonAttributeIds::Range), "nonprojectile arc while sonic");
+			report.CheckValue("a weapon swap cannot give travelling waves the cone range modifier", wave, resolve("Weapon.Wave.CryoProjector.Basic", CommonAttributeIds::Range), "wave while sonic");
+			f.Remove(id);
+			report.CheckValue("uninstall removes sonic beam range", beam, resolve("Weapon.Beam.ContinuousHeatLaser.Basic", PrimaryWeaponSchema::Beam::Delivery::Range), "beam after uninstall");
+			report.CheckValue("uninstall removes sonic cone range", cone, resolve("Weapon.Cone.RapidShotgun.Basic", CommonAttributeIds::Range), "cone after uninstall");
+			report.CheckValue("uninstall removes sonic arc range", arc, resolve("Weapon.Arc.ElectricLauncher.Basic", CommonAttributeIds::Range), "arc after uninstall");
 		}
 
 		void LevelChecks(Report& report, Application& application, const PrimaryValues& base, Fixture& plain, int level, float multiplier)
@@ -312,7 +340,7 @@ namespace rare_sustained_speed_e2e
 			{
 				Drive(f, kFastSpeed, 20);
 				cyclesOk = cyclesOk && SonicOn(base, ResolvePrimary(*f.ship)) &&
-					f.ship->GetModuleApplier().GetOwnedHandleCount() == handlesIdle + 3;
+					f.ship->GetModuleApplier().GetOwnedHandleCount() == handlesIdle + 6;
 				++checked;
 				cyclesOk = cyclesOk && f.loadout.Uninstall(id);
 				f.ship->GetModuleApplier().Apply(f.loadout, f.rules);
@@ -440,7 +468,8 @@ namespace rare_sustained_speed_e2e
 			shatter.ship->SetMovementMode(ShipMovementMode::ThrustDrift);
 			MeasureCap(shatter);
 			NoCrits(shatter);
-			shatter.Install("Module.Defense.ShatterCurrent.Basic", 0, 1);
+			const auto shatterId = shatter.Install("Module.Defense.ShatterCurrent.Basic", 0, 1);
+			const float shatterFraction = .3f + .04f * ModuleResolver::FindZoneLevelBonus(shatter.ship->GetModuleApplier().GetResolvedEffects(), shatterId);
 			const auto breaker = Enemy(shatter);
 			shatter.ship->GetShieldComponent().SetMaxShield(100.f);
 			shatter.ship->GetShieldComponent().ChangeShield(100.f);
@@ -450,8 +479,8 @@ namespace rare_sustained_speed_e2e
 			const bool energySecondary = shatterShot.records.size() == 2 && shatterShot.records[1].damageTags.size() == 1 &&
 				shatterShot.records[1].damageTags.front() == GameplayTags::Damage::Type::Energy;
 			report.Check(energySecondary && Near(shatterShot.records[0].originalDamage, plainShot.damage) &&
-				std::abs(shatterShot.records[1].originalDamage - 0.3f * plainShot.damage) <= 0.02f * plainShot.damage,
-				"a live Primary hit after a shield break adds a 30% Energy secondary (Shatter Current)",
+				std::abs(shatterShot.records[1].originalDamage - shatterFraction * plainShot.damage) <= 0.02f * plainShot.damage,
+				"a live Primary hit after a shield break adds the effective-level Energy secondary (Shatter Current)",
 				Json{ { "records", shatterShot.records.size() }, { "primary", shatterShot.records.empty() ? 0.f : shatterShot.records[0].originalDamage },
 					{ "secondary", shatterShot.records.size() > 1 ? shatterShot.records[1].originalDamage : 0.f }, { "plainDamage", plainShot.damage } });
 		}
@@ -552,6 +581,7 @@ int main(int argc, char** argv)
 			Json{ { "damage", base.damage }, { "speed", base.speed }, { "pierce", base.pierce } });
 
 		HoldChecks(report, application, base, plain);
+		DeliveryRangeChecks(report, application);
 		LevelChecks(report, application, base, plain, 2, 1.15f);
 		LevelChecks(report, application, base, plain, 3, 1.20f);
 		LingerChecks(report, application, base, plain);

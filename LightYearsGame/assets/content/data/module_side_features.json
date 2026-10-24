@@ -1717,7 +1717,7 @@
     {
       "id": "Module.SideFeature.PrismCore.StormCapacitor",
       "displayName": "Storm Capacitor",
-      "description": "Each Q, E, F and R use charges a storm. At {storm.0.chargesRequired} charges, your next Primary hit discharges it onto {storm.0.targetCount} random enemies within {storm.0.radius} units, each taking {storm.0.damage} damage and {storm.0.electricStacks} Electric stacks.",
+      "description": "Each Q, E, F and R use charges a storm. At {storm.0.chargesRequired} charges, your next Primary hit discharges it onto {storm.0.targetCount} random enemies within {storm.0.radius} units, each taking {storm.0.primaryDamagePercent}% of the triggering Primary hit as damage and {storm.0.electricStacks} Electric stacks.",
       "levelCount": 3,
       "rules": {
         "stormCapacitorRules": [
@@ -1726,7 +1726,7 @@
             "targetCount": 3,
             "electricStacks": 2,
             "radius": 500,
-            "damage": 15
+            "primaryDamageFraction": 0.5
           }
         ]
       }
@@ -1752,8 +1752,8 @@
       "rules": {
         "clotArmorRules": [
           {
-            "armorPerCost": 3,
-            "seconds": 3
+            "armorPerCost": 2,
+            "seconds": 4
           }
         ]
       }
@@ -1766,7 +1766,7 @@
       "rules": {
         "debtCollectionRules": [
           {
-            "healWindowSeconds": 7
+            "healWindowSeconds": 6
           }
         ]
       }

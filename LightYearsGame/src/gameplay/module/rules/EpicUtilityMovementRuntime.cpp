@@ -26,7 +26,6 @@ namespace vega
 		const char* const kAssaultDamageId = "ModuleAssaultVector.Damage";
 		const char* const kPhaseProtectionId = "ModulePhaseSlip.Protection";
 
-		std::string CascadeModifierId(std::uint32_t instanceId) { return "ModuleCascade." + std::to_string(instanceId); }
 
 		bool HasTag(const List<GameplayTag>& tags, const GameplayTag& wanted)
 		{
@@ -77,12 +76,11 @@ namespace vega
 		if (mShuttingDown) return;
 		mRules = rules;
 
-		// Cascade chains of placements that left the layout release their modifier; kept chains refresh theirs at the new level.
+		// Keep committed chains only for placements still present; the next use reads the current resolved level.
 		List<CascadeState> kept;
 		for (CascadeState& state : mCascades)
 		{
 			if (FindCascade(rules.cascades, state.instanceId)) kept.push_back(state);
-			else RemoveCascadeModifier(state);
 		}
 		for (const ResolvedModuleCascadeRule& rule : rules.cascades)
 		{
@@ -91,10 +89,6 @@ namespace vega
 			CascadeState fresh;
 			fresh.instanceId = rule.instanceId;
 			kept.push_back(fresh);
-		}
-		for (CascadeState& state : kept)
-		{
-			if (state.step > 0 && state.lastFamily.IsValid()) ApplyCascadeModifier(state, *FindCascade(rules.cascades, state.instanceId), state.lastFamily);
 		}
 		mCascades = std::move(kept);
 
@@ -153,7 +147,7 @@ namespace vega
 	}
 
 	// Cascade Reactor: the first use starts the chain without a bonus. A different family advances it by one step (capped);
-	// the same family or a lapsed window restarts it. The step's bonus is scoped to the family of the powered use.
+	// the same family or a lapsed window restarts it. The powered use captures its quantity multiplier before activation.
 	void ModuleEpicUtilityMovementRuntime::AdvanceCascade(CascadeState& state, const GameplayTag& family)
 	{
 		const ResolvedModuleCascadeRule* rule = FindCascade(mRules.cascades, state.instanceId);
@@ -162,21 +156,20 @@ namespace vega
 		state.step = continuing ? std::min(state.step + 1, rule->maxSteps) : 0;
 		state.lastFamily = family;
 		state.remainingSeconds = rule->windowSeconds;
-		ApplyCascadeModifier(state, *rule, family);
 	}
 
-	void ModuleEpicUtilityMovementRuntime::ApplyCascadeModifier(CascadeState& state, const ResolvedModuleCascadeRule& rule, const GameplayTag& family)
+	float ModuleEpicUtilityMovementRuntime::GetNextCascadeMultiplier(const List<GameplayTag>& tags) const
 	{
-		const float multiplier = 1.f + rule.stepBonus * static_cast<float>(state.step);
-		state.appliedMultiplier = multiplier;
-		if (state.step <= 0 || multiplier == 1.f) mCombatRuntime.RemoveRuntimeModifier(CascadeModifierId(state.instanceId));
-		else mCombatRuntime.SetRuntimeModifier(CascadeModifierId(state.instanceId), CombatRuntimeModifier{ multiplier, sas::AbilitySlot::None, family });
-	}
-
-	void ModuleEpicUtilityMovementRuntime::RemoveCascadeModifier(CascadeState& state)
-	{
-		mCombatRuntime.RemoveRuntimeModifier(CascadeModifierId(state.instanceId));
-		state.appliedMultiplier = 1.f;
+		const GameplayTag family = FamilyOf(tags);
+		if (!family.IsValid()) return 1.f;
+		float multiplier = 1.f;
+		for (const CascadeState& state : mCascades)
+		{
+			const auto* rule = FindCascade(mRules.cascades, state.instanceId);
+			if (!rule || !state.lastFamily.IsValid() || state.remainingSeconds <= 0.f || family == state.lastFamily) continue;
+			multiplier *= 1.f + rule->stepBonus * static_cast<float>(std::min(state.step + 1, rule->maxSteps));
+		}
+		return multiplier;
 	}
 
 	void ModuleEpicUtilityMovementRuntime::TickCascades(float deltaSeconds)
@@ -189,7 +182,6 @@ namespace vega
 			state.remainingSeconds = 0.f;
 			state.step = 0;
 			state.lastFamily = {};
-			RemoveCascadeModifier(state);
 		}
 	}
 
@@ -307,7 +299,7 @@ namespace vega
 				for (const ResolvedModuleAssaultVectorRule& rule : mRules.assaultVectors)
 				{
 					if (cosine >= rule.minimumCosine) damage += rule.damageBonus;
-					else if (-cosine >= rule.minimumCosine) armor += rule.armorBonus;
+					else if (cosine < -rule.minimumCosine) armor += rule.armorBonus;
 				}
 			}
 		}
@@ -408,7 +400,6 @@ namespace vega
 
 	void ModuleEpicUtilityMovementRuntime::Clear()
 	{
-		for (CascadeState& state : mCascades) RemoveCascadeModifier(state);
 		mCascades.clear();
 		ClearAssault();
 		ClearPhase();

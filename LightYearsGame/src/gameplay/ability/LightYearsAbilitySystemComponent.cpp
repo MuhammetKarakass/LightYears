@@ -175,6 +175,11 @@ namespace vega
 		return !mModuleSystemGate || mModuleSystemGate->IsModuleSystemEnabled(systemTag);
 	}
 
+	float LightYearsAbilitySystemComponent::GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition) const
+	{
+		return mModuleSystemGate && sas::IsLoadoutAbilitySlot(definition.slot) ? mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags) : 1.f;
+	}
+
 	bool LightYearsAbilitySystemComponent::IsModuleAbilityAvailable(const std::string& abilityId) const
 	{
 		for (const auto& system : { GameplayTags::Module::System::AbilitySlot1, GameplayTags::Module::System::AbilitySlot2, GameplayTags::Module::System::AbilitySlot3, GameplayTags::Module::System::AbilitySlot4 })
@@ -321,10 +326,10 @@ namespace vega
 		}
 	}
 
-	std::size_t LightYearsAbilitySystemComponent::AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier)
+	std::size_t LightYearsAbilitySystemComponent::AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier, std::optional<PrimaryWeaponType> requiredWeaponType)
 	{
 		const std::size_t handle = mNextPrimaryWeaponModifierHandle++;
-		mPrimaryWeaponModifiers.emplace_back(handle, modifier);
+		mPrimaryWeaponModifiers.emplace_back(handle, PrimaryModifier{ modifier, requiredWeaponType });
 		++mPrimaryWeaponModifierRevision;
 		return handle;
 	}
@@ -339,11 +344,12 @@ namespace vega
 		return true;
 	}
 
-	float LightYearsAbilitySystemComponent::ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute) const
+	float LightYearsAbilitySystemComponent::ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute, std::optional<PrimaryWeaponType> weaponType) const
 	{
 		if (mPrimaryWeaponModifiers.empty()) return attribute.currentValue;
 		List<sas::AttributeModifier> modifiers;
-		for (const auto& entry : mPrimaryWeaponModifiers) modifiers.push_back(entry.second);
+		for (const auto& entry : mPrimaryWeaponModifiers)
+			if (!entry.second.requiredWeaponType || weaponType == entry.second.requiredWeaponType) modifiers.push_back(entry.second.modifier);
 		return sas::CalculateModifiedAttributeValue(attribute, modifiers);
 	}
 

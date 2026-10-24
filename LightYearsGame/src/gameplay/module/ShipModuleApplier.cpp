@@ -346,7 +346,9 @@ namespace vega
 			if (!adjacent || !(weight > 0.0)) continue;
 			const auto placement = std::find_if(mPlacements.begin(), mPlacements.end(), [&kill](const ModulePlacement& owned) { return owned.instanceId == kill.instanceId; });
 			if (placement == mPlacements.end()) continue;
-			const double bonus = weight * static_cast<double>(kill.damagePerKill);
+			const double normalBonus = weight * static_cast<double>(kill.damagePerKill);
+			const double bonus = targetClass == ControlTargetClass::Boss ? (kill.bossDamagePerKill ? static_cast<double>(*kill.bossDamagePerKill) : normalBonus) :
+				(targetClass == ControlTargetClass::Elite || targetClass == ControlTargetClass::MiniBoss) ? (kill.eliteDamagePerKill ? static_cast<double>(*kill.eliteDamagePerKill) : normalBonus) : normalBonus;
 			placement->killStacks += weight;
 			placement->killDamageBonus += bonus;
 			if (mKillCreditSink) mKillCreditSink(kill.instanceId, weight, bonus);

@@ -12,7 +12,7 @@ namespace vega
 	// only definitions, resolved structs carry one placement's values at its effective level.
 
 	// Cascade Reactor (Utility). Each loadout use from a different family than the previous one advances the chain by one
-	// step, up to maxSteps. stepBonusByLevel is the outgoing damage fraction gained per step. windowSeconds is refreshed by
+	// step, up to maxSteps. stepBonusByLevel is the main effect quantity fraction gained per step. windowSeconds is refreshed by
 	// every valid use; a repeated family or a timeout restarts the chain.
 	struct ModuleCascadeRule
 	{
@@ -37,7 +37,7 @@ namespace vega
 		ModuleLevelTable<float> damageBonusByLevel;
 		ModuleLevelTable<float> armorBonusByLevel;
 		float targetRange = 900.f;
-		float minimumCosine = 0.5f;
+		float minimumCosine = 0.f;
 		float minimumSpeed = 100.f;
 	};
 
@@ -49,6 +49,7 @@ namespace vega
 		float phaseSeconds = 0.35f;
 		float cooldownSeconds = 6.f;
 		float explosionRadius = 120.f;
+		ModuleLevelTable<float> explosionRadiusByLevel;
 		ModuleLevelTable<float> primaryDamageMultiplierByLevel;
 	};
 

@@ -62,7 +62,7 @@ namespace vega
 		// Owner-level modifiers that enter only the primary-fire weapon branch of the
 		// attribute resolver (module Primary family). The revision is part of every
 		// primary weapon cache key; it changes whenever the modifier set changes.
-		std::size_t AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier);
+		std::size_t AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier, std::optional<PrimaryWeaponType> requiredWeaponType = std::nullopt);
 		bool RemovePrimaryWeaponModifier(std::size_t modifierHandle);
 		uint64_t GetPrimaryWeaponModifierRevision() const { return mPrimaryWeaponModifierRevision; }
 		// Mount shape of the Primary fire (Turret Mount, Broadside Mount); the module applier sets it on every rebuild.
@@ -71,12 +71,13 @@ namespace vega
 		// Activations of loadout abilities (Ability1-4), never primary fire or
 		// passives. Weapons compare it to grant empowered charges on cast.
 		uint64_t GetLoadoutAbilityActivationCount() const { return mLoadoutAbilityActivationCount; }
-		float ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute) const;
+		float ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute, std::optional<PrimaryWeaponType> weaponType = std::nullopt) const;
 		// The gate is owned by the same ship that owns this component and clears itself on
 		// destruction (see ShipModuleApplier), so the pointer never dangles. Null means
 		// every module system is enabled.
 		void SetModuleSystemGate(const ModuleSystemGate* gate) { mModuleSystemGate = gate; }
 		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const;
+		float GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition) const;
 		bool IsModuleAbilityAvailable(const std::string& abilityId) const;
 		void CancelAbilitiesUnavailableByModules();
 		Actor& GetOwner() { return mOwner; }
@@ -177,7 +178,8 @@ namespace vega
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mScopedAbilityRules;
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mDeferredScopedAbilityRules;
 		std::vector<std::pair<std::size_t, ScopedAbilityCooldownRule>> mScopedAbilityCooldownRules;
-		std::vector<std::pair<std::size_t, sas::AttributeModifier>> mPrimaryWeaponModifiers;
+		struct PrimaryModifier { sas::AttributeModifier modifier; std::optional<PrimaryWeaponType> requiredWeaponType; };
+		std::vector<std::pair<std::size_t, PrimaryModifier>> mPrimaryWeaponModifiers;
 		std::size_t mNextPrimaryWeaponModifierHandle = 1;
 		uint64_t mPrimaryWeaponModifierRevision = 0;
 		PrimaryWeaponMountProfile mPrimaryMountProfile;

@@ -14,7 +14,7 @@
 namespace vega
 {
 	// Last Stand's post-revive bonus: one timed set of owner attribute modifiers. A new revive restarts the full duration and
-	// replaces the previous set, so bonuses never stack. The stats are Attack Power, Energy Power, Attack Speed and Armor.
+	// replaces the previous set, so bonuses never stack. The stats are Attack Power, Energy Power, Attack Speed and MaxHealth.
 	class ModuleReviveBonusRuntime final
 	{
 	public:

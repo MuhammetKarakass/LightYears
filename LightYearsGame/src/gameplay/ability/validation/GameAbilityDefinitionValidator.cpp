@@ -236,43 +236,46 @@ namespace vega
 					"Actor.Ability." + attributeName.substr(actorPrefix.size(), actorEnd - actorPrefix.size()) + ".Basic");
 				return actor && sas::FindAttribute(actor->attributes, outputId);
 			};
-			List<sas::AttributeId> outputIds;
-			for (const sas::AttributeId& outputId : ability.invocationOutputAttributes)
+			for (const auto* outputs : { &ability.invocationOutputAttributes, &ability.mainEffectAttributes })
 			{
-				if (!ValidateAttributeId(outputId, failureReason)) return false;
-				bool declared = sas::FindAttribute(ability.attributes, outputId) || actionsDeclareOutput(ability.actions, outputId) ||
-					ownFamilyActorDeclaresOutput(outputId);
-				for (const AbilityEffectSpecDefinition& effectSpec : ability.effectSpecs)
+				List<sas::AttributeId> outputIds;
+				for (const sas::AttributeId& outputId : *outputs)
 				{
-					declared = declared || sas::FindAttribute(effectSpec.attributes, outputId);
-				}
-				for (const AbilityTriggerSpec& trigger : ability.triggers)
-				{
-					declared = declared || actionsDeclareOutput(trigger.actions, outputId);
-				}
-				for (const List<AbilityLevelStep>* steps :
-					{ &ability.levelProgression, &ability.repeatingLevelProgression })
-				{
-					for (const AbilityLevelStep& step : *steps)
+					if (!ValidateAttributeId(outputId, failureReason)) return false;
+					bool declared = sas::FindAttribute(ability.attributes, outputId) || actionsDeclareOutput(ability.actions, outputId) ||
+						ownFamilyActorDeclaresOutput(outputId);
+					for (const AbilityEffectSpecDefinition& effectSpec : ability.effectSpecs)
 					{
-						declared = declared || actionsDeclareOutput(step.addedActions, outputId);
-						for (const AbilityTriggerSpec& trigger : step.addedTriggers)
+						declared = declared || sas::FindAttribute(effectSpec.attributes, outputId);
+					}
+					for (const AbilityTriggerSpec& trigger : ability.triggers)
+					{
+						declared = declared || actionsDeclareOutput(trigger.actions, outputId);
+					}
+					for (const List<AbilityLevelStep>* steps :
+						{ &ability.levelProgression, &ability.repeatingLevelProgression })
+					{
+						for (const AbilityLevelStep& step : *steps)
 						{
-							declared = declared || actionsDeclareOutput(trigger.actions, outputId);
+							declared = declared || actionsDeclareOutput(step.addedActions, outputId);
+							for (const AbilityTriggerSpec& trigger : step.addedTriggers)
+							{
+								declared = declared || actionsDeclareOutput(trigger.actions, outputId);
+							}
 						}
 					}
+					const bool conventionalDamageOutput = outputId == CommonAttributeIds::Damage;
+					if (!declared && !conventionalDamageOutput)
+					{
+						return Fail(failureReason, "Invocation output attribute '" + std::string{ outputId.GetName() } +
+							"' is not produced by ability '" + ability.abilityId + "'.");
+					}
+					if (std::find(outputIds.begin(), outputIds.end(), outputId) != outputIds.end())
+					{
+						return Fail(failureReason, "Invocation output attribute IDs must be unique.");
+					}
+					outputIds.push_back(outputId);
 				}
-				const bool conventionalDamageOutput = outputId == CommonAttributeIds::Damage;
-				if (!declared && !conventionalDamageOutput)
-				{
-					return Fail(failureReason, "Invocation output attribute '" + std::string{ outputId.GetName() } +
-						"' is not produced by ability '" + ability.abilityId + "'.");
-				}
-				if (std::find(outputIds.begin(), outputIds.end(), outputId) != outputIds.end())
-				{
-					return Fail(failureReason, "Invocation output attribute IDs must be unique.");
-				}
-				outputIds.push_back(outputId);
 			}
 			return true;
 		}
