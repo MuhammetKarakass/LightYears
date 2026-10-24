@@ -102,6 +102,11 @@ namespace vega
 		bool TryActivateElectricSpread(const ModuleElectricSpreadRule& rule, std::uint64_t targetId);
 		bool TryActivateModuleStatusPulse(std::uint32_t instanceId, std::size_t ruleIndex, std::uint64_t targetId, float cooldownSeconds);
 		const ModuleStatusRules& GetModuleStatusRules() const { return mModuleStatusRules; }
+		// Epic Offense: the ship's aggregate rules and its run-time counters (Prism cycle, Storm charges, hit records, blood marks).
+		void SetEpicOffenseEffects(const EpicOffenseEffects& effects) { mEpicOffenseEffects = effects; }
+		const EpicOffenseEffects& GetEpicOffenseEffects() const { return mEpicOffenseEffects; }
+		EpicOffenseState& GetEpicOffenseState() { return mEpicOffenseState; }
+		float ResolveEpicOffenseOutgoingMultiplier(Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType);
 		// Set by the module applier while a generated rule reads the target's statuses at resolution.
 		void SetTargetStatusSnapshotRequested(bool requested) { mTargetStatusSnapshotRequested = requested; }
 		bool WantsTargetStatusSnapshot() const { return mTargetStatusSnapshotRequested; }
@@ -210,6 +215,8 @@ namespace vega
 		CombatRuntimeModifiers mRuntimeModifiers;
 		std::unordered_map<std::string, float> mPrimaryShotModifiers;
 		ModuleStatusRules mModuleStatusRules;
+		EpicOffenseEffects mEpicOffenseEffects;
+		EpicOffenseState mEpicOffenseState;
 		struct ModuleStatusPulseCooldown { std::uint32_t instanceId; std::size_t ruleIndex; std::uint64_t targetId; float remaining; };
 		List<ModuleStatusPulseCooldown> mModuleStatusPulseCooldowns;
 		bool mTargetStatusSnapshotRequested = false;

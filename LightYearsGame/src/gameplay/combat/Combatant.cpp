@@ -199,7 +199,12 @@ namespace vega
 			payload.hitGroup->kind == DamageHitGroup::Kind::PrimaryShot
 			? sourceCombatant->GetCombatRuntime().GetPrimaryShotDamageMultiplier()
 			: 1.f;
-		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier * primaryShotMultiplier;
+		// Epic Offense (Blood Contract, Alternating Current): owner hits only; suppressed and generated damage never qualify.
+		auto* epicSource = source ? dynamic_cast<Combatant*>(source) : nullptr;
+		const float epicOffenseMultiplier = epicSource && !payload.skipModuleDamageRules && payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed
+			? epicSource->GetCombatRuntime().ResolveEpicOffenseOutgoingMultiplier(target, sourceAbilityTags, damageTags, deliveryType)
+			: 1.f;
+		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier * primaryShotMultiplier * epicOffenseMultiplier;
 		bool wasCritical = false;
 		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
 		{

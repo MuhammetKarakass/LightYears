@@ -568,6 +568,97 @@ namespace vega
 				}
 			}
 		}
+		// Epic Prism Core. The Offense use's hit applies the current cycle status as extraStacks on top of its own status: Thermal ignite,
+		// Cryo slow, Electric stacks or Kinetic stacks. Duration follows the damage-status duration rules times the Prism multiplier.
+		// Only the owner's Offense hits that are not periodic or generated count. Frozen and stun are not part of the cycle.
+		void ApplyEpicPrismStatus(sas::AbilitySystemComponent& targetAbilitySystem, DamageContext& context, const ModuleStatusRules& rules, float generalBonus, float durationMultiplier)
+		{
+			auto* source = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr;
+			if (!source || !context.target || context.deliveryType == DamageDeliveryType::Periodic || context.payload.skipModuleDamageRules ||
+				context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed) return;
+			const EpicOffenseEffects& effects = source->GetCombatRuntime().GetEpicOffenseEffects();
+			if (!effects.prismCore || !std::any_of(context.sourceAbilityTags.begin(), context.sourceAbilityTags.end(), [](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Offense); })) return;
+			const int stacks = effects.prismExtraStacks;
+			const float scale = durationMultiplier * effects.prismDurationMultiplier;
+			const int cycle = EpicPrismCycleIndex(source->GetCombatRuntime().GetEpicOffenseState());
+			if (cycle == 0)
+			{
+				const sas::GameplayEffectDefinition* definition = EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Ignite");
+				if (!definition) return;
+				sas::GameplayEffectSpec spec = MakeStatusEffectSpec(*definition, (GetDamageStatusBalance().thermal.duration + generalBonus) * scale, GetDamageStatusBalance().thermal.maxStacks);
+				spec.attributes.clear();
+				ApplyCappedStackEffect(targetAbilitySystem, spec, context.source, stacks);
+			}
+			else if (cycle == 1)
+			{
+				DamageContext cryo;
+				cryo.source = context.source;
+				cryo.target = context.target;
+				cryo.payload.cryoBuildupPerHit = stacks;
+				ApplyCryoStatus(targetAbilitySystem, cryo, (GetDamageStatusBalance().cryo.duration + generalBonus) * scale - GetDamageStatusBalance().cryo.duration);
+			}
+			else if (cycle == 2)
+			{
+				const sas::GameplayEffectDefinition* definition = EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Electric");
+				if (!definition) return;
+				const ModuleElectricStatusRule* electricRule = ElectricRule(rules);
+				sas::GameplayEffectSpec spec = MakeStatusEffectSpec(*definition, (GetDamageStatusBalance().electric.duration + generalBonus) * scale,
+					electricRule ? static_cast<int>(electricRule->damageTakenByStack.size()) : GetDamageStatusBalance().electric.maxStacks);
+				spec.attributes.clear();
+				if (electricRule)
+					for (std::size_t stack = 0; stack < electricRule->damageTakenByStack.size(); ++stack)
+					{
+						const float amount = electricRule->damageTakenByStack[stack];
+						spec.attributes.emplace_back(DamageAttributeIds::ElectricDamageTakenBonusForStack(static_cast<int>(stack + 1)), amount, amount);
+					}
+				ApplyCappedStackEffect(targetAbilitySystem, spec, context.source, stacks);
+			}
+			else
+			{
+				DamageContext kinetic;
+				kinetic.source = context.source;
+				kinetic.target = context.target;
+				kinetic.payload.kineticStacks = stacks;
+				ApplyKineticStatus(targetAbilitySystem, kinetic, (GetDamageStatusBalance().kinetic.duration + generalBonus) * scale - GetDamageStatusBalance().kinetic.duration);
+			}
+		}
+
+		// Epic Storm Capacitor (side feature). Charges built by ability uses are spent by the next eligible Primary hit: the owner's
+		// stormTargetCount random opposing combatants in stormRadius take the storm damage and stormElectricStacks Electric stacks.
+		// Periodic, suppressed and generated damage never discharge it.
+		void ApplyEpicStormDischarge(DamageContext& context)
+		{
+			auto* source = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr;
+			if (!source || !context.target || context.deliveryType == DamageDeliveryType::Periodic || context.payload.skipModuleDamageRules ||
+				context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed || !context.source->GetWorld()) return;
+			const EpicOffenseEffects& effects = source->GetCombatRuntime().GetEpicOffenseEffects();
+			EpicOffenseState& state = source->GetCombatRuntime().GetEpicOffenseState();
+			const bool primaryHit = std::any_of(context.sourceAbilityTags.begin(), context.sourceAbilityTags.end(), [](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Primary); }) ||
+				(context.payload.hitGroup && context.payload.hitGroup->kind == DamageHitGroup::Kind::PrimaryShot);
+			if (!effects.stormCapacitor || !primaryHit || state.stormCharges < effects.stormChargesRequired) return;
+			state.stormCharges = 0;
+			auto victims = targeting::FindOpposingCombatants(*context.source->GetWorld(), *context.source, context.source->GetActorLocation(), effects.stormRadius, false);
+			std::shuffle(victims.begin(), victims.end(), state.random);
+			int struck = 0;
+			for (const auto& victim : victims)
+			{
+				if (struck >= effects.stormTargetCount) break;
+				if (!victim || victim->GetIsPendingDestroy()) continue;
+				auto* combatant = dynamic_cast<Combatant*>(victim.get());
+				if (!combatant) continue;
+				DamageContext spreadContext;
+				spreadContext.source = context.source;
+				spreadContext.target = victim.get();
+				spreadContext.remainingDamage = 1.f;
+				spreadContext.damageTags = { DamageTypeSchema::Electric };
+				spreadContext.payload.electricStacks = effects.stormElectricStacks;
+				spreadContext.payload.kineticStacks = 0;
+				spreadContext.payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
+				DamageTypeSystem::ApplyStatusEffects(combatant->GetAbilitySystemComponent(), spreadContext);
+				ApplyCombatDamage(*victim, effects.stormDamage, context.source, { DamageTypeSchema::Electric }, MakeModuleGeneratedDamagePayload(0, DamageSourceScalingPolicy::Normal), {}, {}, DamageDeliveryType::Area, nullptr);
+				++struck;
+			}
+		}
 	}
 
 	List<GameplayTag> DamageTypeSystem::ApplyStatusEffects(sas::AbilitySystemComponent& targetAbilitySystem, DamageContext& context)
@@ -583,6 +674,7 @@ namespace vega
 		for (const auto& rule : rules.durationBonuses) generalBonus += rule.bonusSeconds;
 		const float durationBonus = generalBonus + StatusDurationBonus(targetAbilitySystem, rules);
 		const float durationMultiplier = StatusDurationMultiplier(rules);
+		ApplyEpicPrismStatus(targetAbilitySystem, context, rules, generalBonus, durationMultiplier);
 		const auto* electricRule = ElectricRule(rules);
 		if (HasDamageType(context.damageTags, DamageTypeSchema::Electric) && context.payload.electricStacks == 0)
 		{
@@ -662,6 +754,7 @@ namespace vega
 		{
 			applied.push_back(DamageStatusSchema::Kinetic);
 		}
+		ApplyEpicStormDischarge(context);
 		return applied;
 	}
 

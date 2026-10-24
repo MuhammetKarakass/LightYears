@@ -15,6 +15,7 @@
 #include "gameplay/module/generated/ModuleTargetSlowRuntime.h"
 #include "gameplay/module/rules/ShieldBatteryRuptureRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
+#include "gameplay/module/rules/EpicOffenseRuntime.h"
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <cstddef>
@@ -136,6 +137,7 @@ namespace vega
 		ModuleRunCounterRuntime mRunCounterRuntime;
 		ModuleReviveBonusRuntime mReviveBonus;
 		ModuleEmergencyProtocolRuntime mEmergencyRuntime;
+		ModuleEpicOffenseRuntime mEpicOffenseRuntime;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;

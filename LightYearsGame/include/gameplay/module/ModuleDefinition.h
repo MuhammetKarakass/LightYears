@@ -5,9 +5,11 @@
 #include "framework/Core.h"
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageContext.h"
+#include "gameplay/module/ModuleLevelTable.h"
 #include "gameplay/module/ModuleRulePredicates.h"
 #include "gameplay/module/rules/EpicStatRules.h"
 #include "gameplay/module/rules/EpicDefenseRules.h"
+#include "gameplay/module/rules/EpicOffenseRules.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -27,22 +29,6 @@ namespace vega
 		Rare,
 		Epic,
 		Legendary
-	};
-
-	template<typename T>
-	struct ModuleLevelTable
-	{
-		List<T> values;
-		// Levels past the authored table extrapolate linearly from its last step.
-		T ValueAtLevel(T fallback, int level) const
-		{
-			if (values.empty() || level <= 0) return fallback;
-			const int count = static_cast<int>(values.size());
-			if (level <= count) return values[static_cast<std::size_t>(level - 1)];
-			if (count == 1) return values.front();
-			const T step = values.back() - values[static_cast<std::size_t>(count - 2)];
-			return values.back() + step * static_cast<T>(level - count);
-		}
 	};
 
 	// Cell offsets relative to the module's own origin; (0,0)-based.
@@ -600,6 +586,8 @@ namespace vega
 		List<ModulePrimaryMountRule> primaryMountRules;
 		// Execution Priority (Turret side feature only): the Turret prefers the valid target with the lowest health fraction.
 		bool primaryExecutionPriority = false;
+		// Epic Offense rules (Prism Core, Blood Contract and their side features).
+		ModuleEpicOffenseRules epicOffense;
 		// F1 Parçalama, side features only: the placement may split into one-cell fragments at the largest size. Layout only.
 		// Epic Defense (rules/EpicDefenseRules.h): Last Stand revive is a main package rule; hull-threshold rules are main (cooldown) or side (damage, movement).
 		List<ModuleReviveRule> reviveRules;
@@ -686,6 +674,9 @@ namespace vega
 			for (std::size_t i = 0; i < rules.chargeRules.size(); ++i) if (!visit("chargeRules.chargePerLevel", i, rules.chargeRules[i].chargePerLevel)) return false;
 			for (std::size_t i = 0; i < rules.familyStatRules.size(); ++i) if (!visit("familyStatRules.perModule", i, rules.familyStatRules[i].perModuleByLevel)) return false;
 			for (std::size_t i = 0; i < rules.primaryMountRules.size(); ++i) if (!visit("primaryMountRules.damageMultiplier", i, rules.primaryMountRules[i].damageMultiplierByLevel)) return false;
+		for (std::size_t i = 0; i < rules.epicOffense.prismCores.size(); ++i) if (!visit("epicOffense.prismCores.statusDurationMultiplier", i, rules.epicOffense.prismCores[i].statusDurationMultiplierByLevel)) return false;
+		for (std::size_t i = 0; i < rules.epicOffense.bloodContracts.size(); ++i)
+			if (!visit("epicOffense.bloodContracts.fullHealthMultiplier", i, rules.epicOffense.bloodContracts[i].fullHealthMultiplierByLevel) || !visit("epicOffense.bloodContracts.emptyHealthMultiplier", i, rules.epicOffense.bloodContracts[i].emptyHealthMultiplierByLevel)) return false;
 		return true;
 	}
 

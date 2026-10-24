@@ -415,6 +415,7 @@ namespace vega::content
 			ParseFragmentation(object, context, variant, sideFeature);
 			ParseEpicDefenseRules(object, context, minimumLevelCount, variant, sideFeature);
 			ParsePrimaryMountRules(object, context, minimumLevelCount, variant, sideFeature);
+			ParseEpicOffenseRules(object, context, minimumLevelCount, variant, sideFeature);
 			const Json statusRules = object.value("statusRules", Json::object());
 			if (!statusRules.is_object()) throw std::runtime_error(context + ".statusRules must be an object");
 			const std::set<std::string> statusKeys{ "electricOverrides", "electricSpreads", "primaryStatusPrimers", "cryoFreezes", "thermalCryoDurationBonuses", "freezeSpreads", "durationBonuses", "thermalBursts", "kineticConsumes" };

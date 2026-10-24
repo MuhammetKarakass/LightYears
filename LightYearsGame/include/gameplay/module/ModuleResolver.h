@@ -153,6 +153,8 @@ namespace vega
 		List<ResolvedModuleChargeRule> chargeRules;
 		// Ship-wide Primary mount shape (Turret Mount, Broadside Mount), read by the Primary fire path through the ability component.
 		PrimaryWeaponMountProfile primaryMount;
+		// Epic Offense aggregate of every placed Prism Core, Blood Contract and side feature rule.
+		EpicOffenseEffects epicOffense;
 	};
 
 	namespace ModuleResolver
