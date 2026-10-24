@@ -6,6 +6,7 @@
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageContext.h"
 #include "gameplay/module/ModuleRulePredicates.h"
+#include "gameplay/module/rules/EpicStatRules.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -156,7 +157,7 @@ namespace vega
 		List<GameplayTag> requiredEventTags;
 		float durationSeconds = 0.f;
 	};
-	enum class ModuleOwnerAttributeSource { HealthThreshold, MovementSpeed, HigherPower, Luck, Armor, ArmorHigherPower, ArmorLowerPower, Gold };
+	enum class ModuleOwnerAttributeSource { HealthThreshold, MovementSpeed, HigherPower, Luck, Armor, ArmorHigherPower, ArmorLowerPower, Gold, MaxHealthFraction, PowerEqualize };
 	struct ModuleOwnerAttributeRule
 	{
 		ModuleOwnerAttributeSource source = ModuleOwnerAttributeSource::HealthThreshold;
@@ -573,6 +574,7 @@ namespace vega
 		List<ModuleKillStackCooldownRule> killStackCooldownRules;
 		List<ModuleKillStackDamageRule> killStackDamageRules;
 		List<ModuleChargeRule> chargeRules;
+		List<EpicFamilyStatRule> familyStatRules;
 		// F1 Parçalama, side features only: the placement may split into one-cell fragments at the largest size. Layout only.
 		bool fragmentation = false;
 	};
@@ -651,6 +653,7 @@ namespace vega
 			for (std::size_t i = 0; i < rules.sustainedSpeedRules.size(); ++i) if (!visit("sustainedSpeedRules.primaryDamageMultiplier", i, rules.sustainedSpeedRules[i].primaryDamageMultiplierByLevel)) return false;
 			for (std::size_t i = 0; i < rules.ownerBurstRules.size(); ++i) if (!visit("ownerBurstRules.damageFractionOfMaxHealth", i, rules.ownerBurstRules[i].damageFractionOfMaxHealthByLevel) || !visit("ownerBurstRules.damage", i, rules.ownerBurstRules[i].damageByLevel)) return false;
 			for (std::size_t i = 0; i < rules.chargeRules.size(); ++i) if (!visit("chargeRules.chargePerLevel", i, rules.chargeRules[i].chargePerLevel)) return false;
+			for (std::size_t i = 0; i < rules.familyStatRules.size(); ++i) if (!visit("familyStatRules.perModule", i, rules.familyStatRules[i].perModuleByLevel)) return false;
 		return true;
 	}
 

@@ -3361,6 +3361,116 @@
       ]
     },
     {
+      "id": "Module.Offense.TwinReactor.Epic",
+      "displayName": "Twin Reactor",
+      "description": "Attack Power and Energy Power both become the higher of the two, plus {owner.0.amount}. The bonus never feeds back into the comparison.",
+      "family": "Ability.Offense",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "ownerAttributeRules": [
+            { "source": "PowerEqualize", "attributeId": "Owner.AttackPower", "amount": [5.0, 10.0, 15.0] },
+            { "source": "PowerEqualize", "attributeId": "Owner.Energy.Power", "amount": [5.0, 10.0, 15.0] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.VitalAlloy.Epic",
+      "displayName": "Vital Alloy",
+      "description": "Gain Armor equal to {owner.0.amountPercent}% of your Max Health. Health and Armor are not spent.",
+      "family": "Ability.Defense",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0], [0, 1]],
+          "ownerAttributeRules": [
+            { "source": "MaxHealthFraction", "attributeId": "Owner.Armor", "amount": [0.15, 0.18, 0.21] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.ConfluenceCore.Epic",
+      "displayName": "Confluence Core",
+      "description": "Each other installed main module adds to its family's stats: Offense AP and EP +{familyStat.0.perModule}, Defense Max Health +{familyStat.2.perModule}, Primary fire rate +{familyStat.3.perModulePercent}%, Movement rating +{familyStat.4.perModule}, Utility cooldown recovery +{familyStat.6.perModulePercent}%.",
+      "family": "Ability.Utility",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "sizeVariants": [
+        {
+          "shape": [[0, 0]],
+          "familyStatRules": [
+            { "family": "Ability.Offense", "attributeId": "Owner.AttackPower", "perModule": [2.0, 3.0, 4.0] },
+            { "family": "Ability.Offense", "attributeId": "Owner.Energy.Power", "perModule": [2.0, 3.0, 4.0] },
+            { "family": "Ability.Defense", "attributeId": "Owner.MaxHealth", "perModule": [10.0, 15.0, 20.0] },
+            { "family": "Ability.Primary", "target": "PrimaryWeapon", "attributeId": "Common.FireRate", "operation": "Multiply", "perModule": [0.01, 0.015, 0.02] },
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.35, 0.45] },
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.35, 0.45] },
+            { "family": "Ability.Utility", "target": "Ability", "attributeId": "Common.Cooldown", "operation": "Multiply", "reduce": true, "perModule": [0.01, 0.015, 0.02] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.MomentumDrive.Epic",
+      "displayName": "Momentum Drive",
+      "description": "Horizontal and vertical movement rating +{Owner.MoveSpeedHorizontal}, plus {familyStat.0.perModule} for each other installed Movement module. On Movement ability use, this module's total rating is doubled for {trigger.0.durationSeconds} sec; re-use refreshes it.",
+      "family": "Ability.Movement",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "sizeLadder": [1, 2],
+      "sizeVariants": [
+        {
+          "shape": [[0, 0]],
+          "attributeModifiers": [
+            { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] },
+            { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] }
+          ],
+          "triggerBuffs": [
+            {
+              "trigger": "AbilityActivated",
+              "requiredEventTags": ["Ability.Movement"],
+              "durationSeconds": 5.0,
+              "modifiers": [
+                { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true },
+                { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true }
+              ]
+            }
+          ],
+          "familyStatRules": [
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] },
+            { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] }
+          ],
+          "triggerBuffs": [
+            {
+              "trigger": "AbilityActivated",
+              "requiredEventTags": ["Ability.Movement"],
+              "durationSeconds": 5.0,
+              "modifiers": [
+                { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true },
+                { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true }
+              ]
+            }
+          ],
+          "familyStatRules": [
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
+          ]
+        }
+      ]
+    },
+    {
       "id": "Module.Defense.BarrierRecharge.Basic",
       "displayName": "Barrier Recharge",
       "description": "Defense ability use restores {action.0.amountPercent}% of Max Shield; cannot exceed maximum.",

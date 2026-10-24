@@ -322,6 +322,8 @@ namespace vega::content
 				else if (source == "ArmorHigherPower") rule.source = ModuleOwnerAttributeSource::ArmorHigherPower;
 				else if (source == "ArmorLowerPower") rule.source = ModuleOwnerAttributeSource::ArmorLowerPower;
 				else if (source == "Gold") rule.source = ModuleOwnerAttributeSource::Gold;
+				else if (source == "MaxHealthFraction") rule.source = ModuleOwnerAttributeSource::MaxHealthFraction;
+				else if (source == "PowerEqualize") rule.source = ModuleOwnerAttributeSource::PowerEqualize;
 				else throw std::runtime_error(context + " unknown owner attribute source: " + source);
 				rule.attributeId = sas::AttributeId{ entry.at("attributeId").get<std::string>() };
 				std::string failure;
@@ -330,7 +332,7 @@ namespace vega::content
 				rule.operation = AttributeJsonParser::ParseOperation(entry.value("operation", std::string{ "Add" }), context);
 				const bool ownerAttribute = rule.target == ModuleAttributeTarget::Owner && rule.operation == sas::AttributeModifierOperation::Add &&
 					(rule.attributeId == OwnerAttributeIds::AttackSpeed || rule.attributeId == OwnerAttributeIds::AttackPower || rule.attributeId == OwnerAttributeIds::EnergyPower ||
-						((rule.source == ModuleOwnerAttributeSource::Luck || rule.source == ModuleOwnerAttributeSource::HealthThreshold) && rule.attributeId == OwnerAttributeIds::CriticalChance) || (rule.source == ModuleOwnerAttributeSource::Gold && rule.attributeId == OwnerAttributeIds::Armor));
+						((rule.source == ModuleOwnerAttributeSource::Luck || rule.source == ModuleOwnerAttributeSource::HealthThreshold) && rule.attributeId == OwnerAttributeIds::CriticalChance) || (rule.source == ModuleOwnerAttributeSource::Gold && rule.attributeId == OwnerAttributeIds::Armor) || (rule.source == ModuleOwnerAttributeSource::MaxHealthFraction && rule.attributeId == OwnerAttributeIds::Armor));
 				const bool shipAttribute = rule.target == ModuleAttributeTarget::Ship && rule.operation == sas::AttributeModifierOperation::Multiply && rule.source == ModuleOwnerAttributeSource::HealthThreshold && rule.attributeId == ShipAttributeIds::ShieldRegen;
 				if (!ownerAttribute && !shipAttribute)
 					throw std::runtime_error(context + " unsupported conditional owner attribute");
@@ -402,6 +404,7 @@ namespace vega::content
 			ParseKillStackCooldownRules(object, context, variant);
 			ParseKillStackDamageRules(object, context, variant);
 			ParseChargeRules(object, context, minimumLevelCount, variant, sideFeature);
+			ParseFamilyStatRules(object, context, minimumLevelCount, variant, sideFeature);
 			ParseFragmentation(object, context, variant, sideFeature);
 			const Json statusRules = object.value("statusRules", Json::object());
 			if (!statusRules.is_object()) throw std::runtime_error(context + ".statusRules must be an object");

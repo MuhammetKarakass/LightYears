@@ -95,6 +95,7 @@ namespace vega::content
 		void ParseKillStackCooldownRules(const Json& object, const std::string& context, ModuleRulePackage& rules);
 
 		void ParseKillStackDamageRules(const Json& object, const std::string& context, ModuleRulePackage& rules);
+		void ParseFamilyStatRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules, bool sideFeature);
 
 		void ParseChargeRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleSizeVariant& variant, bool sideFeature);
 

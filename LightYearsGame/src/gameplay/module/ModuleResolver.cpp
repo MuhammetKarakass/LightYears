@@ -1,4 +1,5 @@
 #include "gameplay/module/ModuleResolver.h"
+#include "gameplay/module/rules/EpicStatRuleResolution.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/module/ModuleAbilitySlots.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -544,6 +545,7 @@ namespace vega
 				if (!placement) continue;
 				charge.slots = GeometricAbilitySlots(rules, activePlacements, *placement, static_cast<std::size_t>(charge.neighbourCount));
 			}
+			ApplyEpicFamilyStatRules(effects, rules, activePlacements);
 			return effects;
 		}
 	}
