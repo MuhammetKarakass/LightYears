@@ -360,7 +360,7 @@ namespace vega
 		if (!mShuttingDown && mShip && mAbilityUseObserver && event.eventTag == GameplayTags::Event::Ability::Activated && mShip->GetHealthComponent().GetHealth() > 0.f)
 		{
 			const auto* ability = mAbilities.GetAbilityById(event.sourceAbilityId.ToString());
-			if (ability && sas::IsLoadoutAbilitySlot(ability->GetDefinition().slot)) mAbilityUseObserver(ability->GetDefinition().abilityTags);
+			if (ability && sas::IsLoadoutAbilitySlot(ability->GetDefinition().slot)) mAbilityUseObserver(ability->GetDefinition().abilityId, ability->GetDefinition().abilityTags);
 		}
 		if (mShuttingDown || !mShip || mActions.empty()) return;
 		const auto* context = event.GetContext<DamageContext>();

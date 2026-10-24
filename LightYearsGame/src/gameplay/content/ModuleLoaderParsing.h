@@ -98,6 +98,8 @@ namespace vega::content
 
 		void ParseChargeRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleSizeVariant& variant, bool sideFeature);
 
+		void ParseEpicUtilityMovementRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules, bool sideFeature);
+
 		void ParseTargetSlowRules(const Json& object, const std::string& context, ModuleRulePackage& rules);
 
 		void ParseFragmentation(const Json& object, const std::string& context, ModuleRulePackage& rules, bool sideFeature);

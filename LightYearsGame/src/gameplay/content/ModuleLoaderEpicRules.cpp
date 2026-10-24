@@ -1,0 +1,98 @@
+#include "ModuleLoaderParsing.h"
+
+#include <cstddef>
+#include <stdexcept>
+#include <string>
+
+namespace vega::content
+{
+	namespace module_loader_detail
+	{
+		namespace
+		{
+			// Per-level float table that must be an array of levelCount entries (a scalar would not reach the table).
+			void ParseLevelFloats(const Json& value, const std::string& context, int minimumLevelCount, ModuleLevelTable<float>& table)
+			{
+				if (!value.is_array()) throw std::runtime_error(context + " must be a per-level array");
+				ParseLevelFloat(value, context, minimumLevelCount, table);
+				ValidateTable(table, context, [](float number) { return number >= 0.f; }, "must not be negative");
+			}
+		}
+
+		void ParseEpicUtilityMovementRules(const Json& object, const std::string& context, int minimumLevelCount, ModuleRulePackage& rules, bool sideFeature)
+		{
+			const Json cascades = object.value("cascadeRules", Json::array());
+			if (!cascades.is_array()) throw std::runtime_error(context + ".cascadeRules must be an array");
+			std::size_t index = 0;
+			for (const Json& entry : cascades)
+			{
+				const std::string entryContext = context + ".cascadeRules[" + std::to_string(index++) + "]";
+				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
+				ModuleCascadeRule rule;
+				ParseLevelFloats(entry.at("stepBonus"), entryContext + ".stepBonus", minimumLevelCount, rule.stepBonusByLevel);
+				rule.maxSteps = ParsePositiveInt(entry.at("maxSteps"), entryContext + ".maxSteps");
+				rule.windowSeconds = ParseFiniteFloat(entry.at("windowSeconds"), entryContext + ".windowSeconds");
+				if (rule.windowSeconds <= 0.f) throw std::runtime_error(entryContext + " needs a positive window");
+				rules.cascadeRules.push_back(rule);
+			}
+
+			const Json fieldMastery = object.value("fieldMasteryRules", Json::array());
+			if (!fieldMastery.is_array()) throw std::runtime_error(context + ".fieldMasteryRules must be an array");
+			index = 0;
+			for (const Json& entry : fieldMastery)
+			{
+				const std::string entryContext = context + ".fieldMasteryRules[" + std::to_string(index++) + "]";
+				const bool mainRule = entry.contains("usesPerLevelUp");
+				const bool transferRule = entry.contains("transferUses");
+				if (mainRule == transferRule) throw std::runtime_error(entryContext + " needs usesPerLevelUp (main) or transferUses (Knowledge Transfer side)");
+				ModuleFieldMasteryRule rule;
+				if (mainRule)
+				{
+					if (sideFeature) throw std::runtime_error(entryContext + ".usesPerLevelUp is main-package only");
+					if (!entry.at("usesPerLevelUp").is_array()) throw std::runtime_error(entryContext + ".usesPerLevelUp must be a per-level array");
+					(void)ParsePositiveLevelInt(entry.at("usesPerLevelUp"), entryContext + ".usesPerLevelUp", minimumLevelCount, rule.usesPerLevelUpByLevel);
+				}
+				else
+				{
+					if (!sideFeature) throw std::runtime_error(entryContext + ".transferUses is side-feature only");
+					rule.transferUses = ParseFiniteFloat(entry.at("transferUses"), entryContext + ".transferUses");
+					if (rule.transferUses <= 0.f) throw std::runtime_error(entryContext + " needs a positive transferUses");
+				}
+				rules.fieldMasteryRules.push_back(rule);
+			}
+
+			const Json assault = object.value("assaultVectorRules", Json::array());
+			if (!assault.is_array()) throw std::runtime_error(context + ".assaultVectorRules must be an array");
+			index = 0;
+			for (const Json& entry : assault)
+			{
+				const std::string entryContext = context + ".assaultVectorRules[" + std::to_string(index++) + "]";
+				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
+				ModuleAssaultVectorRule rule;
+				ParseLevelFloats(entry.at("damageBonus"), entryContext + ".damageBonus", minimumLevelCount, rule.damageBonusByLevel);
+				ParseLevelFloats(entry.at("armorBonus"), entryContext + ".armorBonus", minimumLevelCount, rule.armorBonusByLevel);
+				rule.targetRange = ParseFiniteFloat(entry.at("targetRange"), entryContext + ".targetRange");
+				rule.minimumCosine = ParseFiniteFloat(entry.at("minimumCosine"), entryContext + ".minimumCosine");
+				rule.minimumSpeed = ParseFiniteFloat(entry.at("minimumSpeed"), entryContext + ".minimumSpeed");
+				if (rule.targetRange <= 0.f || rule.minimumCosine <= 0.f || rule.minimumCosine > 1.f || rule.minimumSpeed < 0.f) throw std::runtime_error(entryContext + " has invalid target range, direction cosine or speed");
+				rules.assaultVectorRules.push_back(rule);
+			}
+
+			const Json phase = object.value("phaseSlipRules", Json::array());
+			if (!phase.is_array()) throw std::runtime_error(context + ".phaseSlipRules must be an array");
+			index = 0;
+			for (const Json& entry : phase)
+			{
+				const std::string entryContext = context + ".phaseSlipRules[" + std::to_string(index++) + "]";
+				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
+				ModulePhaseSlipRule rule;
+				rule.phaseSeconds = ParseFiniteFloat(entry.at("phaseSeconds"), entryContext + ".phaseSeconds");
+				rule.cooldownSeconds = ParseFiniteFloat(entry.at("cooldownSeconds"), entryContext + ".cooldownSeconds");
+				rule.explosionRadius = ParseFiniteFloat(entry.at("explosionRadius"), entryContext + ".explosionRadius");
+				ParseLevelFloats(entry.at("primaryDamageMultiplier"), entryContext + ".primaryDamageMultiplier", minimumLevelCount, rule.primaryDamageMultiplierByLevel);
+				if (rule.phaseSeconds <= 0.f || rule.cooldownSeconds <= 0.f || rule.explosionRadius <= 0.f) throw std::runtime_error(entryContext + " needs positive phase, cooldown and radius");
+				rules.phaseSlipRules.push_back(rule);
+			}
+		}
+	}
+}

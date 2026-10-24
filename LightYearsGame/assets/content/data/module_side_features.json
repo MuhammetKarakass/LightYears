@@ -1633,6 +1633,19 @@
           ]
         }
       }
+    },
+    {
+      "id": "Module.SideFeature.FieldMastery.KnowledgeTransfer",
+      "displayName": "Knowledge Transfer",
+      "levelCount": 3,
+      "description": "When this module levels a Utility ability, every other installed Utility ability gains 2 uses toward its next level.",
+      "rules": {
+        "fieldMasteryRules": [
+          {
+            "transferUses": 2
+          }
+        ]
+      }
     }
   ]
 }

@@ -5,7 +5,9 @@
 #include "framework/Core.h"
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageContext.h"
+#include "gameplay/module/ModuleLevelTable.h"
 #include "gameplay/module/ModuleRulePredicates.h"
+#include "gameplay/module/rules/EpicUtilityMovementRules.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -25,22 +27,6 @@ namespace vega
 		Rare,
 		Epic,
 		Legendary
-	};
-
-	template<typename T>
-	struct ModuleLevelTable
-	{
-		List<T> values;
-		// Levels past the authored table extrapolate linearly from its last step.
-		T ValueAtLevel(T fallback, int level) const
-		{
-			if (values.empty() || level <= 0) return fallback;
-			const int count = static_cast<int>(values.size());
-			if (level <= count) return values[static_cast<std::size_t>(level - 1)];
-			if (count == 1) return values.front();
-			const T step = values.back() - values[static_cast<std::size_t>(count - 2)];
-			return values.back() + step * static_cast<T>(level - count);
-		}
 	};
 
 	// Cell offsets relative to the module's own origin; (0,0)-based.
@@ -573,6 +559,11 @@ namespace vega
 		List<ModuleKillStackCooldownRule> killStackCooldownRules;
 		List<ModuleKillStackDamageRule> killStackDamageRules;
 		List<ModuleChargeRule> chargeRules;
+		// Epic Utility/Movement rules (rules/EpicUtilityMovementRules.h).
+		List<ModuleCascadeRule> cascadeRules;
+		List<ModuleFieldMasteryRule> fieldMasteryRules;
+		List<ModuleAssaultVectorRule> assaultVectorRules;
+		List<ModulePhaseSlipRule> phaseSlipRules;
 		// F1 Parçalama, side features only: the placement may split into one-cell fragments at the largest size. Layout only.
 		bool fragmentation = false;
 	};
@@ -651,6 +642,10 @@ namespace vega
 			for (std::size_t i = 0; i < rules.sustainedSpeedRules.size(); ++i) if (!visit("sustainedSpeedRules.primaryDamageMultiplier", i, rules.sustainedSpeedRules[i].primaryDamageMultiplierByLevel)) return false;
 			for (std::size_t i = 0; i < rules.ownerBurstRules.size(); ++i) if (!visit("ownerBurstRules.damageFractionOfMaxHealth", i, rules.ownerBurstRules[i].damageFractionOfMaxHealthByLevel) || !visit("ownerBurstRules.damage", i, rules.ownerBurstRules[i].damageByLevel)) return false;
 			for (std::size_t i = 0; i < rules.chargeRules.size(); ++i) if (!visit("chargeRules.chargePerLevel", i, rules.chargeRules[i].chargePerLevel)) return false;
+		for (std::size_t i = 0; i < rules.cascadeRules.size(); ++i) if (!visit("cascadeRules.stepBonus", i, rules.cascadeRules[i].stepBonusByLevel)) return false;
+		for (std::size_t i = 0; i < rules.fieldMasteryRules.size(); ++i) if (!visit("fieldMasteryRules.usesPerLevelUp", i, rules.fieldMasteryRules[i].usesPerLevelUpByLevel)) return false;
+		for (std::size_t i = 0; i < rules.assaultVectorRules.size(); ++i) if (!visit("assaultVectorRules.damageBonus", i, rules.assaultVectorRules[i].damageBonusByLevel) || !visit("assaultVectorRules.armorBonus", i, rules.assaultVectorRules[i].armorBonusByLevel)) return false;
+		for (std::size_t i = 0; i < rules.phaseSlipRules.size(); ++i) if (!visit("phaseSlipRules.primaryDamageMultiplier", i, rules.phaseSlipRules[i].primaryDamageMultiplierByLevel)) return false;
 		return true;
 	}
 
