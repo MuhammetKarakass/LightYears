@@ -8,6 +8,7 @@
 #include "gameplay/ability/runtime/AbilityInvocationRuntime.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
 #include "gameplay/module/ModuleSystemGate.h"
+#include "gameplay/weapon/PrimaryWeaponMountProfile.h"
 #include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
 
 #include <cstddef>
@@ -64,6 +65,9 @@ namespace vega
 		std::size_t AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier);
 		bool RemovePrimaryWeaponModifier(std::size_t modifierHandle);
 		uint64_t GetPrimaryWeaponModifierRevision() const { return mPrimaryWeaponModifierRevision; }
+		// Mount shape of the Primary fire (Turret Mount, Broadside Mount); the module applier sets it on every rebuild.
+		void SetPrimaryMountProfile(const PrimaryWeaponMountProfile& profile) { mPrimaryMountProfile = profile; }
+		const PrimaryWeaponMountProfile& GetPrimaryMountProfile() const { return mPrimaryMountProfile; }
 		// Activations of loadout abilities (Ability1-4), never primary fire or
 		// passives. Weapons compare it to grant empowered charges on cast.
 		uint64_t GetLoadoutAbilityActivationCount() const { return mLoadoutAbilityActivationCount; }
@@ -176,6 +180,7 @@ namespace vega
 		std::vector<std::pair<std::size_t, sas::AttributeModifier>> mPrimaryWeaponModifiers;
 		std::size_t mNextPrimaryWeaponModifierHandle = 1;
 		uint64_t mPrimaryWeaponModifierRevision = 0;
+		PrimaryWeaponMountProfile mPrimaryMountProfile;
 		uint64_t mLoadoutAbilityActivationCount = 0;
 		std::size_t mNextScopedAbilityRuleHandle = 1;
 		std::size_t mNextScopedAbilityCooldownRuleHandle = 1;

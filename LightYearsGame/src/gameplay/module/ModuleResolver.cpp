@@ -259,6 +259,18 @@ namespace vega
 					rule.primaryDamageMultiplier = ValueAtLevel(rule.primaryDamageMultiplier, rule.primaryDamageMultiplierByLevel, level);
 					effects.sustainedSpeedRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
+				for (const ModulePrimaryMountRule& mount : package.primaryMountRules)
+				{
+					if (mount.mode == ModulePrimaryMountMode::Turret) effects.primaryMount.turret = true;
+					else
+					{
+						const float multiplier = ValueAtLevel(mount.damageMultiplier, mount.damageMultiplierByLevel, level);
+						// Several Broadside placements still fire one volley per shot; the strongest coefficient applies.
+						effects.primaryMount.broadsideDamageMultiplier = effects.primaryMount.broadside ? std::max(effects.primaryMount.broadsideDamageMultiplier, multiplier) : multiplier;
+						effects.primaryMount.broadside = true;
+					}
+				}
+				if (sideFeature && package.primaryExecutionPriority) effects.primaryMount.executionPriority = true;
 				for (auto rule : package.statusRules.electricOverrides)
 				{
 					for (std::size_t index = 0; index < rule.damageTakenByStack.size() && index < rule.damageTakenByStackByLevel.size(); ++index)

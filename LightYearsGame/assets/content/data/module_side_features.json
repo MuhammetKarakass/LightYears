@@ -1432,6 +1432,15 @@
       }
     },
     {
+      "id": "Module.SideFeature.TurretMount.ExecutionPriority",
+      "displayName": "Execution Priority",
+      "description": "Turret auto-aim prefers the valid target with the lowest health percentage.",
+      "levelCount": 3,
+      "rules": {
+        "primaryExecutionPriority": true
+      }
+    },
+    {
       "id": "Module.SideFeature.EscapeVelocity.SlipstreamControl",
       "displayName": "Slipstream Control",
       "description": "While sonic, turn capability increases by {sonic.0.turnBonusPercent}%.",

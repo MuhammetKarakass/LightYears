@@ -3119,6 +3119,126 @@
       ]
     },
     {
+      "id": "Module.Primary.TurretMount.Epic",
+      "displayName": "Turret Mount",
+      "description": "Your Primary weapon aims itself at the nearest enemy in range, whichever way you face. Primary damage {damage.0.reductionPercent}% less.",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "family": "Ability.Primary",
+      "conflictsWith": [
+        "Module.Primary.BroadsideMount.Epic"
+      ],
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "PrimaryShotOnly",
+              "damageMultiplier": [
+                0.8,
+                0.83,
+                0.86
+              ]
+            }
+          ],
+          "primaryMountRules": [
+            {
+              "mode": "Turret"
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "PrimaryShotOnly",
+              "damageMultiplier": [
+                0.8,
+                0.83,
+                0.86
+              ]
+            }
+          ],
+          "primaryMountRules": [
+            {
+              "mode": "Turret"
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.TurretMount.ExecutionPriority"
+      ]
+    },
+    {
+      "id": "Module.Primary.BroadsideMount.Epic",
+      "displayName": "Broadside Mount",
+      "description": "Your Primary weapon fires from both sides of the ship instead of forward. Each side deals {mount.0.damagePercent}% of normal damage.",
+      "rarity": "Epic",
+      "levelCount": 3,
+      "family": "Ability.Primary",
+      "conflictsWith": [
+        "Module.Primary.TurretMount.Epic"
+      ],
+      "sizeLadder": [
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "primaryMountRules": [
+            {
+              "mode": "Broadside",
+              "damageMultiplier": [
+                0.7,
+                0.75,
+                0.8
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "Module.Offense.TrophyCore.Rare",
       "displayName": "Trophy Core",
       "description": "Each enemy killed by the adjacent Q/E/F/R ability permanently adds {runCounter.0.damagePerStackPercent}% damage for the run (elite {runCounter.0.elitePercent}%, boss {runCounter.0.bossPercent}%). Stacks stay with the module, so moving it next to another ability moves the bonus with it.",

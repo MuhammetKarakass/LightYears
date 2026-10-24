@@ -551,6 +551,16 @@ namespace vega
 	};
 	#include "gameplay/module/rules/ShieldBatteryRuptureRules.h"
 
+	enum class ModulePrimaryMountMode { Turret, Broadside };
+	// Epic Primary mounts. Turret aims the Primary at the nearest valid enemy in range, whichever way the ship faces; its damage is an
+	// ordinary PrimaryShotOnly damage rule. Broadside fires each volley from both sides instead of forward; damageMultiplier is the
+	// coefficient of each side volley (level table, positive). The fire behaviour lives in the Primary fire path, not in this rule.
+	struct ModulePrimaryMountRule
+	{
+		ModulePrimaryMountMode mode = ModulePrimaryMountMode::Turret;
+		float damageMultiplier = 1.f;
+		ModuleLevelTable<float> damageMultiplierByLevel;
+	};
 	struct ModuleRulePackage
 	{
 		List<ModuleAttributeModifier> attributeModifiers;
@@ -587,6 +597,9 @@ namespace vega
 		List<ModuleKillStackDamageRule> killStackDamageRules;
 		List<ModuleChargeRule> chargeRules;
 		List<EpicFamilyStatRule> familyStatRules;
+		List<ModulePrimaryMountRule> primaryMountRules;
+		// Execution Priority (Turret side feature only): the Turret prefers the valid target with the lowest health fraction.
+		bool primaryExecutionPriority = false;
 		// F1 Parçalama, side features only: the placement may split into one-cell fragments at the largest size. Layout only.
 		// Epic Defense (rules/EpicDefenseRules.h): Last Stand revive is a main package rule; hull-threshold rules are main (cooldown) or side (damage, movement).
 		List<ModuleReviveRule> reviveRules;
@@ -672,6 +685,7 @@ namespace vega
 			for (std::size_t i = 0; i < rules.ownerBurstRules.size(); ++i) if (!visit("ownerBurstRules.damageFractionOfMaxHealth", i, rules.ownerBurstRules[i].damageFractionOfMaxHealthByLevel) || !visit("ownerBurstRules.damage", i, rules.ownerBurstRules[i].damageByLevel)) return false;
 			for (std::size_t i = 0; i < rules.chargeRules.size(); ++i) if (!visit("chargeRules.chargePerLevel", i, rules.chargeRules[i].chargePerLevel)) return false;
 			for (std::size_t i = 0; i < rules.familyStatRules.size(); ++i) if (!visit("familyStatRules.perModule", i, rules.familyStatRules[i].perModuleByLevel)) return false;
+			for (std::size_t i = 0; i < rules.primaryMountRules.size(); ++i) if (!visit("primaryMountRules.damageMultiplier", i, rules.primaryMountRules[i].damageMultiplierByLevel)) return false;
 		return true;
 	}
 

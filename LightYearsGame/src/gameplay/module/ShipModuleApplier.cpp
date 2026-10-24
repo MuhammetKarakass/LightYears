@@ -266,6 +266,7 @@ namespace vega
 			if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->RefreshMovementAttributesFromRuntime();
 		}
 		SyncPrimaryWeaponModifiers();
+		mAbilities.SetPrimaryMountProfile(mResolved.primaryMount);
 		mAbilityRuleApplier.Replace(mResolved.abilityRules);
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mTriggerBuffRuleApplier.Replace(mResolved.triggerBuffs);

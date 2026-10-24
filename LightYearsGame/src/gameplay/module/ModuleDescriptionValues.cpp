@@ -199,6 +199,12 @@ namespace vega
 			out.Number(key + "damagePerStackPercent", rule.damagePerStackByLevel.ValueAtLevel(rule.damagePerStack, level) * 100.f);
 			out.Number(key + "moveSpeedPerStackPercent", rule.moveSpeedPerStackByLevel.ValueAtLevel(rule.moveSpeedPerStack, level) * 100.f);
 		}
+		for (std::size_t i = 0; i < rules.primaryMountRules.size(); ++i)
+		{
+			const auto& rule = rules.primaryMountRules[i]; const std::string key = "mount." + std::to_string(i) + ".";
+			const float multiplier = rule.damageMultiplierByLevel.ValueAtLevel(rule.damageMultiplier, level);
+			out.Number(key + "damageMultiplier", multiplier); out.Number(key + "damagePercent", multiplier * 100.f); out.Number(key + "reductionPercent", (1.f - multiplier) * 100.f);
+		}
 		for (std::size_t i = 0; i < rules.sustainedSpeedRules.size(); ++i)
 		{
 			const auto& rule = rules.sustainedSpeedRules[i]; const std::string key = "sonic." + std::to_string(i) + ".";
