@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <set>
 #include <optional>
@@ -189,21 +190,20 @@ namespace
 
 		const auto shipped = content::ModuleLoader::LoadFromFile(DataPath() / "modules.json");
 		report.Check(shipped.Succeeded(), "shipped modules.json loads through the real loader", Json(shipped.error));
-		// The only shipped conflict is the deliberate Rare pair; each member lists only the other.
-		const std::string shield = "Module.Movement.MomentumShield.Rare";
-		const std::string generator = "Module.Defense.ContinuousFieldGenerator.Rare";
-		const std::set<std::string> expected{ shield, generator };
-		std::set<std::string> declaring;
-		bool listsOnlyPartner = true;
+		// The only shipped conflicts are the deliberate pairs (Rare shield/generator, Epic Turret/Broadside); each member lists only its partner.
+		const std::map<std::string, std::string> expectedPartners{
+			{ "Module.Movement.MomentumShield.Rare", "Module.Defense.ContinuousFieldGenerator.Rare" },
+			{ "Module.Defense.ContinuousFieldGenerator.Rare", "Module.Movement.MomentumShield.Rare" },
+			{ "Module.Primary.TurretMount.Epic", "Module.Primary.BroadsideMount.Epic" },
+			{ "Module.Primary.BroadsideMount.Epic", "Module.Primary.TurretMount.Epic" } };
+		// Maps each declaring module to its single listed partner; an entry with several partners maps to an empty string.
+		std::map<std::string, std::string> declaring;
 		for (const ModuleDefinition& definition : shipped.definitions)
 		{
 			if (definition.conflictsWith.empty()) continue;
-			const std::string id = definition.moduleId.ToString();
-			declaring.insert(id);
-			const std::string partner = id == shield ? generator : shield;
-			listsOnlyPartner = listsOnlyPartner && definition.conflictsWith.size() == 1 && definition.conflictsWith[0].ToString() == partner;
+			declaring[definition.moduleId.ToString()] = definition.conflictsWith.size() == 1 ? definition.conflictsWith[0].ToString() : std::string{};
 		}
-		report.Check(declaring == expected && listsOnlyPartner, "shipped conflicts are exactly the MomentumShield and ContinuousFieldGenerator pair, each listing only the other");
+		report.Check(declaring == expectedPartners, "shipped conflicts are exactly the MomentumShield/ContinuousFieldGenerator and TurretMount/BroadsideMount pairs, each listing only its partner");
 	}
 
 	void RuleChecks(Report& report)

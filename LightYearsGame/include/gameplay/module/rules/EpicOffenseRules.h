@@ -146,8 +146,16 @@ namespace vega
 		int stormCharges = 0;
 		List<DirectHit> directHits;
 		List<BloodMark> bloodMarks;
-		std::mt19937 random;
+		// Heap-allocated on first use: an inline engine is ~5 KB and every combatant embeds this state.
+		std::unique_ptr<std::mt19937> random;
 	};
+
+	// Storm Capacitor target choice; the engine is created on first use so ships without the module never pay for it.
+	inline std::mt19937& EpicOffenseRandom(EpicOffenseState& state)
+	{
+		if (!state.random) state.random = std::make_unique<std::mt19937>(std::random_device{}());
+		return *state.random;
+	}
 
 	// Prism Core cycle position of the most recent Offense use: 0 Thermal, 1 Cryo, 2 Electric, 3 Kinetic. Before any use: 0.
 	inline int EpicPrismCycleIndex(const EpicOffenseState& state) { return state.prismUses > 0 ? (state.prismUses - 1) % 4 : 0; }

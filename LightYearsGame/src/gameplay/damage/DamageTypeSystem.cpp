@@ -638,7 +638,7 @@ namespace vega
 			if (!effects.stormCapacitor || !primaryHit || state.stormCharges < effects.stormChargesRequired) return;
 			state.stormCharges = 0;
 			auto victims = targeting::FindOpposingCombatants(*context.source->GetWorld(), *context.source, context.source->GetActorLocation(), effects.stormRadius, false);
-			std::shuffle(victims.begin(), victims.end(), state.random);
+			std::shuffle(victims.begin(), victims.end(), EpicOffenseRandom(state));
 			int struck = 0;
 			for (const auto& victim : victims)
 			{

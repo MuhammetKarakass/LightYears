@@ -9,7 +9,7 @@
 namespace
 {
 	using namespace uncommon_p6_e2e;
-	const char* const kDash = "Ability.Movement.Dash.Basic";
+	const char* const kCryoBola = "Ability.Utility.CryoBola.Basic";
 
 	ModuleEpicUtilityMovementRuntime& Epic(Fixture& f) { return f.ship->GetModuleApplier().GetEpicUtilityMovementRuntime(); }
 
@@ -39,17 +39,28 @@ namespace
 		const auto id = f.Install("Module.Utility.FieldMastery.Epic", 0, 1);
 		const List<GameplayTag> utility{ GameplayTags::Ability::Utility };
 		f.Equal("Utility abilities cannot be upgraded with Scrap while installed", 1.f, Epic(f).IsScrapUpgradeLocked(utility) ? 1.f : 0.f);
-		for (int use = 0; use < 14; ++use) Epic(f).OnAbilityUse(kDash, utility);
-		f.Equal("uses accumulate per ability", 14.f, Epic(f).GetUseCount(kDash));
-		Epic(f).OnAbilityUse(kDash, utility);
-		f.ship->GetModuleApplier().Tick(0.01f);
-		const auto* ability = f.ship->GetAbilitySystemComponent().GetAbilityById(kDash);
-		report.Check(ability != nullptr, "Field Mastery test uses the shipped loadout Movement ability as its Utility stand-in");
-		if (ability && ability->GetMaxLevel() >= 2)
+		// Cryo Bola is a shipped Utility ability (default loadout Ability1) and the real source of Utility uses here.
+		auto& abilities = f.ship->GetAbilitySystemComponent();
+		if (!abilities.GetAbilityById(kCryoBola))
 		{
-			f.Equal("the fifteenth use grants one run level", 2.f, static_cast<float>(ability->GetLevel()));
-			f.Equal("the threshold is spent", 0.f, Epic(f).GetUseCount(kDash));
+			if (auto* current = abilities.GetAbility(sas::AbilitySlot::Ability1)) report.Check(abilities.RemoveAbility(current->GetHandle()), "Field Mastery test replaces only the fixture's Q ability");
+			const auto* authored = content::AbilityContentCatalog::FindById(kCryoBola);
+			report.Check(authored != nullptr, "Field Mastery test uses shipped Cryo Bola content");
+			auto definition = *authored; definition.slot = sas::AbilitySlot::Ability1;
+			report.Check(abilities.GrantAbility(definition).IsValid(), "Field Mastery test grants the shipped Cryo Bola Utility ability");
 		}
+		const auto* ability = abilities.GetAbilityById(kCryoBola);
+		report.Check(ability != nullptr, "Field Mastery test resolves the Cryo Bola Utility ability on the ship");
+		report.Check(std::any_of(ability->GetDefinition().abilityTags.begin(), ability->GetDefinition().abilityTags.end(), [](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Utility); }), "Field Mastery test ability carries the Utility tag");
+		f.Equal("the granted Utility ability starts at run level one", 1.f, static_cast<float>(ability->GetLevel()));
+		for (int use = 0; use < 14; ++use) Epic(f).OnAbilityUse(kCryoBola, utility);
+		f.Equal("uses accumulate per ability", 14.f, Epic(f).GetUseCount(kCryoBola));
+		f.ship->GetModuleApplier().Tick(0.01f);
+		f.Equal("fourteen uses do not grant a run level yet", 1.f, static_cast<float>(ability->GetLevel()));
+		Epic(f).OnAbilityUse(kCryoBola, utility);
+		f.ship->GetModuleApplier().Tick(0.01f);
+		f.Equal("the fifteenth use grants one run level", 2.f, static_cast<float>(ability->GetLevel()));
+		f.Equal("the threshold is spent", 0.f, Epic(f).GetUseCount(kCryoBola));
 		f.Remove(id);
 		report.Check(!Epic(f).IsScrapUpgradeLocked(utility), "uninstall lifts the Scrap lock");
 	}

@@ -211,6 +211,8 @@ namespace
 			const auto inWindow = Enemy(f);
 			health.Regenerate(maximum);
 			Hit(*inWindow, f.ship.get(), 100.f, Scaled(), {}, { GameplayTags::Ability::Offense }, DamageDeliveryType::Direct, { DamageTypeSchema::Energy });
+			// Healing never overheals, so the owner starts below MaxHealth; otherwise the 1% heal is clamped to nothing.
+			health.ChangeHealth(-maximum * 0.5f);
 			ApplyCombatDamage(*inWindow, 100000.f, nullptr, { DamageTypeSchema::Energy }, Scaled());
 			const float beforeHeal = health.GetHealth();
 			f.ship->GetModuleApplier().Tick(0.1f);
@@ -234,6 +236,7 @@ namespace
 			const auto enemy = Enemy(f);
 			health.Regenerate(maximum);
 			Hit(*enemy, f.ship.get(), 100.f, Scaled(), {}, { GameplayTags::Ability::Offense }, DamageDeliveryType::Direct, { DamageTypeSchema::Energy });
+			health.ChangeHealth(-maximum * 0.5f);
 			f.ship->GetModuleApplier().Tick(5.f);
 			ApplyCombatDamage(*enemy, 100000.f, nullptr, { DamageTypeSchema::Energy }, Scaled());
 			const float beforeHeal = health.GetHealth();
@@ -282,6 +285,7 @@ int main(int argc, char** argv)
 		StormChecks(report, application);
 		AlternatingChecks(report, application);
 		BloodChecks(report, application);
+		report.artifact["passed"] = true;
 	}
 	catch (const std::exception& error) { report.artifact["error"] = error.what(); std::cerr << error.what() << '\n'; }
 	report.artifact["test"] = "EpicOffenseModulesE2E";
