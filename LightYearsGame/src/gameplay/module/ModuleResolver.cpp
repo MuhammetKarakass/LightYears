@@ -198,7 +198,7 @@ namespace vega
 					rule.amount = ValueAtLevel(rule.amount, rule.amountByLevel, level);
 					rule.chancePerLuck = ValueAtLevel(rule.chancePerLuck, rule.chancePerLuckByLevel, level);
 					rule.targetCount = ValueAtLevel(rule.targetCount, rule.targetCountByLevel, level);
-					if (rule.kind == ModuleEventActionKind::ReduceFamilyCooldowns || rule.kind == ModuleEventActionKind::ReduceLongestCooldown) rule.amount = std::min(1.f, rule.amount);
+					if (rule.kind == ModuleEventActionKind::ReduceFamilyCooldowns || rule.kind == ModuleEventActionKind::ReduceLongestCooldown || rule.kind == ModuleEventActionKind::RefundAllCooldownsFraction) rule.amount = std::min(1.f, rule.amount);
 					effects.eventActions.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
 				for (std::size_t index = 0; index < package.ownerAttributeRules.size(); ++index)

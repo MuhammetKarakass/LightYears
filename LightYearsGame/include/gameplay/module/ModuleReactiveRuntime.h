@@ -7,6 +7,7 @@
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/progression/RunGold.h"
 #include <functional>
+#include <memory>
 #include <optional>
 #include <random>
 
@@ -14,6 +15,7 @@ namespace vega
 {
 	class SpaceShip;
 	class LightYearsAbilitySystemComponent;
+	struct DamageHitGroup;
 	// Ship-owned RAII receiver. Event snapshots contain values, never actor identities.
 	class ModuleReactiveRuntime final
 	{
@@ -58,6 +60,7 @@ namespace vega
 		struct Event { ModuleTriggerKind trigger; sas::ContentId abilityId; };
 		struct DesiredRules { List<ResolvedModuleEventAction> actions; List<ResolvedModuleOwnerAttributeRule> attributes; List<ResolvedModuleEffects::MovementFade> fades; };
 		void OnEvent(const sas::AbilityEvent& event);
+		bool ConsumeCriticalHitGroup(const std::shared_ptr<DamageHitGroup>& hitGroup);
 		void NotifyOwnerKill(const sas::AbilityEvent& event);
 		void OnHealth(float amount, float health, float maximum);
 		void OnShield(float amount, float current, float maximum);
@@ -113,6 +116,8 @@ namespace vega
 		std::function<void(sas::AbilitySlot, ControlTargetClass)> mKillObserver;
 		std::function<void(const std::string&, const List<GameplayTag>&)> mAbilityUseObserver;
 		List<Event> mEvents;
+		// One count per Primary shot / beam delivery, never per pellet or beam tick.
+		List<std::weak_ptr<DamageHitGroup>> mCriticalHitGroups;
 		std::optional<DesiredRules> mPending;
 		std::mt19937 mRandom{ std::random_device{}() };
 		bool mBusy = false;

@@ -35,6 +35,8 @@ namespace vega
 		{
 			List<weak_ptr<ContinuousBeamVisualActor>> beams;
 			List<PendingBeamHit> pendingHits;
+			// Damage accumulated between combat ticks belongs to the last 0.25s step.
+			shared_ptr<DamageHitGroup> deliveryHitGroup;
 			float tickAccumulator{ 0.f };
 			unsigned int splitPulseCount = 0;
 			// Tags of the current heat region; pending damage is delivered with them.
@@ -95,10 +97,12 @@ namespace vega
 			beamState.pendingHits.push_back(PendingBeamHit{ target->GetUniqueID(), target, damage });
 		}
 
-		void DeliverPendingBeamDamage(const PrimaryWeaponExecutionContext& context, ContinuousBeamWeaponRuntimeState& beamState, const DamagePayload& payload)
+		void DeliverPendingBeamDamage(const PrimaryWeaponExecutionContext& context, ContinuousBeamWeaponRuntimeState& beamState, const DamagePayload& payload, bool newHitGroup = true)
 		{
 			auto deliveryPayload = payload;
-			deliveryPayload.hitGroup = std::make_shared<DamageHitGroup>(DamageHitGroup::Kind::PrimaryShot);
+			if (newHitGroup || !beamState.deliveryHitGroup)
+				beamState.deliveryHitGroup = std::make_shared<DamageHitGroup>(DamageHitGroup::Kind::PrimaryShot);
+			deliveryPayload.hitGroup = beamState.deliveryHitGroup;
 			const List<GameplayTag> damageTags = beamState.damageTags.empty()
 				? context.damageTags
 				: beamState.damageTags;
@@ -348,12 +352,14 @@ namespace vega
 							beamState,
 							DamageTypeSystem::BuildPayload(
 								beamState.damageTags.empty() ? context.damageTags : beamState.damageTags,
-								context.attributes)
+								context.attributes),
+							false
 						);
 					}
 				}
 				catch (...) { error = std::current_exception(); }
 				beamState.pendingHits.clear();
+				beamState.deliveryHitGroup.reset();
 				beamState.tickAccumulator = 0.f;
 				for (auto beam = beamState.beams.begin(); beam != beamState.beams.end();)
 				{
