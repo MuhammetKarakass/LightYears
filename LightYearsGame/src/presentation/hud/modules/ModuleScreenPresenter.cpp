@@ -144,7 +144,7 @@ namespace vega
 				}
 			}
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
-			out.family = FamilyLabel(definition->family);
+			out.family = FamilyLabel(installed ? ModuleResolver::GetPlacementFamily(rules, *definition, placement) : definition->family);
 			out.rarity = RarityLabel(definition->rarity);
 			out.isSystem = definition->systemCategory.IsValid();
 			const sas::AbilitySlot abilitySlot = AbilitySlotForModuleSystem(definition->systemCategory);

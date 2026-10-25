@@ -176,7 +176,9 @@ namespace vega
 	void ShipModuleApplier::OnLoadoutAbilitiesCleared()
 	{
 		if (mShuttingDown || !mHasApplied) return;
-		if (mMovementAbilityCount != mAbilities.CountLoadoutAbilitiesWithTag(GameplayTags::Ability::Movement)) Rebuild();
+		EpicOffenseEffects updated = mResolved.epicOffense;
+		ResolveMonochromeCoreLoadout(updated, mAbilities);
+		if (mMovementAbilityCount != mAbilities.CountLoadoutAbilitiesWithTag(GameplayTags::Ability::Movement) || updated.monochromeMultipliers != mResolved.epicOffense.monochromeMultipliers) Rebuild();
 	}
 
 	bool ShipModuleApplier::IsSystemEnabled(const GameplayTag& systemTag) const
@@ -278,6 +280,7 @@ namespace vega
 
 		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); } };
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
+		ResolveMonochromeCoreLoadout(mResolved.epicOffense, mAbilities);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
 		mCombatRuntime.SetModuleStatusRules(mResolved.statusRules);
 		mCombatRuntime.SetEpicOffenseEffects(mResolved.epicOffense);

@@ -159,6 +159,12 @@
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneEffects/*", R"field({})field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneEffects/*/zone", R"field("Module.Zone.Wings")field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneEffects/*/scope", R"field("FamilyOfZone")field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneEffects/*/kind", R"field("CooldownMultiplier")field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneEffects/*/seconds", R"field([0.25, 0.30, 0.35])field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/monochromeCoreRules", R"field([])field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/monochromeCoreRules/*", R"field({})field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/monochromeCoreRules/*/pairMultiplier", R"field([1.25, 1.30, 1.35])field");
+		if (schema.type == "module") Add(schema, "/sizeVariants/*/monochromeCoreRules/*/additionalAbilityBonus", R"field(0.25)field");
 		if (schema.type == "module") Add(schema, "/sizeVariants/*/zoneEffects/*/multiplier", R"field(0.79)field");
 		if (schema.type == "module") Add(schema, "/rarity", R"field("Uncommon")field");
 		if (schema.type == "module") Add(schema, "/levelCount", R"field(3)field");
@@ -567,6 +573,7 @@
 				"/sizeVariants/*/generatedRules/trailMines/*/maxActive",
 				"/sizeVariants/*/healthThresholdRules/*/cooldownRecoveryMultiplier",
 				"/sizeVariants/*/movementRules/*/thrustMultiplier",
+				"/sizeVariants/*/monochromeCoreRules/*/pairMultiplier",
 				"/sizeVariants/*/ownerAttributeRules/*/amount",
 				"/sizeVariants/*/ownerAttributeRules/*/maximumAmount",
 				"/sizeVariants/*/ownerBurstRules/*/damage",
@@ -602,7 +609,8 @@
 				"/sizeVariants/*/triggerBuffs/*/durationSeconds",
 				"/sizeVariants/*/triggerBuffs/*/modifiers/*/magnitude",
 				"/sizeVariants/*/triggerBuffs/*/movementSpeedMultiplier",
-				"/sizeVariants/*/zoneEffects/*/multiplier" })
+				"/sizeVariants/*/zoneEffects/*/multiplier",
+				"/sizeVariants/*/zoneEffects/*/seconds" })
 			{
 				const std::string path{ tablePath };
 				Add(schema, path, R"field([1, 1, 1])field", true);

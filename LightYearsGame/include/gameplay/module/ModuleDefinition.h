@@ -122,12 +122,16 @@ namespace vega
 		float seconds = 0.f;
 	};
 
+	enum class ModuleZoneEffectKind { CooldownMultiplier, PrimaryHitCooldownSeconds };
 	struct ModuleZoneEffect
 	{
 		GameplayTag zone;
 		ModuleCooldownScope scope = ModuleCooldownScope::FamilyOfZone;
 		float multiplier = 1.f;
 		ModuleLevelTable<float> multiplierByLevel;
+		ModuleZoneEffectKind kind = ModuleZoneEffectKind::CooldownMultiplier;
+		float seconds = 0.f;
+		ModuleLevelTable<float> secondsByLevel;
 	};
 
 	enum class ModuleEventActionKind { RestoreShield, GrantTemporaryShield, ShieldOverflowToHealth, RestoreHealth, RestoreHealthOverTime, RestoreAfterburner, ReduceAllCooldowns, ReduceFamilyCooldowns, ReduceLongestCooldown, ReduceLongestCooldownSeconds, RefundAllCooldownsFraction, RefundUsedCooldown, ApplyNearbyCryo, AwardGold };
@@ -682,7 +686,8 @@ namespace vega
 		}
 		for (std::size_t i = 0; i < rules.statusRules.thermalBursts.size(); ++i) if (!visit("statusRules.thermalBursts.damageFraction", i, rules.statusRules.thermalBursts[i].damageFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.statusRules.kineticConsumes.size(); ++i) if (!visit("statusRules.kineticConsumes.damageMultiplier", i, rules.statusRules.kineticConsumes[i].damageMultiplierByLevel)) return false;
-		for (std::size_t i = 0; i < rules.zoneEffects.size(); ++i) if (!visit("zoneEffects.multiplier", i, rules.zoneEffects[i].multiplierByLevel)) return false;
+		for (std::size_t i = 0; i < rules.zoneEffects.size(); ++i) if (!visit("zoneEffects.multiplier", i, rules.zoneEffects[i].multiplierByLevel) || !visit("zoneEffects.seconds", i, rules.zoneEffects[i].secondsByLevel)) return false;
+		for (std::size_t i = 0; i < rules.epicOffense.monochromeCores.size(); ++i) if (!visit("epicOffense.monochromeCores.pairMultiplier", i, rules.epicOffense.monochromeCores[i].pairMultiplierByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.ricochets.size(); ++i) if (!visit("generatedRules.ricochets.damageFraction", i, rules.generatedRules.ricochets[i].damageFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.guidedSalvos.size(); ++i) if (!visit("generatedRules.guidedSalvos.damageFraction", i, rules.generatedRules.guidedSalvos[i].damageFractionByLevel)) return false;
 		for (std::size_t i = 0; i < rules.generatedRules.delayedExplosions.size(); ++i) if (!visit("generatedRules.delayedExplosions.damageFraction", i, rules.generatedRules.delayedExplosions[i].damageFractionByLevel)) return false;

@@ -59,6 +59,11 @@ namespace vega
 		}
 		for (const auto& rule : rules.zoneEffects)
 		{
+			if (rule.kind == ModuleZoneEffectKind::PrimaryHitCooldownSeconds)
+			{
+				out.Number("cooldown." + rule.zone.name + ".seconds", rule.secondsByLevel.ValueAtLevel(rule.seconds, level));
+				continue;
+			}
 			const float multiplier = rule.multiplierByLevel.ValueAtLevel(rule.multiplier, level);
 			out.Number("cooldown." + rule.zone.name + ".multiplier", multiplier);
 			out.Number("cooldown." + rule.zone.name + ".reductionPercent", (1.f - multiplier) * 100.f);

@@ -48,6 +48,20 @@ namespace vega::content
 		{
 			ModuleEpicOffenseRules& rules = variant.epicOffense;
 			std::size_t index = 0;
+			for (const Json& entry : EpicEntries(object, context, "monochromeCoreRules"))
+			{
+				const std::string entryContext = context + ".monochromeCoreRules[" + std::to_string(index++) + "]";
+				RejectUnknownFields(entry, entryContext, { "pairMultiplier", "pairMultiplierGrowth", "additionalAbilityBonus" });
+				if (sideFeature) throw std::runtime_error(entryContext + " is main-package only");
+				ModuleMonochromeCoreRule rule;
+				rule.pairMultiplier = ParseLevelFloat(entry, "pairMultiplier", entryContext, minimumLevelCount, rule.pairMultiplierByLevel);
+				if (rule.pairMultiplier <= 1.f) throw std::runtime_error(entryContext + " pairMultiplier must exceed one");
+				ValidateTable(rule.pairMultiplierByLevel, entryContext, [](float value) { return value > 1.f; }, "pairMultiplier must exceed one");
+				rule.additionalAbilityBonus = ParseFiniteFloat(entry.at("additionalAbilityBonus"), entryContext);
+				if (rule.additionalAbilityBonus <= 0.f) throw std::runtime_error(entryContext + " additionalAbilityBonus must be positive");
+				rules.monochromeCores.push_back(std::move(rule));
+			}
+			index = 0;
 			for (const Json& entry : EpicEntries(object, context, "prismCoreRules"))
 			{
 				const std::string entryContext = context + ".prismCoreRules[" + std::to_string(index++) + "]";

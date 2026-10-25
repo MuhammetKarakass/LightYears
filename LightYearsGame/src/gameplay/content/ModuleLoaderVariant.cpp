@@ -222,6 +222,23 @@ namespace vega::content
 				effect.zone = ParseTag(entry.at("zone"), GameplayTagKind::ModuleZone, entryContext + ".zone");
 				if (!seenZones.insert(effect.zone.name).second) throw std::runtime_error(entryContext + " duplicates zone effect: " + effect.zone.name);
 				effect.scope = ParseCooldownScope(entry.at("scope").get<std::string>());
+				const std::string kind = entry.value("kind", "CooldownMultiplier");
+				const std::set<std::string> allowed = kind == "PrimaryHitCooldownSeconds"
+					? std::set<std::string>{ "zone", "scope", "kind", "seconds", "secondsGrowth" }
+					: std::set<std::string>{ "zone", "scope", "kind", "multiplier", "multiplierGrowth" };
+				for (const auto& field : entry.items())
+					if (!allowed.count(field.key())) throw std::runtime_error(entryContext + " unknown field: " + field.key());
+				if (kind == "PrimaryHitCooldownSeconds")
+				{
+					if (sideFeature || entry.contains("multiplier")) throw std::runtime_error(entryContext + " PrimaryHitCooldownSeconds is main-only and excludes multiplier");
+					effect.kind = ModuleZoneEffectKind::PrimaryHitCooldownSeconds;
+					effect.seconds = ParseLevelFloat(entry, "seconds", entryContext + ".seconds", minimumLevelCount, effect.secondsByLevel);
+					if (effect.seconds <= 0.f) throw std::runtime_error(entryContext + " seconds must be positive");
+					ValidateTable(effect.secondsByLevel, entryContext, [](float value) { return value > 0.f; }, "seconds must be positive");
+					variant.zoneEffects.push_back(std::move(effect));
+					continue;
+				}
+				if (kind != "CooldownMultiplier" || entry.contains("seconds")) throw std::runtime_error(entryContext + " invalid zone effect kind/fields");
 				effect.multiplier = ParseLevelFloat(entry, "multiplier", entryContext + ".multiplier", minimumLevelCount, effect.multiplierByLevel);
 				if (effect.multiplier <= 0.f || effect.multiplier > 1.f)
 					throw std::runtime_error(entryContext + " multiplier must be in (0, 1]");

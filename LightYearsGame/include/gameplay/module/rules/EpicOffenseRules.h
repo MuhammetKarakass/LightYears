@@ -2,6 +2,7 @@
 
 #include "framework/Core.h"
 #include "gameplay/module/ModuleLevelTable.h"
+#include "gameplay/tags/GameplayTags.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -10,6 +11,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <utility>
 
 namespace vega
 {
@@ -73,6 +75,13 @@ namespace vega
 		float healWindowSeconds = 6.f;
 	};
 
+	struct ModuleMonochromeCoreRule
+	{
+		float pairMultiplier = 1.f;
+		ModuleLevelTable<float> pairMultiplierByLevel;
+		float additionalAbilityBonus = 0.f;
+	};
+
 	// Package-level list of Epic Offense rules, one entry per declared rule.
 	struct ModuleEpicOffenseRules
 	{
@@ -82,10 +91,11 @@ namespace vega
 		List<ModuleBloodContractRule> bloodContracts;
 		List<ModuleClotArmorRule> clotArmors;
 		List<ModuleDebtCollectionRule> debtCollections;
+		List<ModuleMonochromeCoreRule> monochromeCores;
 
 		bool Empty() const
 		{
-			return prismCores.empty() && stormCapacitors.empty() && alternatingCurrents.empty() && bloodContracts.empty() && clotArmors.empty() && debtCollections.empty();
+			return prismCores.empty() && stormCapacitors.empty() && alternatingCurrents.empty() && bloodContracts.empty() && clotArmors.empty() && debtCollections.empty() && monochromeCores.empty();
 		}
 	};
 
@@ -118,8 +128,11 @@ namespace vega
 
 		float clotArmorPerCost = 0.f;
 		float clotArmorSeconds = 0.f;
+		float monochromePairMultiplier = 1.f;
+		float monochromeAdditionalAbilityBonus = 0.f;
+		List<std::pair<GameplayTag, float>> monochromeMultipliers;
 
-		bool Empty() const { return !prismCore && !stormCapacitor && !alternatingCurrent && !bloodContract && clotArmorPerCost <= 0.f && debtHealWindowSeconds <= 0.f; }
+		bool Empty() const { return !prismCore && !stormCapacitor && !alternatingCurrent && !bloodContract && clotArmorPerCost <= 0.f && debtHealWindowSeconds <= 0.f && monochromePairMultiplier <= 1.f; }
 		float EffectiveBloodHealWindowSeconds() const { return std::max(bloodHealWindowSeconds, debtHealWindowSeconds); }
 	};
 

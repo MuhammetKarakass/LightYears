@@ -415,6 +415,16 @@ namespace vega
 						if (!placementZoneEntry || placementZoneEntry->anyFamily || !placementZoneEntry->family.IsValid()) continue;
 						family = placementZoneEntry->family;
 					}
+					if (source.kind == ModuleZoneEffectKind::PrimaryHitCooldownSeconds)
+					{
+						ModuleEventAction action;
+						action.trigger = ModuleTriggerKind::PrimaryHit;
+						action.kind = ModuleEventActionKind::ReduceAllCooldowns;
+						action.amount = ValueAtLevel(source.seconds, source.secondsByLevel, level);
+						action.abilityFamily = family;
+						effects.eventActions.push_back({ placement.instanceId, NamespacedRuleIndex(package.eventActions.size() + ruleIndex, sideFeature), std::move(action) });
+						continue;
+					}
 					const float multiplier = ValueAtLevel(source.multiplier, source.multiplierByLevel, level);
 					effects.cooldownRules.push_back({ placement.instanceId, NamespacedRuleIndex(ruleIndex, sideFeature),
 						source.zone, source.scope, family, multiplier });
@@ -422,12 +432,21 @@ namespace vega
 			}
 		}
 
+		GameplayTag GetPlacementFamily(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
+		{
+			if (placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module.sizeVariants.size()) return module.family;
+			const auto& effects = module.sizeVariants[static_cast<std::size_t>(placement.variantIndex)].zoneEffects;
+			if (std::none_of(effects.begin(), effects.end(), [](const ModuleZoneEffect& effect) { return effect.kind == ModuleZoneEffectKind::PrimaryHitCooldownSeconds; })) return module.family;
+			const auto* zone = rules.zoneTable.FindZone(GetPlacementZone(rules, module, placement));
+			return zone && !zone->anyFamily ? zone->family : GameplayTag{};
+		}
+
 		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
 		{
-			const auto zoneLevelBonus = [&rules, &module](const GameplayTag& zone) -> int
+			const auto zoneLevelBonus = [&rules, &module, &placement](const GameplayTag& zone) -> int
 			{
 				const ModuleZoneEntry* entry = zone.IsValid() ? rules.zoneTable.FindZone(zone) : nullptr;
-				return entry && (entry->anyFamily || entry->family == module.family) ? entry->levelBonus : 0;
+				return entry && (entry->anyFamily || entry->family == GetPlacementFamily(rules, module, placement)) ? entry->levelBonus : 0;
 			};
 			int bonus = 0;
 			if (placement.fragmented)

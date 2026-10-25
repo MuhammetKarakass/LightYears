@@ -60,7 +60,7 @@ namespace vega
 		struct Event { ModuleTriggerKind trigger; sas::ContentId abilityId; };
 		struct DesiredRules { List<ResolvedModuleEventAction> actions; List<ResolvedModuleOwnerAttributeRule> attributes; List<ResolvedModuleEffects::MovementFade> fades; };
 		void OnEvent(const sas::AbilityEvent& event);
-		bool ConsumeCriticalHitGroup(const std::shared_ptr<DamageHitGroup>& hitGroup);
+		bool ConsumePrimaryHitGroup(const std::shared_ptr<DamageHitGroup>& hitGroup, ModuleTriggerKind trigger);
 		void NotifyOwnerKill(const sas::AbilityEvent& event);
 		void OnHealth(float amount, float health, float maximum);
 		void OnShield(float amount, float current, float maximum);
@@ -118,6 +118,7 @@ namespace vega
 		List<Event> mEvents;
 		// One count per Primary shot / beam delivery, never per pellet or beam tick.
 		List<std::weak_ptr<DamageHitGroup>> mCriticalHitGroups;
+		List<std::weak_ptr<DamageHitGroup>> mPrimaryHitGroups;
 		std::optional<DesiredRules> mPending;
 		std::mt19937 mRandom{ std::random_device{}() };
 		bool mBusy = false;

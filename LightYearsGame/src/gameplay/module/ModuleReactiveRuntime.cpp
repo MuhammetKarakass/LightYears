@@ -371,15 +371,15 @@ namespace vega
 		mKillObserver(ability->GetDefinition().slot, target ? target->GetControlTargetClass() : ControlTargetClass::Normal);
 	}
 
-	bool ModuleReactiveRuntime::ConsumeCriticalHitGroup(const std::shared_ptr<DamageHitGroup>& hitGroup)
+	bool ModuleReactiveRuntime::ConsumePrimaryHitGroup(const std::shared_ptr<DamageHitGroup>& hitGroup, ModuleTriggerKind trigger)
 	{
 		if (!hitGroup) return false;
-		mCriticalHitGroups.erase(std::remove_if(mCriticalHitGroups.begin(), mCriticalHitGroups.end(),
-			[](const std::weak_ptr<DamageHitGroup>& weak) { return weak.expired(); }), mCriticalHitGroups.end());
-		if (std::any_of(mCriticalHitGroups.begin(), mCriticalHitGroups.end(),
+		auto& groups = trigger == ModuleTriggerKind::CriticalHit ? mCriticalHitGroups : mPrimaryHitGroups;
+		groups.erase(std::remove_if(groups.begin(), groups.end(),
+			[](const std::weak_ptr<DamageHitGroup>& weak) { return weak.expired(); }), groups.end());
+		if (std::any_of(groups.begin(), groups.end(),
 			[&hitGroup](const std::weak_ptr<DamageHitGroup>& weak) { return weak.lock() == hitGroup; })) return false;
-		if (mCriticalHitGroups.size() >= 256) mCriticalHitGroups.erase(mCriticalHitGroups.begin());
-		mCriticalHitGroups.push_back(hitGroup);
+		groups.push_back(hitGroup);
 		return true;
 	}
 
@@ -396,12 +396,14 @@ namespace vega
 		if (event.eventTag == GameplayTags::Event::Owner::DamageTaken && context && context->target == mShip && context->appliedDamage > 0.f) mDamageFreeSeconds = 0.f;
 		if (mActions.empty()) return;
 		if (context && context->payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed) return;
-		if (event.eventTag == GameplayTags::Event::Source::DamageDealt && context && context->wasCritical &&
+		if (event.eventTag == GameplayTags::Event::Source::DamageDealt && context &&
 			context->source == &mAbilities.GetOwner() && !context->payload.skipModuleDamageRules &&
 			context->appliedDamage > 0.f && context->payload.hitGroup &&
-			context->payload.hitGroup->kind == DamageHitGroup::Kind::PrimaryShot &&
-			ConsumeCriticalHitGroup(context->payload.hitGroup))
-			mEvents.push_back({ ModuleTriggerKind::CriticalHit, event.sourceAbilityId });
+			context->payload.hitGroup->kind == DamageHitGroup::Kind::PrimaryShot)
+		{
+			if (ConsumePrimaryHitGroup(context->payload.hitGroup, ModuleTriggerKind::PrimaryHit)) mEvents.push_back({ ModuleTriggerKind::PrimaryHit, event.sourceAbilityId });
+			if (context->wasCritical && ConsumePrimaryHitGroup(context->payload.hitGroup, ModuleTriggerKind::CriticalHit)) mEvents.push_back({ ModuleTriggerKind::CriticalHit, event.sourceAbilityId });
+		}
 		const ModuleTriggerKind trigger = ModuleTriggerFromEventTag(event.eventTag);
 		if (trigger == ModuleTriggerKind::KillConfirmed)
 		{

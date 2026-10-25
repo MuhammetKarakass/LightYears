@@ -292,6 +292,13 @@ namespace vega::content
 				if (failureReason) *failureReason = context + " FamilyOfZone cooldown requires a zone with one family: " + effect.zone.name;
 				return false;
 			}
+			if (effect.kind == ModuleZoneEffectKind::PrimaryHitCooldownSeconds &&
+				((effect.scope == ModuleCooldownScope::FamilyOfZone && zone->family == GameplayTags::Ability::Primary) ||
+				(effect.scope == ModuleCooldownScope::AllActiveNonPrimary && !zone->anyFamily)))
+			{
+				if (failureReason) *failureReason = context + " hit refunds require a non-Primary family or an all-family zone";
+				return false;
+			}
 		}
 		return true;
 	}

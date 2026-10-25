@@ -46,14 +46,39 @@ namespace vega
 		}
 	}
 
+	void ResolveMonochromeCoreLoadout(EpicOffenseEffects& effects, const LightYearsAbilitySystemComponent& abilities)
+	{
+		effects.monochromeMultipliers.clear();
+		if (effects.monochromePairMultiplier <= 1.f) return;
+		List<std::pair<GameplayTag, int>> counts;
+		for (const auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+		{
+			const auto* ability = abilities.GetAbility(slot);
+			if (!ability) continue;
+			List<GameplayTag> seen;
+			for (const auto& type : ability->GetDefinition().damageTags)
+			{
+				if (std::find(seen.begin(), seen.end(), type) != seen.end()) continue;
+				seen.push_back(type);
+				const auto found = std::find_if(counts.begin(), counts.end(), [&type](const auto& entry) { return entry.first == type; });
+				if (found == counts.end()) counts.push_back({ type, 1 }); else ++found->second;
+			}
+		}
+		for (const auto& [type, count] : counts)
+			if (count >= 2) effects.monochromeMultipliers.push_back({ type, effects.monochromePairMultiplier + static_cast<float>(count - 2) * effects.monochromeAdditionalAbilityBonus });
+	}
+
 	float ComputeEpicOffenseOutgoingMultiplier(EpicOffenseState& state, const EpicOffenseEffects& effects, Actor& owner, Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType)
 	{
-		if (!effects.bloodContract && !effects.alternatingCurrent) return 1.f;
+		if (!effects.bloodContract && !effects.alternatingCurrent && effects.monochromeMultipliers.empty()) return 1.f;
 		const bool offense = HasTagMatch(sourceAbilityTags, GameplayTags::Ability::Offense);
 		const bool primary = HasTagMatch(sourceAbilityTags, GameplayTags::Ability::Primary);
 		const std::uint64_t targetId = target.GetUniqueID();
 		const std::weak_ptr<Actor> weakTarget = target.GetWeakActor();
 		float multiplier = 1.f;
+		// A multi-tag hit takes the strongest matching type once; it never compounds one hit's types.
+		for (const auto& [type, value] : effects.monochromeMultipliers)
+			if (HasTagMatch(damageTags, type)) multiplier = std::max(multiplier, value);
 
 		// Blood Contract: Offense damage (not periodic ticks) scales with missing health, and the hit marks the target for the heal window.
 		if (effects.bloodContract && offense && deliveryType != DamageDeliveryType::Periodic)

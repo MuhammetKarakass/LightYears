@@ -11,6 +11,8 @@ namespace vega
 	class Actor;
 	class CombatRuntime;
 	class LightYearsAbilitySystemComponent;
+	// Counts each installed Q/E/F/R ability once per distinct authored damage tag; no type means no count.
+	void ResolveMonochromeCoreLoadout(EpicOffenseEffects& effects, const LightYearsAbilitySystemComponent& abilities);
 
 	// Outgoing damage multiplier of one owner hit from Blood Contract (Offense damage scaled by missing health) and Alternating Current
 	// (a direct ability hit after a different damage type on the same enemy). Records the hit for later comparison; call once per hit.

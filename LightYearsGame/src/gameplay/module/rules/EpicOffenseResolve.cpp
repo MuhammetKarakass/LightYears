@@ -8,6 +8,11 @@ namespace vega
 	// multipliers and the cost fraction start from their first authored value, so a zero default never caps them.
 	void MergeEpicOffenseRules(EpicOffenseEffects& effects, const ModuleEpicOffenseRules& rules, int level)
 	{
+		for (const auto& rule : rules.monochromeCores)
+		{
+			effects.monochromePairMultiplier = std::max(effects.monochromePairMultiplier, rule.pairMultiplierByLevel.ValueAtLevel(rule.pairMultiplier, level));
+			effects.monochromeAdditionalAbilityBonus = std::max(effects.monochromeAdditionalAbilityBonus, rule.additionalAbilityBonus);
+		}
 		for (const ModulePrismCoreRule& rule : rules.prismCores)
 		{
 			effects.prismCore = true;
@@ -52,6 +57,13 @@ namespace vega
 
 	void VisitEpicOffenseDescriptionValues(const ModuleEpicOffenseRules& rules, int level, const std::function<void(const std::string&, float)>& visitor)
 	{
+		for (std::size_t i = 0; i < rules.monochromeCores.size(); ++i)
+		{
+			const auto& rule = rules.monochromeCores[i];
+			const std::string key = "monochrome." + std::to_string(i) + ".";
+			visitor(key + "pairMultiplier", rule.pairMultiplierByLevel.ValueAtLevel(rule.pairMultiplier, level));
+			visitor(key + "additionalAbilityBonus", rule.additionalAbilityBonus);
+		}
 		for (std::size_t i = 0; i < rules.prismCores.size(); ++i)
 		{
 			const ModulePrismCoreRule& rule = rules.prismCores[i];

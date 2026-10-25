@@ -15,7 +15,8 @@ namespace vega
 		DamageTaken,
 		SourceDamageDealt,
 		KillConfirmed,
-		CriticalHit
+		CriticalHit,
+		PrimaryHit
 	};
 
 	enum class ModuleDamageCondition
@@ -90,6 +91,7 @@ namespace vega
 		case ModuleTriggerKind::ShieldBroken:
 		case ModuleTriggerKind::KillConfirmed:
 		case ModuleTriggerKind::CriticalHit:
+		case ModuleTriggerKind::PrimaryHit:
 			return true;
 		case ModuleTriggerKind::DamageTaken:
 		case ModuleTriggerKind::SourceDamageDealt:
@@ -113,6 +115,7 @@ namespace vega
 		case ModuleTriggerKind::DamageTaken:
 		case ModuleTriggerKind::SourceDamageDealt:
 		case ModuleTriggerKind::CriticalHit:
+		case ModuleTriggerKind::PrimaryHit:
 			return ModuleTriggerEventTagsMatch(requiredEventTags, event.payloadTags);
 		case ModuleTriggerKind::ShieldBroken:
 		case ModuleTriggerKind::KillConfirmed:

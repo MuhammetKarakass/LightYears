@@ -21,7 +21,7 @@ namespace vega
 			{
 				if (other.instanceId == ownerInstanceId) continue;
 				const ModuleDefinition* module = rules.lookup ? rules.lookup(other.moduleId) : nullptr;
-				if (module && module->family == family && !module->systemCategory.IsValid()) ++count;
+				if (module && ModuleResolver::GetPlacementFamily(rules, *module, other) == family && !module->systemCategory.IsValid()) ++count;
 			}
 			return count;
 		}

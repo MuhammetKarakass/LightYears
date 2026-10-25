@@ -166,6 +166,8 @@ namespace vega
 
 	namespace ModuleResolver
 	{
+		// Zone-driven hit refunds adopt the placement's family; an all-family zone has no single family.
+		GameplayTag GetPlacementFamily(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement);
 		// Level bonus for one placement from its zone: a whole placement takes its single zone (0 when the cells are mixed),
 		// a fragmented placement takes the lowest cell bonus, so its worst fragment decides. Clamped to [0, kMaxZoneLevelBonus].
 		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement);
