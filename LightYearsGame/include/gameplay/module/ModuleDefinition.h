@@ -126,7 +126,7 @@ namespace vega
 		ModuleLevelTable<float> multiplierByLevel;
 	};
 
-	enum class ModuleEventActionKind { RestoreShield, GrantTemporaryShield, ShieldOverflowToHealth, RestoreHealth, RestoreHealthOverTime, RestoreAfterburner, ReduceAllCooldowns, ReduceFamilyCooldowns, ReduceLongestCooldown, RefundUsedCooldown, ApplyNearbyCryo, AwardGold };
+	enum class ModuleEventActionKind { RestoreShield, GrantTemporaryShield, ShieldOverflowToHealth, RestoreHealth, RestoreHealthOverTime, RestoreAfterburner, ReduceAllCooldowns, ReduceFamilyCooldowns, ReduceLongestCooldown, ReduceLongestCooldownSeconds, RefundAllCooldownsFraction, RefundUsedCooldown, ApplyNearbyCryo, AwardGold };
 	struct ModuleEventAction
 	{
 		ModuleTriggerKind trigger = ModuleTriggerKind::KillConfirmed;

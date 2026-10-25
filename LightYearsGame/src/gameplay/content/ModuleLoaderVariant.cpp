@@ -245,6 +245,8 @@ namespace vega::content
 				else if (kind == "ReduceAllCooldowns") action.kind = ModuleEventActionKind::ReduceAllCooldowns;
 				else if (kind == "ReduceFamilyCooldowns") action.kind = ModuleEventActionKind::ReduceFamilyCooldowns;
 				else if (kind == "ReduceLongestCooldown") action.kind = ModuleEventActionKind::ReduceLongestCooldown;
+				else if (kind == "ReduceLongestCooldownSeconds") action.kind = ModuleEventActionKind::ReduceLongestCooldownSeconds;
+				else if (kind == "RefundAllCooldownsFraction") action.kind = ModuleEventActionKind::RefundAllCooldownsFraction;
 				else if (kind == "RefundUsedCooldown") action.kind = ModuleEventActionKind::RefundUsedCooldown;
 				else if (kind == "ApplyNearbyCryo") action.kind = ModuleEventActionKind::ApplyNearbyCryo;
 				else if (kind == "AwardGold") action.kind = ModuleEventActionKind::AwardGold;
@@ -256,12 +258,15 @@ namespace vega::content
 				}
 				const bool refund = action.kind == ModuleEventActionKind::RefundUsedCooldown;
 				const bool cryo = action.kind == ModuleEventActionKind::ApplyNearbyCryo;
+				const bool allFraction = action.kind == ModuleEventActionKind::RefundAllCooldownsFraction;
+				const bool longestSeconds = action.kind == ModuleEventActionKind::ReduceLongestCooldownSeconds;
 				const bool abilityRestore = action.trigger == ModuleTriggerKind::AbilityActivated && (action.kind == ModuleEventActionKind::RestoreShield || action.kind == ModuleEventActionKind::RestoreHealth || action.kind == ModuleEventActionKind::GrantTemporaryShield || action.kind == ModuleEventActionKind::RestoreHealthOverTime);
-				if (!abilityRestore && action.trigger != (refund ? ModuleTriggerKind::AbilityActivated : cryo ? ModuleTriggerKind::DamageTaken : ModuleTriggerKind::KillConfirmed))
+				const ModuleTriggerKind expectedTrigger = refund ? ModuleTriggerKind::AbilityActivated : (cryo || allFraction) ? ModuleTriggerKind::DamageTaken : longestSeconds ? ModuleTriggerKind::CriticalHit : ModuleTriggerKind::KillConfirmed;
+				if (!abilityRestore && action.trigger != expectedTrigger)
 					throw std::runtime_error(context + " incompatible event action trigger");
 				action.requiredEventTags = ParseRequiredEventTags(entry.value("requiredEventTags", Json::array()), action.trigger, context + ".eventActions.requiredEventTags");
 				action.amount = ParseLevelFloat(entry, "amount", context + ".eventActions.amount", minimumLevelCount, action.amountByLevel);
-				const bool seconds = action.kind == ModuleEventActionKind::ReduceAllCooldowns;
+				const bool seconds = action.kind == ModuleEventActionKind::ReduceAllCooldowns || longestSeconds;
 				const auto validAmount = [seconds, cryo, gold = action.kind == ModuleEventActionKind::AwardGold](float value) { return value > 0.f && ((cryo || gold) ? value <= static_cast<float>(std::numeric_limits<int>::max() / 2) && std::floor(value) == value : seconds || value <= 1.f); };
 				if (!validAmount(action.amount)) throw std::runtime_error(context + " invalid event action amount");
 				ValidateTable(action.amountByLevel, context, validAmount, "invalid event action amount");
@@ -296,6 +301,12 @@ namespace vega::content
 					action.targetCount = ParsePositiveLevelInt(entry, "targetCount", context + ".targetCount", minimumLevelCount, action.targetCountByLevel);
 					if (action.radius <= 0.f || action.cooldownSeconds <= 0.f || action.everyCount != 1)
 						throw std::runtime_error(context + " nearby Cryo requires positive radius/cooldown and everyCount=1");
+				}
+				else if (action.kind == ModuleEventActionKind::RefundAllCooldownsFraction)
+				{
+					action.cooldownSeconds = ParseFiniteFloat(entry.at("cooldownSeconds"), context + ".cooldownSeconds");
+					if (action.cooldownSeconds <= 0.f || action.everyCount != 1)
+						throw std::runtime_error(context + " all-cooldown refund requires positive cooldown and everyCount=1");
 				}
 				else if (action.kind == ModuleEventActionKind::RestoreHealthOverTime)
 				{

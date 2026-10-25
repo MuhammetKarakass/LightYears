@@ -2072,6 +2072,39 @@
       ]
     },
     {
+      "id": "Module.Primary.CriticalSync.Uncommon",
+      "displayName": "Critical Sync",
+      "description": "Every {action.0.everyCount} critical Primary hits, reduce the longest ability cooldown by {action.0.amount} seconds.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Primary",
+      "sizeLadder": [
+        1
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "CriticalHit",
+              "kind": "ReduceLongestCooldownSeconds",
+              "amount": [
+                1.0,
+                1.2,
+                1.4
+              ],
+              "everyCount": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "Module.Defense.HealthBridge.Uncommon",
       "displayName": "Health Bridge",
       "description": "Adjacent abilities add {damage.0.maxHealthDamagePercent}% of your Max Health to direct hits. Damage over time is excluded.",
@@ -4701,6 +4734,43 @@
       ],
       "sideFeatures": [
         "Module.SideFeature.GoldPlating.GildedFrame"
+      ]
+    },
+    {
+      "id": "Module.Defense.ReflexCircuit.Rare",
+      "displayName": "Reflex Circuit",
+      "description": "Taking damage refunds {action.0.amountPercent}% of every ability cooldown. Can trigger once every {action.0.cooldownSeconds} seconds.",
+      "family": "Ability.Defense",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "DamageTaken",
+              "kind": "RefundAllCooldownsFraction",
+              "amount": [
+                0.15,
+                0.18,
+                0.21
+              ],
+              "cooldownSeconds": 3
+            }
+          ]
+        }
       ]
     },
     {

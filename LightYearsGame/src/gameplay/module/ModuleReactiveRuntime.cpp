@@ -358,6 +358,18 @@ namespace vega
 		mKillObserver(ability->GetDefinition().slot, target ? target->GetControlTargetClass() : ControlTargetClass::Normal);
 	}
 
+	bool ModuleReactiveRuntime::ConsumeCriticalHitGroup(const std::shared_ptr<DamageHitGroup>& hitGroup)
+	{
+		if (!hitGroup) return false;
+		mCriticalHitGroups.erase(std::remove_if(mCriticalHitGroups.begin(), mCriticalHitGroups.end(),
+			[](const std::weak_ptr<DamageHitGroup>& weak) { return weak.expired(); }), mCriticalHitGroups.end());
+		if (std::any_of(mCriticalHitGroups.begin(), mCriticalHitGroups.end(),
+			[&hitGroup](const std::weak_ptr<DamageHitGroup>& weak) { return weak.lock() == hitGroup; })) return false;
+		if (mCriticalHitGroups.size() >= 256) mCriticalHitGroups.erase(mCriticalHitGroups.begin());
+		mCriticalHitGroups.push_back(hitGroup);
+		return true;
+	}
+
 	void ModuleReactiveRuntime::OnEvent(const sas::AbilityEvent& event)
 	{
 		if (!mShuttingDown && mShip && mKillObserver && ModuleTriggerFromEventTag(event.eventTag) == ModuleTriggerKind::KillConfirmed) NotifyOwnerKill(event);
@@ -369,6 +381,12 @@ namespace vega
 		if (mShuttingDown || !mShip || mActions.empty()) return;
 		const auto* context = event.GetContext<DamageContext>();
 		if (context && context->payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed) return;
+		if (event.eventTag == GameplayTags::Event::Source::DamageDealt && context && context->wasCritical &&
+			context->source == &mAbilities.GetOwner() && !context->payload.skipModuleDamageRules &&
+			context->appliedDamage > 0.f && context->payload.hitGroup &&
+			context->payload.hitGroup->kind == DamageHitGroup::Kind::PrimaryShot &&
+			ConsumeCriticalHitGroup(context->payload.hitGroup))
+			mEvents.push_back({ ModuleTriggerKind::CriticalHit, event.sourceAbilityId });
 		const ModuleTriggerKind trigger = ModuleTriggerFromEventTag(event.eventTag);
 		if (trigger == ModuleTriggerKind::KillConfirmed)
 		{
@@ -385,7 +403,11 @@ namespace vega
 			const auto* damage = event.GetContext<DamageContext>();
 			if (!damage || damage->payload.skipModuleDamageRules || damage->target != mShip || damage->appliedDamage <= 0.f) return;
 		}
-		else return;
+		else
+		{
+			Flush();
+			return;
+		}
 		mEvents.push_back({ trigger, event.sourceAbilityId });
 		Flush();
 	}
@@ -649,6 +671,28 @@ namespace vega
 			}
 			else if (rule.kind == ModuleEventActionKind::RestoreHealth) mShip->GetHealthComponent().Regenerate(mShip->GetHealthComponent().GetMaxHealth() * rule.amount);
 			else if (rule.kind == ModuleEventActionKind::RestoreAfterburner) mShip->GetEnergyComponent().Restore(mShip->GetEnergyComponent().GetMaxEnergy() * rule.amount);
+			else if (rule.kind == ModuleEventActionKind::ReduceLongestCooldownSeconds)
+			{
+				GameAbility* longest = nullptr;
+				for (auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+				{
+					GameAbility* ability = mAbilities.GetAbility(slot);
+					if (!ability || ability->GetCooldownRemaining() <= 0.f) continue;
+					if (!longest || ability->GetCooldownRemaining() > longest->GetCooldownRemaining()) longest = ability;
+				}
+				if (longest) longest->ReduceCooldownRemaining(rule.amount);
+			}
+			else if (rule.kind == ModuleEventActionKind::RefundAllCooldownsFraction)
+			{
+				state.cooldownRemaining = rule.cooldownSeconds;
+				for (auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+				{
+					GameAbility* ability = mAbilities.GetAbility(slot);
+					if (!ability || ability->GetCooldownRemaining() <= 0.f) continue;
+					ability->ReduceCooldownRemaining(ability->GetCooldownRemaining() * rule.amount);
+					if (mPending) break;
+				}
+			}
 			else
 			{
 				GameAbility* longest = nullptr;
