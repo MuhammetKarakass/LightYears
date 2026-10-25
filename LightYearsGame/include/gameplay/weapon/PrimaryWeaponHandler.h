@@ -119,6 +119,13 @@ namespace vega
 
 	// Base damage plus the empowered bonus when this shot is empowered.
 	float ResolvePrimaryWeaponShotDamage(const PrimaryWeaponExecutionContext& context);
+	struct PrimaryWeaponEmission
+	{
+		sf::Vector2f origin;
+		float rotation = 0.f;
+		float damageMultiplier = 1.f;
+	};
+	List<PrimaryWeaponEmission> ResolvePrimaryWeaponEmissions(const PrimaryWeaponExecutionContext& context, bool firstMuzzleOnly = false);
 
 	class PrimaryWeaponHandler
 	{

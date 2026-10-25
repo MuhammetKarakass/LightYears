@@ -1,5 +1,6 @@
 #include "presentation/hud/vitals/VitalsView.h"
 #include "widget/UIStyle.h"
+#include <algorithm>
 
 namespace vega
 {
@@ -19,9 +20,15 @@ namespace vega
 		}
 
 		auto gauges = composition.lock()->AddChild<StackPanel>(UIOrientation::Vertical, 6.f);
+		mGauges = gauges;
 		if (auto layout = gauges.lock()) layout->SetPanelSize({ 220.f, 78.f });
 		mEnergyGauge = gauges.lock()->AddChild<ValueGauge>(sf::Vector2f{ 220.f, 18.f }, 1.f, sf::Color{ 70, 205, 255, 255 }, sf::Color{ 35, 70, 95, 255 });
 		mShieldGauge = gauges.lock()->AddChild<ValueGauge>(sf::Vector2f{ 220.f, 18.f }, 1.f, sf::Color{ 120, 180, 255, 255 }, sf::Color{ 35, 55, 95, 255 });
+		mReserveTrack = mShieldGauge.lock()->AddChild<Panel>(sf::Vector2f{ 0.f, 6.f });
+		mReserveTrack.lock()->SetBackgroundColor(sf::Color{ 40, 70, 60, 255 });
+		mReserveFill = mReserveTrack.lock()->AddChild<Panel>(sf::Vector2f{ 0.f, 6.f });
+		mReserveFill.lock()->SetBackgroundColor(sf::Color{ 90, 245, 185, 255 });
+		mReserveTrack.lock()->SetVisibility(false);
 		mHealthGauge = gauges.lock()->AddChild<ValueGauge>(sf::Vector2f{ 220.f, 30.f }, 1.f, sf::Color{ 128, 255, 128, 255 }, style.Color(UIColorRole::GaugeBackground));
 
 		auto status = composition.lock()->AddChild<StackPanel>(UIOrientation::Horizontal, 10.f);
@@ -39,6 +46,21 @@ namespace vega
 
 		if (auto gauge = mEnergyGauge.lock()) gauge->UpdateValue(mViewModel->energy, mViewModel->energyMax);
 		if (auto gauge = mShieldGauge.lock()) gauge->UpdateValue(mViewModel->shield, mViewModel->shieldMax);
+		const bool showReserve = mViewModel->hasShip && mViewModel->shieldReserveCap > 0.f && mViewModel->shield >= mViewModel->shieldMax;
+		const float capWidth = 220.f * mViewModel->shieldReserveCap / std::max(1.f, mViewModel->shieldMax);
+		if (auto track = mReserveTrack.lock())
+		{
+			track->SetVisibility(showReserve);
+			track->SetPanelSize({ capWidth, 6.f });
+			track->SetLayout(UILayout::Anchored(UIAnchor::TopLeft, { 224.f, 6.f }, { capWidth, 6.f }));
+		}
+		if (auto fill = mReserveFill.lock())
+		{
+			const float width = capWidth * std::clamp(mViewModel->shieldReserve / std::max(.001f, mViewModel->shieldReserveCap), 0.f, 1.f);
+			fill->SetPanelSize({ width, 6.f });
+			fill->SetLayout(UILayout::Anchored(UIAnchor::TopLeft, {}, { width, 6.f }));
+		}
+		if (auto gauges = mGauges.lock()) gauges->SetPanelSize({ 220.f + (showReserve ? capWidth + 4.f : 0.f), 78.f });
 		if (auto gauge = mHealthGauge.lock())
 		{
 			gauge->SetVisibility(mViewModel->healthReadoutVisible);

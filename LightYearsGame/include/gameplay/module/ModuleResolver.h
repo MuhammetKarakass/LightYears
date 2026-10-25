@@ -18,6 +18,7 @@ namespace vega
 		std::uint32_t instanceId{ 0 };
 		std::size_t ruleIndex{ 0 };
 		ModuleTriggerBuff rule;
+		bool preserveActiveDurationOnChange = false;
 	};
 
 	struct ResolvedModuleDamageRule

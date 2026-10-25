@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/module/generated/ModuleRicochetProjectileActor.h"
 #include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
@@ -62,6 +63,7 @@ namespace vega
 	}
 	void ModuleRicochetProjectileActor::OnActorBeginOverlap(Actor* target)
 	{
+		if (TryPassPhaseSlipContact(*this, target)) return;
 		if (GetIsPendingDestroy() || IsInPortalTransit() || !target || std::find(mVisited.begin(), mVisited.end(), target->GetUniqueID()) != mVisited.end()) return;
 		AbilityWorldActor::OnActorBeginOverlap(target);
 		if (GetIsPendingDestroy() || !IsValidAbilityTarget(target)) return;

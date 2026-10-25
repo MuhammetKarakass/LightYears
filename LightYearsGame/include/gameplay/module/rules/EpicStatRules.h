@@ -29,6 +29,7 @@ namespace vega
 		sas::AttributeId attributeId;
 		sas::AttributeModifierOperation operation = sas::AttributeModifierOperation::Add;
 		EpicLevelTable perModuleByLevel;
+		float perAbility = 0.f;
 		bool reduce = false;
 		bool doubleOnAbilityUse = false;
 		float durationSeconds = 0.f;

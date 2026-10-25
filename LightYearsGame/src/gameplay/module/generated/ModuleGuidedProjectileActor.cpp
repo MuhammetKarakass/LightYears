@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/module/generated/ModuleGuidedProjectileActor.h"
 #include "framework/GameplayTag.h"
 #include "gameplay/module/generated/ModuleGeneratedDamage.h"
@@ -53,6 +54,7 @@ namespace vega
 	}
 	void ModuleGuidedProjectileActor::OnActorBeginOverlap(Actor* target)
 	{
+		if (TryPassPhaseSlipContact(*this, target)) return;
 		if (target && std::find(mExcludedTargets.begin(), mExcludedTargets.end(), target->GetUniqueID()) != mExcludedTargets.end()) return;
 		AbilityWorldActor::OnActorBeginOverlap(target);
 		if (GetIsPendingDestroy() || !IsValidAbilityTarget(target)) return;

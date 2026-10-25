@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/MathUtility.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -317,6 +318,7 @@ namespace vega
 			GetPhysicsCollisionRadius()
 		))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			if (!contact.hasSurfaceNormal)
 			{
 				continue;

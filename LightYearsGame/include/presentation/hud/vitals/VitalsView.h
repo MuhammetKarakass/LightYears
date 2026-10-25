@@ -21,6 +21,9 @@ namespace vega
 		UIRevisionWatcher mWatcher;
 		weak_ptr<ValueGauge> mEnergyGauge;
 		weak_ptr<ValueGauge> mShieldGauge;
+		weak_ptr<StackPanel> mGauges;
+		weak_ptr<Panel> mReserveTrack;
+		weak_ptr<Panel> mReserveFill;
 		weak_ptr<ValueGauge> mHealthGauge;
 		weak_ptr<TextWidget> mLifeText;
 		weak_ptr<TextWidget> mScoreText;

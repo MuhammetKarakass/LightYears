@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/ability/combatSentry/CombatSentryProjectileActor.h"
 #include "framework/MathUtility.h"
 
@@ -161,6 +162,7 @@ namespace vega
 			std::max(0.f, GetPhysicsCollisionRadius())
 		))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			if (GetIsPendingDestroy())
 			{
 				return;
@@ -188,6 +190,7 @@ namespace vega
 
 	void CombatSentryProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (GetIsPendingDestroy())
 		{
 			return;

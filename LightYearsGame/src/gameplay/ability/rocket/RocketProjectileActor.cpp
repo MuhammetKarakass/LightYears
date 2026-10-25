@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/MathUtility.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -259,6 +260,7 @@ namespace vega
 
 	void RocketProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (GetIsPendingDestroy())
 		{
 			return;
@@ -372,6 +374,7 @@ namespace vega
 				GetPhysicsCollisionRadius()
 			))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			SetActorLocation(
 				startLocation + (endLocation - startLocation) * contact.fraction
 			);

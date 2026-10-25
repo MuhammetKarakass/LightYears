@@ -104,6 +104,8 @@ namespace vega
 		SetIfChanged(mViewModel->displayHealthMax, 1.f, mViewModel->revision);
 		SetIfChanged(mViewModel->shield, 0.f, mViewModel->revision);
 		SetIfChanged(mViewModel->shieldMax, 1.f, mViewModel->revision);
+		SetIfChanged(mViewModel->shieldReserve, 0.f, mViewModel->revision);
+		SetIfChanged(mViewModel->shieldReserveCap, 0.f, mViewModel->revision);
 		SetIfChanged(mViewModel->energy, 0.f, mViewModel->revision);
 		SetIfChanged(mViewModel->energyMax, 1.f, mViewModel->revision);
 	}
@@ -179,6 +181,8 @@ namespace vega
 		SetIfChanged(vm.displayHealthMax, displayHealthMax, vm.revision);
 		SetIfChanged(vm.shield, shield.GetMaxShield() > 0.f ? std::max(0.f, shield.GetShield()) : 0.f, vm.revision);
 		SetIfChanged(vm.shieldMax, shield.GetMaxShield() > 0.f ? shield.GetMaxShield() : 1.f, vm.revision);
+		SetIfChanged(vm.shieldReserve, shield.GetBatteryReserve(), vm.revision);
+		SetIfChanged(vm.shieldReserveCap, shield.GetBatteryCap(), vm.revision);
 		SetIfChanged(vm.energy, std::max(0.f, energy.GetEnergy()), vm.revision);
 		SetIfChanged(vm.energyMax, energy.GetMaxEnergy() > 0.f ? energy.GetMaxEnergy() : 1.f, vm.revision);
 	}

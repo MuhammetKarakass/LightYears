@@ -7,6 +7,7 @@
 #include "abilities/AbilityPolicies.h"
 #include "abilities/AbilityHandle.h"
 #include "gameplay/module/ModuleLoadout.h"
+#include "gameplay/module/rules/FieldMasteryRunState.h"
 #include <optional>
 #include <string>
 
@@ -93,6 +94,7 @@ namespace vega
 		DelegateHandle mShipLevelChangedHandle;
 		ShipProgression mShipProgression;
 		PurchasedAbilityLevels mPurchasedAbilityLevels;
+		std::shared_ptr<FieldMasteryRunState> mFieldMasteryRunState = std::make_shared<FieldMasteryRunState>();
 		PurchasedAbilityLevels mPendingTestAbilityLevels;
 		ModuleLoadout mModuleLoadout;
 		// Players live by value; callback validity must not depend on shared Object ownership.

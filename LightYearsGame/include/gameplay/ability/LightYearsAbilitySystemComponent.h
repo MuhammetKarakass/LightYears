@@ -45,6 +45,7 @@ namespace vega
 		const GameAbility* GetAbility(sas::AbilityHandle handle) const;
 		GameAbility* GetAbilityById(const std::string& abilityId);
 		const GameAbility* GetAbilityById(const std::string& abilityId) const;
+		int CountLoadoutAbilitiesWithTag(const GameplayTag& category) const;
 		std::size_t AddScopedAbilityRule(ScopedAbilityRule rule);
 		bool RemoveScopedAbilityRule(std::size_t ruleHandle);
 		void ClearScopedAbilityRules();

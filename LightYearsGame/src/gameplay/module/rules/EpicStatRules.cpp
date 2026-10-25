@@ -43,12 +43,14 @@ namespace vega
 				const EpicFamilyStatRule& rule = variant.familyStatRules[index];
 				const int count = CountOtherMainModules(rules, activePlacements, placement.instanceId, rule.family);
 				const float perModule = rule.perModuleByLevel.ValueAtLevel(0.f, level);
-				if (count <= 0 || !(perModule > 0.f)) continue;
+				const float abilityBonus = rules.countLoadoutAbilities ? rule.perAbility * static_cast<float>(rules.countLoadoutAbilities(rule.family)) : 0.f;
+				// Keep a zero contribution's active window so clearing and rebinding the last Movement slot cannot lose the doubling.
+				if (!(perModule * static_cast<float>(count) + abilityBonus > 0.f) && !(rule.perAbility > 0.f && rule.doubleOnAbilityUse)) continue;
 
 				sas::AttributeModifier modifier;
 				modifier.attributeId = rule.attributeId;
 				modifier.operation = rule.operation;
-				modifier.magnitude = perModule * static_cast<float>(count);
+				modifier.magnitude = perModule * static_cast<float>(count) + abilityBonus;
 				if (rule.operation == sas::AttributeModifierOperation::Multiply) modifier.magnitude = rule.reduce ? 1.f - modifier.magnitude : 1.f + modifier.magnitude;
 
 				switch (rule.target)
@@ -77,7 +79,7 @@ namespace vega
 					buff.requiredEventTags.push_back(rule.family);
 					buff.durationSeconds = rule.durationSeconds;
 					buff.modifiers.push_back(std::move(entry));
-					effects.triggerBuffs.push_back({ placement.instanceId, kFamilyTriggerBuffRuleBase + index, std::move(buff) });
+					effects.triggerBuffs.push_back({ placement.instanceId, kFamilyTriggerBuffRuleBase + index, std::move(buff), rule.perAbility > 0.f });
 				}
 			}
 		}

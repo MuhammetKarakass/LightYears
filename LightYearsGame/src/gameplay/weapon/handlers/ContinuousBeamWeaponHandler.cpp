@@ -134,10 +134,7 @@ namespace vega
 				return std::make_unique<ContinuousBeamWeaponRuntimeState>();
 			}
 
-			void BeginFire(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponTypeRuntimeState& state
-			) const override
+			void BeginFire(const PrimaryWeaponExecutionContext& context, PrimaryWeaponTypeRuntimeState& state) const override
 			{
 				World* world = context.owner.GetWorld();
 				if (!world)
@@ -146,29 +143,14 @@ namespace vega
 				}
 
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
-				const auto spawnBeam = [&](const WeaponMuzzleDefinition&)
+				for (const auto& emission : ResolvePrimaryWeaponEmissions(context))
 				{
 					if (!context.ShouldContinue()) return;
-					beamState.beams.push_back(
-						world->SpawnActor<ContinuousBeamVisualActor>(&context.owner)
-					);
-				};
-				if (context.definition.muzzleDefinitions.empty())
-				{
-					spawnBeam(WeaponMuzzleDefinition{});
-					return;
-				}
-				for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
-				{
-					if (!context.ShouldContinue()) return;
-					spawnBeam(muzzle);
+					beamState.beams.push_back(world->SpawnActor<ContinuousBeamVisualActor>(&context.owner));
 				}
 			}
 
-			bool FireOnce(
-				const PrimaryWeaponExecutionContext&,
-				PrimaryWeaponTypeRuntimeState&
-			) const override
+			bool FireOnce(const PrimaryWeaponExecutionContext&, PrimaryWeaponTypeRuntimeState&) const override
 			{
 				return false;
 			}
@@ -219,9 +201,16 @@ namespace vega
 					DamageTypeSystem::BuildPayload(heatDamage.damageTags, context.attributes);
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
 				beamState.damageTags = heatDamage.damageTags;
-				Set<Actor*> damagedTargets;
+				const auto emissions = ResolvePrimaryWeaponEmissions(context);
+				while (beamState.beams.size() > emissions.size())
+				{
+					if (const auto beam = beamState.beams.back().lock()) beam->Destroy();
+					beamState.beams.pop_back();
+				}
+				while (beamState.beams.size() < emissions.size()) beamState.beams.push_back(context.owner.GetWorld()->SpawnActor<ContinuousBeamVisualActor>(&context.owner));
+				Set<Actor*> damagedTargets[2];
 				size_t beamIndex = 0;
-				const auto tickBeam = [&](const WeaponMuzzleDefinition& muzzle)
+				const auto tickBeam = [&](const PrimaryWeaponEmission& emission)
 				{
 					if (!context.ShouldContinue()) return;
 					if (beamIndex >= beamState.beams.size())
@@ -235,10 +224,8 @@ namespace vega
 						return;
 					}
 
-					const sf::Vector2f start = context.owner.GetActorLocation() +
-						context.owner.TransformLocalToWorld(muzzle.offset);
-					const float directionRotation =
-						context.owner.GetActorRotation() + muzzle.rotationOffset - 90.f;
+					const sf::Vector2f start = emission.origin;
+					const float directionRotation = emission.rotation - 90.f;
 					const sf::Vector2f direction = RotationToVector(directionRotation);
 					const sf::Vector2f fullEnd = start + direction * range;
 					movement::StaticGeometrySweepHit staticHit;
@@ -318,24 +305,18 @@ namespace vega
 						context.definition.presentationDefinition.pointLightDef.color
 					);
 
-					// Two muzzles converging on one target still deal one beam's damage.
-					if (firstTarget && damagedTargets.insert(firstTarget.get()).second)
+					// Converging muzzles still deal one beam per side; Broadside has two independent sides.
+					const std::size_t side = context.mountProfile.broadside ? (beamIndex - 1) % 2 : 0;
+					if (firstTarget && damagedTargets[side].insert(firstTarget.get()).second)
 					{
-						AddPendingBeamDamage(beamState, firstTarget, damage);
+						AddPendingBeamDamage(beamState, firstTarget, damage * emission.damageMultiplier);
 					}
 				};
 
-				if (context.definition.muzzleDefinitions.empty())
+				for (const auto& emission : emissions)
 				{
-					tickBeam(WeaponMuzzleDefinition{});
-				}
-				else
-				{
-					for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
-					{
-						if (!context.ShouldContinue()) return;
-						tickBeam(muzzle);
-					}
+					if (!context.ShouldContinue()) return;
+					tickBeam(emission);
 				}
 
 				if (time::ConsumePeriodicTicks(
@@ -349,10 +330,7 @@ namespace vega
 				}
 			}
 
-			void EndFire(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponTypeRuntimeState& state
-			) const override
+			void EndFire(const PrimaryWeaponExecutionContext& context, PrimaryWeaponTypeRuntimeState& state) const override
 			{
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
 				std::exception_ptr error;

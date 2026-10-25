@@ -32,10 +32,18 @@ namespace vega
 				return PrimaryWeaponType::ConeBlast;
 			}
 
-			bool FireOnce(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponTypeRuntimeState&
-			) const override
+			bool FireOnce(const PrimaryWeaponExecutionContext& context, PrimaryWeaponTypeRuntimeState&) const override
+			{
+				bool fired = false;
+				for (const auto& emission : ResolvePrimaryWeaponEmissions(context, true))
+				{
+					if (!context.ShouldContinue()) break;
+					fired = FireEmission(context, emission) || fired;
+				}
+				return fired;
+			}
+
+			static bool FireEmission(const PrimaryWeaponExecutionContext& context, const PrimaryWeaponEmission& emission)
 			{
 				World* world = context.owner.GetWorld();
 				if (!world)
@@ -59,13 +67,8 @@ namespace vega
 					break;
 				}
 
-				const WeaponMuzzleDefinition muzzle = context.definition.muzzleDefinitions.empty()
-					? WeaponMuzzleDefinition{}
-					: context.definition.muzzleDefinitions.front();
-				const sf::Vector2f origin = context.owner.GetActorLocation() +
-					context.owner.TransformLocalToWorld(muzzle.offset);
-				const sf::Vector2f forward = RotationToVector(
-					context.owner.GetActorRotation() + muzzle.rotationOffset - 90.f);
+				const sf::Vector2f origin = emission.origin;
+				const sf::Vector2f forward = RotationToVector(emission.rotation - 90.f);
 				const float range = std::max(0.f, sas::FindAttributeValue(
 					context.attributes, CommonAttributeIds::Range, 0.f));
 				const float halfAngle = std::clamp(sas::FindAttributeValue(
@@ -90,7 +93,7 @@ namespace vega
 				}
 				DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, context.attributes);
 				ApplyShotMetadataToPayload(payload, context.shotMetadata);
-				const float damage = ResolvePrimaryWeaponShotDamage(context);
+				const float damage = ResolvePrimaryWeaponShotDamage(context) * emission.damageMultiplier;
 
 				const sf::FloatRect searchBounds{ origin - sf::Vector2f{ range, range }, { range * 2.f, range * 2.f } };
 				bool anyHit = false;

@@ -1,4 +1,5 @@
 #include "framework/EngineContext.h"
+#include "gameplay/weapon/wave/ExpandingWaveWeaponActor.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 
@@ -88,6 +89,93 @@ namespace
 		for (const auto& weak : f.level->GetActorsByType<PrimaryWeaponProjectileActor>())
 			if (const auto actor = weak.lock(); actor && std::find(before.begin(), before.end(), actor.get()) == before.end()) volley.projectiles.push_back(actor);
 		return volley;
+	}
+
+	void FireOtherPrimary(Fixture& f, const char* weaponId, const PrimaryWeaponMountProfile& mount)
+	{
+		const auto* weapon = content::WeaponContentCatalog::FindById(weaponId);
+		f.report.Check(weapon != nullptr, "mount E2E resolves shipped non-projectile Primary");
+		PrimaryWeaponExecutionContext fire{ *f.ship, *weapon, weapon->attributes };
+		fire.mountProfile = mount;
+		fire.shotMetadata.criticalPolicy = DamageCriticalPolicy::Disabled;
+		PrimaryWeaponRuntimeState state;
+		PrimaryWeaponExecutionSystem::InitializeRuntime(*weapon, state);
+		fire.runtime = &state;
+		state.handler->BeginFire(fire, *state.typeState);
+		if (state.handler->UsesIntervalFire()) f.report.Check(state.handler->FireOnce(fire, *state.typeState), "non-projectile Primary handler fires");
+		else state.handler->TickFire(fire, *state.typeState, .25f);
+		state.handler->EndFire(fire, *state.typeState);
+		f.level->TickInternal(0.f);
+		for (const auto& weak : f.level->GetActorsByType<ExpandingWaveWeaponActor>())
+			if (const auto wave = weak.lock()) for (int step = 0; step < 45 && !wave->GetIsPendingDestroy(); ++step) wave->Tick(.02f);
+	}
+
+	void OtherPrimaryChecks(Report& report, Application& application)
+	{
+		for (const char* weapon : { "Weapon.Cone.RapidShotgun.Basic", "Weapon.Beam.ContinuousHeatLaser.Basic", "Weapon.Wave.CryoProjector.Basic", "Weapon.Arc.ElectricLauncher.Basic" })
+		{
+			float fullDamage = 0.f;
+			for (int mode = 0; mode < 3; ++mode)
+			{
+				Fixture f{ report, application };
+				f.ship->SetActorRotation(0.f);
+				const auto east = Enemy(f, mode == 2 ? 450.f : 200.f);
+				const auto other = Enemy(f, 450.f);
+				other->SetActorLocation(f.ship->GetActorLocation() + (mode == 2 ? sf::Vector2f{ -450.f, 0.f } : sf::Vector2f{ 0.f, 400.f }));
+				other->GetHealthComponent().ChangeHealth(-500.f);
+				const auto north = Enemy(f, 450.f);
+				north->SetActorLocation(f.ship->GetActorLocation() + sf::Vector2f{ 0.f, -450.f });
+				for (const auto& target : { east, other, north }) target->SetCollisionMask(GameCollision::PlayerBullet);
+				PrimaryWeaponMountProfile mount;
+				mount.turret = mode != 2;
+				mount.executionPriority = mode == 1;
+				if (mode == 2)
+				{
+					f.Install(kBroadsideId);
+					mount = f.ship->GetAbilitySystemComponent().GetPrimaryMountProfile();
+				}
+				FireOtherPrimary(f, weapon, mount);
+				const float eastDamage = 1000.f - east->GetHealthComponent().GetHealth();
+				const float otherDamage = 500.f - other->GetHealthComponent().GetHealth();
+				if (mode == 0)
+				{
+					fullDamage = eastDamage;
+					report.Check(eastDamage > 0.f && otherDamage == 0.f, std::string{ weapon } + " Turret aims at nearest enemy despite north-facing ship");
+				}
+				else if (mode == 1) report.Check(otherDamage > 0.f && eastDamage == 0.f, std::string{ weapon } + " Execution Priority chooses the lower health fraction");
+				else
+				{
+					report.Check(fullDamage > 0.f && Near(eastDamage, fullDamage * mount.broadsideDamageMultiplier, .02f) && Near(otherDamage, fullDamage * mount.broadsideDamageMultiplier, .02f), std::string{ weapon } + " Broadside fires both sides with its coefficient on each");
+					report.Check(north->GetHealthComponent().GetHealth() == 1000.f, std::string{ weapon } + " Broadside replaces forward fire");
+				}
+			}
+		}
+	}
+
+	void HeldBeamMountChecks(Report& report, Application& application)
+	{
+		Fixture f{ report, application };
+		f.ship->SetActorRotation(0.f);
+		const auto east = Enemy(f, 200.f);
+		const auto west = Enemy(f, 200.f);
+		west->SetActorLocation(f.ship->GetActorLocation() + sf::Vector2f{ -200.f, 0.f });
+		for (const auto& target : { east, west }) target->SetCollisionMask(GameCollision::PlayerBullet);
+		const auto* weapon = content::WeaponContentCatalog::FindById("Weapon.Beam.ContinuousHeatLaser.Basic");
+		PrimaryWeaponExecutionContext fire{ *f.ship, *weapon, weapon->attributes };
+		fire.shotMetadata.criticalPolicy = DamageCriticalPolicy::Disabled;
+		PrimaryWeaponRuntimeState state;
+		PrimaryWeaponExecutionSystem::InitializeRuntime(*weapon, state);
+		fire.runtime = &state;
+		state.handler->BeginFire(fire, *state.typeState);
+		fire.mountProfile.broadside = true;
+		fire.mountProfile.broadsideDamageMultiplier = .55f;
+		state.handler->TickFire(fire, *state.typeState, .25f);
+		report.Check(east->GetHealthComponent().GetHealth() < 1000.f && west->GetHealthComponent().GetHealth() < 1000.f, "mounting Broadside while a beam is held creates both side beams");
+		const float westHealth = west->GetHealthComponent().GetHealth();
+		fire.mountProfile = {};
+		state.handler->TickFire(fire, *state.typeState, .25f);
+		report.Check(west->GetHealthComponent().GetHealth() == westHealth, "removing Broadside while held clears its extra side beam");
+		state.handler->EndFire(fire, *state.typeState);
 	}
 
 	void ContentChecks(Report& report)
@@ -249,6 +337,8 @@ int main(int argc, char** argv)
 		ContentChecks(report);
 		TurretChecks(report, application);
 		BroadsideChecks(report, application);
+		OtherPrimaryChecks(report, application);
+		HeldBeamMountChecks(report, application);
 		report.artifact["passed"] = true;
 	}
 	catch (const std::exception& error) { report.artifact["error"] = error.what(); std::cerr << error.what() << '\n'; }

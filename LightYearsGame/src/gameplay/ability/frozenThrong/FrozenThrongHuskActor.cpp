@@ -7,6 +7,7 @@
 #include "gameplay/ability/frozenThrong/FrozenThrongContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -301,6 +302,7 @@ namespace vega
 		{
 			return;
 		}
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(otherActor);
 			captureVolume && captureVolume->TryCaptureProjectile(*this))
 		{

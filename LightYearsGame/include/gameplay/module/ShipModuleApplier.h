@@ -120,6 +120,8 @@ namespace vega
 		};
 
 		void Rebuild();
+		void OnLoadoutAbilityChanged(sas::AbilityHandle handle);
+		void OnLoadoutAbilitiesCleared();
 		void OnOwnerAbilityUse(const std::string& abilityId, const List<GameplayTag>& tags);
 		void OnOwnerKill(sas::AbilitySlot slot, ControlTargetClass targetClass);
 		void RefreshKillEffects();
@@ -146,6 +148,11 @@ namespace vega
 		ModuleEmergencyProtocolRuntime mEmergencyRuntime;
 		ModuleEpicOffenseRuntime mEpicOffenseRuntime;
 		ModuleEpicUtilityMovementRuntime mEpicUtilityMovementRuntime;
+		DelegateHandle mAbilityGrantedHandle;
+		DelegateHandle mAbilityRemovedHandle;
+		DelegateHandle mAbilityChangedHandle;
+		DelegateHandle mAbilitiesClearedHandle;
+		int mMovementAbilityCount = 0;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;

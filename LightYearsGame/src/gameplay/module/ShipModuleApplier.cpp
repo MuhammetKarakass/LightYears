@@ -93,6 +93,10 @@ namespace vega
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
 		mAbilities.SetModuleSystemGate(this);
+		mAbilityGrantedHandle = mAbilities.onAbilityGranted.BindAction(this, &ShipModuleApplier::OnLoadoutAbilityChanged);
+		mAbilityRemovedHandle = mAbilities.onAbilityRemoved.BindAction(this, &ShipModuleApplier::OnLoadoutAbilityChanged);
+		mAbilityChangedHandle = mAbilities.onAbilityChanged.BindAction(this, &ShipModuleApplier::OnLoadoutAbilityChanged);
+		mAbilitiesClearedHandle = mAbilities.onAbilitiesCleared.BindAction(this, &ShipModuleApplier::OnLoadoutAbilitiesCleared);
 		mReactiveRuntime.SetAbilityUseObserver([this](const std::string& abilityId, const List<GameplayTag>& tags) { OnOwnerAbilityUse(abilityId, tags); });
 		mReactiveRuntime.SetKillObserver([this](sas::AbilitySlot slot, ControlTargetClass targetClass) { OnOwnerKill(slot, targetClass); });
 	}
@@ -103,6 +107,10 @@ namespace vega
 		// only because SpaceShip binds its listeners through weak_ptr and ShipRuntime outlives
 		// this member; a raw `this` listener on a later PlayerSpaceShip member would dangle.
 		mShuttingDown = true;
+		mAbilities.onAbilityGranted.UnbindAction(mAbilityGrantedHandle);
+		mAbilities.onAbilityRemoved.UnbindAction(mAbilityRemovedHandle);
+		mAbilities.onAbilityChanged.UnbindAction(mAbilityChangedHandle);
+		mAbilities.onAbilitiesCleared.UnbindAction(mAbilitiesClearedHandle);
 		mAbilities.SetModuleSystemGate(nullptr);
 		mCombatRuntime.SetModuleStatusRules({});
 		mCombatRuntime.SetTargetStatusSnapshotRequested(false);
@@ -157,6 +165,18 @@ namespace vega
 	{
 		return mOwnerHandles.size() + mShipHandles.size() + mPrimaryHandles.size() +
 			mAbilityRuleApplier.GetOwnedHandleCount() + mCooldownRuleApplier.GetOwnedHandleCount() + mReactiveRuntime.GetOwnedHandleCount() + mReactiveRuntime.GetOwnedSustainedHandleCount() + mRunCounterRuntime.GetOwnedSourceCount() + mChargeBonuses.size();
+	}
+
+	void ShipModuleApplier::OnLoadoutAbilityChanged(sas::AbilityHandle handle)
+	{
+		(void)handle;
+		OnLoadoutAbilitiesCleared();
+	}
+
+	void ShipModuleApplier::OnLoadoutAbilitiesCleared()
+	{
+		if (mShuttingDown || !mHasApplied) return;
+		if (mMovementAbilityCount != mAbilities.CountLoadoutAbilitiesWithTag(GameplayTags::Ability::Movement)) Rebuild();
 	}
 
 	bool ShipModuleApplier::IsSystemEnabled(const GameplayTag& systemTag) const
@@ -248,6 +268,7 @@ namespace vega
 
 	void ShipModuleApplier::Rebuild()
 	{
+		mMovementAbilityCount = mAbilities.CountLoadoutAbilitiesWithTag(GameplayTags::Ability::Movement);
 		List<ModulePlacement> active;
 		active.reserve(mPlacements.size());
 		for (const ModulePlacement& placement : mPlacements)
@@ -255,7 +276,7 @@ namespace vega
 			if (!IsRebooting(placement.instanceId)) active.push_back(placement);
 		}
 
-		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup };
+		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); } };
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
 		mCombatRuntime.SetModuleStatusRules(mResolved.statusRules);
@@ -367,7 +388,7 @@ namespace vega
 		{
 			if (!IsRebooting(placement.instanceId)) active.push_back(placement);
 		}
-		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup };
+		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); } };
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);

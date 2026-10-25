@@ -209,9 +209,18 @@ namespace vega
 				rules.end(),
 				[&active](const ResolvedModuleTriggerBuff& resolved) { return SameKey(active, resolved); }
 			);
-			if (desired == rules.end() || !(active.rule == desired->rule))
+			if (desired == rules.end())
 			{
 				RemoveActiveBuff(index - 1);
+			}
+			else if (!(active.rule == desired->rule))
+			{
+				const float remaining = active.remainingSeconds;
+				RemoveActiveBuff(index - 1);
+				if (!desired->preserveActiveDurationOnChange) continue;
+				ActiveBuff updated = CreateActiveBuff(*desired);
+				updated.remainingSeconds = remaining;
+				mActiveBuffs.insert(mActiveBuffs.begin() + static_cast<std::ptrdiff_t>(index - 1), std::move(updated));
 			}
 		}
 		mRules = std::move(nextRules);

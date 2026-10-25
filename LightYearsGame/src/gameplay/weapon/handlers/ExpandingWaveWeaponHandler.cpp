@@ -20,10 +20,7 @@ namespace vega
 				return PrimaryWeaponType::WaveExpanding;
 			}
 
-			bool FireOnce(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponTypeRuntimeState&
-			) const override
+			bool FireOnce(const PrimaryWeaponExecutionContext& context, PrimaryWeaponTypeRuntimeState&) const override
 			{
 				World* world = context.owner.GetWorld();
 				if (!world)
@@ -53,7 +50,7 @@ namespace vega
 
 				bool anySpawned = false;
 				const auto spawnFromMuzzle =
-					[&](const WeaponMuzzleDefinition& muzzle) -> bool
+					[&](const PrimaryWeaponEmission& emission) -> bool
 				{
 					const weak_ptr<ExpandingWaveWeaponActor> wave =
 						world->SpawnActor<ExpandingWaveWeaponActor>(
@@ -65,32 +62,19 @@ namespace vega
 					if (const shared_ptr<ExpandingWaveWeaponActor> spawned =
 						wave.lock())
 					{
-						spawned->SetDamage(ResolvePrimaryWeaponShotDamage(context));
+						spawned->SetDamage(ResolvePrimaryWeaponShotDamage(context) * emission.damageMultiplier);
 						spawned->SetShotMetadata(context.shotMetadata);
-						spawned->SetActorLocation(
-							context.owner.GetActorLocation() +
-							context.owner.TransformLocalToWorld(muzzle.offset)
-						);
-						spawned->SetActorRotation(
-							context.owner.GetActorRotation() +
-							muzzle.rotationOffset
-						);
+						spawned->SetActorLocation(emission.origin);
+						spawned->SetActorRotation(emission.rotation);
 						return true;
 					}
 					return false;
 				};
 
-				if (context.definition.muzzleDefinitions.empty())
+				for (const auto& emission : ResolvePrimaryWeaponEmissions(context))
 				{
-					return spawnFromMuzzle(WeaponMuzzleDefinition{});
-				}
-				for (const WeaponMuzzleDefinition& muzzle :
-					context.definition.muzzleDefinitions)
-				{
-					if (spawnFromMuzzle(muzzle))
-					{
-						anySpawned = true;
-					}
+					if (!context.ShouldContinue()) break;
+					anySpawned = spawnFromMuzzle(emission) || anySpawned;
 				}
 				return anySpawned;
 			}

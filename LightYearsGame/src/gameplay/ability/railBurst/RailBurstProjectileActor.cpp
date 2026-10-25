@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/ability/railBurst/RailBurstProjectileActor.h"
 #include "framework/MathUtility.h"
 
@@ -359,6 +360,7 @@ namespace vega
 		);
 		for (const projectile::SweptContact& contact : contacts)
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			Actor* candidate = contact.actor;
 			if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(candidate);
 				captureVolume && captureVolume->TryCaptureProjectile(*this))
@@ -398,6 +400,7 @@ namespace vega
 
 	void RailBurstProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{
 			return;

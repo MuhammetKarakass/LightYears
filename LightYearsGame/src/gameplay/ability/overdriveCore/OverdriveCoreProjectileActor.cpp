@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h"
 
 #include "attributes/AttributeSystem.h"
@@ -287,6 +288,7 @@ namespace vega
 
 	void OverdriveCoreProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (GetIsPendingDestroy())
 		{
 			return;
@@ -389,6 +391,7 @@ namespace vega
 				GetPhysicsCollisionRadius()
 			))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			SetActorLocation(
 				startLocation + (endLocation - startLocation) * contact.fraction
 			);

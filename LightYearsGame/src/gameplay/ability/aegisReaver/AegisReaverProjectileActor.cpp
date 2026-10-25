@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "framework/MathUtility.h"
 #include "gameplay/ability/aegisReaver/AegisReaverProjectileActor.h"
@@ -459,6 +460,7 @@ namespace vega
 			GetPhysicsCollisionRadius()
 		))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			if (auto* target = dynamic_cast<SpaceShip*>(contact.actor))
 			{
 				TryHitShip(*target);
@@ -487,6 +489,7 @@ namespace vega
 			GetPhysicsCollisionRadius()
 		))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			if (!contact.actor)
 			{
 				continue;
@@ -594,6 +597,7 @@ namespace vega
 
 	void AegisReaverProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (!otherActor || GetIsPendingDestroy())
 		{
 			return;

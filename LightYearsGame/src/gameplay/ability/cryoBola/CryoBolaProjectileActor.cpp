@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/ability/cryoBola/CryoBolaProjectileActor.h"
 #include "framework/MathUtility.h"
 
@@ -330,6 +331,7 @@ namespace vega
 			{
 				return;
 			}
+			if (TryPassPhaseSlipContact(*this, candidate.get())) continue;
 			if (IsValidAbilityTarget(candidate.get()))
 			{
 				ResolveHit(*candidate);
@@ -340,6 +342,7 @@ namespace vega
 
 	void CryoBolaProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (mResolved || GetIsPendingDestroy() || IsInPortalTransit())
 		{
 			return;

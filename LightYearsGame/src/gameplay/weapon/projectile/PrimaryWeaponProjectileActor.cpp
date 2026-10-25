@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h"
@@ -93,6 +94,7 @@ namespace vega
 
 	void PrimaryWeaponProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (GetIsPendingDestroy())
 		{
 			return;
@@ -247,6 +249,7 @@ namespace vega
 				collisionRadius
 			))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			if (GetIsPendingDestroy() || IsInPortalTransit())
 			{
 				return;

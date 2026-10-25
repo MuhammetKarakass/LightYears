@@ -1,10 +1,37 @@
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "framework/Actor.h"
+#include "framework/MathUtility.h"
+#include "gameplay/module/rules/EpicPrimaryRules.h"
 
 #include <algorithm>
 
 namespace vega
 {
+	List<PrimaryWeaponEmission> ResolvePrimaryWeaponEmissions(const PrimaryWeaponExecutionContext& context, bool firstMuzzleOnly)
+	{
+		const float range = sas::FindAttributeValue(context.attributes, PrimaryWeaponSchema::Beam::Delivery::Range, sas::FindAttributeValue(context.attributes, CommonAttributeIds::Range, 1600.f));
+		const float rotation = EpicPrimaryMounts::FindTurretRotation(context.owner, context.mountProfile, range).value_or(context.owner.GetActorRotation());
+		List<PrimaryWeaponEmission> emissions;
+		const auto addMuzzle = [&](const WeaponMuzzleDefinition& muzzle)
+		{
+			const auto origin = context.owner.GetActorLocation() + context.owner.TransformLocalToWorld(muzzle.offset);
+			if (context.mountProfile.broadside)
+			{
+				for (const float side : { 90.f, -90.f })
+				{
+					const float sideRotation = rotation + side;
+					emissions.push_back({ origin + RotationToVector(sideRotation - 90.f) * EpicPrimaryMounts::kBroadsideSpawnOffset, sideRotation + muzzle.rotationOffset, context.mountProfile.broadsideDamageMultiplier });
+				}
+			}
+			else emissions.push_back({ origin, rotation + muzzle.rotationOffset, 1.f });
+		};
+		if (context.definition.muzzleDefinitions.empty()) addMuzzle({});
+		else if (firstMuzzleOnly) addMuzzle(context.definition.muzzleDefinitions.front());
+		else for (const auto& muzzle : context.definition.muzzleDefinitions) addMuzzle(muzzle);
+		return emissions;
+	}
+
 	float PrimaryWeaponRuntimeState::GetFeatureValue(
 		const sas::AttributeId& key,
 		float fallback

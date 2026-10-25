@@ -25,6 +25,7 @@ namespace vega
 		ModuleLookup lookup;
 		const ModuleZoneTable& zoneTable;
 		ModuleSideFeatureLookup sideFeatureLookup;
+		std::function<int(const GameplayTag&)> countLoadoutAbilities;
 	};
 
 	enum class ModulePlacementFailure

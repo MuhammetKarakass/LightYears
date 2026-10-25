@@ -7,6 +7,7 @@
 #include "framework/GameplayTag.h"
 #include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/rules/EpicUtilityMovementRules.h"
+#include "gameplay/module/rules/FieldMasteryRunState.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -14,6 +15,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <unordered_set>
 
 namespace vega
 {
@@ -24,7 +26,7 @@ namespace vega
 
 	// Owner-scoped runtime for the Epic Utility/Movement modules (Cascade Reactor, Field Mastery, Assault Vector, Phase Slip).
 	// ShipModuleApplier owns one instance, replaces its rules on every rebuild and ticks it each frame. Every handle it creates
-	// (outgoing damage modifiers, Armor modifier, damage protection) is released by Replace, Clear or destruction.
+	// (outgoing damage modifiers, Armor modifier) is released by Replace, Clear or destruction.
 	class ModuleEpicUtilityMovementRuntime final
 	{
 	public:
@@ -39,6 +41,9 @@ namespace vega
 		void OnAbilityUse(const std::string& abilityId, const List<GameplayTag>& tags);
 		// Receives every Field Mastery level gain (ability id, new level) so the owning Player keeps it for the run.
 		void SetAbilityLevelSink(std::function<void(const std::string&, int)> sink) { mAbilityLevelSink = std::move(sink); }
+		void SetFieldMasteryRunState(std::shared_ptr<FieldMasteryRunState> state) { if (state) mFieldMasteryState = std::move(state); }
+		bool TryPassProjectile(const Actor& projectile);
+		std::size_t GetPhaseProjectileCount() const { return mPhaseProjectiles.size(); }
 
 		// Phase Slip lock: Primary and loadout ability systems report disabled while a phase is open.
 		bool IsSystemLocked(const GameplayTag& systemTag) const;
@@ -61,12 +66,6 @@ namespace vega
 			GameplayTag lastFamily;
 			int step = 0;
 			float remainingSeconds = 0.f;
-		};
-
-		struct UseCounter
-		{
-			std::string abilityId;
-			double uses = 0.0;
 		};
 
 		struct PendingExplosion
@@ -104,7 +103,8 @@ namespace vega
 
 		ResolvedModuleEpicRules mRules;
 		List<CascadeState> mCascades;
-		List<UseCounter> mUseCounters;
+		std::shared_ptr<FieldMasteryRunState> mFieldMasteryState = std::make_shared<FieldMasteryRunState>();
+		std::unordered_set<unsigned int> mPhaseProjectiles;
 
 		bool mPhaseAfterburning = false;
 		float mPhaseRemaining = 0.f;

@@ -10,6 +10,7 @@
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/targeting/AutoTargeting.h"
+#include "gameplay/module/rules/EpicPrimaryRules.h"
 #include "gameplay/targeting/CombatTargetPriority.h"
 #include "gameplay/weapon/visuals/ElectricArcVisualActor.h"
 
@@ -33,18 +34,11 @@ namespace vega
 				: 0.f;
 		}
 
-		void ResolveElectricArc(
-			const PrimaryWeaponExecutionContext& context,
-			const sf::Vector2f& origin,
-			int additionalChainCount,
-			float targetRange,
-			float chainRange,
-			float damageMultiplierPerChain,
-			bool& hitReported
-		)
+		void ResolveElectricArc(const PrimaryWeaponExecutionContext& context, const PrimaryWeaponEmission& emission, int additionalChainCount, float targetRange, float chainRange, float damageMultiplierPerChain, bool& hitReported)
 		{
 			World* world = context.owner.GetWorld();
-			const float baseDamage = ResolvePrimaryWeaponShotDamage(context);
+			const sf::Vector2f origin = emission.origin;
+			const float baseDamage = ResolvePrimaryWeaponShotDamage(context) * emission.damageMultiplier;
 			if (!world || baseDamage <= 0.f || targetRange <= 0.f)
 			{
 				return;
@@ -114,6 +108,21 @@ namespace vega
 							: left.distanceSquared < right.distanceSquared;
 					};
 				}
+				if (excludedTargets.empty() && (context.mountProfile.turret || context.mountProfile.broadside))
+				{
+					query.comparator = [&](const targeting::TargetingCandidate& left, const targeting::TargetingCandidate& right)
+					{
+						const float leftHealth = context.mountProfile.executionPriority ? EpicPrimaryMounts::GetHealthFraction(*left.actor) : 0.f;
+						const float rightHealth = context.mountProfile.executionPriority ? EpicPrimaryMounts::GetHealthFraction(*right.actor) : 0.f;
+						return leftHealth != rightHealth ? leftHealth < rightHealth : left.distanceSquared < right.distanceSquared;
+					};
+					if (context.mountProfile.broadside)
+					{
+						query.shape = targeting::TargetingShape::Cone;
+						query.direction = RotationToVector(emission.rotation - 90.f);
+						query.coneHalfAngleRadians = 1.57079632679f;
+					}
+				}
 				query.excludedTargets.reserve(excludedTargets.size());
 				for (Actor* excludedTarget : excludedTargets)
 				{
@@ -135,7 +144,7 @@ namespace vega
 				const float placeholderLength = std::min(targetRange, 420.f);
 				world->SpawnActor<ElectricArcVisualActor>(
 					origin,
-					origin + context.owner.GetActorForwardDirection() * placeholderLength,
+					origin + RotationToVector(emission.rotation - 90.f) * placeholderLength,
 					context.definition.presentationDefinition.pointLightDef.color
 				);
 				return;
@@ -209,10 +218,7 @@ namespace vega
 				return PrimaryWeaponType::ArcElectric;
 			}
 
-			bool FireOnce(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponTypeRuntimeState&
-			) const override
+			bool FireOnce(const PrimaryWeaponExecutionContext& context, PrimaryWeaponTypeRuntimeState&) const override
 			{
 				if (!context.owner.GetWorld())
 				{
@@ -243,28 +249,10 @@ namespace vega
 					0.f
 				));
 				bool hitReported = false;
-				const auto fireFromMuzzle = [&](const WeaponMuzzleDefinition& muzzle)
+				for (const auto& emission : ResolvePrimaryWeaponEmissions(context))
 				{
-					const sf::Vector2f origin = context.owner.GetActorLocation() +
-						context.owner.TransformLocalToWorld(muzzle.offset);
-					ResolveElectricArc(
-						context,
-						origin,
-						chainCount,
-						targetRange,
-						chainRange,
-						damageMultiplier,
-						hitReported
-					);
-				};
-				if (context.definition.muzzleDefinitions.empty())
-				{
-					fireFromMuzzle(WeaponMuzzleDefinition{});
-					return true;
-				}
-				for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
-				{
-					fireFromMuzzle(muzzle);
+					if (!context.ShouldContinue()) break;
+					ResolveElectricArc(context, emission, chainCount, targetRange, chainRange, damageMultiplier, hitReported);
 				}
 				return true;
 			}

@@ -1,6 +1,8 @@
 #include "gameplay/module/rules/EpicUtilityMovementRuntime.h"
 
 #include "framework/World.h"
+#include "gameConfigs/CollisionLayers.h"
+#include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -24,8 +26,6 @@ namespace vega
 	{
 		constexpr sas::AbilitySlot kLoadoutSlots[] = { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 };
 		const char* const kAssaultDamageId = "ModuleAssaultVector.Damage";
-		const char* const kPhaseProtectionId = "ModulePhaseSlip.Protection";
-
 
 		bool HasTag(const List<GameplayTag>& tags, const GameplayTag& wanted)
 		{
@@ -139,7 +139,7 @@ namespace vega
 
 	float ModuleEpicUtilityMovementRuntime::GetUseCount(const std::string& abilityId) const
 	{
-		for (const UseCounter& counter : mUseCounters)
+		for (const FieldMasteryRunState::UseCounter& counter : mFieldMasteryState->counters)
 		{
 			if (counter.abilityId == abilityId) return static_cast<float>(counter.uses);
 		}
@@ -186,7 +186,7 @@ namespace vega
 	}
 
 	// Phase Slip: an Afterburner start (rising edge) opens the phase while the cooldown is ready. The phase locks Primary and
-	// loadout abilities and blocks incoming hits; when it ends the next Primary hit detonates.
+	// loadout abilities and lets hostile projectiles pass; when it ends the next Primary hit detonates.
 	void ModuleEpicUtilityMovementRuntime::TickPhase(float deltaSeconds)
 	{
 		mPhaseCooldown = std::max(0.f, mPhaseCooldown - deltaSeconds);
@@ -206,22 +206,30 @@ namespace vega
 		mPhaseRemaining = rule.phaseSeconds;
 		mPhaseCooldown = rule.cooldownSeconds;
 		mPhaseArmed = false;
-		mCombatRuntime.SetDamageProtection(kPhaseProtectionId, true, false);
+		mPhaseProjectiles.clear();
 		mAbilities.CancelAbilitiesUnavailableByModules();
+	}
+
+	bool ModuleEpicUtilityMovementRuntime::TryPassProjectile(const Actor& projectile)
+	{
+		const auto* abilityActor = dynamic_cast<const AbilityWorldActor*>(&projectile);
+		if (!IsPhaseActive() || !mShip || !abilityActor || !abilityActor->IsProjectileActor() || projectile.GetIsPendingDestroy()) return false;
+		if (!HasCollisionLayer(GameCollision::EnemyBullet, projectile.GetCollisionLayer())) return false;
+		mPhaseProjectiles.insert(projectile.GetUniqueID());
+		return true;
 	}
 
 	void ModuleEpicUtilityMovementRuntime::EndPhase()
 	{
 		mPhaseRemaining = 0.f;
-		mCombatRuntime.RemoveDamageProtection(kPhaseProtectionId);
 		mPhaseArmed = !mRules.phaseSlips.empty();
 	}
 
 	void ModuleEpicUtilityMovementRuntime::ClearPhase()
 	{
-		if (mPhaseRemaining > 0.f) mCombatRuntime.RemoveDamageProtection(kPhaseProtectionId);
 		mPhaseRemaining = 0.f;
 		mPhaseArmed = false;
+		mPhaseProjectiles.clear();
 	}
 
 	// Outgoing Primary hit after the phase: queue one area explosion at the impact (processed on Tick, never inside the event).
@@ -235,7 +243,7 @@ namespace vega
 		if (!primaryShot) return;
 		const ResolvedModulePhaseSlipRule& rule = mRules.phaseSlips.front();
 		mPhaseArmed = false;
-		mPendingExplosions.push_back({ sf::Vector2f{ context->targetLocationAtResolution.x, context->targetLocationAtResolution.y }, context->originalDamage * rule.primaryDamageMultiplier, rule.explosionRadius });
+		mPendingExplosions.push_back({ sf::Vector2f{ context->targetLocationAtResolution.x, context->targetLocationAtResolution.y }, context->originalDamage * rule.primaryDamageMultiplier * (1.f + .25f * static_cast<float>(mPhaseProjectiles.size())), rule.explosionRadius + 15.f * static_cast<float>(mPhaseProjectiles.size()) });
 	}
 
 	void ModuleEpicUtilityMovementRuntime::ProcessExplosions()
@@ -343,13 +351,13 @@ namespace vega
 
 	void ModuleEpicUtilityMovementRuntime::AddUses(const std::string& abilityId, double amount)
 	{
-		for (UseCounter& counter : mUseCounters)
+		for (FieldMasteryRunState::UseCounter& counter : mFieldMasteryState->counters)
 		{
 			if (counter.abilityId != abilityId) continue;
 			counter.uses += amount;
 			return;
 		}
-		mUseCounters.push_back({ abilityId, amount });
+		mFieldMasteryState->counters.push_back({ abilityId, amount });
 	}
 
 	// Field Mastery: each threshold of uses of one Utility ability grants it one run level, capped by the ability's own maximum.
@@ -357,18 +365,18 @@ namespace vega
 	{
 		const int threshold = FieldMasteryThreshold();
 		if (threshold <= 0) return;
-		for (std::size_t index = 0; index < mUseCounters.size(); ++index)
+		for (std::size_t index = 0; index < mFieldMasteryState->counters.size(); ++index)
 		{
-			if (mUseCounters[index].uses < static_cast<double>(threshold)) continue;
-			const std::string abilityId = mUseCounters[index].abilityId;
+			if (mFieldMasteryState->counters[index].uses < static_cast<double>(threshold)) continue;
+			const std::string abilityId = mFieldMasteryState->counters[index].abilityId;
 			GameAbility* ability = mAbilities.FindAbilityById<GameAbility>(abilityId);
 			if (!ability) continue;
 			if (ability->GetLevel() >= ability->GetMaxLevel())
 			{
-				mUseCounters[index].uses = 0.0;
+				mFieldMasteryState->counters[index].uses = 0.0;
 				continue;
 			}
-			mUseCounters[index].uses -= static_cast<double>(threshold);
+			mFieldMasteryState->counters[index].uses -= static_cast<double>(threshold);
 			if (LevelUpAbility(abilityId)) TransferUses(abilityId);
 		}
 	}

@@ -15,7 +15,7 @@ namespace vega::content
 			const Json entries = object.value("familyStatRules", Json::array());
 			if (!entries.is_array()) throw std::runtime_error(context + ".familyStatRules must be an array");
 			if (sideFeature && !entries.empty()) throw std::runtime_error(context + " familyStatRules is only allowed on the main package");
-			const std::set<std::string> allowedKeys{ "family", "target", "attributeId", "operation", "perModule", "perModuleGrowth", "reduce", "doubleOnAbilityUse", "durationSeconds", "durationSecondsGrowth" };
+			const std::set<std::string> allowedKeys{ "family", "target", "attributeId", "operation", "perModule", "perAbility", "perModuleGrowth", "reduce", "doubleOnAbilityUse", "durationSeconds", "durationSecondsGrowth" };
 			std::size_t index = 0;
 			for (const Json& entry : entries)
 			{
@@ -46,6 +46,8 @@ namespace vega::content
 					if (!(value > 0.f)) throw std::runtime_error(entryContext + " perModule must be positive");
 				rule.perModuleByLevel = std::move(table);
 
+				rule.perAbility = entry.contains("perAbility") ? ParseFiniteFloat(entry.at("perAbility"), entryContext + " perAbility") : 0.f;
+				if (rule.perAbility < 0.f) throw std::runtime_error(entryContext + " perAbility must be nonnegative");
 				rule.reduce = entry.value("reduce", false);
 				if (rule.reduce && rule.operation != sas::AttributeModifierOperation::Multiply) throw std::runtime_error(entryContext + " reduce requires Multiply");
 

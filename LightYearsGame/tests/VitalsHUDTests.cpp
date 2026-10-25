@@ -115,6 +115,37 @@ namespace
 			NearlyEqual(initial->energyMax, ship->GetEnergyComponent().GetMaxEnergy()), "view model matches shipped energy",
 			{ { "energy", initial->energy }, { "energyMax", initial->energyMax } });
 
+		auto& shield = ship->GetShieldComponent();
+		const auto originalShieldBehavior = shield.GetModuleBehavior();
+		const float originalShield = shield.GetShield();
+		auto battery = originalShieldBehavior; battery.batteryCapFraction = .4f;
+		shield.SetModuleBehavior(battery);
+		shield.ChangeShield(10000.f);
+		const float cap = shield.GetBatteryCap();
+		shield.TickBatteryReserve(1.f, cap * .5f, true);
+		presenter.Tick();
+		report.Check(cap > 0.f && NearlyEqual(initial->shieldReserve, cap * .5f) && NearlyEqual(initial->shieldReserveCap, cap), "presenter reads live battery reserve and cap");
+		VitalsView batteryView{ application.GetEngineContext(), presenter.GetViewModel() };
+		batteryView.Tick(0.f);
+		const auto batteryGauges = std::dynamic_pointer_cast<StackPanel>(std::dynamic_pointer_cast<StackPanel>(batteryView.GetChildren().front())->GetChildren().front());
+		const auto shieldWidget = batteryGauges->GetChildren()[1];
+		const auto reserveTrack = shieldWidget->GetChildren().front();
+		const auto reserveFill = reserveTrack->GetChildren().front();
+		batteryView.ResolveLayoutTree({ {}, { 1280.f, 720.f } }, true);
+		report.Check(reserveTrack->GetVisibility() && NearlyEqual(reserveTrack->GetResolvedRect().size.x, 88.f) && NearlyEqual(reserveFill->GetResolvedRect().size.x, 44.f) && reserveTrack->GetResolvedRect().position.x >= shieldWidget->GetResolvedRect().position.x + 220.f, "half-full reserve occupies a thin extension to the right of the full shield");
+		const float fullShield = shield.GetShield();
+		shield.AbsorbDamage(cap * .25f, 1.f, 0.f);
+		presenter.Tick(); batteryView.Tick(0.f);
+		batteryView.ResolveLayoutTree({ {}, { 1280.f, 720.f } }, true);
+		report.Check(NearlyEqual(shield.GetShield(), fullShield) && NearlyEqual(initial->shieldReserve, cap * .25f) && NearlyEqual(reserveFill->GetResolvedRect().size.x, 22.f), "damage spends and shrinks reserve before normal shield");
+		shield.AbsorbDamage(cap, 1.f, 0.f);
+		presenter.Tick(); batteryView.Tick(0.f);
+		report.Check(initial->shieldReserve == 0.f && initial->shield < fullShield && !reserveTrack->GetVisibility(), "depleted reserve hides when damage reaches the normal shield");
+		shield.SetModuleBehavior(originalShieldBehavior);
+		shield.ChangeShield(originalShield - shield.GetShield());
+		presenter.Tick(); batteryView.Tick(0.f);
+		report.Check(initial->shieldReserve == 0.f && initial->shieldReserveCap == 0.f && !reserveTrack->GetVisibility(), "removing battery clears and hides its extension");
+
 		const float healthBeforeDamage = initial->health;
 		const UIRevision beforeDamage = initial->revision;
 		constexpr float damageAmount = 200.f;

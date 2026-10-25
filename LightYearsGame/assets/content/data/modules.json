@@ -3809,7 +3809,7 @@
     {
       "id": "Module.Movement.MomentumDrive.Epic",
       "displayName": "Momentum Drive",
-      "description": "Horizontal and vertical movement rating +{Owner.MoveSpeedHorizontal}, plus {familyStat.0.perModule} for each other installed Movement module. On Movement ability use, this module's total rating is doubled for {trigger.0.durationSeconds} sec; re-use refreshes it.",
+      "description": "Horizontal and vertical movement rating +{Owner.MoveSpeedHorizontal}, +1 per equipped Movement ability, plus {familyStat.0.perModule} for each other installed Movement module. On Movement ability use, this module's total rating is doubled for {trigger.0.durationSeconds} sec; re-use refreshes it.",
       "family": "Ability.Movement",
       "rarity": "Epic",
       "levelCount": 3,
@@ -3833,8 +3833,8 @@
             }
           ],
           "familyStatRules": [
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
           ]
         },
         {
@@ -3855,8 +3855,8 @@
             }
           ],
           "familyStatRules": [
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
+            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
           ]
         }
       ]

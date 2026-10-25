@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "framework/MathUtility.h"
 #include "gameplay/ability/crescentReaver/CrescentReaverProjectileActor.h"
@@ -570,6 +571,7 @@ namespace vega
 
 	void CrescentReaverProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (mIsDissipating)
 		{
 			return;

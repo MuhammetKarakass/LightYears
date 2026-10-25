@@ -519,6 +519,7 @@ namespace vega
 	void Player::ApplyModuleLoadout(PlayerSpaceShip& ship)
 	{
 		ship.GetModuleApplier().SetGoldWallet(mGold);
+		ship.GetModuleApplier().GetEpicUtilityMovementRuntime().SetFieldMasteryRunState(mFieldMasteryRunState);
 		const std::weak_ptr<bool> lifetime = mModuleCreditLifetime;
 		ship.GetModuleApplier().SetRunCounterCreditSink([this, lifetime](std::uint32_t instanceId, double units) { if (!lifetime.expired()) mModuleLoadout.AddRunCounterCredit(instanceId, units); });
 		ship.GetModuleApplier().SetKillCreditSink([this, lifetime](std::uint32_t instanceId, double stacks, double damageBonus) { if (!lifetime.expired()) mModuleLoadout.AddKillCredit(instanceId, stacks, damageBonus); });
@@ -683,6 +684,7 @@ namespace vega
 		mModuleLoadout = ModuleLoadout{};
 		mTestModulesGranted = false;
 		mPurchasedAbilityLevels.clear();
+		mFieldMasteryRunState = std::make_shared<FieldMasteryRunState>();
 		mPendingTestAbilityLevels.clear();
 		mPendingTestAbilityLevelUps = 0;
 		if (mScrap != 0)

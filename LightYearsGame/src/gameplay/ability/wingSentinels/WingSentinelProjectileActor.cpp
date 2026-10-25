@@ -1,3 +1,4 @@
+#include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "gameplay/ability/wingSentinels/WingSentinelProjectileActor.h"
 
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
@@ -93,6 +94,7 @@ namespace vega
 		SetVelocity(GetActorForwardDirection() * mSpeed);
 		for (const projectile::SweptContact& contact : projectile::FindSweptContacts(*this, start, end, GetPhysicsCollisionRadius()))
 		{
+			if (TryPassPhaseSlipContact(*this, contact.actor)) continue;
 			SetActorLocation(start + (end - start) * contact.fraction);
 			if (contact.hasSurfaceNormal && ProjectileReflectionService::TryReflectFromSurface(
 				*this, *contact.actor, { contact.impactLocation, contact.surfaceNormal }))
@@ -110,6 +112,7 @@ namespace vega
 
 	void WingSentinelProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (TryPassPhaseSlipContact(*this, otherActor)) return;
 		if (GetIsPendingDestroy()) return;
 		if (TryReflectOnOverlap(otherActor)) return;
 		if (auto* capture = dynamic_cast<ProjectileCaptureVolume*>(otherActor); capture && capture->TryCaptureProjectile(*this)) return;

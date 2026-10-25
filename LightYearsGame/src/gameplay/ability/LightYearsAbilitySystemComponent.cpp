@@ -15,6 +15,21 @@
 
 namespace vega
 {
+	int LightYearsAbilitySystemComponent::CountLoadoutAbilitiesWithTag(const GameplayTag& category) const
+	{
+		int count = 0;
+		for (const auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+		{
+			const auto* ability = GetAbility(slot);
+			if (!ability) continue;
+			for (const auto& tag : ability->GetDefinition().abilityTags)
+			{
+				if (tag.MatchesTag(category)) { ++count; break; }
+			}
+		}
+		return count;
+	}
+
 	namespace
 	{
 		bool IsEffectBehaviorRegistered(const sas::GameplayEffectBehaviorKey& behaviorKey)
