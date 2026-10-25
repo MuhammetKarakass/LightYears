@@ -29,7 +29,7 @@ namespace
 			Fixture f{ report, application }; auto wallet = std::make_shared<RunGold>(); f.ship->GetModuleApplier().SetGoldWallet(wallet);
 			const float baseMaxHealth = f.Owner(OwnerAttributeIds::MaxHealth), baseArmor = f.Owner(OwnerAttributeIds::Armor);
 			const auto* module = content::ModuleContentCatalog::FindById("Module.Defense.GoldPlating.Rare");
-			report.Check(module && module->sizeLadderCellCounts == List<int>{ 2, 3 } && module->sideFeatures.size() == 1 && module->sideFeatures.front() == sas::ContentId{ "Module.SideFeature.GoldPlating.GildedFrame" } && module->sharedPools.empty(), "Gold Plating is a 2/3 ladder whose only side feature is the private Gilded Frame");
+			report.Check(module && module->sizeLadderCellCounts == List<int>{ 2, 3 } && module->sideFeatures.size() == 1 && module->sideFeatures.front() == sas::ContentId{ "Module.SideFeature.GoldPlating.GildedFrame" } && module->sharedPools.size() == 3, "Gold Plating is a 2/3 ladder with private Gilded Frame and three selected shared sides");
 			const auto id = f.Install("Module.Defense.GoldPlating.Rare", 1, 1, "Module.SideFeature.GoldPlating.GildedFrame");
 			f.Equal("Gilded Frame adds no Max Health before Gold", baseMaxHealth, f.Owner(OwnerAttributeIds::MaxHealth));
 			wallet->Award(500); f.ship->GetModuleApplier().Tick(0.f);

@@ -9,5 +9,7 @@ namespace vega
 	{
 		struct UseCounter { std::string abilityId; double uses = 0.0; };
 		List<UseCounter> counters;
+		List<UseCounter> overflowCounters;
+		double utilityEffectBonus = 0.0;
 	};
 }

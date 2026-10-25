@@ -44,13 +44,21 @@ namespace vega::content
 				const std::string entryContext = context + ".fieldMasteryRules[" + std::to_string(index++) + "]";
 				const bool mainRule = entry.contains("usesPerLevelUp");
 				const bool transferRule = entry.contains("transferUses");
-				if (mainRule == transferRule) throw std::runtime_error(entryContext + " needs usesPerLevelUp (main) or transferUses (Knowledge Transfer side)");
+				const bool overflowRule = entry.contains("overflowUses");
+				if (static_cast<int>(mainRule) + static_cast<int>(transferRule) + static_cast<int>(overflowRule) != 1) throw std::runtime_error(entryContext + " needs exactly one Field Mastery rule kind");
 				ModuleFieldMasteryRule rule;
 				if (mainRule)
 				{
 					if (sideFeature) throw std::runtime_error(entryContext + ".usesPerLevelUp is main-package only");
 					if (!entry.at("usesPerLevelUp").is_array()) throw std::runtime_error(entryContext + ".usesPerLevelUp must be a per-level array");
 					(void)ParsePositiveLevelInt(entry, "usesPerLevelUp", entryContext + ".usesPerLevelUp", minimumLevelCount, rule.usesPerLevelUpByLevel);
+				}
+				else if (overflowRule)
+				{
+					if (!sideFeature) throw std::runtime_error(entryContext + " overflow is side-feature only");
+					rule.overflowUses = ParsePositiveInt(entry.at("overflowUses"), entryContext);
+					rule.overflowBonus = ParseFiniteFloat(entry.at("overflowBonus"), entryContext);
+					if (rule.overflowBonus <= 0.f) throw std::runtime_error(entryContext + " overflow bonus must be positive");
 				}
 				else
 				{

@@ -1,4 +1,5 @@
 #include "framework/EngineContext.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameplay/weapon/wave/ExpandingWaveWeaponActor.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
@@ -108,6 +109,35 @@ namespace
 		f.level->TickInternal(0.f);
 		for (const auto& weak : f.level->GetActorsByType<ExpandingWaveWeaponActor>())
 			if (const auto wave = weak.lock()) for (int step = 0; step < 45 && !wave->GetIsPendingDestroy(); ++step) wave->Tick(.02f);
+	}
+
+	void SplitFireChecks(Report& report, Application& application)
+	{
+		for (const char* weaponId : { kWeaponId, "Weapon.Projectile.EnemyTwinBladeScatter.Basic", "Weapon.Cone.RapidShotgun.Basic", "Weapon.Beam.ContinuousHeatLaser.Basic", "Weapon.Wave.CryoProjector.Basic", "Weapon.Arc.ElectricLauncher.Basic" })
+		{
+			const auto* authored = content::WeaponContentCatalog::FindById(weaponId);
+			report.Check(authored != nullptr, "Split Fire uses registered Primary content", weaponId);
+			Fixture f{ report, application }; f.Install(kTurretId, 1, 3, "Module.SideFeature.TurretMount.SplitFire");
+			const auto east = Enemy(f, 200.f), west = Enemy(f, 400.f); west->SetActorLocation(f.ship->GetActorLocation() + sf::Vector2f{ -400.f, 0.f });
+			for (const auto& target : { east, west }) target->SetCollisionMask(GameCollision::PlayerBullet);
+			PrimaryWeaponExecutionContext fire{ *f.ship, *authored, authored->attributes }; fire.mountProfile = f.ship->GetAbilitySystemComponent().GetPrimaryMountProfile(); fire.shotMetadata.criticalPolicy = DamageCriticalPolicy::Disabled;
+			PrimaryWeaponRuntimeState state; PrimaryWeaponExecutionSystem::InitializeRuntime(*authored, state); fire.runtime = &state; PrimaryWeaponExecutionSystem::BeginFire(fire, state);
+			for (int shot = 1; shot <= 4; ++shot)
+			{
+				if (state.handler->UsesIntervalFire()) report.Check(PrimaryWeaponExecutionSystem::FireOnce(fire, state), "Split Fire advances a real successful Primary shot", weaponId);
+				else state.handler->TickFire(fire, *state.typeState, CombatTick::Interval);
+				f.level->TickInternal(0.f);
+				for (const auto& weak : f.level->GetActorsByType<PrimaryWeaponProjectileActor>())
+					if (const auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy())
+					{
+						auto target = actor->GetActorForwardDirection().x > 0.f ? east : west;
+						actor->OnActorBeginOverlap(target.get());
+					}
+				for (const auto& weak : f.level->GetActorsByType<ExpandingWaveWeaponActor>()) if (const auto wave = weak.lock()) for (int step = 0; step < 60 && !wave->GetIsPendingDestroy(); ++step) wave->Tick(.02f);
+				report.Check((west->GetHealthComponent().GetHealth() < 1000.f) == (shot == 4), "Split Fire reaches a distinct second target only on every fourth shot/pulse", Json{ { "weapon", weaponId }, { "shot", shot }, { "health", west->GetHealthComponent().GetHealth() }, { "split", state.splitFireShot } });
+			}
+			PrimaryWeaponExecutionSystem::EndFire(fire, state);
+		}
 	}
 
 	void OtherPrimaryChecks(Report& report, Application& application)
@@ -338,6 +368,7 @@ int main(int argc, char** argv)
 		TurretChecks(report, application);
 		BroadsideChecks(report, application);
 		OtherPrimaryChecks(report, application);
+		SplitFireChecks(report, application);
 		HeldBeamMountChecks(report, application);
 		report.artifact["passed"] = true;
 	}

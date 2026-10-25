@@ -5,6 +5,7 @@
 #include "gameplay/module/rules/EpicPrimaryRules.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace vega
 {
@@ -13,6 +14,7 @@ namespace vega
 		const float range = sas::FindAttributeValue(context.attributes, PrimaryWeaponSchema::Beam::Delivery::Range, sas::FindAttributeValue(context.attributes, CommonAttributeIds::Range, 1600.f));
 		const float rotation = EpicPrimaryMounts::FindTurretRotation(context.owner, context.mountProfile, range).value_or(context.owner.GetActorRotation());
 		List<PrimaryWeaponEmission> emissions;
+		const auto secondTarget = context.mountProfile.splitFire && context.runtime && context.runtime->splitFireShot ? EpicPrimaryMounts::FindTurretTarget(context.owner, context.mountProfile, range, 1) : nullptr;
 		const auto addMuzzle = [&](const WeaponMuzzleDefinition& muzzle)
 		{
 			const auto origin = context.owner.GetActorLocation() + context.owner.TransformLocalToWorld(muzzle.offset);
@@ -24,7 +26,16 @@ namespace vega
 					emissions.push_back({ origin + RotationToVector(sideRotation - 90.f) * EpicPrimaryMounts::kBroadsideSpawnOffset, sideRotation + muzzle.rotationOffset, context.mountProfile.broadsideDamageMultiplier });
 				}
 			}
-			else emissions.push_back({ origin, rotation + muzzle.rotationOffset, 1.f });
+			else
+			{
+				emissions.push_back({ origin, rotation + muzzle.rotationOffset, 1.f });
+				if (secondTarget)
+				{
+					const auto offset = secondTarget->GetActorLocation() - context.owner.GetActorLocation();
+					const float secondRotation = RadiansToDegrees(std::atan2(offset.y, offset.x)) + 90.f;
+					emissions.push_back({ origin, secondRotation + muzzle.rotationOffset, 1.f, secondTarget });
+				}
+			}
 		};
 		if (context.definition.muzzleDefinitions.empty()) addMuzzle({});
 		else if (firstMuzzleOnly) addMuzzle(context.definition.muzzleDefinitions.front());

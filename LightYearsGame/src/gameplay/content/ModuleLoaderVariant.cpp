@@ -260,6 +260,11 @@ namespace vega::content
 				if (!abilityRestore && action.trigger != (refund ? ModuleTriggerKind::AbilityActivated : cryo ? ModuleTriggerKind::DamageTaken : ModuleTriggerKind::KillConfirmed))
 					throw std::runtime_error(context + " incompatible event action trigger");
 				action.requiredEventTags = ParseRequiredEventTags(entry.value("requiredEventTags", Json::array()), action.trigger, context + ".eventActions.requiredEventTags");
+				if (entry.contains("healthAtMost"))
+				{
+					action.healthAtMost = ParseFiniteFloat(entry.at("healthAtMost"), context + ".healthAtMost");
+					if (!abilityRestore || action.kind != ModuleEventActionKind::RestoreHealth || action.healthAtMost <= 0.f || action.healthAtMost > 1.f) throw std::runtime_error(context + " invalid healing health threshold");
+				}
 				action.amount = ParseLevelFloat(entry, "amount", context + ".eventActions.amount", minimumLevelCount, action.amountByLevel);
 				const bool seconds = action.kind == ModuleEventActionKind::ReduceAllCooldowns;
 				const auto validAmount = [seconds, cryo, gold = action.kind == ModuleEventActionKind::AwardGold](float value) { return value > 0.f && ((cryo || gold) ? value <= static_cast<float>(std::numeric_limits<int>::max() / 2) && std::floor(value) == value : seconds || value <= 1.f); };
@@ -415,6 +420,7 @@ namespace vega::content
 			ParsePrimaryMountRules(object, context, minimumLevelCount, variant, sideFeature);
 			ParseEpicOffenseRules(object, context, minimumLevelCount, variant, sideFeature);
 			ParseEpicUtilityMovementRules(object, context, minimumLevelCount, variant, sideFeature);
+			ParseSideRules(object, context, variant, sideFeature);
 			const Json statusRules = object.value("statusRules", Json::object());
 			if (!statusRules.is_object()) throw std::runtime_error(context + ".statusRules must be an object");
 			const std::set<std::string> statusKeys{ "electricOverrides", "electricSpreads", "primaryStatusPrimers", "cryoFreezes", "thermalCryoDurationBonuses", "freezeSpreads", "durationBonuses", "thermalBursts", "kineticConsumes" };

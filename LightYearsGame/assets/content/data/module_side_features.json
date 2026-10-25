@@ -31,23 +31,27 @@
       "choices": [
         {
           "sideFeatureId": "Module.SideFeature.Shared.D1",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D5",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D3",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D2",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D4",
-          "weight": 1.0
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D6",
+          "weight": 1
         }
       ]
     },
@@ -56,26 +60,42 @@
       "choices": [
         {
           "sideFeatureId": "Module.SideFeature.Shared.G2",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G3",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G4",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G5",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G1",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.LuckyCast",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R1.Uncommon",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R2.Uncommon",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R5.Uncommon",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R6.Uncommon",
           "weight": 1
         }
       ]
@@ -110,23 +130,27 @@
       "choices": [
         {
           "sideFeatureId": "Module.SideFeature.Shared.D1.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D5.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D3.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D2.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.D4.Rare",
-          "weight": 1.0
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D6.Rare",
+          "weight": 1
         }
       ]
     },
@@ -135,52 +159,39 @@
       "choices": [
         {
           "sideFeatureId": "Module.SideFeature.Shared.G2.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G3.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G4.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G5.Rare",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.G1.Rare",
-          "weight": 1.0
-        }
-      ]
-    },
-    {
-      "id": "Module.SidePool.RareSpecial",
-      "choices": [
+          "weight": 1
+        },
         {
           "sideFeatureId": "Module.SideFeature.Shared.R1",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.R2",
-          "weight": 1.0
-        },
-        {
-          "sideFeatureId": "Module.SideFeature.Shared.R3",
-          "weight": 1.0
-        },
-        {
-          "sideFeatureId": "Module.SideFeature.Shared.R4",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.R5",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "sideFeatureId": "Module.SideFeature.Shared.R6",
-          "weight": 1.0
+          "weight": 1
         }
       ]
     },
@@ -190,6 +201,127 @@
         {
           "sideFeatureId": "Module.SideFeature.Shared.F1.Rare",
           "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.EpicOffense",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O1.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O2.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O3.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O4.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O5.Epic",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.EpicDefense",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D1.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D2.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D3.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D4.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D5.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D6.Epic",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.EpicGeneral",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G1.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G2.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G3.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G4.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G5.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R1.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R2.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R5.Epic",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R6.Epic",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.RareUnique",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.CalmBreath",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.AttunedSocket",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.EpicUnique",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.DeferredDamage",
+          "weight": 1
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.HullBond",
+          "weight": 1
         }
       ]
     }
@@ -208,13 +340,14 @@
             "attributeId": "Owner.AttackPower",
             "operation": "Add",
             "magnitude": [
-              8.0,
-              8.0,
-              8.0
+              8,
+              8,
+              8
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.O2",
@@ -229,13 +362,14 @@
             "attributeId": "Owner.CriticalChance",
             "operation": "Add",
             "magnitude": [
-              8.0,
-              8.0,
-              8.0
+              8,
+              8,
+              8
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.D1",
@@ -250,13 +384,14 @@
             "attributeId": "Owner.MaxHealth",
             "operation": "Add",
             "magnitude": [
-              25.0,
-              25.0,
-              25.0
+              25,
+              25,
+              25
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.D5",
@@ -277,7 +412,8 @@
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.G2",
@@ -292,13 +428,14 @@
             "attributeId": "Owner.AbilityHaste",
             "operation": "Add",
             "magnitude": [
-              4.0,
-              4.0,
-              4.0
+              4,
+              4,
+              4
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.G3",
@@ -319,7 +456,8 @@
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.G4",
@@ -350,7 +488,8 @@
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.G5",
@@ -365,13 +504,14 @@
             "attributeId": "Owner.Luck",
             "operation": "Add",
             "magnitude": [
-              1.0,
-              1.0,
-              1.0
+              1,
+              1,
+              1
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.GlassTop.ShieldReturn",
@@ -406,14 +546,15 @@
             "attributeId": "Owner.AttackSpeed",
             "operation": "Add",
             "magnitude": [
-              4.0,
-              4.0,
-              4.0
+              4,
+              4,
+              4
             ]
           }
         ]
       },
-      "poolId": "Module.SidePool.Offense"
+      "poolId": "Module.SidePool.Offense",
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.D3",
@@ -429,7 +570,8 @@
           }
         ]
       },
-      "poolId": "Module.SidePool.Defense"
+      "poolId": "Module.SidePool.Defense",
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.LootShield.KillWard",
@@ -540,7 +682,8 @@
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.D4",
@@ -557,7 +700,8 @@
             "magnitude": 1.15
           }
         ]
-      }
+      },
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.SharpScale.CriticalRhythm",
@@ -743,7 +887,8 @@
           ]
         }
       },
-      "poolId": "Module.SidePool.Offense"
+      "poolId": "Module.SidePool.Offense",
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.O5",
@@ -758,7 +903,8 @@
           }
         ]
       },
-      "poolId": "Module.SidePool.Offense"
+      "poolId": "Module.SidePool.Offense",
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.G1",
@@ -774,7 +920,8 @@
           }
         ]
       },
-      "poolId": "Module.SidePool.General"
+      "poolId": "Module.SidePool.General",
+      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.GlassTop.LowHealthCrit",
@@ -851,13 +998,14 @@
             "attributeId": "Owner.AttackPower",
             "operation": "Add",
             "magnitude": [
-              14.0,
-              14.0,
-              14.0
+              14,
+              14,
+              14
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.O2.Rare",
@@ -872,13 +1020,14 @@
             "attributeId": "Owner.CriticalChance",
             "operation": "Add",
             "magnitude": [
-              14.0,
-              14.0,
-              14.0
+              14,
+              14,
+              14
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.O3.Rare",
@@ -893,13 +1042,14 @@
             "attributeId": "Owner.AttackSpeed",
             "operation": "Add",
             "magnitude": [
-              7.0,
-              7.0,
-              7.0
+              7,
+              7,
+              7
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.O4.Rare",
@@ -911,11 +1061,12 @@
         "statusRules": {
           "durationBonuses": [
             {
-              "bonusSeconds": 1.5
+              "bonusSeconds": 1.75
             }
           ]
         }
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.O5.Rare",
@@ -927,10 +1078,11 @@
         "damageRules": [
           {
             "condition": "FirstTargetHit",
-            "damageMultiplier": 1.25
+            "damageMultiplier": 1.2625
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.D1.Rare",
@@ -945,13 +1097,14 @@
             "attributeId": "Owner.MaxHealth",
             "operation": "Add",
             "magnitude": [
-              45.0,
-              45.0,
-              45.0
+              43.75,
+              43.75,
+              43.75
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.D2.Rare",
@@ -969,12 +1122,13 @@
                 "target": "Owner",
                 "attributeId": "Owner.Armor",
                 "operation": "Add",
-                "magnitude": 20
+                "magnitude": 21
               }
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.D3.Rare",
@@ -990,7 +1144,8 @@
             "amount": 0.0175
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.D4.Rare",
@@ -1004,10 +1159,11 @@
             "target": "Ship",
             "attributeId": "Ship.Shield.Regen",
             "operation": "Multiply",
-            "magnitude": 1.25
+            "magnitude": 1.2625
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.D5.Rare",
@@ -1028,7 +1184,8 @@
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.G1.Rare",
@@ -1044,7 +1201,8 @@
             "amount": 2
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.G2.Rare",
@@ -1059,13 +1217,14 @@
             "attributeId": "Owner.AbilityHaste",
             "operation": "Add",
             "magnitude": [
-              7.0,
-              7.0,
-              7.0
+              7,
+              7,
+              7
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.G3.Rare",
@@ -1080,13 +1239,14 @@
             "attributeId": "Ship.Afterburner.Capacity",
             "operation": "Multiply",
             "magnitude": [
-              1.18,
-              1.18,
-              1.18
+              1.175,
+              1.175,
+              1.175
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.G4.Rare",
@@ -1117,7 +1277,8 @@
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.G5.Rare",
@@ -1132,19 +1293,20 @@
             "attributeId": "Owner.Luck",
             "operation": "Add",
             "magnitude": [
-              2.0,
-              2.0,
-              2.0
+              2,
+              2,
+              2
             ]
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.R1",
       "displayName": "Guarded Strike",
       "description": "Using a Defense ability raises your Primary shot damage by {damage.0.bonusPercent}% for {damage.0.activeDurationSeconds}s.",
-      "poolId": "Module.SidePool.RareSpecial",
+      "poolId": "Module.SidePool.RareGeneral",
       "levelCount": 3,
       "rules": {
         "damageRules": [
@@ -1158,13 +1320,14 @@
             "activeDurationSeconds": 4
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.R2",
       "displayName": "Reactive Plating",
       "description": "When your shield breaks, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
-      "poolId": "Module.SidePool.RareSpecial",
+      "poolId": "Module.SidePool.RareGeneral",
       "levelCount": 3,
       "rules": {
         "triggerBuffs": [
@@ -1181,43 +1344,14 @@
             ]
           }
         ]
-      }
-    },
-    {
-      "id": "Module.SideFeature.Shared.R3",
-      "displayName": "Boss Hunter",
-      "description": "Deal {damage.0.bonusPercent}% more damage to boss-class enemies.",
-      "poolId": "Module.SidePool.RareSpecial",
-      "levelCount": 3,
-      "rules": {
-        "damageRules": [
-          {
-            "condition": "TargetIsBossClass",
-            "damageMultiplier": 1.1
-          }
-        ]
-      }
-    },
-    {
-      "id": "Module.SideFeature.Shared.R4",
-      "displayName": "Full Charge",
-      "description": "While your shield is full, deal {damage.0.bonusPercent}% more damage.",
-      "poolId": "Module.SidePool.RareSpecial",
-      "levelCount": 3,
-      "rules": {
-        "damageRules": [
-          {
-            "condition": "OwnerShieldFull",
-            "damageMultiplier": 1.08
-          }
-        ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.R5",
       "displayName": "Status Weaver",
       "description": "Deal {damage.0.bonusPercent}% more damage to enemies with {damage.0.conditionCount} or more different status effects.",
-      "poolId": "Module.SidePool.RareSpecial",
+      "poolId": "Module.SidePool.RareGeneral",
       "levelCount": 3,
       "rules": {
         "damageRules": [
@@ -1227,13 +1361,14 @@
             "damageMultiplier": 1.2
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.Shared.R6",
       "displayName": "Fleet Guard",
       "description": "After you use a Movement ability, damage you take is reduced by {damage.0.reductionPercent}% for {damage.0.activeDurationSeconds}s.",
-      "poolId": "Module.SidePool.RareSpecial",
+      "poolId": "Module.SidePool.RareGeneral",
       "levelCount": 3,
       "rules": {
         "damageRules": [
@@ -1248,7 +1383,8 @@
             "activeDurationSeconds": 3
           }
         ]
-      }
+      },
+      "requiredRarity": "Rare"
     },
     {
       "id": "Module.SideFeature.KineticBreaker.HairTrigger",
@@ -1780,6 +1916,684 @@
         "fieldMasteryRules": [
           {
             "transferUses": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O1.Epic",
+      "displayName": "Offensive O1 Epic",
+      "description": "Attack Power +{Owner.AttackPower}.",
+      "poolId": "Module.SidePool.EpicOffense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AttackPower",
+            "operation": "Add",
+            "magnitude": [
+              20,
+              20,
+              20
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.O2.Epic",
+      "displayName": "Offensive O2 Epic",
+      "description": "Critical chance +{Owner.CriticalChance}%.",
+      "poolId": "Module.SidePool.EpicOffense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.CriticalChance",
+            "operation": "Add",
+            "magnitude": [
+              20,
+              20,
+              20
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.O3.Epic",
+      "displayName": "Offensive O3 Epic",
+      "description": "Attack Speed +{Owner.AttackSpeed}%.",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AttackSpeed",
+            "operation": "Add",
+            "magnitude": [
+              10,
+              10,
+              10
+            ]
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.EpicOffense",
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.O4.Epic",
+      "displayName": "Lasting Status Epic",
+      "description": "Applied status durations +{statusDuration.0.bonusSeconds}s.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "durationBonuses": [
+            {
+              "bonusSeconds": 2.5
+            }
+          ]
+        }
+      },
+      "poolId": "Module.SidePool.EpicOffense",
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.O5.Epic",
+      "displayName": "Opening Hit Epic",
+      "description": "First successful hit per enemy deals {damage.0.bonusPercent}% more damage.",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "FirstTargetHit",
+            "damageMultiplier": 1.375
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.EpicOffense",
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.D1.Epic",
+      "displayName": "Defensive D1 Epic",
+      "description": "Max Health +{Owner.MaxHealth}.",
+      "poolId": "Module.SidePool.EpicDefense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MaxHealth",
+            "operation": "Add",
+            "magnitude": [
+              62.5,
+              62.5,
+              62.5
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.D2.Epic",
+      "displayName": "Damage Guard Epic",
+      "description": "After taking damage, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
+      "poolId": "Module.SidePool.EpicDefense",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "DamageTaken",
+            "durationSeconds": 2,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.Armor",
+                "operation": "Add",
+                "magnitude": 30
+              }
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.D3.Epic",
+      "displayName": "Hunt Recovery Epic",
+      "description": "On kill, restore {action.0.amountPercent}% of Max Health.",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "RestoreHealth",
+            "amount": 0.025
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.EpicDefense",
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.D4.Epic",
+      "displayName": "Shield Recharge Epic",
+      "description": "Shield regeneration +{Ship.Shield.Regen.bonusPercent}%.",
+      "poolId": "Module.SidePool.EpicDefense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Regen",
+            "operation": "Multiply",
+            "magnitude": 1.375
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.D5.Epic",
+      "displayName": "Defensive D5 Epic",
+      "description": "Max Shield +{Ship.Shield.Max.bonusPercent}%.",
+      "poolId": "Module.SidePool.EpicDefense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Max",
+            "operation": "Multiply",
+            "magnitude": [
+              1.2,
+              1.2,
+              1.2
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.G1.Epic",
+      "displayName": "Hunt Gold Epic",
+      "description": "On kill, gain {action.0.amount} Gold for this run.",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "AwardGold",
+            "amount": 3
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.EpicGeneral",
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.G2.Epic",
+      "displayName": "General G2 Epic",
+      "description": "Ability Haste +{Owner.AbilityHaste}.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AbilityHaste",
+            "operation": "Add",
+            "magnitude": [
+              10,
+              10,
+              10
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.G3.Epic",
+      "displayName": "General G3 Epic",
+      "description": "Afterburner capacity +{Ship.Afterburner.Capacity.bonusPercent}%.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Afterburner.Capacity",
+            "operation": "Multiply",
+            "magnitude": [
+              1.25,
+              1.25,
+              1.25
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.G4.Epic",
+      "displayName": "General G4 Epic",
+      "description": "Horizontal and vertical movement ratings +{Owner.MoveSpeedHorizontal}.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedHorizontal",
+            "operation": "Add",
+            "magnitude": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedVertical",
+            "operation": "Add",
+            "magnitude": [
+              2,
+              2,
+              2
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.G5.Epic",
+      "displayName": "General G5 Epic",
+      "description": "Luck +{Owner.Luck}.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.Luck",
+            "operation": "Add",
+            "magnitude": [
+              3,
+              3,
+              3
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.D6",
+      "displayName": "Desperate Patch",
+      "description": "Defense use at or below 40% hull heals {action.0.amountPercent}% of Max Health.",
+      "poolId": "Module.SidePool.Defense",
+      "requiredRarity": "Uncommon",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "AbilityActivated",
+            "requiredEventTags": [
+              "Ability.Defense"
+            ],
+            "kind": "RestoreHealth",
+            "healthAtMost": 0.4,
+            "amount": 0.12
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D6.Rare",
+      "displayName": "Desperate Patch Rare",
+      "description": "Defense use at or below 40% hull heals {action.0.amountPercent}% of Max Health.",
+      "poolId": "Module.SidePool.RareDefense",
+      "requiredRarity": "Rare",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "AbilityActivated",
+            "requiredEventTags": [
+              "Ability.Defense"
+            ],
+            "kind": "RestoreHealth",
+            "healthAtMost": 0.4,
+            "amount": 0.21
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D6.Epic",
+      "displayName": "Desperate Patch Epic",
+      "description": "Defense use at or below 40% hull heals {action.0.amountPercent}% of Max Health.",
+      "poolId": "Module.SidePool.EpicDefense",
+      "requiredRarity": "Epic",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "AbilityActivated",
+            "requiredEventTags": [
+              "Ability.Defense"
+            ],
+            "kind": "RestoreHealth",
+            "healthAtMost": 0.4,
+            "amount": 0.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.R1.Uncommon",
+      "displayName": "Guarded Strike Uncommon",
+      "description": "Using a Defense ability raises your Primary shot damage by {damage.0.bonusPercent}% for {damage.0.activeDurationSeconds}s.",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "PrimaryShotOnly",
+            "damageMultiplier": 1.09,
+            "activeWhileTrigger": "AbilityActivated",
+            "activeWhileEventTags": [
+              "Ability.Defense"
+            ],
+            "activeDurationSeconds": 4
+          }
+        ]
+      },
+      "requiredRarity": "Uncommon"
+    },
+    {
+      "id": "Module.SideFeature.Shared.R1.Epic",
+      "displayName": "Guarded Strike Epic",
+      "description": "Using a Defense ability raises your Primary shot damage by {damage.0.bonusPercent}% for {damage.0.activeDurationSeconds}s.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "PrimaryShotOnly",
+            "damageMultiplier": 1.21,
+            "activeWhileTrigger": "AbilityActivated",
+            "activeWhileEventTags": [
+              "Ability.Defense"
+            ],
+            "activeDurationSeconds": 4
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.R2.Uncommon",
+      "displayName": "Reactive Plating Uncommon",
+      "description": "When your shield breaks, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "ShieldBroken",
+            "durationSeconds": 4,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.Armor",
+                "operation": "Add",
+                "magnitude": 17
+              }
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Uncommon"
+    },
+    {
+      "id": "Module.SideFeature.Shared.R2.Epic",
+      "displayName": "Reactive Plating Epic",
+      "description": "When your shield breaks, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "ShieldBroken",
+            "durationSeconds": 4,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.Armor",
+                "operation": "Add",
+                "magnitude": 43
+              }
+            ]
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.R5.Uncommon",
+      "displayName": "Status Weaver Uncommon",
+      "description": "Deal {damage.0.bonusPercent}% more damage to enemies with {damage.0.conditionCount} or more different status effects.",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "TargetStatusKindsAtLeast",
+            "conditionValue": 2,
+            "damageMultiplier": 1.11
+          }
+        ]
+      },
+      "requiredRarity": "Uncommon"
+    },
+    {
+      "id": "Module.SideFeature.Shared.R5.Epic",
+      "displayName": "Status Weaver Epic",
+      "description": "Deal {damage.0.bonusPercent}% more damage to enemies with {damage.0.conditionCount} or more different status effects.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "TargetStatusKindsAtLeast",
+            "conditionValue": 2,
+            "damageMultiplier": 1.29
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.R6.Uncommon",
+      "displayName": "Fleet Guard Uncommon",
+      "description": "After you use a Movement ability, damage you take is reduced by {damage.0.reductionPercent}% for {damage.0.activeDurationSeconds}s.",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "incoming": true,
+            "condition": "Always",
+            "damageMultiplier": 0.91,
+            "activeWhileTrigger": "AbilityActivated",
+            "activeWhileEventTags": [
+              "Ability.Movement"
+            ],
+            "activeDurationSeconds": 3
+          }
+        ]
+      },
+      "requiredRarity": "Uncommon"
+    },
+    {
+      "id": "Module.SideFeature.Shared.R6.Epic",
+      "displayName": "Fleet Guard Epic",
+      "description": "After you use a Movement ability, damage you take is reduced by {damage.0.reductionPercent}% for {damage.0.activeDurationSeconds}s.",
+      "poolId": "Module.SidePool.EpicGeneral",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "incoming": true,
+            "condition": "Always",
+            "damageMultiplier": 0.79,
+            "activeWhileTrigger": "AbilityActivated",
+            "activeWhileEventTags": [
+              "Ability.Movement"
+            ],
+            "activeDurationSeconds": 3
+          }
+        ]
+      },
+      "requiredRarity": "Epic"
+    },
+    {
+      "id": "Module.SideFeature.Shared.CalmBreath",
+      "displayName": "Calm Breath",
+      "levelCount": 3,
+      "description": "After 3 seconds without taking damage, all Q/E/F/R cooldowns recover 15% faster. Taking damage ends it.",
+      "rules": {
+        "cooldownRecoveryRules": [
+          {
+            "bonus": 0.15,
+            "damageFreeSeconds": 3
+          }
+        ]
+      },
+      "requiredRarity": "Rare",
+      "poolId": "Module.SidePool.RareUnique"
+    },
+    {
+      "id": "Module.SideFeature.Shared.AttunedSocket",
+      "displayName": "Attuned Socket",
+      "levelCount": 3,
+      "description": "This module always receives at least +1 zone level; Hull still grants +2.",
+      "rules": {
+        "minimumZoneLevelBonus": 1
+      },
+      "requiredRarity": "Rare",
+      "poolId": "Module.SidePool.RareUnique"
+    },
+    {
+      "id": "Module.SideFeature.Shared.DeferredDamage",
+      "displayName": "Deferred Damage",
+      "levelCount": 3,
+      "description": "30% of each incoming hit is spread evenly over the next 3 seconds.",
+      "rules": {
+        "deferredDamage": {
+          "fraction": 0.3,
+          "seconds": 3
+        }
+      },
+      "requiredRarity": "Epic",
+      "poolId": "Module.SidePool.EpicUnique"
+    },
+    {
+      "id": "Module.SideFeature.Shared.HullBond",
+      "displayName": "Hull Bond",
+      "levelCount": 3,
+      "description": "This module receives +2 zone levels wherever it is placed.",
+      "rules": {
+        "minimumZoneLevelBonus": 2
+      },
+      "requiredRarity": "Epic",
+      "poolId": "Module.SidePool.EpicUnique"
+    },
+    {
+      "id": "Module.SideFeature.TripleCore.SpareTimer",
+      "displayName": "Spare Timer",
+      "levelCount": 3,
+      "description": "Each empty Q/E/F/R slot speeds up installed ability cooldown recovery by 15%.",
+      "rules": {
+        "cooldownRecoveryRules": [
+          {
+            "bonus": 0.15,
+            "perEmptyAbilitySlot": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.TripleCore.FocusFire",
+      "displayName": "Focus Fire",
+      "levelCount": 3,
+      "description": "While a Q/E/F/R slot is empty, Primary gains half of Triple Core's ability damage bonus.",
+      "rules": {
+        "primaryShareOfAbilityBonus": 0.5
+      }
+    },
+    {
+      "id": "Module.SideFeature.MomentumDrive.SpeedEcho",
+      "displayName": "Speed Echo",
+      "levelCount": 3,
+      "description": "Movement use during the doubled-rating window extends it by 2 seconds instead of refreshing it, up to 10 seconds remaining.",
+      "rules": {
+        "momentumExtension": {
+          "seconds": 2,
+          "maximumSeconds": 10
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.MomentumDrive.FlowShield",
+      "displayName": "Flow Shield",
+      "levelCount": 3,
+      "description": "During the doubled-rating window, damage taken x0.85.",
+      "rules": {
+        "damageRules": [
+          {
+            "incoming": true,
+            "condition": "Always",
+            "damageMultiplier": 0.85,
+            "activeWhileTrigger": "AbilityActivated",
+            "activeWhileEventTags": [
+              "Ability.Movement"
+            ],
+            "activeDurationSeconds": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.TurretMount.SplitFire",
+      "displayName": "Split Fire",
+      "levelCount": 3,
+      "description": "Every fourth Primary shot also fires at a second target.",
+      "rules": {
+        "primarySplitFire": true
+      }
+    },
+    {
+      "id": "Module.SideFeature.FieldMastery.MasteryOverflow",
+      "displayName": "Mastery Overflow",
+      "levelCount": 3,
+      "description": "Every 15 uses of a max-level Utility ability permanently add 5% to all Utility effects for this run.",
+      "rules": {
+        "fieldMasteryRules": [
+          {
+            "overflowUses": 15,
+            "overflowBonus": 0.05
           }
         ]
       }

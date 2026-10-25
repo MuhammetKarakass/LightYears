@@ -583,6 +583,8 @@ namespace vega
 		}
 		if (!runtimeContext.ShouldContinue()) return false;
 
+		if (!context.mountProfile.splitFire) state.splitFireCount = 0;
+		state.splitFireShot = context.mountProfile.splitFire && (state.splitFireCount + 1) % 4 == 0;
 		const bool success = state.handler->FireOnce(runtimeContext, *state.typeState);
 		if (!success)
 		{
@@ -590,6 +592,7 @@ namespace vega
 			return false;
 		}
 		++state.successfulFireCount;
+		if (context.mountProfile.splitFire) state.splitFireCount = (state.splitFireCount + 1) % 4;
 		ConsumeEmpoweredShot(context, state, shotMetadata.isEmpowered);
 
 		if (context.definition.magazine.has_value())

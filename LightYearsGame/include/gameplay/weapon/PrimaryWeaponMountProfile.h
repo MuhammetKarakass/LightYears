@@ -12,6 +12,7 @@ namespace vega
 		bool broadside = false;
 		// Execution Priority (Turret side feature): the valid target with the lowest health fraction is preferred.
 		bool executionPriority = false;
+		bool splitFire = false;
 		// Coefficient of the damage of each Broadside side volley.
 		float broadsideDamageMultiplier = 1.f;
 	};

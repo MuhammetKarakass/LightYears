@@ -2724,6 +2724,30 @@
             }
           ]
         }
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O1.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.CalmBreath"
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.TripleCore.SpareTimer",
+        "Module.SideFeature.TripleCore.FocusFire"
       ]
     },
     {
@@ -2991,7 +3015,7 @@
           ]
         },
         {
-          "poolId": "Module.SidePool.RareSpecial",
+          "poolId": "Module.SidePool.RareGeneral",
           "allowedFeatureIds": [
             "Module.SideFeature.Shared.R5"
           ]
@@ -3077,13 +3101,8 @@
         {
           "poolId": "Module.SidePool.RareOffense",
           "allowedFeatureIds": [
-            "Module.SideFeature.Shared.O5.Rare"
-          ]
-        },
-        {
-          "poolId": "Module.SidePool.RareSpecial",
-          "allowedFeatureIds": [
-            "Module.SideFeature.Shared.R3"
+            "Module.SideFeature.Shared.O5.Rare",
+            "Module.SideFeature.Shared.O1.Rare"
           ]
         },
         {
@@ -3169,12 +3188,7 @@
         {
           "poolId": "Module.SidePool.RareGeneral",
           "allowedFeatureIds": [
-            "Module.SideFeature.Shared.G4.Rare"
-          ]
-        },
-        {
-          "poolId": "Module.SidePool.RareSpecial",
-          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G4.Rare",
             "Module.SideFeature.Shared.R6"
           ]
         },
@@ -3261,7 +3275,23 @@
         }
       ],
       "sideFeatures": [
-        "Module.SideFeature.TurretMount.ExecutionPriority"
+        "Module.SideFeature.TurretMount.ExecutionPriority",
+        "Module.SideFeature.TurretMount.SplitFire"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.EpicOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O2.Epic",
+            "Module.SideFeature.Shared.O3.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.HullBond"
+          ]
+        }
       ]
     },
     {
@@ -3553,7 +3583,7 @@
           "prismCoreRules": [
             {
               "statusDurationMultiplier": [
-                1.0,
+                1,
                 1.15,
                 1.3
               ]
@@ -3578,7 +3608,7 @@
           "prismCoreRules": [
             {
               "statusDurationMultiplier": [
-                1.0,
+                1,
                 1.15,
                 1.3
               ]
@@ -3590,7 +3620,26 @@
         "Module.SideFeature.PrismCore.StormCapacitor",
         "Module.SideFeature.PrismCore.AlternatingCurrent"
       ],
-      "sharedPools": []
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.EpicOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O4.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.R5.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.HullBond"
+          ]
+        }
+      ]
     },
     {
       "id": "Module.Offense.BloodContract.Epic",
@@ -3671,7 +3720,21 @@
         "Module.SideFeature.BloodContract.ClotArmor",
         "Module.SideFeature.BloodContract.DebtCollection"
       ],
-      "sharedPools": []
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.EpicDefense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D3.Epic",
+            "Module.SideFeature.Shared.D1.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.DeferredDamage"
+          ]
+        }
+      ]
     },
     {
       "id": "Module.Utility.SpareCapacitor.Rare",
@@ -3813,52 +3876,212 @@
       "family": "Ability.Movement",
       "rarity": "Epic",
       "levelCount": 3,
-      "sizeLadder": [1, 2],
+      "sizeLadder": [
+        1,
+        2
+      ],
       "sizeVariants": [
         {
-          "shape": [[0, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] },
-            { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] }
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MoveSpeedHorizontal",
+              "operation": "Add",
+              "magnitude": [
+                3,
+                3.5,
+                4
+              ]
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MoveSpeedVertical",
+              "operation": "Add",
+              "magnitude": [
+                3,
+                3.5,
+                4
+              ]
+            }
           ],
           "triggerBuffs": [
             {
               "trigger": "AbilityActivated",
-              "requiredEventTags": ["Ability.Movement"],
-              "durationSeconds": 5.0,
+              "requiredEventTags": [
+                "Ability.Movement"
+              ],
+              "durationSeconds": 5,
               "modifiers": [
-                { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true },
-                { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true }
+                {
+                  "target": "Owner",
+                  "attributeId": "Owner.MoveSpeedHorizontal",
+                  "operation": "Add",
+                  "magnitude": [
+                    3,
+                    3.5,
+                    4
+                  ],
+                  "affectedByZoneBonus": true
+                },
+                {
+                  "target": "Owner",
+                  "attributeId": "Owner.MoveSpeedVertical",
+                  "operation": "Add",
+                  "magnitude": [
+                    3,
+                    3.5,
+                    4
+                  ],
+                  "affectedByZoneBonus": true
+                }
               ]
             }
           ],
           "familyStatRules": [
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
+            {
+              "family": "Ability.Movement",
+              "attributeId": "Owner.MoveSpeedHorizontal",
+              "perModule": [
+                0.25,
+                0.25,
+                0.25
+              ],
+              "perAbility": 1,
+              "doubleOnAbilityUse": true,
+              "durationSeconds": 5
+            },
+            {
+              "family": "Ability.Movement",
+              "attributeId": "Owner.MoveSpeedVertical",
+              "perModule": [
+                0.25,
+                0.25,
+                0.25
+              ],
+              "perAbility": 1,
+              "doubleOnAbilityUse": true,
+              "durationSeconds": 5
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] },
-            { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0] }
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MoveSpeedHorizontal",
+              "operation": "Add",
+              "magnitude": [
+                3,
+                3.5,
+                4
+              ]
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MoveSpeedVertical",
+              "operation": "Add",
+              "magnitude": [
+                3,
+                3.5,
+                4
+              ]
+            }
           ],
           "triggerBuffs": [
             {
               "trigger": "AbilityActivated",
-              "requiredEventTags": ["Ability.Movement"],
-              "durationSeconds": 5.0,
+              "requiredEventTags": [
+                "Ability.Movement"
+              ],
+              "durationSeconds": 5,
               "modifiers": [
-                { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true },
-                { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [3.0, 3.5, 4.0], "affectedByZoneBonus": true }
+                {
+                  "target": "Owner",
+                  "attributeId": "Owner.MoveSpeedHorizontal",
+                  "operation": "Add",
+                  "magnitude": [
+                    3,
+                    3.5,
+                    4
+                  ],
+                  "affectedByZoneBonus": true
+                },
+                {
+                  "target": "Owner",
+                  "attributeId": "Owner.MoveSpeedVertical",
+                  "operation": "Add",
+                  "magnitude": [
+                    3,
+                    3.5,
+                    4
+                  ],
+                  "affectedByZoneBonus": true
+                }
               ]
             }
           ],
           "familyStatRules": [
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedHorizontal", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 },
-            { "family": "Ability.Movement", "attributeId": "Owner.MoveSpeedVertical", "perModule": [0.25, 0.25, 0.25], "perAbility": 1.0, "doubleOnAbilityUse": true, "durationSeconds": 5.0 }
+            {
+              "family": "Ability.Movement",
+              "attributeId": "Owner.MoveSpeedHorizontal",
+              "perModule": [
+                0.25,
+                0.25,
+                0.25
+              ],
+              "perAbility": 1,
+              "doubleOnAbilityUse": true,
+              "durationSeconds": 5
+            },
+            {
+              "family": "Ability.Movement",
+              "attributeId": "Owner.MoveSpeedVertical",
+              "perModule": [
+                0.25,
+                0.25,
+                0.25
+              ],
+              "perAbility": 1,
+              "doubleOnAbilityUse": true,
+              "durationSeconds": 5
+            }
           ]
         }
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.EpicGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G4.Epic",
+            "Module.SideFeature.Shared.R6.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.DeferredDamage"
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.MomentumDrive.SpeedEcho",
+        "Module.SideFeature.MomentumDrive.FlowShield"
       ]
     },
     {
@@ -4396,7 +4619,23 @@
         }
       ],
       "sideFeatures": [
-        "Module.SideFeature.FieldMastery.KnowledgeTransfer"
+        "Module.SideFeature.FieldMastery.KnowledgeTransfer",
+        "Module.SideFeature.FieldMastery.MasteryOverflow"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.EpicGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2.Epic",
+            "Module.SideFeature.Shared.G5.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.HullBond"
+          ]
+        }
       ]
     },
     {
@@ -4632,6 +4871,26 @@
       "sideFeatures": [
         "Module.SideFeature.EmergencyProtocol.Counterpressure",
         "Module.SideFeature.EmergencyProtocol.EvacuationRoute"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.EpicGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicDefense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D6.Epic"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.EpicUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.DeferredDamage"
+          ]
+        }
       ]
     },
     {
@@ -4701,6 +4960,26 @@
       ],
       "sideFeatures": [
         "Module.SideFeature.GoldPlating.GildedFrame"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareDefense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D1.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G1.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.AttunedSocket"
+          ]
+        }
       ]
     },
     {
@@ -4755,18 +5034,48 @@
       "description": "While the normal shield is full, regeneration fills a reserve up to {battery.0.reservePercent}% of Max Shield. Incoming damage spends the reserve before the normal shield.",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "shieldBatteryRules": [
             {
-              "reserveFraction": [0.3, 0.35, 0.4]
+              "reserveFraction": [
+                0.3,
+                0.35,
+                0.4
+              ]
             }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [0, 1]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
           "shieldBatteryRules": [
             {
-              "reserveFraction": [0.3, 0.35, 0.4]
+              "reserveFraction": [
+                0.3,
+                0.35,
+                0.4
+              ]
             }
           ]
         }
@@ -4774,6 +5083,21 @@
       "sideFeatures": [
         "Module.SideFeature.ShieldBattery.CapacitorFocus",
         "Module.SideFeature.ShieldBattery.UnbrokenStorage"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareDefense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D4.Rare",
+            "Module.SideFeature.Shared.D5.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareUnique",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.AttunedSocket"
+          ]
+        }
       ]
     },
     {

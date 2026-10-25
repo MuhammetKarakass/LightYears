@@ -110,7 +110,7 @@ namespace vega
 
 	void PlayerSpaceShip::ReceiveDamage(DamageContext context)
 	{
-		if (IsInvulnerable() || GetCombatRuntime().BlocksIncomingDamage())
+		if (!context.deferredDamage && (IsInvulnerable() || GetCombatRuntime().BlocksIncomingDamage()))
 		{
 			return;
 		}

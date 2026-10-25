@@ -33,7 +33,7 @@ set(VEGA_GAMEPLAY_CORE_FILES
 	EnergySpearContentRegistration AbilityLifecycleDispatcher AbilityUseHistory FocusActionLocks
 	TemporalRateModifierLedger AbilityActionValidator GameAbilityDefinitionValidator
 	GameplayEffectDefinitionValidator GameContentBootstrap ShipSchematicValidator ModuleLoadout
-	ModulePlacementRules ModuleResolver ModuleLoader ModuleLoaderPrimitives ModuleLoaderRules ModuleLoaderVariant ModuleContentCatalog ModuleSideFeatureLoader ModuleSideFeatureCatalog ModuleRoller GameAbilitySettingContracts
+	ModulePlacementRules ModuleResolver ModuleLoader ModuleLoaderPrimitives ModuleLoaderRules ModuleLoaderSideRules ModuleLoaderVariant ModuleContentCatalog ModuleSideFeatureLoader ModuleSideFeatureCatalog ModuleRoller GameAbilitySettingContracts
 	LightYearsEffectBehaviorRuntime
 )
 string(JOIN "|" VEGA_GAMEPLAY_CORE_REGEX_BODY ${VEGA_GAMEPLAY_CORE_FILES})
@@ -335,6 +335,7 @@ if(BUILD_TESTING)
 	vega_add_game_test_case(LightYearsRareSlipstreamControlE2E LightYearsRareSlipstreamControlE2ETests ARGS "${VEGA_E2E}/rare-slipstream-control.json" TIMEOUT 240)
 	vega_add_game_test(LightYearsRareShieldBatteryRuptureE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/RareShieldBatteryRuptureE2E.cpp)
 	vega_add_game_test_case(LightYearsRareShieldBatteryRuptureE2E LightYearsRareShieldBatteryRuptureE2ETests ARGS "${VEGA_E2E}/rare-shield-battery-rupture.json" TIMEOUT 240)
+	vega_add_game_test(LightYearsModuleSidePoolsE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleSidePoolsE2E.cpp)
 	vega_add_game_test(LightYearsModuleRefinementE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleRefinementE2E.cpp)
 	vega_add_game_test(LightYearsModulePlanTransitionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModulePlanTransitionE2E.cpp)
 	vega_add_game_test(LightYearsModuleGoldHullE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleGoldHullE2E.cpp)
@@ -362,6 +363,7 @@ if(BUILD_TESTING)
 	vega_add_game_test(LightYearsEpicUtilityMovementModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/EpicUtilityMovementModulesE2E.cpp)
 	vega_add_game_test_case(LightYearsEpicUtilityMovementModulesE2E LightYearsEpicUtilityMovementModulesE2ETests ARGS "${VEGA_E2E}/epic-utility-movement-modules-2026-10-24.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModulePlanTransitionE2E LightYearsModulePlanTransitionE2ETests ARGS "${VEGA_E2E}/module-plan-transition-2026-10-13.json" TIMEOUT 120)
+	vega_add_game_test_case(LightYearsModuleSidePoolsE2E LightYearsModuleSidePoolsE2ETests ARGS "${VEGA_E2E}/module-side-pools-task-c.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModuleRefinementE2E LightYearsModuleRefinementE2ETests ARGS "${VEGA_E2E}/module-refinement-2026-10-13.json" TIMEOUT 120)
 
 

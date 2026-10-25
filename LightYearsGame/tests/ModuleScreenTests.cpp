@@ -278,6 +278,32 @@ namespace
 		report.Check(cargoRhythm && cargoRhythm->level == 1 && cargoRhythm->zoneLevelBonus == 0 && cargoRhythm->description == levelOneText,
 			"the same module in cargo describes its placement level", { { "description", cargoRhythm ? cargoRhythm->description : std::string{} } });
 
+		// Placement sides must drive the preview, installed +Lv label and main card description through one resolver.
+		for (const auto& entry : { std::pair<const char*, const char*>{ "Module.Defense.GoldPlating.Rare", "Module.SideFeature.Shared.AttunedSocket" }, { "Module.Primary.TurretMount.Epic", "Module.SideFeature.Shared.HullBond" } })
+		{
+			const auto* definition = content::ModuleContentCatalog::FindById(entry.first);
+			const auto instance = player.AddModuleToInventory(entry.first, 1, definition->rarity, 1, entry.second);
+			const auto rules = player.BuildModuleRules(); bool installed = false; sf::Vector2i origin; int rotation = 0;
+			for (int turns = 0; turns < 4 && !installed; ++turns)
+				for (int y = 0; y < rules->schematic.height && !installed; ++y)
+					for (int x = 0; x < rules->schematic.width && !installed; ++x)
+					{
+						auto candidate = *player.GetModuleLoadout().FindInventoryItem(instance); candidate.origin = { x, y }; candidate.rotationQuarterTurns = turns;
+						const auto covered = ModulePlacementRules::GetCoveredCells(*definition, candidate);
+						if (std::any_of(covered.begin(), covered.end(), [&](const auto& cell) { return rules->schematic.GetZoneAt(cell.x, cell.y) == GameplayTags::Module::Zone::Hull; })) continue;
+						if (ModulePlacementRules::CanPlace(*rules, player.GetModuleLoadout(), candidate) != ModulePlacementFailure::None) continue;
+						origin = candidate.origin; rotation = turns; installed = true;
+					}
+			report.Check(installed, "placement-side UI test finds a non-Hull placement");
+			presenter->PickUpInventory(instance); presenter->RotateHeld(rotation); presenter->SetHoverCell(origin); level->TickInternal(0.f);
+			const int expected = definition->rarity == ModuleRarity::Rare ? 1 : 2;
+			report.Check(model->preview.legal && model->preview.zoneLevelBonus == expected, "placement side changes preview +Lv outside Hull");
+			report.Check(presenter->DropOnGrid(), "placement side installs through screen"); level->TickInternal(0.f);
+			const ModuleEntryView* shown = nullptr; for (const auto& item : model->installed) if (item.instanceId == instance) shown = &item;
+			report.Check(shown && shown->zoneLevelBonus == expected && shown->description == FormatModuleDescription(*definition, definition->sizeVariants[1], 1 + expected), "placement-side label and card main text use the same effective level");
+			report.Check(player.TryUninstallModule(instance), "placement-side UI test releases its cells"); level->TickInternal(0.f);
+		}
+
 		// Ability bay: only the Q/E/F/R slot modules fit it, they cannot leave it, and dropping one on another swaps them.
 		{
 			const auto slotId = [&](const char* id) { for (const ModulePlacement& placement : player.GetModuleLoadout().GetPlacements()) if (placement.moduleId == id) return placement.instanceId; return std::uint32_t{ 0 }; };

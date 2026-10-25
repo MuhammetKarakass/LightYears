@@ -80,6 +80,7 @@ namespace vega
 		float modifiedDamage = 0.f;
 		float appliedDamage = 0.f;
 		bool wasCritical = false;
+		bool deferredDamage = false;
 		// This is true only after health/shield resolution confirms that the hit
 		// actually reduced the target's health to zero.
 		bool targetWasKilled = false;

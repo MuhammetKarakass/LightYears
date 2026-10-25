@@ -16,6 +16,7 @@ namespace vega
 		int levelCount = 3;
 		ModuleRulePackage rules;
 		std::string description;
+		std::optional<ModuleRarity> requiredRarity;
 	};
 
 	struct ModuleSideFeatureChoice
@@ -34,7 +35,7 @@ namespace vega
 
 	inline bool IsModuleSideFeatureAllowed(const ModuleDefinition& module,const ModuleSideFeatureDefinition* feature)
 	{
-		if (!feature) return false;
+		if (!feature || (feature->requiredRarity && *feature->requiredRarity != module.rarity)) return false;
 		if (AllowsPrivateSideFeature(module, feature->sideFeatureId)) return !feature->poolId.IsValid();
 		if (!feature->poolId.IsValid()) return false;
 		return AllowsSharedSideFeature(module, feature->poolId, feature->sideFeatureId);

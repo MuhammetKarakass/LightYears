@@ -28,6 +28,8 @@ namespace vega
 	{
 		ModuleLevelTable<int> usesPerLevelUpByLevel;
 		float transferUses = 0.f;
+		int overflowUses = 0;
+		float overflowBonus = 0.f;
 	};
 
 	// Assault Vector (Movement). Moving toward the nearest enemy within targetRange (direction cosine >= minimumCosine,
@@ -66,6 +68,8 @@ namespace vega
 		std::uint32_t instanceId = 0;
 		int usesPerLevelUp = 0;
 		float transferUses = 0.f;
+		int overflowUses = 0;
+		float overflowBonus = 0.f;
 	};
 
 	struct ResolvedModuleAssaultVectorRule

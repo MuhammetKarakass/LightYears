@@ -3,6 +3,7 @@
 #include "gameplay/weapon/PrimaryWeaponMountProfile.h"
 
 #include <optional>
+#include <memory>
 
 namespace vega
 {
@@ -17,7 +18,8 @@ namespace vega
 
 		// Turret Mount: the rotation (Actor::GetActorRotation convention) that points the forward axis at the chosen enemy in range.
 		// Empty when the mount is not a Turret, when Broadside is also set, or when no valid enemy is in range.
-		std::optional<float> FindTurretRotation(Actor& owner, const PrimaryWeaponMountProfile& mount, float range);
+		std::shared_ptr<Actor> FindTurretTarget(Actor& owner, const PrimaryWeaponMountProfile& mount, float range, unsigned int targetOrdinal = 0);
+		std::optional<float> FindTurretRotation(Actor& owner, const PrimaryWeaponMountProfile& mount, float range, unsigned int targetOrdinal = 0);
 
 		// Current over maximum health of an actor; 1 when it has no health component.
 		float GetHealthFraction(const Actor& actor);

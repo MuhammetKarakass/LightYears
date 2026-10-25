@@ -81,6 +81,8 @@ namespace vega
 	void SpaceShip::Tick(float deltaTime)
 	{
 		Actor::Tick(deltaTime);
+		mDeferredDamage.Tick(deltaTime);
+		if (GetIsPendingDestroy()) return;
 		if (mPortalTransit)
 		{
 			mCombatRuntime.Tick(deltaTime);
@@ -433,8 +435,7 @@ namespace vega
 
 	void SpaceShip::ReceiveDamage(DamageContext context)
 	{
-		if (IsInvulnerable() ||
-			GetCombatRuntime().BlocksIncomingDamage() ||
+		if ((!context.deferredDamage && (IsInvulnerable() || GetCombatRuntime().BlocksIncomingDamage())) ||
 			context.remainingDamage <= 0.f)
 		{
 			return;
@@ -443,7 +444,8 @@ namespace vega
 		context.target = this;
 
 		context.shieldDamage = 0.f;
-		mCombatRuntime.ProcessIncomingDamage(context);
+		if (!context.deferredDamage) mCombatRuntime.ProcessIncomingDamage(context);
+		mDeferredDamage.Defer(context);
 		if (context.remainingDamage > 0.f)
 		{
 			float shieldDamageMultiplier = context.payload.shieldDamageMultiplier;

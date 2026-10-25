@@ -28,6 +28,7 @@ namespace vega
 		void SetAbilityUseObserver(std::function<void(const std::string&, const List<GameplayTag>&)> observer) { mAbilityUseObserver = std::move(observer); }
 		void SetKillObserver(std::function<void(sas::AbilitySlot, ControlTargetClass)> observer) { mKillObserver = std::move(observer); }
 		void Tick(float deltaSeconds);
+		void ReplaceCooldownRecovery(const List<ModuleCooldownRecoveryRule>& rules);
 		// Spare Capacitor trickle rules (side feature). Replace keeps the running interval of an unchanged rule; a removed rule drops its state.
 		void ReplaceCharge(const List<ResolvedModuleChargeRule>& rules);
 		void ReplaceConditionalMovement(const List<ResolvedModuleEffects::ConditionalMovement>& rules);
@@ -75,6 +76,8 @@ namespace vega
 		DelegateHandle mShieldHandle;
 		DelegateHandle mAttributeHandle;
 		List<ActionState> mActions;
+		List<ModuleCooldownRecoveryRule> mCooldownRecovery;
+		float mDamageFreeSeconds = 0.f;
 		List<AttributeState> mAttributes;
 		List<ResolvedModuleEffects::MovementFade> mFades;
 		struct SustainedSpeedState

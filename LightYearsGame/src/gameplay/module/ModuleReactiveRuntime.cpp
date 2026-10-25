@@ -67,6 +67,13 @@ namespace vega
 	void ModuleReactiveRuntime::Tick(float deltaSeconds)
 	{
 		if (deltaSeconds < 0.f || mShuttingDown) return;
+		const float previousQuiet = mDamageFreeSeconds;
+		mDamageFreeSeconds += deltaSeconds;
+		float recoverySeconds = 0.f;
+		for (const auto& rule : mCooldownRecovery) recoverySeconds += rule.bonus * std::max(0.f, mDamageFreeSeconds - std::max(previousQuiet, rule.damageFreeSeconds));
+		if (mShip && mShip->GetHealthComponent().GetHealth() > 0.f && recoverySeconds > 0.f)
+			for (const auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+				if (auto* ability = mAbilities.GetAbility(slot); ability && ability->IsOnCooldown()) ability->ReduceCooldownRemaining(recoverySeconds);
 		float heal = 0.f;
 		for (auto& state : mActions)
 		{
@@ -81,6 +88,12 @@ namespace vega
 		Flush(deltaSeconds);
 	}
 
+	void ModuleReactiveRuntime::ReplaceCooldownRecovery(const List<ModuleCooldownRecoveryRule>& rules)
+	{
+		const auto hasQuiet = [](const auto& entries) { return std::any_of(entries.begin(), entries.end(), [](const auto& rule) { return rule.damageFreeSeconds > 0.f; }); };
+		if (!hasQuiet(mCooldownRecovery) || !hasQuiet(rules)) mDamageFreeSeconds = 0.f;
+		mCooldownRecovery = rules;
+	}
 	void ModuleReactiveRuntime::ReplaceCharge(const List<ResolvedModuleChargeRule>& rules)
 	{
 		if (mShuttingDown) return;
@@ -366,8 +379,10 @@ namespace vega
 			const auto* ability = mAbilities.GetAbilityById(event.sourceAbilityId.ToString());
 			if (ability && sas::IsLoadoutAbilitySlot(ability->GetDefinition().slot)) mAbilityUseObserver(ability->GetDefinition().abilityId, ability->GetDefinition().abilityTags);
 		}
-		if (mShuttingDown || !mShip || mActions.empty()) return;
+		if (mShuttingDown || !mShip) return;
 		const auto* context = event.GetContext<DamageContext>();
+		if (event.eventTag == GameplayTags::Event::Owner::DamageTaken && context && context->target == mShip && context->appliedDamage > 0.f) mDamageFreeSeconds = 0.f;
+		if (mActions.empty()) return;
 		if (context && context->payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed) return;
 		const ModuleTriggerKind trigger = ModuleTriggerFromEventTag(event.eventTag);
 		if (trigger == ModuleTriggerKind::KillConfirmed)
@@ -383,7 +398,8 @@ namespace vega
 		else if (trigger == ModuleTriggerKind::DamageTaken)
 		{
 			const auto* damage = event.GetContext<DamageContext>();
-			if (!damage || damage->payload.skipModuleDamageRules || damage->target != mShip || damage->appliedDamage <= 0.f) return;
+			if (!damage || damage->target != mShip || damage->appliedDamage <= 0.f) return;
+			if (damage->payload.skipModuleDamageRules) return;
 		}
 		else return;
 		mEvents.push_back({ trigger, event.sourceAbilityId });
@@ -582,6 +598,8 @@ namespace vega
 					return std::any_of(tags.begin(), tags.end(), [&required](const GameplayTag& tag) { return tag.MatchesTag(required); });
 				})) continue;
 			}
+			const auto& health = mShip->GetHealthComponent();
+			if (health.GetMaxHealth() <= 0.f || health.GetHealth() > health.GetMaxHealth() * rule.healthAtMost) continue;
 			if (++state.count < rule.everyCount) continue;
 			state.count = 0;
 			if (rule.kind == ModuleEventActionKind::ApplyNearbyCryo)

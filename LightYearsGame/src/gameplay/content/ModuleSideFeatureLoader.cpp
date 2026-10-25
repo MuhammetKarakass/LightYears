@@ -84,6 +84,14 @@ namespace vega::content
 
 				ModuleSideFeatureDefinition definition;
 				definition.sideFeatureId = sas::ContentId{ id };
+				if (entry.contains("requiredRarity"))
+				{
+					const std::string rarity = entry.at("requiredRarity").get<std::string>();
+					if (rarity == "Uncommon") definition.requiredRarity = ModuleRarity::Uncommon;
+					else if (rarity == "Rare") definition.requiredRarity = ModuleRarity::Rare;
+					else if (rarity == "Epic") definition.requiredRarity = ModuleRarity::Epic;
+					else throw std::runtime_error(context + " invalid requiredRarity");
+				}
 				if (entry.contains("displayName"))
 				{
 					if (!entry.at("displayName").is_string()) throw std::runtime_error(context + ".displayName must be a string");
@@ -133,7 +141,7 @@ namespace vega::content
 				if (definition.rules.attributeModifiers.empty() && definition.rules.abilityModifiers.empty() &&
 					definition.rules.triggerBuffs.empty() && definition.rules.damageRules.empty() && definition.rules.zoneEffects.empty() &&
 					definition.rules.eventActions.empty() && definition.rules.ownerAttributeRules.empty() && definition.rules.movementFadeRules.empty() && definition.rules.conditionalMovementRules.empty() && definition.rules.shieldReflections.empty() && definition.rules.shieldRules.empty() && definition.rules.shieldBatteryRules.empty() && definition.rules.statusRules.Empty() && definition.rules.generatedRules.Empty() && definition.rules.targetSlowRules.empty() &&
-					definition.rules.killStackCooldownRules.empty() && definition.rules.killStackDamageRules.empty() && definition.rules.sustainedSpeedRules.empty() && definition.rules.ownerBurstRules.empty() && definition.rules.ownerBurstModifiers.empty() && definition.rules.chargeRules.empty() && definition.rules.epicOffense.Empty() && definition.rules.cascadeRules.empty() && definition.rules.fieldMasteryRules.empty() && definition.rules.assaultVectorRules.empty() && definition.rules.phaseSlipRules.empty() && definition.rules.reviveRules.empty() && definition.rules.healthThresholdRules.empty() && !definition.rules.fragmentation && !definition.rules.primaryExecutionPriority)
+					definition.rules.killStackCooldownRules.empty() && definition.rules.killStackDamageRules.empty() && definition.rules.sustainedSpeedRules.empty() && definition.rules.ownerBurstRules.empty() && definition.rules.ownerBurstModifiers.empty() && definition.rules.chargeRules.empty() && definition.rules.epicOffense.Empty() && definition.rules.cascadeRules.empty() && definition.rules.fieldMasteryRules.empty() && definition.rules.assaultVectorRules.empty() && definition.rules.phaseSlipRules.empty() && definition.rules.reviveRules.empty() && definition.rules.healthThresholdRules.empty() && !definition.rules.fragmentation && !definition.rules.primaryExecutionPriority && !definition.rules.minimumZoneLevelBonus && definition.rules.cooldownRecoveryRules.empty() && !definition.rules.deferredDamage && !definition.rules.momentumExtension && !definition.rules.primaryShareOfAbilityBonus && !definition.rules.primarySplitFire)
 					throw std::runtime_error(context + " rules must not be empty");
 				result.definitions.push_back(std::move(definition));
 			}

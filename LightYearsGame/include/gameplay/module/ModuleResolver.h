@@ -128,6 +128,8 @@ namespace vega
 		List<ResolvedModuleTriggerBuff> triggerBuffs;
 		List<ResolvedModuleDamageRule> damageRules;
 		List<ResolvedModuleCooldownRule> cooldownRules;
+		List<ModuleCooldownRecoveryRule> cooldownRecoveryRules;
+		ModuleDeferredDamageRule deferredDamage;
 		List<GameplayTag> enabledSystems;
 		List<ResolvedModuleEventAction> eventActions;
 		List<ResolvedModuleOwnerAttributeRule> ownerAttributeRules;

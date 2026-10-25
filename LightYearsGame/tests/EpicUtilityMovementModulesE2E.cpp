@@ -304,7 +304,7 @@ namespace
 		const auto* assault = content::ModuleContentCatalog::FindById("Module.Movement.AssaultVector.Epic");
 		const auto* phase = content::ModuleContentCatalog::FindById("Module.Movement.PhaseSlip.Epic");
 		report.Check(cascade && cascade->rarity == vega::ModuleRarity::Epic && cascade->sideFeatures.empty(), "Cascade Reactor is a sideless Epic Utility");
-		report.Check(field && field->rarity == vega::ModuleRarity::Epic && field->sizeLadderCellCounts == List<int>{ 2, 3 } && field->sideFeatures.size() == 1, "Field Mastery is a 2/3 Epic ladder with one side");
+		report.Check(field && field->rarity == vega::ModuleRarity::Epic && field->sizeLadderCellCounts == List<int>{ 2, 3 } && field->sideFeatures.size() == 2, "Field Mastery is a 2/3 Epic ladder with two sides");
 		report.Check(assault && assault->rarity == vega::ModuleRarity::Epic && assault->sideFeatures.empty(), "Assault Vector is a sideless Epic Movement");
 		report.Check(phase && phase->rarity == vega::ModuleRarity::Epic && phase->sideFeatures.empty(), "Phase Slip is a sideless Epic Movement");
 		report.Check(content::ModuleSideFeatureCatalog::FindById("Module.SideFeature.FieldMastery.KnowledgeTransfer") != nullptr, "Knowledge Transfer side is registered");

@@ -47,7 +47,7 @@ namespace rare_ladder_e2e
 		constexpr const char* kSideR2 = "Module.SideFeature.Shared.R2";
 		constexpr const char* kSideO2 = "Module.SideFeature.Shared.O2.Rare";
 		constexpr const char* kSideR5 = "Module.SideFeature.Shared.R5";
-		constexpr const char* kSideR3 = "Module.SideFeature.Shared.R3";
+		constexpr const char* kSideO1 = "Module.SideFeature.Shared.O1.Rare";
 		constexpr const char* kSideG4 = "Module.SideFeature.Shared.G4.Rare";
 		constexpr const char* kSideR6 = "Module.SideFeature.Shared.R6";
 		constexpr const char* kHairTrigger = "Module.SideFeature.KineticBreaker.HairTrigger";
@@ -360,7 +360,7 @@ namespace rare_ladder_e2e
 				const float firstAgain = Dealt(f, *target, 10.f);
 				return first / firstAgain;
 			};
-			report.CheckValue("Opening Hit on the large size: the first hit is x1.25", 1.25f, firstRatio(1, kSideO5), "large size with O5.Rare");
+			report.CheckValue("Opening Hit on the large size: the first hit is x1.2625", 1.2625f, firstRatio(1, kSideO5), "large size with O5.Rare");
 			report.CheckValue("Opening Hit on the small size is absent", 1.f, firstRatio(0, kSideO5), "small size with O5.Rare");
 			report.CheckValue("Lasting Status on the large size leaves the first hit unchanged", 1.f, firstRatio(1, kSideO4), "large size with O4.Rare");
 		}

@@ -3,6 +3,7 @@
 #include "attributes/AttributeSystem.h"
 #include "content/ContentId.h"
 #include "framework/Core.h"
+#include "gameplay/module/rules/ModuleSideRules.h"
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageContext.h"
 #include "gameplay/module/ModuleLevelTable.h"
@@ -15,6 +16,7 @@
 #include <SFML/System/Vector2.hpp>
 
 #include <string>
+#include <optional>
 #include <tuple>
 #include <utility>
 #include <algorithm>
@@ -76,6 +78,8 @@ namespace vega
 		float movementSpeedMultiplier = 1.f;
 		ModuleLevelTable<float> durationSecondsByLevel;
 		ModuleLevelTable<float> movementSpeedMultiplierByLevel;
+		float extendSeconds = 0.f;
+		float maximumDurationSeconds = 0.f;
 	};
 
 	struct ModuleDamageRule
@@ -144,6 +148,7 @@ namespace vega
 		GameplayTag abilityFamily;
 		List<GameplayTag> requiredEventTags;
 		float durationSeconds = 0.f;
+		float healthAtMost = 1.f;
 	};
 	// GoldArmorBonus (side features only): the placement's own Gold Armor bonus times amount; it reads the main Gold rule of the same placement.
 	enum class ModuleOwnerAttributeSource { HealthThreshold, MovementSpeed, HigherPower, Luck, Armor, ArmorHigherPower, ArmorLowerPower, Gold, GoldArmorBonus, MaxHealthFraction, PowerEqualize, ShieldReserve };
@@ -373,14 +378,14 @@ namespace vega
 	// Rule equality decides whether a runtime keeps its state across a reapply. Each operator binds every
 	// field of the rule structurally, so adding a field without extending the comparison fails to compile.
 	inline bool operator==(const ModuleAttributeModifier& left, const ModuleAttributeModifier& right) { const auto& [a0, a1, a2, a3] = left; const auto& [b0, b1, b2, b3] = right; const auto& [am0, am1, am2, am3] = a1; const auto& [bm0, bm1, bm2, bm3] = b1; return std::tie(a0, a2, a3) == std::tie(b0, b2, b3) && std::tie(am0, am1, am2, am3) == std::tie(bm0, bm1, bm2, bm3); }
-	inline bool operator==(const ModuleTriggerBuff& left, const ModuleTriggerBuff& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
+	inline bool operator==(const ModuleTriggerBuff& left, const ModuleTriggerBuff& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8); }
 	inline bool operator==(const ModuleDamageRule& left, const ModuleDamageRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21); }
 	inline bool operator==(const ModuleRicochetRule& left, const ModuleRicochetRule& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
 	inline bool operator==(const ModuleGuidedSalvoRule& left, const ModuleGuidedSalvoRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7); }
 	inline bool operator==(const ModuleDelayedExplosionRule& left, const ModuleDelayedExplosionRule& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
 	inline bool operator==(const ModuleTrailMineRule& left, const ModuleTrailMineRule& right) { return std::tie(left.damage, left.attackPowerCoefficient, left.spacing, left.windowSeconds, left.fuseSeconds, left.radius, left.maxActive, left.additionalLimit, left.cryoStacks, left.damageType, left.damageByLevel, left.attackPowerCoefficientByLevel, left.maxActiveByLevel) == std::tie(right.damage, right.attackPowerCoefficient, right.spacing, right.windowSeconds, right.fuseSeconds, right.radius, right.maxActive, right.additionalLimit, right.cryoStacks, right.damageType, right.damageByLevel, right.attackPowerCoefficientByLevel, right.maxActiveByLevel); }
 	inline bool operator==(const ModuleKillExplosionRule& left, const ModuleKillExplosionRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
-	inline bool operator==(const ModuleEventAction& left, const ModuleEventAction& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14); }
+	inline bool operator==(const ModuleEventAction& left, const ModuleEventAction& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15); }
 	inline bool operator==(const ModuleShieldRule& left, const ModuleShieldRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10); }
 	inline bool operator==(const ModuleMovementRule& left, const ModuleMovementRule& right) { const auto& [a0, a1, a2] = left; const auto& [b0, b1, b2] = right; return std::tie(a0, a1, a2) == std::tie(b0, b1, b2); }
 	inline bool operator==(const ModuleOwnerAttributeRule& left, const ModuleOwnerAttributeRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11); }
@@ -602,6 +607,12 @@ namespace vega
 		List<ModuleReviveRule> reviveRules;
 		List<ModuleHealthThresholdRule> healthThresholdRules;
 		bool fragmentation = false;
+		int minimumZoneLevelBonus = 0;
+		List<ModuleCooldownRecoveryRule> cooldownRecoveryRules;
+		std::optional<ModuleDeferredDamageRule> deferredDamage;
+		std::optional<ModuleMomentumExtension> momentumExtension;
+		float primaryShareOfAbilityBonus = 0.f;
+		bool primarySplitFire = false;
 	};
 	inline bool operator==(const ModuleRulePackage::ShieldReflection& left, const ModuleRulePackage::ShieldReflection& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
 

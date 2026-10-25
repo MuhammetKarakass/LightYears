@@ -50,6 +50,8 @@ namespace vega
 		// Field Mastery: Utility abilities cannot be upgraded with Scrap while the module is installed.
 		bool IsScrapUpgradeLocked(const List<GameplayTag>& abilityTags) const;
 
+		float GetUtilityEffectMultiplier(const List<GameplayTag>& tags) const;
+		void CountMasteryOverflow(const std::string& abilityId);
 		float GetNextCascadeMultiplier(const List<GameplayTag>& tags) const;
 		int GetCascadeStep(std::uint32_t instanceId) const;
 		float GetUseCount(const std::string& abilityId) const;

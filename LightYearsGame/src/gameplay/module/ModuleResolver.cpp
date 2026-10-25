@@ -438,6 +438,11 @@ namespace vega
 				for (const sf::Vector2i& cell : cells) bonus = std::min(bonus, zoneLevelBonus(rules.schematic.GetZoneAt(cell.x, cell.y)));
 			}
 			else bonus = zoneLevelBonus(GetPlacementZone(rules, module, placement));
+			if (rules.sideFeatureLookup && IsLargestCellCountVariant(module, placement.variantIndex))
+			{
+				const auto* feature = rules.sideFeatureLookup(placement.sideFeatureId);
+				if (IsSideFeatureUsableAtLevel(module, feature, placement.level)) bonus = std::max(bonus, feature->rules.minimumZoneLevelBonus);
+			}
 			return std::clamp(bonus, 0, kMaxZoneLevelBonus);
 		}
 
@@ -510,6 +515,25 @@ namespace vega
 						{
 							ResolvePackage(effects, feature->rules, *module, placement, placement.level, placement.level, placementZone, placementZoneEntry, true);
 							MergeSideStatusModifiers(effects, feature->rules, mainBegin, mainEnd);
+							for (auto recovery : feature->rules.cooldownRecoveryRules)
+							{
+								if (recovery.perEmptyAbilitySlot) recovery.bonus *= static_cast<float>(CountEmptyAbilitySlots(rules, layoutPlacements));
+								effects.cooldownRecoveryRules.push_back(recovery);
+							}
+							if (feature->rules.deferredDamage && feature->rules.deferredDamage->fraction > effects.deferredDamage.fraction) effects.deferredDamage = *feature->rules.deferredDamage;
+							if (feature->rules.primaryShareOfAbilityBonus > 0.f)
+							{
+								for (const auto& main : variant.damageRules)
+								{
+									if (main.requiredEmptyAbilitySlots <= 0) continue;
+									ModuleDamageRule primary = main;
+									primary.condition = ModuleDamageCondition::PrimaryShotOnly;
+									primary.damageMultiplier = 1.f + (main.damageMultiplierByLevel.ValueAtLevel(main.damageMultiplier, placement.level + zoneLevel) - 1.f) * feature->rules.primaryShareOfAbilityBonus;
+									primary.damageMultiplierByLevel = {};
+									effects.damageRules.push_back({ placement.instanceId, NamespacedRuleIndex(0, true), primary, {} });
+								}
+							}
+							if (feature->rules.primarySplitFire) effects.primaryMount.splitFire = true;
 						}
 				}
 
@@ -587,6 +611,18 @@ namespace vega
 				charge.slots = GeometricAbilitySlots(rules, activePlacements, *placement, static_cast<std::size_t>(charge.neighbourCount));
 			}
 			ApplyEpicFamilyStatRules(effects, rules, activePlacements);
+			for (const auto& placement : activePlacements)
+			{
+				const auto* module = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
+				const auto* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(placement.sideFeatureId) : nullptr;
+				if (!module || !IsLargestCellCountVariant(*module, placement.variantIndex) || !IsSideFeatureUsableAtLevel(*module, feature, placement.level) || !feature->rules.momentumExtension) continue;
+				for (auto& buff : effects.triggerBuffs)
+				{
+					if (buff.instanceId != placement.instanceId) continue;
+					buff.rule.extendSeconds = feature->rules.momentumExtension->seconds;
+					buff.rule.maximumDurationSeconds = feature->rules.momentumExtension->maximumSeconds;
+				}
+			}
 			return effects;
 		}
 	}

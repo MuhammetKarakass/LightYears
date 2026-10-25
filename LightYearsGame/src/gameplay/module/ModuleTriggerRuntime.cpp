@@ -164,7 +164,7 @@ namespace vega
 			);
 			if (active != mActiveBuffs.end())
 			{
-				active->remainingSeconds = resolved.rule.durationSeconds;
+				active->remainingSeconds = resolved.rule.extendSeconds > 0.f ? std::min(resolved.rule.maximumDurationSeconds, active->remainingSeconds + resolved.rule.extendSeconds) : resolved.rule.durationSeconds;
 				continue;
 			}
 			ActiveBuff buff = CreateActiveBuff(resolved);

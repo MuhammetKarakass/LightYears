@@ -36,6 +36,7 @@ namespace vega
 			List<weak_ptr<ContinuousBeamVisualActor>> beams;
 			List<PendingBeamHit> pendingHits;
 			float tickAccumulator{ 0.f };
+			unsigned int splitPulseCount = 0;
 			// Tags of the current heat region; pending damage is delivered with them.
 			List<GameplayTag> damageTags;
 		};
@@ -201,6 +202,8 @@ namespace vega
 					DamageTypeSystem::BuildPayload(heatDamage.damageTags, context.attributes);
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
 				beamState.damageTags = heatDamage.damageTags;
+				if (!context.mountProfile.splitFire) beamState.splitPulseCount = 0;
+				if (context.runtime) context.runtime->splitFireShot = context.mountProfile.splitFire && (beamState.splitPulseCount + 1) % 4 == 0;
 				const auto emissions = ResolvePrimaryWeaponEmissions(context);
 				while (beamState.beams.size() > emissions.size())
 				{
@@ -327,6 +330,7 @@ namespace vega
 					// Pending damage is delivered in one hit, so drop any tick debt.
 					beamState.tickAccumulator = std::fmod(beamState.tickAccumulator, CombatTick::Interval);
 					DeliverPendingBeamDamage(context, beamState, payload);
+					if (context.mountProfile.splitFire) beamState.splitPulseCount = (beamState.splitPulseCount + 1) % 4;
 				}
 			}
 

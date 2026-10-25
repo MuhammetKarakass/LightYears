@@ -299,6 +299,8 @@ namespace vega
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mTriggerBuffRuleApplier.Replace(mResolved.triggerBuffs);
 		mReactiveRuntime.Replace(mResolved.eventActions, mResolved.ownerAttributeRules, mResolved.movementFadeRules);
+		mReactiveRuntime.ReplaceCooldownRecovery(mResolved.cooldownRecoveryRules);
+		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->GetDeferredDamageRuntime().SetRule(mResolved.deferredDamage);
 	mReactiveRuntime.ReplaceSustainedSpeed(mResolved.sustainedSpeedRules);
 		mShieldReflectionRuntime.Replace(mResolved.shieldReflections);
 		SyncChargeBonuses(mResolved.chargeRules);

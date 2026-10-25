@@ -112,7 +112,7 @@ namespace
 		auto definition = *authored; definition.slot = sas::AbilitySlot::Ability3;
 		auto& asc = f.ship->GetAbilitySystemComponent();
 		report.Check(asc.RemoveAbility(asc.GetAbility(sas::AbilitySlot::Ability3)->GetHandle()) && asc.GrantAbility(definition).IsValid(), "remaining ability is shipped Inferno Spray");
-		const auto core = f.Install("Module.Utility.TripleCore.Rare"); const float coreMultiplier = 1.2f + .05f * static_cast<float>(1 + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), core)); const auto* tripleModule = content::ModuleContentCatalog::FindById("Module.Utility.TripleCore.Rare"); report.Check(tripleModule && tripleModule->sizeLadderCellCounts == List<int>{ 2, 3 } && tripleModule->sideFeatures.empty() && tripleModule->sharedPools.empty(), "Triple Core is a 2/3 ladder with no side pool yet");
+		const auto core = f.Install("Module.Utility.TripleCore.Rare"); const float coreMultiplier = 1.2f + .05f * static_cast<float>(1 + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), core)); const auto* tripleModule = content::ModuleContentCatalog::FindById("Module.Utility.TripleCore.Rare"); report.Check(tripleModule && tripleModule->sizeLadderCellCounts == List<int>{ 2, 3 } && tripleModule->sideFeatures.size() == 2 && tripleModule->sharedPools.size() == 3, "Triple Core is a 2/3 ladder with two private and three selected shared sides");
 		enemy->SetActorLocation(f.ship->GetActorLocation() + f.ship->GetActorForwardDirection() * 200.f);
 		asc.AddOwnedTag(GameplayTags::State::Ability::InfernoSpray::Active);
 		const auto spray = [&]()

@@ -115,13 +115,16 @@ namespace vega::PrimaryWeaponProjectileSpawner
 		const float forwardRotation = EpicPrimaryMounts::FindTurretRotation(context.owner, mount, sas::FindAttributeValue(context.attributes, CommonAttributeIds::Range, 1600.f)).value_or(context.owner.GetActorRotation());
 		const List<float> volleySides = mount.broadside ? List<float>{ 90.f, -90.f } : List<float>{ 0.f };
 		const float damageScale = mount.broadside ? mount.broadsideDamageMultiplier : 1.f;
+		const auto secondRotation = mount.splitFire && context.runtime && context.runtime->splitFireShot ? EpicPrimaryMounts::FindTurretRotation(context.owner, mount, sas::FindAttributeValue(context.attributes, CommonAttributeIds::Range, 1600.f), 1) : std::nullopt;
 		const auto fireFromMuzzle = [&](const WeaponMuzzleDefinition& muzzle)
 		{
-			for (const float sideAngle : volleySides)
+			List<float> directions = volleySides;
+			if (secondRotation) directions.push_back(*secondRotation - forwardRotation);
+			for (const float sideAngle : directions)
 			{
 				const float volleyRotation = forwardRotation + sideAngle;
 				// A side volley starts one lateral offset from the ship centre, on the side it fires from.
-				const sf::Vector2f lateralOffset = sideAngle != 0.f ? RotationToVector(volleyRotation) * EpicPrimaryMounts::kBroadsideSpawnOffset : sf::Vector2f{};
+				const sf::Vector2f lateralOffset = mount.broadside && sideAngle != 0.f ? RotationToVector(volleyRotation) * EpicPrimaryMounts::kBroadsideSpawnOffset : sf::Vector2f{};
 				const sf::Vector2f muzzleFireDirection = RotationToVector(volleyRotation + muzzle.rotationOffset - 90.f);
 				// Every pellet in this muzzle's volley receives the same ship-motion term.
 				const sf::Vector2f carrierVelocity = ProjectileMotion::ResolveCarrierVelocity(context.owner.GetVelocity(), muzzleFireDirection);

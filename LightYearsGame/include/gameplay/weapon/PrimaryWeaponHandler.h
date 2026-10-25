@@ -48,6 +48,8 @@ namespace vega
 		bool handlerEndFirePending = false;
 		List<uint8_t> featureEndFirePending;
 		uint64_t successfulFireCount = 0;
+		unsigned int splitFireCount = 0;
+		bool splitFireShot = false;
 		// Empowered trigger state (see PrimaryWeaponEmpoweredTrigger).
 		std::shared_ptr<PrimaryWeaponHitLedger> hitLedger;
 		std::shared_ptr<PrimaryWeaponFrostMeterState> frostMeter;
@@ -124,6 +126,7 @@ namespace vega
 		sf::Vector2f origin;
 		float rotation = 0.f;
 		float damageMultiplier = 1.f;
+		std::weak_ptr<Actor> turretTarget;
 	};
 	List<PrimaryWeaponEmission> ResolvePrimaryWeaponEmissions(const PrimaryWeaponExecutionContext& context, bool firstMuzzleOnly = false);
 

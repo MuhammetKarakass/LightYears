@@ -114,7 +114,35 @@ namespace vega
 		{
 			for (CascadeState& state : mCascades) AdvanceCascade(state, family);
 		}
-		if (HasTag(tags, GameplayTags::Ability::Utility) && FieldMasteryThreshold() > 0) AddUses(abilityId, 1.0);
+		if (HasTag(tags, GameplayTags::Ability::Utility) && FieldMasteryThreshold() > 0)
+		{
+			AddUses(abilityId, 1.0);
+			CountMasteryOverflow(abilityId);
+		}
+	}
+
+	float ModuleEpicUtilityMovementRuntime::GetUtilityEffectMultiplier(const List<GameplayTag>& tags) const
+	{
+		return HasTag(tags, GameplayTags::Ability::Utility) ? 1.f + static_cast<float>(mFieldMasteryState->utilityEffectBonus) : 1.f;
+	}
+
+	void ModuleEpicUtilityMovementRuntime::CountMasteryOverflow(const std::string& abilityId)
+	{
+		const auto* ability = mAbilities.FindAbilityById<GameAbility>(abilityId);
+		if (!ability || ability->GetLevel() < ability->GetMaxLevel()) return;
+		for (const auto& rule : mRules.fieldMasteries)
+		{
+			if (rule.overflowUses <= 0) continue;
+			auto& counters = mFieldMasteryState->overflowCounters;
+			auto counter = std::find_if(counters.begin(), counters.end(), [&](const auto& entry) { return entry.abilityId == abilityId; });
+			if (counter == counters.end()) { counters.push_back({ abilityId, 0.0 }); counter = counters.end() - 1; }
+			counter->uses += 1.0;
+			while (counter->uses >= rule.overflowUses)
+			{
+				counter->uses -= rule.overflowUses;
+				mFieldMasteryState->utilityEffectBonus += rule.overflowBonus;
+			}
+		}
 	}
 
 	bool ModuleEpicUtilityMovementRuntime::IsSystemLocked(const GameplayTag& systemTag) const

@@ -168,7 +168,7 @@ int main(int argc, char** argv)
 		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Shield Battery and Rupture content registration failed" };
 		const auto* battery = content::ModuleContentCatalog::FindById("Module.Defense.ShieldBattery.Rare");
-		report.Check(battery && battery->sizeVariants.size() == 2 && battery->sizeVariants[0].shape.cells.size() == 2 && battery->sizeVariants[1].shape.cells.size() == 3 && battery->sideFeatures.size() == 2 && battery->sharedPools.empty(), "Shield Battery is a 2/3-cell ladder with two private side features");
+		report.Check(battery && battery->sizeVariants.size() == 2 && battery->sizeVariants[0].shape.cells.size() == 2 && battery->sizeVariants[1].shape.cells.size() == 3 && battery->sideFeatures.size() == 2 && battery->sharedPools.size() == 2, "Shield Battery is a 2/3-cell ladder with two private side features");
 		const auto* rupture = content::ModuleContentCatalog::FindById("Module.Offense.ShieldRupture.Rare");
 		report.Check(rupture && rupture->sizeVariants.size() == 1 && rupture->sizeVariants.front().shape.cells.size() == 2 && rupture->sideFeatures.empty(), "Shield Rupture is fixed two cells with no side features");
 		std::string title = "Rare Shield Battery and Rupture E2E";

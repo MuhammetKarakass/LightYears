@@ -132,7 +132,9 @@ namespace vega
 			};
 
 			std::unordered_set<Actor*> struckTargets;
-			shared_ptr<Actor> currentTarget = findClosestTarget(
+			shared_ptr<Actor> currentTarget = emission.turretTarget.lock();
+			if (currentTarget && currentTarget->GetIsPendingDestroy()) return;
+			if (!currentTarget) currentTarget = findClosestTarget(
 				origin,
 				targetRange,
 				struckTargets,
