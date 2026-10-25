@@ -2588,7 +2588,7 @@
       "id": "Module.SideFeature.FieldMastery.MasteryOverflow",
       "displayName": "Mastery Overflow",
       "levelCount": 3,
-      "description": "Every 15 uses of a max-level Utility ability permanently add 5% to all Utility effects for this run.",
+      "description": "Every 15 uses of each Utility ability permanently add 5% to all Utility effects for this run.",
       "rules": {
         "fieldMasteryRules": [
           {

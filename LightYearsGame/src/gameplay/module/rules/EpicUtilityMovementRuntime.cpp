@@ -129,7 +129,7 @@ namespace vega
 	void ModuleEpicUtilityMovementRuntime::CountMasteryOverflow(const std::string& abilityId)
 	{
 		const auto* ability = mAbilities.FindAbilityById<GameAbility>(abilityId);
-		if (!ability || ability->GetLevel() < ability->GetMaxLevel()) return;
+		if (!ability) return;
 		for (const auto& rule : mRules.fieldMasteries)
 		{
 			if (rule.overflowUses <= 0) continue;

@@ -23,10 +23,7 @@ namespace vega::DirectionalBarrierEffectBehavior
 			return left.x * right.x + left.y * right.y;
 		}
 
-		// Front arc is +/-60 degrees around facing: cos(60 deg) = 0.5.
-		constexpr float FrontArcHalfAngleCosine = 0.5f;
-
-		bool IsFrontApproach(const Actor& owner, const Actor& projectile)
+		bool IsFrontApproach(const Actor& owner, const Actor& projectile, const sas::GameplayEffectSpec& spec)
 		{
 			sf::Vector2f approachDirection = -projectile.GetVelocity();
 			if (GetVectorLength(approachDirection) <= 0.001f)
@@ -39,20 +36,19 @@ namespace vega::DirectionalBarrierEffectBehavior
 			}
 
 			NormalizeVector(approachDirection);
-			return Dot(owner.GetActorForwardDirection(), approachDirection) > FrontArcHalfAngleCosine;
+			const float halfAngleDegrees = sas::FindAttributeValue(spec.attributes, AbilityData::DirectionalBarrier::Attribute::HalfAngleDegrees, 60.f);
+			const float halfAngleCosine = std::cos(halfAngleDegrees * 0.01745329251994329577f);
+			return Dot(owner.GetActorForwardDirection(), approachDirection) > halfAngleCosine;
 		}
 
-		sas::GameplayEffectBehaviorResult ProcessIncomingDamage(
-			sas::ActiveGameplayEffect&,
-			DamageContext& context
-		)
+		sas::GameplayEffectBehaviorResult ProcessIncomingDamage(sas::ActiveGameplayEffect& effect, DamageContext& context)
 		{
 			sas::GameplayEffectBehaviorResult result;
 			if (context.remainingDamage <= 0.f ||
 				context.deliveryType != DamageDeliveryType::Projectile ||
 				!context.deliveryActor ||
 				!context.target ||
-				!IsFrontApproach(*context.target, *context.deliveryActor))
+				!IsFrontApproach(*context.target, *context.deliveryActor, effect.spec))
 			{
 				return result;
 			}
@@ -70,10 +66,7 @@ namespace vega::DirectionalBarrierEffectBehavior
 		}
 	}
 
-	bool TryInterceptProjectile(
-		Actor& projectile,
-		const sf::Vector2f& previousLocation
-	)
+	bool TryInterceptProjectile(Actor& projectile, const sf::Vector2f& previousLocation)
 	{
 		if (projectile.GetIsPendingDestroy() || !projectile.GetWorld() ||
 			!dynamic_cast<AbilityWorldActor*>(&projectile))
@@ -110,11 +103,12 @@ namespace vega::DirectionalBarrierEffectBehavior
 						AbilityData::DirectionalBarrier::State::Active
 					) ||
 					!projectile.CanCollideWith(ship) ||
-					!ship->CanCollideWith(&projectile) ||
-					!IsFrontApproach(*ship, projectile))
+					!ship->CanCollideWith(&projectile))
 				{
 					return;
 				}
+				const auto* effect = ship->GetAbilitySystemComponent().FindGameplayEffectById(AbilityData::DirectionalBarrier::Effect::ActiveEffectId);
+				if (!effect || !IsFrontApproach(*ship, projectile, effect->spec)) return;
 
 				const sf::Vector2f center = ship->GetActorLocation();
 				const sf::Vector2f previousOffset = previousLocation - center;

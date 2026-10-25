@@ -234,6 +234,8 @@ namespace vega
 			sas::MakeGameplayEffectSpec(*effectDefinition);
 		effectSpec.duration = duration;
 		effectSpec.maxStacks = 1;
+		const float halfAngleDegrees = AbilityData::DirectionalBarrier::ResolveHalfAngleDegrees(context.definition.mainEffectMultiplier);
+		effectSpec.attributes.emplace_back(AbilityData::DirectionalBarrier::Attribute::HalfAngleDegrees, halfAngleDegrees);
 		mActiveEffectHandle = context.abilitySystem.ApplyGameplayEffect(
 			effectSpec,
 			sas::GameplayEffectSourceContext{
@@ -269,9 +271,11 @@ namespace vega
 					DirectionalBarrierPresentationIds::Basic
 				))
 			{
+				auto activeProfile = *profile;
+				activeProfile.halfAngleDegrees = halfAngleDegrees;
 				mVisualActor = world->SpawnActor<DirectionalBarrierVisualActor>(
 					&context.owner,
-					*profile
+					activeProfile
 				);
 			}
 		}

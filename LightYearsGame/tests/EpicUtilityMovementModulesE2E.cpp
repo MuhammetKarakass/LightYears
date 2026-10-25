@@ -11,6 +11,14 @@
 #include "gameplay/projectile/ProjectilePhaseSlip.h"
 #include "player/Player.h"
 #include "player/PlayerMovementComponent.h"
+#include "gameConfigs/SimulationTimeDomains.h"
+#include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
+#include "gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h"
+#include "gameplay/ability/voidGate/VoidGatePortalActor.h"
+#include "gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.h"
+#include "framework/MathUtility.h"
+
+#include <cmath>
 
 namespace
 {
@@ -151,6 +159,153 @@ namespace
 		f.Equal("a lapsed five second window resets the chain", 0.f, static_cast<float>(Epic(f).GetCascadeStep(id)));
 		f.Remove(id);
 		report.Check(Epic(f).GetCascadeStep(id) == 0, "uninstall removes the chain state");
+	}
+
+	GameAbility& CascadeAbility(Fixture& f, const char* id, sas::AbilitySlot slot)
+	{
+		auto& asc = f.ship->GetAbilitySystemComponent();
+		if (const auto* old = asc.GetAbility(slot)) f.report.Check(asc.RemoveAbility(old->GetHandle()), "Cascade fixture replaces only the requested ability slot");
+		auto definition = *content::AbilityContentCatalog::FindById(id); definition.slot = slot;
+		f.report.Check(asc.GrantAbility(definition).IsValid(), "Cascade fixture grants shipped ability content");
+		return *asc.GetAbilityById(id);
+	}
+
+	void StartCascadeAbility(Fixture& f, GameAbility& ability)
+	{
+		if (ability.IsActive()) ability.Cancel(sas::AbilityEndReason::Completed);
+		ability.Tick(100.f);
+		f.report.Check(ability.TryActivate(), "Cascade quantity scenario activates through the real ASC");
+	}
+
+	float CascadeStepBonus(Fixture& f, std::uint32_t instance, int level = 1)
+	{
+		const int effectiveLevel = level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), instance);
+		const float expected = .20f + .02f * static_cast<float>(effectiveLevel - 1);
+		f.Equal("Cascade coefficient follows placement plus zone level", expected, f.ship->GetModuleApplier().GetResolvedEffects().epicRules.cascades.front().stepBonus);
+		return expected;
+	}
+
+	void CascadeTimeSlipChecks(Report& report, Application& application)
+	{
+		Fixture f{ report, application };
+		auto& ability = CascadeAbility(f, "Ability.Defense.TimeSlip.Basic", sas::AbilitySlot::Ability1);
+		StartCascadeAbility(f, ability);
+		const float duration = ability.GetActiveDuration();
+		f.Equal("unpowered Time Slip preserves hostile time", .35f, f.level->GetSimulationTimeScale(GameTimeDomains::HostileGameplay));
+		ability.Cancel(sas::AbilityEndReason::Completed);
+		const auto id = f.Install("Module.Utility.CascadeReactor.Epic");
+		const float multiplier = 1.f + CascadeStepBonus(f, id);
+		CastOffense(f); StartCascadeAbility(f, ability);
+		f.Equal("Time Slip captures Cascade before its use advances the chain", multiplier, ability.GetDefinition().mainEffectMultiplier);
+		f.Equal("Cascade divides hostile gameplay time", .35f / multiplier, f.level->GetSimulationTimeScale(GameTimeDomains::HostileGameplay));
+		f.Equal("Cascade divides all projectile gameplay time", .35f / multiplier, f.level->GetSimulationTimeScale(GameTimeDomains::ProjectileGameplay));
+		f.Equal("Cascade preserves Primary fire rate penalty", .35f, f.ship->GetPrimaryWeaponFireRateMultiplier());
+		f.Equal("Cascade preserves Time Slip duration", duration, ability.GetActiveDuration());
+		CastOffense(f); f.ship->GetModuleApplier().Tick(5.01f); f.Remove(id);
+		f.Equal("active Time Slip keeps its captured time after chain expiry and removal", .35f / multiplier, f.level->GetSimulationTimeScale(GameTimeDomains::HostileGameplay));
+		f.Equal("active projectile time also keeps its captured multiplier", .35f / multiplier, f.level->GetSimulationTimeScale(GameTimeDomains::ProjectileGameplay));
+		ability.Tick(duration + .01f);
+		report.Check(!ability.IsActive(), "Time Slip ends at its unchanged duration");
+		f.Equal("Time Slip ending restores hostile time", 1.f, f.level->GetSimulationTimeScale(GameTimeDomains::HostileGameplay));
+		f.Equal("Time Slip ending restores projectile time", 1.f, f.level->GetSimulationTimeScale(GameTimeDomains::ProjectileGameplay));
+		f.Equal("Time Slip ending restores Primary fire rate", 1.f, f.ship->GetPrimaryWeaponFireRateMultiplier());
+	}
+
+	void CascadeBarrierChecks(Report& report, Application& application)
+	{
+		for (const int step : { 0, 1, 3 })
+		{
+			Fixture f{ report, application };
+			auto& ability = CascadeAbility(f, "Ability.Defense.DirectionalBarrier.Basic", sas::AbilitySlot::Ability1);
+			StartCascadeAbility(f, ability); const float duration = ability.GetActiveDuration(); ability.Cancel(sas::AbilityEndReason::Completed);
+			const auto id = f.Install("Module.Utility.CascadeReactor.Epic");
+			const float multiplier = 1.f + step * CascadeStepBonus(f, id);
+			if (step > 0) CastOffense(f);
+			if (step == 3) { CastMovement(f); CastOffense(f); }
+			StartCascadeAbility(f, ability);
+			const float halfAngle = std::min(60.f * multiplier, 90.f);
+			const auto* effect = Effect(*f.ship, AbilityData::DirectionalBarrier::Effect::ActiveEffectId);
+			report.Check(effect != nullptr, "Barrier owns a real active effect snapshot");
+			f.Equal("Barrier captures its Cascade multiplier", multiplier, ability.GetDefinition().mainEffectMultiplier);
+			f.Equal("Barrier arc is 120 degrees times Cascade capped at 180", halfAngle * 2.f, 2.f * sas::FindAttributeValue(effect->spec.attributes, AbilityData::DirectionalBarrier::Attribute::HalfAngleDegrees, 0.f));
+			f.Equal("Cascade preserves Barrier duration", duration, ability.GetActiveDuration());
+			if (step == 3) report.Check(multiplier > 1.5f && halfAngle == 90.f, "third step exercises the actual 180 degree cap");
+			f.Remove(id);
+			const auto enemy = Enemy(f, 600.f);
+			const auto* weapon = content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyVanguardPulse.Basic");
+			report.Check(weapon != nullptr, "Barrier angle probes use shipped hostile projectiles");
+			f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f);
+			f.ship->GetShieldComponent().ChangeShield(-10000.f);
+			f.level->TickInternal(0.f);
+			for (const float angle : { -(halfAngle + .5f), -(halfAngle - .5f), halfAngle - .5f, halfAngle + .5f })
+			{
+				const float radians = angle * .01745329251994329577f;
+				const auto forward = f.ship->GetActorForwardDirection();
+				const sf::Vector2f direction{ forward.x * std::cos(radians) - forward.y * std::sin(radians), forward.x * std::sin(radians) + forward.y * std::cos(radians) };
+				const auto projectile = f.level->SpawnActor<PrimaryWeaponProjectileActor>(enemy.get(), weapon->presentationDefinition, weapon->attributes).lock();
+				projectile->SetActorLocation(f.ship->GetActorLocation() + direction * 100.f); projectile->SetLaunchVelocity(-direction * 1000.f);
+				const bool blocked = std::abs(angle) < halfAngle;
+				report.Check(DirectionalBarrierEffectBehavior::TryInterceptProjectile(*projectile, f.ship->GetActorLocation() + direction * 200.f) == blocked, "swept Barrier interception respects both captured arc edges after module removal", { { "step", step }, { "angle", angle }, { "blocked", blocked } });
+				const float health = f.ship->GetHealthComponent().GetHealth();
+				ApplyCombatDamage(*f.ship, 1.f, enemy.get(), {}, Plain(), {}, {}, DamageDeliveryType::Projectile, projectile.get());
+				f.Equal("damage pipeline respects the same captured Barrier edges", blocked ? 0.f : 1.f, health - f.ship->GetHealthComponent().GetHealth());
+				projectile->Destroy();
+			}
+			ability.Tick(duration + .01f);
+			report.Check(!ability.IsActive() && !Effect(*f.ship, AbilityData::DirectionalBarrier::Effect::ActiveEffectId), "Barrier expires and removes its arc snapshot at the unchanged duration");
+		}
+	}
+
+	void CascadeVectorSyncChecks(Report& report, Application& application)
+	{
+		Fixture f{ report, application };
+		f.ship->GetMovementComponent().SetMovementMode(ShipMovementMode::ThrustDrift);
+		auto& ability = CascadeAbility(f, "Ability.Movement.VectorSync.Basic", sas::AbilitySlot::Ability2);
+		const float baseline = f.ship->GetMovementSpeedMultiplier();
+		StartCascadeAbility(f, ability); const float duration = ability.GetActiveDuration();
+		f.Equal("unpowered Vector Sync keeps the existing movement speed", baseline, f.ship->GetMovementSpeedMultiplier());
+		report.Check(f.ship->GetMovementComponent().HasDirectionalThrustSync(), "Vector Sync keeps directional thrust equalization");
+		ability.Cancel(sas::AbilityEndReason::Completed);
+		const auto id = f.Install("Module.Utility.CascadeReactor.Epic"); const float multiplier = 1.f + CascadeStepBonus(f, id);
+		CastOffense(f); StartCascadeAbility(f, ability);
+		f.Equal("Vector Sync captures Cascade", multiplier, ability.GetDefinition().mainEffectMultiplier);
+		f.Equal("active Vector Sync multiplies movement speed", baseline * multiplier, f.ship->GetMovementSpeedMultiplier());
+		f.Equal("Cascade preserves Vector Sync duration", duration, ability.GetActiveDuration());
+		const float expectedCap = f.ship->GetMovementComponent().ResolveCurrentSpeedCap(baseline * multiplier);
+		f.ship->SetVelocity({ 100000.f, 0.f }); f.ship->SpaceShip::Tick(.001f);
+		f.Equal("real movement clamps at the Cascade-powered speed", expectedCap, GetVectorLength(f.ship->GetVelocity()));
+		CastOffense(f); f.ship->GetModuleApplier().Tick(5.01f); f.Remove(id);
+		f.Equal("active Vector Sync retains its snapshot after the chain changes", baseline * multiplier, f.ship->GetMovementSpeedMultiplier());
+		ability.Tick(duration + .01f);
+		report.Check(!ability.IsActive() && !f.ship->GetMovementComponent().HasDirectionalThrustSync(), "Vector Sync expires and releases directional thrust sync");
+		f.Equal("Vector Sync expiration removes the captured speed bonus", baseline, f.ship->GetMovementSpeedMultiplier());
+	}
+
+	void CascadeVoidGateChecks(Report& report, Application& application)
+	{
+		Fixture f{ report, application };
+		auto& ability = CascadeAbility(f, "Ability.Utility.VoidGate.Basic", sas::AbilitySlot::Ability1);
+		StartCascadeAbility(f, ability); const float duration = ability.GetActiveDuration();
+		report.Check(Actors<VoidGatePortalActor>(f).size() == 1, "Void Gate creates its normal portal preview");
+		const float radius = Actors<VoidGatePortalActor>(f).front()->GetPortalRadius();
+		AbilityExecutionContext execution{ &f.ship->GetAbilitySystemComponent(), &ability.GetDefinition(), nullptr, &ability };
+		const auto baseline = AbilityActionAttributeResolver::ResolveAbilityAttributes(execution);
+		ability.Cancel(sas::AbilityEndReason::Completed);
+		const auto id = f.Install("Module.Utility.CascadeReactor.Epic"); const float bonus = CascadeStepBonus(f, id);
+		CastOffense(f); StartCascadeAbility(f, ability);
+		f.Equal("Void Gate participates as the Utility step", 1.f, static_cast<float>(Epic(f).GetCascadeStep(id)));
+		f.Equal("Void Gate receives the existing captured multiplier", 1.f + bonus, ability.GetDefinition().mainEffectMultiplier);
+		f.Equal("Cascade does not grow Void Gate duration", duration, ability.GetActiveDuration());
+		report.Check(Actors<VoidGatePortalActor>(f).size() == 1, "powered Void Gate still creates one preview");
+		f.Equal("Cascade does not grow the actual portal radius", radius, Actors<VoidGatePortalActor>(f).front()->GetPortalRadius());
+		const auto powered = AbilityActionAttributeResolver::ResolveAbilityAttributes(execution);
+		report.Check(powered.size() == baseline.size(), "Void Gate keeps its authored runtime channels");
+		for (const auto& attribute : baseline) report.CheckValue("Cascade leaves every Void Gate runtime value unchanged", attribute.currentValue, sas::FindAttributeValue(powered, attribute.id, -1.f), std::string{ attribute.id.GetName() });
+		CastOffense(f);
+		f.Equal("Offense continues from Void Gate's Utility step", 2.f, static_cast<float>(Epic(f).GetCascadeStep(id)));
+		StartCascadeAbility(f, ability); StartCascadeAbility(f, ability);
+		f.Equal("repeated Void Gate resets as the same Utility family", 0.f, static_cast<float>(Epic(f).GetCascadeStep(id)));
+		ability.Cancel(sas::AbilityEndReason::Completed);
 	}
 
 	void FieldMasteryChecks(Report& report, Application& application)
@@ -324,7 +479,7 @@ int main(int argc, char** argv)
 		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "Epic Utility/Movement content registration failed" };
 		std::string title = "Epic Utility Movement E2E"; Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false);
-		ContentChecks(report); PhaseChecks(report, application); PhaseAbilityProjectileChecks(report, application); CascadeChecks(report, application); FieldMasteryChecks(report, application); FieldRunChecks(report, application); AssaultChecks(report, application); SideChecks(report, application); report.artifact["passed"] = true;
+		ContentChecks(report); PhaseChecks(report, application); PhaseAbilityProjectileChecks(report, application); CascadeChecks(report, application); CascadeTimeSlipChecks(report, application); CascadeBarrierChecks(report, application); CascadeVectorSyncChecks(report, application); CascadeVoidGateChecks(report, application); FieldMasteryChecks(report, application); FieldRunChecks(report, application); AssaultChecks(report, application); SideChecks(report, application); report.artifact["passed"] = true;
 	}
 	catch (const std::exception& error) { report.artifact["error"] = error.what(); std::cerr << error.what() << '\n'; }
 	report.artifact["test"] = "EpicUtilityMovementModulesE2E"; WriteArtifact(argv[1], report.artifact); return report.artifact.value("passed", false) ? 0 : 1;

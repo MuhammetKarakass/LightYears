@@ -262,23 +262,36 @@ namespace
 	{
 		Fixture f{ report, application }; const auto instance = f.Install(kField, 1, 3, "Module.SideFeature.FieldMastery.MasteryOverflow");
 		const auto run = std::make_shared<FieldMasteryRunState>(); f.ship->GetModuleApplier().GetEpicUtilityMovementRuntime().SetFieldMasteryRunState(run);
-		auto& ability = Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1); auto& asc = f.ship->GetAbilitySystemComponent();
+		auto& ability = Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1);
 		report.Check(ability.GetMaxLevel() == GameAbilityDefinition::kUnboundedAbilityLevel, "shipped Utility progression retains its existing unbounded technical ceiling");
-		ability.ConfigureInvocationLevel(1, 3); report.Check(asc.SetAbilityLevel(ability.GetHandle(), ability.GetMaxLevel()), "bound only the test invocation and reach its maximum");
-		for (int i = 0; i < 14; ++i) Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1);
+		report.Check(ability.GetLevel() < ability.GetMaxLevel(), "Overflow starts counting an ordinary non-maximal Utility ability");
+		for (int i = 0; i < 13; ++i) Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1);
 		const List<GameplayTag> utility{ GameplayTags::Ability::Utility };
-		f.Equal("fourteen maximum-level uses do not grant overflow", 1.f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		f.Equal("fourteen non-maximal uses do not grant overflow", 1.f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		auto& other = Use(f, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4);
+		report.Check(other.GetMaxLevel() == GameAbilityDefinition::kUnboundedAbilityLevel && other.GetLevel() < other.GetMaxLevel(), "second Utility also keeps its unbounded natural progression");
+		f.Equal("fourteen plus one uses of different abilities do not pool into Overflow", 1.f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
 		Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1); f.Equal("fifteenth use grants five percent to Utility main effects", 1.05f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
 		f.Equal("overflow excludes Offense", 1.f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier({ GameplayTags::Ability::Offense }));
 		Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1); f.Equal("a real Utility activation captures the earned effect multiplier", 1.05f, ability.GetDefinition().mainEffectMultiplier);
-		auto& other = Use(f, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4); other.ConfigureInvocationLevel(1, 3); report.Check(asc.SetAbilityLevel(other.GetHandle(), other.GetMaxLevel()), "another bounded Utility invocation reaches its own maximum");
-		for (int i = 0; i < 14; ++i) Use(f, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4);
+		for (int i = 0; i < 13; ++i) Use(f, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4);
 		f.Equal("overflow counters belong to each ability, not a pooled sum", 1.05f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
-		Use(f, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4); f.Equal("another fifteen maximum-level uses add a second five percent", 1.1f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		Use(f, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4); f.Equal("another fifteen non-maximal uses add a second five percent", 1.1f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		for (int i = 0; i < 14; ++i) Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1);
+		f.Equal("the original Utility awards another five percent at thirty uses", 1.15f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		Use(f, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4);
+		f.Equal("all Utility abilities capture the shared earned bonus", 1.15f, other.GetDefinition().mainEffectMultiplier);
+		f.ship->GetModuleApplier().Tick(0.f);
+		report.Check(ability.GetLevel() > 1 && ability.GetLevel() < ability.GetMaxLevel(), "ordinary Field Mastery levels coexist with Overflow without requiring a maximum");
 		f.Remove(instance); for (int i = 0; i < 15; ++i) Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability1);
-		f.Equal("earned Utility bonus persists after removal; counters freeze", 1.1f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		f.Equal("earned Utility bonus persists after removal; counters freeze", 1.15f, f.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
 		Fixture respawn{ report, application }; respawn.ship->GetModuleApplier().GetEpicUtilityMovementRuntime().SetFieldMasteryRunState(run);
-		f.Equal("a replacement ship reads the same run-owned overflow bonus", 1.1f, respawn.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		f.Equal("a replacement ship reads the same run-owned overflow bonus", 1.15f, respawn.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		respawn.Install(kField, 1, 3, "Module.SideFeature.FieldMastery.MasteryOverflow");
+		for (int i = 0; i < 13; ++i) Use(respawn, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4);
+		f.Equal("respawn resumes the other Utility counter at fourteen uses", 1.15f, respawn.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
+		Use(respawn, "Ability.Utility.GravityAnomaly.Basic", sas::AbilitySlot::Ability4);
+		f.Equal("the retained counter awards five percent at the next fifteen-use threshold", 1.2f, respawn.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
 		Fixture fresh{ report, application }; f.Equal("a new run state starts without overflow", 1.f, fresh.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
 	}
 }

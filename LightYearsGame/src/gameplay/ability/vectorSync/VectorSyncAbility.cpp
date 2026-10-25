@@ -4,6 +4,7 @@
 #include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/ability/vectorSync/VectorSyncContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/ship/ShipRuntimeModifiers.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "spaceShip/SpaceShip.h"
 
@@ -98,14 +99,12 @@ namespace vega
 			true
 		);
 		context.abilitySystem.AddOwnedTag(AbilityData::VectorSync::State::Active);
+		ship->GetRuntimeModifiers().Set(context.definition.abilityId, ShipRuntimeModifier{ context.definition.mainEffectMultiplier });
 		mActive = true;
 		return true;
 	}
 
-	void VectorSyncAbility::End(
-		GameAbilityBehaviorContext& context,
-		sas::AbilityEndReason reason
-	)
+	void VectorSyncAbility::End(GameAbilityBehaviorContext& context, sas::AbilityEndReason reason)
 	{
 		(void)reason;
 		if (!mActive)
@@ -115,6 +114,7 @@ namespace vega
 
 		if (auto* ship = dynamic_cast<SpaceShip*>(&context.owner))
 		{
+			ship->GetRuntimeModifiers().Remove(context.definition.abilityId);
 			ship->GetMovementComponent().SetDirectionalThrustSync(
 				context.definition.abilityId,
 				false

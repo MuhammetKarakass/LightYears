@@ -4,6 +4,8 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
 
+#include <algorithm>
+
 namespace AbilityData::DirectionalBarrier
 {
 	struct AbilityId
@@ -20,6 +22,7 @@ namespace AbilityData::DirectionalBarrier
 	// Gameplay interception and the typed presentation profile share one
 	// boundary value so projectiles stop at the visible outer edge.
 	inline constexpr float BarrierRadius = 105.f;
+	inline float ResolveHalfAngleDegrees(float mainEffectMultiplier) { return std::clamp(60.f * mainEffectMultiplier, 0.f, 90.f); }
 
 	struct State
 	{
@@ -41,6 +44,8 @@ namespace AbilityData::DirectionalBarrier
 
 	struct Attribute
 	{
+		// Activation snapshot shared by damage interception and the visible arc.
+		inline static const sas::AttributeId HalfAngleDegrees{ "Ability.Defense.DirectionalBarrier.HalfAngleDegrees" };
 		// Duration scaling reads the owner's MaxHealth. These are ability-local
 		// tuning attributes; OwnerAttributeIds::MaxHealth remains the runtime
 		// source attribute and is not duplicated in the ability definition.

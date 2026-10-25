@@ -163,7 +163,7 @@ namespace vega
 			values,
 			AbilityData::TimeSlip::Attribute::GameplayTimeMultiplier,
 			0.35f
-		));
+		)) / std::max(0.001f, context.definition.mainEffectMultiplier);
 		const float primaryFireRateMultiplier = ClampTimeMultiplier(FindValue(
 			values,
 			AbilityData::TimeSlip::Attribute::PrimaryFireRateMultiplier,
