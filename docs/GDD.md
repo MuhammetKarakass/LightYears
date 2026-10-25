@@ -292,18 +292,18 @@ Modüller geminin Tetris benzeri şemasına yerleşir; 90° döner, hücreleri �
 
 Life Support sökülürse oyuncu ölür. Flight Control sökülürse A/S/D kapanır; W ile ileri hareket ve fareye dönüş devam eder. Primary Weapon sökülürse ana ateş, Q/E/F/R modülünden biri sökülürse yalnız ilgili slot kullanımı kapanır. Söküp takmak yetenek seviyesi, cooldown veya şarjörü sıfırlamaz. Life Support'u ızgarada taşımak sökme değildir.
 
-| Bölge | Aile | Uygun ana değere bonus |
+| Bölge | Aile | Yerleşim seviyesi |
 |---|---|---:|
-| Burun | Primary | +%25 |
-| Kanatlar | Offense | +%25 |
-| Çekirdek | Defense | +%25 |
-| Motor | Movement | +%25 |
-| Sensör | Utility | +%25 |
-| Gövde | Bütün aileler | +%10 |
+| Burun | Primary | +1 |
+| Kanatlar | Offense | +1 |
+| Çekirdek | Defense | +1 |
+| Motor | Movement | +1 |
+| Sensör | Utility | +1 |
+| Gövde | Bütün aileler | +2 |
 
 Normal modül uygun olmayan bölgeye yerleşebilir ve taban değerini verir; ceza yoktur. Bonus için bütün hücreler tek bölgede kalmalıdır. Bölgeler arası taşma bonusu kaldırır. Bonus, izin verilen ana etkiyi büyütür; yan statları büyütmez. Kalkan/AB/göstergeler ve yaşam/hareket/primary sistemleri kendi bölgelerine takılır. Q/E/F/R slot modülleri her bölgeye yerleşebilir. Sistem kategorisi başına en fazla bir tane bulunur.
 
-**Bonus örneği:** Taban +4 Armor veren plaka, uygun Çekirdek'te +5; Gövde'de +4,4; eşleşmeyen bölgede +4 verir. +%10 çarpanlı bir ana etki uygun bölgede +%12,5 olur; %10'a 25 yüzde puanı eklenmez.
+**Bonus örneği (kullanıcı kararı, 2026-10-24):** bonus yüzde değil seviyedir. L1 Hunt Clock: Utility normalde %5 iade eder; Sensör'de L2 değeri %6, Gövde'de L3 değeri %7, eşleşmeyen bölgede %5 verir. Yerleşimden gelen seviye en fazla +2'dir; istisnalar ve gerekçe [MODULE_SYSTEM_DESIGN.md §3](MODULE_SYSTEM_DESIGN.md#3-bölgeler-ve-aileler). Runtime bu kuralı uygular (2026-10-24).
 
 ### 8.2 Hücre bütçesi ve gemi kimliği
 

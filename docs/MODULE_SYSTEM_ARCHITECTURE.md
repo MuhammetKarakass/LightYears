@@ -228,8 +228,8 @@ ResolvedModuleEffects Resolve(const ShipSchematic&, const ModuleCatalog&, const 
 Bölge bonusu kuralı (tek yer):
 - **Planlı Legendary istisnası (kullanıcı, 2026-10-14):** Legendary hiçbir bölge bonusu almaz; aile bölgesi ve Gövde için `b = 0` olmalıdır. Legendary tek sabit boyutlu ve yansızdır; Epic normal kuralları izler. Bu tasarım kararı runtime'da uygulanmış sayılmaz. [Sözleşme sahibi](MODULE_SYSTEM_DESIGN.md#61-epic--legendary-ayrımı--kullanıcı-kararı-2026-10-14).
 - Modülün **tüm hücreleri tek bölgede** ise o bölge değerlendirilir; taşan modül bonus almaz.
-- Bölgenin ailesi modülün ailesiyle eşleşiyorsa `b = 0.25`, bölge Gövde ise `b = 0.10`, aksi halde 0.
-- `affectedByZoneBonus` olan modifier'ın büyüklüğü ölçeklenir. `Add`: `m × (1+b)`. `Multiply`: `1 + (m−1) × (1+b)`. Böylece "+%12 hasar" eşleşen bölgede "+%15" olur.
+- **Seviye bonusu (2026-10-24):** `ModuleZoneEntry::levelBonus` (JSON `levelBonus`): aile bölgesi 1, Gövde 2, eşleşmeyen 0; `kMaxZoneLevelBonus = 2`. `ModuleResolver::GetZoneLevelBonus` parçalı yerleşimde en düşük hücre değerini alır.
+- Ana paket `placement.level + levelBonus` etkin seviyesinde çözülür; `ModuleLevelTable::ValueAtLevel` tablo dışındaki seviyeleri son basamakla doğrusal uzatır. `affectedByZoneBonus = false` modifier'lar, `zoneEffects` ve yan özellik paketi yerleşim seviyesinde kalır. Koşu sayaçları (`ModuleRunCounterRuntime`, Tempered Hull armor sınırı) aynı etkin seviyeyi `FindZoneLevelBonus` ile okur. Eski `b = 0.25 / 0.10` çarpanı ve `AmplifyZone`/`OutOfZoneMainBonus` kaldırıldı.
 - Yan statlar ve sistem açma bonusla ölçeklenmez.
 
 ## 5. Runtime
@@ -304,7 +304,7 @@ Scoped kurallar ana silaha uygulanmadığı için Primary modülleri ayrı hedef
 ## 7. UI (modül ekranı)
 
 - Oyunu **durdurmaz**. Mevcut MVVM/Presenter tabanında yeni bir ekran.
-- ViewModel: şematik ızgarası, bölge renkleri, yerleşimler, envanter, sürüklenen modülün önizlemesi (`CanPlace` ve bölge bonusu: yeşil +%25 / +%10).
+- ViewModel: şematik ızgarası, bölge renkleri, yerleşimler, envanter, sürüklenen modülün önizlemesi (`CanPlace` ve bölge seviye bonusu: yeşil +1 Lv / +2 Lv).
 - Komutlar yalnız `Player::Try*` çağırır. Hata nedeni `ModulePlacementFailure`'dan metne çevrilir.
 - Yeniden başlatılan modül `ShipModuleApplier::IsRebooting` ile yükleme göstergesi alır.
 - **Uygulandı (adım 10):** `presentation/hud/modules/` altında bir ViewModel + Presenter + View + `ModuleScreenHUDController`. **Tab** açar/kapatır (`GameLevel::DispatchEvent` yalnız oyun duraklatılmamışken `HUDController::HandleEvent` çağırır); oyun durmaz. Açıkken fare ekrana gider; ana silah klavyeden (Space) ateşlendiği için tıklamalar ateş etmez, WASD/yetenek tuşları çalışmaya devam eder (bu yüzden döndürme R değil **sağ tık / T / tekerlek**). Sol tık: envanterden/yerleşik modülü al, ızgaraya bırak (kurulum veya taşıma), envanter alanına bırak ya da **Del** ile kaldır; sürükle-bırak da çalışır. Önizleme yeşil/kırmızı `CanPlace`, etiket yalnız bölge bonusu varsa (+%25/+%10). Presenter oyun durumunu tek yönlü okur; komutlar yalnız `Player::TryInstallModule/TryMoveModule/TryUninstallModule` ile gider. Yeniden başlatılan modül kararır, süre ve ilerleme çubuğu gösterir. Şematiksiz gemi "no module slots" mesajı görür. Test: `LightYearsModuleScreen`.
@@ -334,7 +334,7 @@ Bu 11 adımlı tablo fiziksel sistem/modül temelinin ilk uygulama sırasını k
 | 1 | Kimlikler (`Module.*` ContentId, `Module.Zone.*`, `Module.System.*`), `ModuleDefinition`, `ModuleCatalog`, `modules.json` yükleyici + doğrulayıcı | Yükleyici testleri: geçerli, bilinmeyen aile/bölge, boş varyant, bozuk şekil |
 | 2 | `ShipSchematic` (ASCII ızgara) yükleme ve 6 gemi şeması | 28 hücre, legend, varsayılan yerleşim testleri |
 | 3 | `ModulePlacementRules` + döndürme | Sınır, çakışma, sistem bölgesi, tek sistem, 4 döndürme |
-| 4 | `ModuleResolver` + bölge bonusu | Eşleşen/Gövde/eşleşmeyen/taşan, Add/Multiply ölçekleme, yan stat ölçeklenmez |
+| 4 | `ModuleResolver` + bölge bonusu | Eşleşen/Gövde/eşleşmeyen/taşan; 2026-10-24'ten beri seviye bonusu (etkin seviye), yan stat ölçeklenmez |
 | 5 | `ShipRuntime::SetSystemEnabled` | Kapalı kalkan 0, seviye büyümesi korunur, düşman değişmez |
 | 6 | `ShipModuleApplier` + `Player` loadout + respawn bağlama; varsayılan modüller | **Davranış değişmez:** varsayılanlarla kalkan/afterburner bugünküyle birebir; respawn sonrası handle sızıntısı yok |
 | 7 | Yeniden başlatma + `inCombat` (3 s) | Savaşta 1,5 s gecikme, savaş dışında anında, sökme anında |

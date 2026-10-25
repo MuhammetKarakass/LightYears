@@ -35,9 +35,9 @@ Kullanıcının elektrik stack sınırı/stack başına çarpan ve Ignite yanmas
 | Bölgeler | 5 aile bölgesi + Gövde (serbest bölge), Tetris şekilli |
 | Aileler | Yetenek kategorileriyle aynı: **Primary, Offense, Defense, Movement, Utility**. Tanklık Defense içindedir |
 | Yerleşim | Her modül her bölgeye girer (sistem modülleri hariç) |
-| Bölge bonusu | Ailesiyle eşleşen bölgede ana değer **+%25** |
-| Gövde (serbest bölge) | Her aileye **+%10**, tüm gemilerde var, boyutu gemiye göre değişir |
-| Eşleşmeyen bölge | Ceza yok, taban değerin %100'ü |
+| Bölge bonusu | Ailesiyle eşleşen bölgede modül **+1 seviye** çalışır (kullanıcı, 2026-10-24; eski ana değer +%25 kuralının yerine, §3) |
+| Gövde (serbest bölge) | Her aileye **+2 seviye**, tüm gemilerde var, boyutu gemiye göre değişir (gemi boyutları sonra ayarlanacak) |
+| Eşleşmeyen bölge | Ceza yok, +0 seviye |
 | Döndürme | 90° döndürme var |
 | Değişim | Her zaman, savaş içi dahil; modül ekranı oyunu **durdurmaz** |
 | Savaş içi değişim | Takılan modül kısa süre **"Sistem yeniden başlatılıyor"** durumunda kalır |
@@ -59,7 +59,7 @@ Mevcut runtime'da gemi modülü aileleri yeteneklerin kategorileriyle **aynıdı
 |---|---|---|---|
 | **Burun** | Ön | Primary (ana silah) | — |
 | **Kanatlar** | Yanlar | Offense | — |
-| **Gövde** | Orta | **Serbest:** tüm aileler +%10 | — |
+| **Gövde** | Orta | **Serbest:** tüm aileler +2 seviye | — |
 | **Çekirdek** | Merkez | Defense (kalkan, HP, armor dahil) | Kalkan jeneratörü (2) |
 | **Motor** | Arka | Movement | Afterburner (2) |
 | **Sensör** | Kokpit | Utility | HP/armor göstergesi (1), hasar göstergesi (1) |
@@ -68,9 +68,16 @@ Yetenek kategori değişiklikleri (2026-10-01, uygulandı): Scorch Drive ve Lanc
 
 Kurallar:
 
-- Bonus yalnız modülün **ana değerine** uygulanır; nadirlikten gelen yan statlara uygulanmaz.
+- **Yerleşim seviyesi (kullanıcı, 2026-10-24):** bölge bonusu yüzde değil seviyedir. Modül kendi aile bölgesinde **+1**, Gövde'de **+2** seviye çalışır; başka ailenin bölgesinde **+0**, ceza yok. Örnek: L1 Hunt Clock: Utility normalde %5 iade eder; Sensör'de L2 değeri %6, Gövde'de L3 değeri %7 verir.
+- Gerekçe: nadirlik yükseldikçe modülün değeri davranışa kayar ve "ana değer +%25" görünmez olur. Seviye basamakları her modül için anlamlı olacak şekilde yazıldığından bonus her nadirlikte hissedilir; yüksek nadirlikleri rastgele yerleştirmek kötü seçim kalır, yerleşim yasağı gerekmez. Gövde dar ve her aileye açık olduğu için oyuncunun en önemli modülüne ayırdığı yerdir; bu yüzden aile bölgesinden yüksektir.
+- Yerleşimden gelen seviye en fazla +2'dir. Etkin seviye = modül seviyesi + yerleşim seviyesi. Gelişim yeteneklerdeki gibi seviye başına formülle tutulur (ör. Hunt Clock seviye başına +1 puan); L4/L5 için ayrı değer yazılmaz, formül etkin seviyeye uygulanır (kullanıcı, 2026-10-24).
+- Seviye merdiveni olmayan tek değerli modüller (ör. Zone Cooler) yerleşim seviyesi almaz; kendi bölge davranışları geçerlidir. Legendary hiçbir bölge bonusu almaz (§6.1).
+- F1 parçalı modülde yerleşim seviyesini en zayıf konumdaki parça belirler.
+- Zone Overclocker, Misfit Wiring ve Z1/Z2 yanları bu kararla tasarımdan çıkarıldı.
+- Bonus yalnız modülün **ana özelliğine** uygulanır; nadirlikten gelen yan statlara uygulanmaz.
 - Bonus için modül **tamamen tek bir bölgenin içinde** olmalıdır. İki bölgeye taşan modül bonus almaz.
-- Arayüzde eşleşme yeşil "+%25" (aile bölgesi) / "+%10" (Gövde) etiketiyle gösterilir; eşleşmeme için uyarı gösterilmez.
+- Arayüzde eşleşme yeşil "+1 sv" (aile bölgesi) / "+2 sv" (Gövde) etiketiyle gösterilir; eşleşmeme için uyarı gösterilmez.
+- **Runtime durumu (2026-10-24):** uygulandı. `ModuleResolver` etkin seviyeyle çözer, `modules.json` bölge tablosu `levelBonus` taşır, modül ekranı "+1 Lv" / "+2 Lv" gösterir. Ayrıntı [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md).
 
 ## 4. Sistem modülleri
 
