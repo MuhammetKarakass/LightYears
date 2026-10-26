@@ -28,6 +28,11 @@ namespace vega
 		float primaryAttackSpeedPercentPerWeight = 0.f;
 		float movementRatingPerWeight = 0.f;
 		float utilityHastePercentPerWeight = 0.f;
+		int offenseWeight = 0;
+		int defenseWeight = 0;
+		int primaryWeight = 0;
+		int movementWeight = 0;
+		int utilityWeight = 0;
 		int commonWeight = 0;
 		int uncommonWeight = 0;
 		int rareWeight = 0;

@@ -1,6 +1,9 @@
 #pragma once
 
 #include "gameplay/module/rules/legendary/LegendaryUnderdogCoreRules.h"
+#include "attributes/AttributeSystem.h"
+
+#include <cstddef>
 
 namespace vega
 {
@@ -24,5 +27,8 @@ namespace vega
 		LightYearsAbilitySystemComponent& mAbilities;
 		CombatRuntime& mCombatRuntime;
 		List<ResolvedModuleLegendaryUnderdogCoreRule> mRules;
+		List<sas::AttributeModifierHandle> mOwnerHandles;
+		List<std::size_t> mPrimaryHandles;
+		List<std::size_t> mCooldownHandles;
 	};
 }

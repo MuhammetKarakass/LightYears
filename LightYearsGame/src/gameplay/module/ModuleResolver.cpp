@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <limits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace vega
@@ -440,6 +441,45 @@ namespace vega
 			const auto* zone = rules.zoneTable.FindZone(GetPlacementZone(rules, module, placement));
 			return zone && !zone->anyFamily ? zone->family : GameplayTag{};
 		}
+		namespace
+		{
+			int UnderdogRarityWeight(const ResolvedModuleLegendaryUnderdogCoreRule& rule, ModuleRarity rarity)
+			{
+				switch (rarity)
+				{
+				case ModuleRarity::Common: return rule.commonWeight;
+				case ModuleRarity::Uncommon: return rule.uncommonWeight;
+				case ModuleRarity::Rare: return rule.rareWeight;
+				case ModuleRarity::Epic: return rule.epicWeight;
+				case ModuleRarity::Legendary: return rule.legendaryWeight;
+				case ModuleRarity::None: break;
+				}
+				return 0;
+			}
+
+			bool IsUnderdogCore(const ModuleDefinition& module)
+			{
+				return module.legendary && std::holds_alternative<ModuleLegendaryUnderdogCoreRule>(*module.legendary);
+			}
+
+			void ComputeUnderdogWeights(ResolvedModuleLegendaryUnderdogCoreRule& resolved, const ModuleRulesContext& rules, const List<ModulePlacement>& activePlacements)
+			{
+				for (const ModulePlacement& placement : activePlacements)
+				{
+					const ModuleDefinition* module = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
+					if (!module || IsUnderdogCore(*module) || module->abilityModule || module->systemCategory.IsValid() || module->rarity == ModuleRarity::None) continue;
+					const int weight = UnderdogRarityWeight(resolved, module->rarity);
+					if (weight <= 0) continue;
+					const GameplayTag family = GetPlacementFamily(rules, *module, placement);
+					if (family == GameplayTags::Ability::Offense) resolved.offenseWeight += weight;
+					else if (family == GameplayTags::Ability::Defense) resolved.defenseWeight += weight;
+					else if (family == GameplayTags::Ability::Primary) resolved.primaryWeight += weight;
+					else if (family == GameplayTags::Ability::Movement) resolved.movementWeight += weight;
+					else if (family == GameplayTags::Ability::Utility) resolved.utilityWeight += weight;
+				}
+			}
+		}
+
 
 		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
 		{
@@ -647,6 +687,7 @@ namespace vega
 					buff.rule.maximumDurationSeconds = feature->rules.momentumExtension->maximumSeconds;
 				}
 			}
+			for (ResolvedModuleLegendaryUnderdogCoreRule& underdog : effects.legendaryRules.underdogCores) ComputeUnderdogWeights(underdog, rules, activePlacements);
 			return effects;
 		}
 	}
