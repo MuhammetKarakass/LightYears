@@ -123,7 +123,6 @@ namespace
 						{
 							if (definition.moduleId.ToString().find("GlassTopCore") != std::string::npos) report.Check(entry.description == "Attack Power +16,4268; Max Health -6%.", "attribute level and derived percentage visible", entry.description);
 							if (definition.moduleId.ToString().find("FrostLock") != std::string::npos) report.Check(entry.description.find("1,6s") != std::string::npos && entry.description.find("6s.") != std::string::npos, "status duration and cooldown L3 visible", entry.description);
-							if (definition.moduleId.ToString().find("LuckyCast") != std::string::npos) report.Check(entry.description.find("Luck x 7%") != std::string::npos && entry.description.find("50% cooldown") != std::string::npos, "Luck chance and cooldown fractions visible", entry.description);
 						}
 						if (side.IsValid())
 						{

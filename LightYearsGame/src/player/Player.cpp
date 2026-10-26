@@ -151,6 +151,7 @@ namespace vega
 			ship && !ship->GetIsPendingDestroy())
 		{
 			ship->GetShipRuntime().SetShipLevel(currentLevel);
+			ship->GetModuleApplier().OnShipLevelChanged();
 		}
 
 		if (!kAutoLevelAbilitiesForTesting)

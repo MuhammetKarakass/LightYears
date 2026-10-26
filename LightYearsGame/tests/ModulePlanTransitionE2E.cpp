@@ -92,7 +92,7 @@ namespace
 			const auto module = f.Install(id.c_str(), 1, 1, "Module.SideFeature.Shared.LuckyCast");
 			f.Equal("Lucky Cast supplies one Luck", luck + 1.f, f.Owner(OwnerAttributeIds::Luck));
 			f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Luck, 100.f);
-			f.Equal("guaranteed Luck roll refunds twenty-five percent of real activation cooldown", ordinary * .75f, CastOffense(f).GetCooldownRemaining());
+			f.Equal("guaranteed Luck roll refunds fifteen percent of real activation cooldown", ordinary * .85f, CastOffense(f).GetCooldownRemaining());
 			f.Remove(module); f.Equal("removing Lucky removes the refund", ordinary, CastOffense(f).GetCooldownRemaining());
 		}
 	}

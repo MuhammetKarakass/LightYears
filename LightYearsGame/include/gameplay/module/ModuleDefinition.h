@@ -61,6 +61,8 @@ namespace vega
 		sas::AttributeModifier modifier;
 		bool affectedByZoneBonus = true;
 		ModuleLevelTable<float> magnitudeByLevel;
+		// Added once per ship level above 1 (shipLevel - 1 steps). The zone bonus does not scale this term.
+		float perShipLevel = 0.f;
 	};
 
 	// Resolved later into a ScopedAbilityRule for the module's family.
@@ -383,7 +385,7 @@ namespace vega
 	};
 	// Rule equality decides whether a runtime keeps its state across a reapply. Each operator binds every
 	// field of the rule structurally, so adding a field without extending the comparison fails to compile.
-	inline bool operator==(const ModuleAttributeModifier& left, const ModuleAttributeModifier& right) { const auto& [a0, a1, a2, a3] = left; const auto& [b0, b1, b2, b3] = right; const auto& [am0, am1, am2, am3] = a1; const auto& [bm0, bm1, bm2, bm3] = b1; return std::tie(a0, a2, a3) == std::tie(b0, b2, b3) && std::tie(am0, am1, am2, am3) == std::tie(bm0, bm1, bm2, bm3); }
+	inline bool operator==(const ModuleAttributeModifier& left, const ModuleAttributeModifier& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; const auto& [am0, am1, am2, am3] = a1; const auto& [bm0, bm1, bm2, bm3] = b1; return std::tie(a0, a2, a3, a4) == std::tie(b0, b2, b3, b4) && std::tie(am0, am1, am2, am3) == std::tie(bm0, bm1, bm2, bm3); }
 	inline bool operator==(const ModuleTriggerBuff& left, const ModuleTriggerBuff& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8); }
 	inline bool operator==(const ModuleDamageRule& left, const ModuleDamageRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21); }
 	inline bool operator==(const ModuleRicochetRule& left, const ModuleRicochetRule& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }

@@ -71,6 +71,8 @@ namespace vega
 		bool Apply(const ModuleLoadout& loadout, const ModuleRulesContext& rules, bool inCombat = false);
 		// Counts reboots down and reapplies the stored snapshot when one finishes.
 		void Tick(float deltaSeconds);
+		// Rebuilds the resolved effects when the ship level changed since the last resolve; ship-level terms depend on it.
+		void OnShipLevelChanged();
 
 		bool IsRebooting(std::uint32_t instanceId) const;
 		// 0 when the placement is not rebooting.
@@ -220,6 +222,7 @@ namespace vega
 		std::function<void(std::uint32_t, double)> mRunCounterCreditSink;
 		std::function<void(std::uint32_t)> mReviveSpentSink;
 
+		int mResolvedShipLevel = 1;
 		std::uint64_t mAppliedRevision = 0;
 		bool mHasApplied = false;
 		bool mShuttingDown = false;

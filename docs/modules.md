@@ -233,7 +233,7 @@ Ana modül sayımına dahil değildir (karar 2026-10-24). Combo Sequencer Legend
 
 | Özellik | Yeni yön | Güç / açık noktalar |
 |---|---|---|
-| Lucky Cast | Hunt Clock dört sürümü ortak yanı;G5 yerine | Luck+1; Q/E/F/R kullanımında Luck başına%3 ihtimalle kullanılan yeteneğin beklemesinin%25’i iade. Primary hariç. Yan seviyeleri bu tur artırılmadı. |
+| Lucky Cast | Hunt Clock dört sürümü ortak yanı;G5 yerine | Luck+1; Q/E/F/R kullanımında Luck başına%3 ihtimalle kullanılan yeteneğin beklemesinden iade; iade U/R/E %15/%22/%30 ([ortak tablo](#diğer-ortak-mekanikler--onaylı-tasarım-2026-10-26)). Primary hariç. Taşıyıcıların hepsi Uncommon olduğundan canlıda yalnız %15 kaydı var. |
 | Status Resonator | Arc Extender özel yanı | Uygulanan hasar statü süreleri×1,20; Frozen dahil, donma beklemesi hariç. O4 Arc havuzunda değil; süre artışı Thermal toplam DoT/Ember referansına yansır. |
 | Arc Discharge | Arc Extender özel yanı | Maksimum2 hücrede açılır. Hedef5 Electric’e ulaşınca350 yarıçapta2 en yakın düşmana2stack; hedef başına4sn bekleme. Kaynak korunur; yayılma hasarsız ve zincirsiz. Yeni seviyeler seçilmedi. |
 | Bastion Slam | Tempered Hull özel yanı; bağımsız modül değil | Tempered maksimum3 hücrede açılır. Defense kullanımında biriken bonus Armor’dan %150 Energy hasarı,300 yarıçap uygulandı. Alternatif özel Field Medic ve ortak D1/D3/D4 seçildi; 5sn bekleme ve runtime uygulandı; seçilmemiş seviye büyümesi yok. |
@@ -255,7 +255,7 @@ Boyut merdiveninde maksimum boyutta havuzdan tek yan açılır; eksik seçenekle
 | Overshield Layer | Shield Rush: tavan üstü geçici kalkan varken hareket hızı+%20; kalkan bitince biter, birikmez. | Reserve Shell: tavan üstü geçici kalkan varken alınan hasar×0,90. | D1 / R2 / D4; değerler onaylı genel yan tablosunda. |
 | Armor Conversion | Rapid Alloy: toplam Armor’un %10’u kadar AS yüzde puanı;80 Armor→+%8 AS, sürekli hesaplanır, Armor tüketilmez. | Balanced Output: ana bonusun %25’i düşük AP/EP’ye; eşitlikte ana AP/yan EP, geri besleme yok. | D1 / R2 / D3; değerler onaylı genel yan tablosunda. |
 | Tempered Hull | Bastion Slam: Defense kullanımında birikmiş bonus Armor’un %150’si Energy hasarı,300 yarıçap. 5sn ayrı bekleme kabul edildi. | Field Medic: Defense kullanımında 3sn toplam %12 MaxHealth,30sn bekleme; beklemede yenilenmez. | D1 MaxHealth+45; D3 öldürünce %1,75 MaxHealth; D4 regen×1,25. |
-| Danger Pay | Hazard Dividend: Threat≥3 iken ana ekonomi oranına +10 yüzde puanı; ana gelişimle L1/L2/L3 +%35/+%40/+%45 (bölge bonusu öncesi). | Hazard Cover: aynı koşulda alınan hasar×0,92. | G1 öldürünce+2Gold; G5 Luck+2; Four Corners: dört Q/E/F/R farklı ailedeyse güç+%10, hasarsız etki kapsamı açık. |
+| Danger Pay | Hazard Dividend: Threat≥3 iken ana ekonomi oranına +10 yüzde puanı; ana gelişimle L1/L2/L3 +%35/+%40/+%45 (bölge bonusu öncesi). | Hazard Cover: aynı koşulda alınan hasar×0,92. | G1 öldürünce+2Gold; G5 Luck+2; Four Corners: dört Q/E/F/R farklı ailedeyse uygun ana etki gücü artar (iyileşme/bariyer dahil); oran onaylı ortak tabloda. |
 | Speed Lance | Echo Lance: ilk mızraktan0,4sn sonra aynı yönde %50 hasarlı ikinci delici mızrak; ilk hız örneği, yeni kullanım sayılmaz. | Charged Lance: ilk hedefe2 Electric stack; sonraki delinen hedeflere stack yok. | G2 / G3 / G4; değerler onaylı genel yan tablosunda. |
 | Gold Plating | Altın İskelet: yalnız bu modülün Gold kaynaklı bonus Armor değerine bağlı MaxHealth. Mekanik kullanıcı seçimi (2026-10-24); 1 Armor → 1 MaxHealth oranı öneri. Gold harcamada yeniden hesaplanır, diğer Armor sayılmaz. | Kasa İskontosu: Gold harcama maliyetlerini azaltır. Mekanik kullanıcı seçimi (2026-10-24); ×0,90 maliyet (%10 indirim) öneri. Harcama türleri, fiyat/yuvarlama ve diğer indirimlerle birleşim açık. Darphane Kalkanı reddedildi. | Seçilmedi. D2/D3/D4 önceki ajan önerisi; iki özel seçili, ortak havuz tamamlanmadı. Ortak D1/G1/Uyumlu Yuva seçildi (karar 2026-10-24). |
 | Shield Battery | Kapasitör Odağı: mevcut rezerv miktarına bağlı EP; mekanik kullanıcı seçimi (2026-10-24). %25 oranı öneri: mevcut rezerv80 → EP+20. Rezerv harcandıkça bonus azalır; rezerv tavanı veya normal kalkan sayılmaz. | Kesintisiz Depolama: normal kalkan doluyken rezerv hasar alsa da dolmaya devam eder. Mekanik kullanıcı seçimi (2026-10-24); normal depolama hızının %25 oranı öneri. Normal kalkanın hasar sonrası beklemesini kaldırmaz. | Henüz seçilmedi; iki özel mekanik seçili, ortak havuz açık. Ortak D4/D5/Uyumlu Yuva seçildi; iki %25 oranı onaylı (karar 2026-10-24). |
@@ -278,7 +278,7 @@ Boyut merdiveninde maksimum boyutta havuzdan tek yan açılır; eksik seçenekle
 
 #### Ortak havuzlar — onaylı tasarım, 2026-10-26
 
-Her yanın Uncommon/Rare/Epic bütçesi ayrıdır; ortak rarity çarpanı yoktur. Aşağıdaki sayısal tablo kullanıcı tarafından onaylandı; **canlı JSON/runtime henüz bu tabloya geçirilmedi**. Opening Hit yerine O5 düz EP seçildi; D2 Damage Guard ve G9 kaldırıldı, ilgili D2 ortak izinlerinde R2 tercih edilir.
+Her yanın Uncommon/Rare/Epic bütçesi ayrıdır; ortak rarity çarpanı yoktur. Aşağıdaki sayısal tablo kullanıcı tarafından onaylandı. **Canlı JSON 2026-10-26'da bu tabloya geçirildi** (D2 kayıtları silindi, O5 düz EP oldu). `n` büyümesi JSON'da `perShipLevel` alanıyla tutulur; gemi seviyesi değişince modüller yeniden çözülür. Modül ekranındaki açıklama henüz taban değeri (`n=0`) gösterir; gemi seviyeli gösterim HUD widget işine ertelendi (kullanıcı, 2026-10-27). Opening Hit yerine O5 düz EP seçildi; D2 Damage Guard ve G9 kaldırıldı, ilgili D2 ortak izinlerinde R2 tercih edilir.
 
 `n = gemi seviyesi − 1`. AP, EP, MaxHealth ve R2 Armor bu gemi seviyesiyle büyür; bu modül seviyesi değildir. Bölge bonusu yanın kendi sayısını büyütmez. AP ve EP aynı formülü kullanır.
 
@@ -304,13 +304,13 @@ Her yanın Uncommon/Rare/Epic bütçesi ayrıdır; ortak rarity çarpanı yoktur
 | R5 | En az iki farklı hasar statüsü taşıyan hedefe hasar | +%10 | +%18 | +%25 |
 | R6 | Movement kullanınca 3 sn alınan hasar azalır | %8 | %14 | %20 |
 
-**G2 Haste hesabı:** `bekleme = seviyeden gelen bekleme / (1 + toplam Haste yüzdesi / 100)`; diğer scoped modül çarpanları kendi kontratında uygulanır. +%100 Haste beklemeyi yarıya indirir. Bu yeni tasarım, eski runtime `CD × exp(−rating/100)` ile aynı değildir; içerik/engine tüketim sözleşmesi uygulama turunda birlikte ele alınmalıdır. Ortak rarity katsayıları tekrar devreye sokulmaz.
+**G2 Haste hesabı:** `bekleme = seviyeden gelen bekleme / (1 + toplam Haste yüzdesi / 100)`; diğer scoped modül çarpanları kendi kontratında uygulanır. +%100 Haste beklemeyi yarıya indirir. Bu yeni tasarım, eski runtime `CD × exp(−rating/100)` ile aynı değildir. Uygulandı (2026-10-26): formül oyunun `GetAbilityHasteCooldownMultiplier` yardımcısındadır (`gameplay/ability/AbilityHaste.h`); motordaki eski üstel eğri artık oyun tarafından kullanılmaz. Ortak rarity katsayıları tekrar devreye sokulmaz.
 
 R1/R2/R5/R6 kodları tarihsel adlardır; bu dört yan yalnız Rare değildir. R3 Boss Hunter, R4 Full Charge, Z1/Z2 kaldırılmıştır. Havuz üyeliği bütün modüllere otomatik düşme izni vermez; taşıyıcı izin listeleri geçerlidir. Modüle özel yanlar önceki bölümde kalır.
 
 #### Diğer ortak mekanikler — onaylı tasarım, 2026-10-26
 
-Kullanıcı bu turun sayısal ve yapısal önerilerini de onayladı. Aşağıdaki değerler tasarım sözleşmesidir; **canlı içerik/runtime henüz yeni rarity tablolarına geçirilmedi**. Planlı mağaza/rota işlevlerinin hazır olduğu anlamına gelmez.
+Kullanıcı bu turun sayısal ve yapısal önerilerini de onayladı. Aşağıdaki değerler tasarım sözleşmesidir; canlıda yalnız Lucky Cast Uncommon %15 iadesi uygulandı (2026-10-26), Four Corners/G7/G8 içerikte yoktur. Planlı mağaza/rota işlevlerinin hazır olduğu anlamına gelmez.
 
 | Yan | Ortak koşul / etki | Uncommon | Rare | Epic |
 |---|---|---|---|---|
@@ -441,7 +441,7 @@ Bu kayıtlar içerik dosyasında durur; seçilmiş 84 ana modüle dahil değildi
 | Interest Ledger | Planlı; nokta tamamlanma olayı eksik. |
 | Shield Battery / Shield Rupture | Uygulandı (2026-10-24); rezerv tavanı, patlama yarıçapı ve pencere yer tutucu, ortak yan havuzu yok. |
 | Epic17 / Legendary12 | Pathfinder dışındaki 14 Epic uygulandı (2026-10-24); Phase Slip ve Momentum Drive kısmen. Resonant Barrel ve Monochrome Core 2026-10-25 uygulandı; Legendary beşi planlı (Meltdown Barrel ve Primed Arsenal 2026-10-26 eklendi; Combo Sequencer 2026-10-26 kaldırıldı). Ultimate Protocol 2026-10-25 Epic sayımından çıktı (nadirliksiz yetenek modülü). 2026-10-24 kararlarının uygulaması Sol'a bekliyor. Alternating Current 2026-10-24'te Prism Core yanına taşındı; Storm Capacitor da ana sayım dışında Prism Core yanıdır. |
-| Yan özellikler | Yeni seviyeler için seçilmemiş büyüme eklenmez. Four Corners’ın hasarsız etkileri ve planlı yolculuk yanlarının sistem bağlantıları açık. |
+| Yan özellikler | Ortak sayısal tablo canlı JSON'a geçirildi (2026-10-26); gemi seviyesi `n` büyümesi ve yüzde Haste formülü de uygulandı; kalan: modül açıklamasında gemi seviyeli değer (HUD widget işine ertelendi), Four Corners/G7/G8 wiring ve planlı yolculuk yanlarının sistem bağlantıları. |
 | Ekonomi ve oyuncu akışı | Koşu Gold cüzdanı/harcama API’si var; mağaza, loot, yükseltme harcaması/yeniden seçim, modül kalıcılığı ve Rare sunumu ayrı kapsam. |
 
 [GalaxyRoute](../LightYearsGame/include/gameplay/galaxy/GalaxyRoute.h) yıldız/durak verisi sağlar; ödül/Threat/mağaza sözleşmesi yerine geçmez. [F1 yerleşim çekirdeği](../LightYearsGame/src/gameplay/module/ModulePlacementRules.cpp) ve [parça loadout API’si](../LightYearsGame/src/gameplay/module/ModuleLoadout.cpp) mevcuttur; çekirdek kod bütün ekran/edinme akışının kabulü değildir.

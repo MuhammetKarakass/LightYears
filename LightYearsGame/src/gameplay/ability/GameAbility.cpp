@@ -3,7 +3,7 @@
 
 #include <type_traits>
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
-#include "attributes/AttributeMath.h"
+#include "gameplay/ability/AbilityHaste.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -356,9 +356,9 @@ namespace vega
 		 * Effective cooldown order:
 		 * 1. Start with this GameAbility's private definition copy.
 		 * 2. Ability-specific levels mutate only this copy: base cooldown + summed Cooldown value modifiers.
-		 * 3. Ship-wide AbilityHaste rating is converted by the shared asymptotic
-		 *    curve. Cooldown reduction therefore has diminishing returns and
-		 *    never reaches a zero-second cooldown.
+		 * 3. Ship-wide AbilityHaste rating divides the leveled cooldown through
+		 *    GetAbilityHasteCooldownMultiplier: cooldown / (1 + Haste / 100), so
+		 *    +100 Haste halves it. Negative Haste counts as zero.
 		 */
 		const float moduleMultiplier = IsOnCooldown() && mCooldownModuleMultiplierSnapshot
 			? *mCooldownModuleMultiplierSnapshot
@@ -379,7 +379,7 @@ namespace vega
 			mDefinition.attributeModifiers
 		);
 		const float hasteMultiplier =
-			sas::AttributeMath::GetAbilityCooldownMultiplier(
+			GetAbilityHasteCooldownMultiplier(
 				mAbilitySystem.GetAttributes().GetCurrentValue(
 					OwnerAttributeIds::AbilityHaste
 				)

@@ -2,59 +2,19 @@
 #include "gameplay/content/DamageStatusBalanceCatalog.h"
 namespace uncommon_completion_e2e
 {
-	namespace
-	{
-		struct NestedHit
-		{
-			SpaceShip& target; Actor& source; bool ran = false; float damage = 0.f; bool beforeApply; DelegateHandle handle;
-			NestedHit(SpaceShip& value, Actor& attacker, bool before = false) : target{ value }, source{ attacker }, beforeApply{ before }, handle{ (before ? target.GetCombatRuntime().onDamageProcessed : target.GetCombatRuntime().onDamageResolved).BindAction(this, &NestedHit::Resolved) } {}
-			~NestedHit() { (beforeApply ? target.GetCombatRuntime().onDamageProcessed : target.GetCombatRuntime().onDamageResolved).UnbindAction(handle); }
-			void Resolved(const DamageContext&) { if (!ran) { ran = true; damage = Hit(target, &source, 10.f, Plain()); } }
-		};
-		struct RetainedFailedHit
-		{
-			SpaceShip& target; DamageContext snapshot; bool ran = false; DelegateHandle handle;
-			explicit RetainedFailedHit(SpaceShip& value) : target{ value }, handle{ target.GetCombatRuntime().onDamageProcessed.BindAction(this, &RetainedFailedHit::Processed) } {}
-			~RetainedFailedHit() { target.GetCombatRuntime().onDamageProcessed.UnbindAction(handle); }
-			void Processed(const DamageContext& context) { if (!ran) { ran = true; snapshot = context; throw std::runtime_error{ "E2E interrupted before application" }; } }
-		};
-	}
 	void DamageChecks(Report& report, Application& application)
 	{
 		for (int level = 1; level <= 3; ++level)
 		{
 			Fixture f{ report, application };
+			const float power = f.Owner(OwnerAttributeIds::EnergyPower);
 			const auto id = f.Install("Module.Offense.SharpScale.Uncommon", 1, level, "Module.SideFeature.Shared.O5");
+			f.Equal("O5 adds a flat +8 Energy Power at every side level", power + 8.f, f.Owner(OwnerAttributeIds::EnergyPower));
 			auto target = Enemy(f);
-			target->SetInvulnerability(true);
-			f.Equal("blocked hit applies no damage", 0.f, Hit(*target, f.ship.get(), 10.f, Plain()));
-			report.Check(f.ship->GetCombatRuntime().GetModuleFirstHitTargetCount() == 0, "blocked first hit rolls back its reservation");
-			target->SetInvulnerability(false);
-			f.Equal("first successful target hit receives O5", 11.5f, Hit(*target, f.ship.get(), 10.f, Plain()));
-			f.Equal("later hit receives no O5", 10.f, Hit(*target, f.ship.get(), 10.f, Plain()));
-			const auto unrelated = f.Install("Module.Utility.DoubleFeedCore.Uncommon");
-			f.Equal("unrelated rebuild retains first-hit history", 10.f, Hit(*target, f.ship.get(), 10.f, Plain()));
-			f.Remove(unrelated);
+			f.Equal("O5 gives no first-hit damage bonus", 10.f, Hit(*target, f.ship.get(), 10.f, Plain()));
+			f.Equal("O5 gives no repeat-hit damage bonus", 10.f, Hit(*target, f.ship.get(), 10.f, Plain()));
 			f.Remove(id);
-			f.Install("Module.Offense.SharpScale.Uncommon", 1, level, "Module.SideFeature.Shared.O5");
-			f.Equal("reequip cannot farm O5 on an existing target", 10.f, Hit(*target, f.ship.get(), 10.f, Plain()));
-			auto fresh = Enemy(f, 200.f);
-			{ NestedHit observer{ *fresh, *f.ship }; Hit(*fresh, f.ship.get(), 10.f, Plain()); f.Equal("nested resolved hit cannot repeat O5", 10.f, observer.damage); }
-			auto inflight = Enemy(f, 250.f);
-			{ NestedHit observer{ *inflight, *f.ship, true }; Hit(*inflight, f.ship.get(), 10.f, Plain()); f.Equal("in-flight reservation prevents nested O5", 10.f, observer.damage); }
-			auto skipped = Enemy(f, 300.f);
-			auto payload = Plain(); payload.skipModuleDamageRules = true;
-			f.Equal("generated hit receives no O5", 10.f, Hit(*skipped, f.ship.get(), 10.f, payload));
-			payload.skipModuleDamageRules = false; payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
-			f.Equal("suppressed hit receives no O5", 10.f, Hit(*skipped, f.ship.get(), 10.f, payload));
-			f.Equal("generated and suppressed hits do not consume O5", 11.5f, Hit(*skipped, f.ship.get(), 10.f, Plain()));
-			auto interrupted = Enemy(f, 350.f);
-			{ RetainedFailedHit observer{ *interrupted }; bool rejected = false; try { Hit(*interrupted, f.ship.get(), 10.f, Plain()); } catch (const std::runtime_error&) { rejected = true; }
-				report.Check(rejected && observer.snapshot.moduleFirstHitClaim.expired(), "retained interrupted damage snapshot cannot keep a reservation alive");
-				f.Equal("interrupted application leaves O5 for the next successful hit", 11.5f, Hit(*interrupted, f.ship.get(), 10.f, Plain())); }
-			const auto count = f.ship->GetCombatRuntime().GetModuleFirstHitTargetCount();
-			target->Destroy(); f.level->TickInternal(0.f); target.reset();
-			report.Check(f.ship->GetCombatRuntime().GetModuleFirstHitTargetCount() == count - 1, "first-hit weak history prunes destroyed target");
+			f.Equal("removing O5 releases its Energy Power", power, f.Owner(OwnerAttributeIds::EnergyPower));
 		}
 		for (int level = 1; level <= 3; ++level)
 		{

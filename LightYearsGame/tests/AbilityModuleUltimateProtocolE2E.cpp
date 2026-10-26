@@ -1,5 +1,6 @@
 #include "framework/EngineContext.h"
 #include "attributes/AttributeMath.h"
+#include "gameplay/ability/AbilityHaste.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
@@ -167,7 +168,7 @@ namespace
 		ScopedAbilityCooldownRule reduction; reduction.requiredSlot = sas::AbilitySlot::Ability4; reduction.multiplier = .75f;
 		const auto handle = f.ship->GetAbilitySystemComponent().AddScopedAbilityCooldownRule(reduction);
 		Fire(f, rocket);
-		f.Equal("Ultimate multiplies haste and scoped cooldown reduction", cooldown * 2.f * sas::AttributeMath::GetAbilityCooldownMultiplier(100.f) * .75f, rocket.GetCooldownDuration());
+		f.Equal("Ultimate multiplies haste and scoped cooldown reduction", cooldown * 2.f * vega::GetAbilityHasteCooldownMultiplier(100.f) * .75f, rocket.GetCooldownDuration());
 		report.Check(f.ship->GetAbilitySystemComponent().RemoveScopedAbilityCooldownRule(handle), "remove only the E2E's scoped reduction");
 		// Move the ability itself, leaving the module in R.
 		report.Check(f.ship->GetAbilitySystemComponent().RemoveAbility(rocket.GetHandle()), "remove Rocket from its previous R slot before moving it");

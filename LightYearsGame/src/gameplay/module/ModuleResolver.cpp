@@ -16,6 +16,12 @@ namespace vega
 	{
 		namespace
 		{
+			// Flat per-ship-level term of a module attribute: perShipLevel for each step above level 1.
+			float ShipLevelBonus(float perShipLevel, int shipLevel)
+			{
+				return perShipLevel * static_cast<float>(std::max(0, shipLevel - 1));
+			}
+
 			template<typename T>
 			T ValueAtLevel(T baseValue, const ModuleLevelTable<T>& table, int level)
 			{
@@ -138,12 +144,13 @@ namespace vega
 				for (const ModuleSustainedSpeedRule& modifier : side.sustainedSpeedRules)
 					for (std::size_t index = mainBegin.sustained; index < mainEnd.sustained; ++index) MergeSustainedModifier(effects.sustainedSpeedRules[index].rule, modifier);
 			}
-			void ResolvePackage(ResolvedModuleEffects& effects, const ModuleRulePackage& package, const ModuleDefinition& module, const ModulePlacement& placement, int level, int baseLevel, const GameplayTag& placementZone, const ModuleZoneEntry* placementZoneEntry, bool sideFeature)
+			void ResolvePackage(ResolvedModuleEffects& effects, const ModuleRulePackage& package, const ModuleDefinition& module, const ModulePlacement& placement, int level, int baseLevel, const GameplayTag& placementZone, const ModuleZoneEntry* placementZoneEntry, int shipLevel, bool sideFeature)
 			{
 				for (const ModuleAttributeModifier& entry : package.attributeModifiers)
 				{
 					sas::AttributeModifier modifier = entry.modifier;
-					modifier.magnitude = ValueAtLevel(modifier.magnitude, entry.magnitudeByLevel, entry.affectedByZoneBonus ? level : baseLevel);
+					modifier.magnitude = ValueAtLevel(modifier.magnitude, entry.magnitudeByLevel, entry.affectedByZoneBonus ? level : baseLevel) + ShipLevelBonus(entry.perShipLevel, shipLevel);
+					effects.usesShipLevel |= entry.perShipLevel != 0.f;
 					switch (entry.target)
 					{
 					case ModuleAttributeTarget::Owner: effects.ownerModifiers.push_back(modifier); break;
@@ -171,7 +178,8 @@ namespace vega
 						rule.movementSpeedMultiplierByLevel, level);
 					for (ModuleAttributeModifier& modifier : rule.modifiers)
 					{
-						modifier.modifier.magnitude = ValueAtLevel(modifier.modifier.magnitude, modifier.magnitudeByLevel, modifier.affectedByZoneBonus ? level : baseLevel);
+						modifier.modifier.magnitude = ValueAtLevel(modifier.modifier.magnitude, modifier.magnitudeByLevel, modifier.affectedByZoneBonus ? level : baseLevel) + ShipLevelBonus(modifier.perShipLevel, shipLevel);
+						effects.usesShipLevel |= modifier.perShipLevel != 0.f;
 					}
 					effects.triggerBuffs.push_back({ placement.instanceId, NamespacedRuleIndex(ruleIndex, sideFeature), std::move(rule) });
 				}
@@ -433,14 +441,6 @@ namespace vega
 			}
 		}
 
-		GameplayTag GetPlacementFamily(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
-		{
-			if (placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module.sizeVariants.size()) return module.family;
-			const auto& effects = module.sizeVariants[static_cast<std::size_t>(placement.variantIndex)].zoneEffects;
-			if (std::none_of(effects.begin(), effects.end(), [](const ModuleZoneEffect& effect) { return effect.kind == ModuleZoneEffectKind::PrimaryHitCooldownSeconds; })) return module.family;
-			const auto* zone = rules.zoneTable.FindZone(GetPlacementZone(rules, module, placement));
-			return zone && !zone->anyFamily ? zone->family : GameplayTag{};
-		}
 		namespace
 		{
 			int UnderdogRarityWeight(const ResolvedModuleLegendaryUnderdogCoreRule& rule, ModuleRarity rarity)
@@ -480,6 +480,14 @@ namespace vega
 			}
 		}
 
+		GameplayTag GetPlacementFamily(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
+		{
+			if (placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module.sizeVariants.size()) return module.family;
+			const auto& effects = module.sizeVariants[static_cast<std::size_t>(placement.variantIndex)].zoneEffects;
+			if (std::none_of(effects.begin(), effects.end(), [](const ModuleZoneEffect& effect) { return effect.kind == ModuleZoneEffectKind::PrimaryHitCooldownSeconds; })) return module.family;
+			const auto* zone = rules.zoneTable.FindZone(GetPlacementZone(rules, module, placement));
+			return zone && !zone->anyFamily ? zone->family : GameplayTag{};
+		}
 
 		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
 		{
@@ -560,7 +568,7 @@ namespace vega
 				effects.zoneBonuses.push_back({ placement.instanceId, zoneLevel });
 
 				const StatusRuleCounts mainBegin = CountStatusRules(effects);
-					ResolvePackage(effects, variant, *module, placement, placement.level + zoneLevel, placement.level, placementZone, placementZoneEntry, false);
+					ResolvePackage(effects, variant, *module, placement, placement.level + zoneLevel, placement.level, placementZone, placementZoneEntry, rules.shipLevel, false);
 				if (module->legendary) ResolveLegendaryRules(effects.legendaryRules, *module->legendary, placement.instanceId, placement.level + zoneLevel);
 					const StatusRuleCounts mainEnd = CountStatusRules(effects);
 				// Rolled side stats are never scaled and apply to the owner.
@@ -574,7 +582,7 @@ namespace vega
 					const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup(placement.sideFeatureId);
 					if (IsSideFeatureUsableAtLevel(*module, feature, placement.level))
 						{
-							ResolvePackage(effects, feature->rules, *module, placement, placement.level, placement.level, placementZone, placementZoneEntry, true);
+							ResolvePackage(effects, feature->rules, *module, placement, placement.level, placement.level, placementZone, placementZoneEntry, rules.shipLevel, true);
 							MergeSideStatusModifiers(effects, feature->rules, mainBegin, mainEnd);
 							for (auto recovery : feature->rules.cooldownRecoveryRules)
 							{

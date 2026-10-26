@@ -323,7 +323,7 @@ namespace rare_ladder_e2e
 			}
 		}
 
-		// Ember Accumulation: the burst is identical at both sizes; Opening Hit (O5) acts only on the large size.
+		// Ember Accumulation: the burst is identical at both sizes; Rare O5 (flat Energy Power) applies only on the large size.
 		void EmberChecks(Report& report, Application& application)
 		{
 			const auto& balance = vega::content::DamageStatusBalanceCatalog::Get();
@@ -351,7 +351,13 @@ namespace rare_ladder_e2e
 				}
 			}
 
-			// Opening Hit: the first hit on a fresh enemy is x1.25 on the large size only; Lasting Status (O4) does not change the hit.
+			// Rare O5 is a flat Energy Power bonus on the large size only; Lasting Status (O4) does not change the first hit.
+			const auto energyGain = [&report, &application](int variant, const char* side) {
+				Fixture f{ report, application };
+				const float base = f.Owner(OwnerAttributeIds::EnergyPower);
+				f.Install(kEmber, variant, 1, side);
+				return f.Owner(OwnerAttributeIds::EnergyPower) - base;
+			};
 			const auto firstRatio = [&report, &application](int variant, const char* side) {
 				Fixture f{ report, application };
 				f.Install(kEmber, variant, 1, side);
@@ -360,8 +366,8 @@ namespace rare_ladder_e2e
 				const float firstAgain = Dealt(f, *target, 10.f);
 				return first / firstAgain;
 			};
-			report.CheckValue("Opening Hit on the large size: the first hit is x1.2625", 1.2625f, firstRatio(1, kSideO5), "large size with O5.Rare");
-			report.CheckValue("Opening Hit on the small size is absent", 1.f, firstRatio(0, kSideO5), "small size with O5.Rare");
+			report.CheckValue("Rare O5 on the large size adds +14 Energy Power", 14.f, energyGain(1, kSideO5), "large size with O5.Rare");
+			report.CheckValue("Rare O5 on the small size is absent", 0.f, energyGain(0, kSideO5), "small size with O5.Rare");
 			report.CheckValue("Lasting Status on the large size leaves the first hit unchanged", 1.f, firstRatio(1, kSideO4), "large size with O4.Rare");
 		}
 
@@ -393,7 +399,7 @@ namespace rare_ladder_e2e
 				SetOwnerMaxHealth(f, kOwnerMaxHealth);
 				const float armorBase = f.Owner(OwnerAttributeIds::Armor);
 				Break(report, f, Enemy(f, 600.f).get());
-				report.CheckValue("Reactive Plating on the large size adds Armor 30 after the break", armorBase + 30.f, f.Owner(OwnerAttributeIds::Armor), "R2 on 3 cells");
+				report.CheckValue("Reactive Plating on the large size adds Armor 35 after the break", armorBase + 35.f, f.Owner(OwnerAttributeIds::Armor), "R2 on 3 cells");
 			}
 			{
 				Fixture f{ report, application };

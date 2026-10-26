@@ -1476,8 +1476,13 @@
           "poolId": "Module.SidePool.Defense",
           "allowedFeatureIds": [
             "Module.SideFeature.Shared.D1",
-            "Module.SideFeature.Shared.D2",
             "Module.SideFeature.Shared.D4"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.R2.Uncommon"
           ]
         }
       ]
@@ -4265,8 +4270,13 @@
           "poolId": "Module.SidePool.Defense",
           "allowedFeatureIds": [
             "Module.SideFeature.Shared.D1",
-            "Module.SideFeature.Shared.D2",
             "Module.SideFeature.Shared.D3"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.R2.Uncommon"
           ]
         }
       ]
@@ -4351,8 +4361,13 @@
           "poolId": "Module.SidePool.Defense",
           "allowedFeatureIds": [
             "Module.SideFeature.Shared.D1",
-            "Module.SideFeature.Shared.D2",
             "Module.SideFeature.Shared.D4"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.R2.Uncommon"
           ]
         }
       ]

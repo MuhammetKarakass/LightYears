@@ -33,12 +33,13 @@ namespace uncommon_completion_e2e
 			const auto handles = f.ship->GetModuleApplier().GetOwnedHandleCount();
 			const float critical = f.Owner(OwnerAttributeIds::CriticalChance);
 			const float attackSpeed = f.Owner(OwnerAttributeIds::AttackSpeed);
+			const float energy = f.Owner(OwnerAttributeIds::EnergyPower);
 			const float regen = f.ship->GetShipRuntime().GetAttributes().GetCurrentValue(ShipAttributeIds::ShieldRegen);
 			const auto wallet = std::make_shared<RunGold>(); f.ship->GetModuleApplier().SetGoldWallet(wallet);
 			const auto check = [&](bool active, bool mainActive)
 			{
 				if (kind == 0) { auto target = Enemy(f); StatusHit(*target, f.ship.get(), DamageTypeSchema::Electric); f.Equal("O4 small/reboot gate in real damage", content::DamageStatusBalanceCatalog::Get().electric.duration + (active ? 1.f : 0.f), Effect(*target, DamageStatusEffectIds::ElectricEffectId)->spec.duration); }
-				else if (kind == 1) { auto target = Enemy(f); f.Equal("O5 small/reboot gate in real damage", active ? 11.5f : 10.f, Hit(*target, f.ship.get(), 10.f, Plain())); }
+				else if (kind == 1) { f.Equal("O5 small/reboot gate on flat Energy Power", energy + (active ? 8.f : 0.f), f.Owner(OwnerAttributeIds::EnergyPower)); }
 				else if (kind == 2 || kind == 5) { const auto before = wallet->GetAmount(); f.Kill(); report.Check(wallet->GetAmount() == before + (active ? 1u : 0u), "Gold small/reboot gate in real kill"); }
 				else if (kind == 3 || kind == 4)
 				{

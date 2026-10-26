@@ -45,7 +45,7 @@ namespace rare_side_features_e2e
 		std::string RareId(const char* name) { return std::string{ "Module.SideFeature.Shared." } + name; }
 
 		const std::vector<std::string> kRareOffense{ RareId("O1.Rare"), RareId("O2.Rare"), RareId("O3.Rare"), RareId("O4.Rare"), RareId("O5.Rare") };
-		const std::vector<std::string> kRareDefense{ RareId("D1.Rare"), RareId("D2.Rare"), RareId("D3.Rare"), RareId("D4.Rare"), RareId("D5.Rare") };
+		const std::vector<std::string> kRareDefense{ RareId("D1.Rare"), RareId("D3.Rare"), RareId("D4.Rare"), RareId("D5.Rare") };
 		const std::vector<std::string> kRareGeneral{ RareId("G1.Rare"), RareId("G2.Rare"), RareId("G3.Rare"), RareId("G4.Rare"), RareId("G5.Rare") };
 		const std::vector<std::string> kRareSpecial{ RareId("R1"), RareId("R2"), RareId("R5"), RareId("R6") };
 
@@ -159,7 +159,7 @@ namespace rare_side_features_e2e
 			int rareCopies = 0;
 			for (const ModuleSideFeatureDefinition& definition : side.definitions)
 				if (EndsWith(definition.sideFeatureId.ToString(), ".Rare")) ++rareCopies;
-			report.Check(rareCopies == 17, "all 16 Rare shared copies and the F1 fragmentation switch load", Json{ { "count", rareCopies } });
+			report.Check(rareCopies == 16, "all 15 Rare shared copies and the F1 fragmentation switch load", Json{ { "count", rareCopies } });
 			for (const std::string& id : kRareSpecial)
 				report.Check(FindDefinition(side, id) != nullptr, std::string{ "Rare-only feature loads: " } + id);
 			for (const char* pool : { "Module.SidePool.RareOffense", "Module.SidePool.RareDefense", "Module.SidePool.RareGeneral", "Module.SidePool.RareGeneral" })
@@ -170,6 +170,8 @@ namespace rare_side_features_e2e
 			}
 			report.Check(content::ModuleSideFeatureCatalog::FindById(sas::ContentId{ RareId("O1.Rare") }) != nullptr,
 				"bootstrapped catalog exposes the Rare copies");
+			report.Check(!content::ModuleSideFeatureCatalog::FindById(sas::ContentId{ "Module.SideFeature.Shared.D2" }) && !content::ModuleSideFeatureCatalog::FindById(sas::ContentId{ RareId("D2.Rare") }),
+				"retired shared D2 is absent from the catalog");
 			const Json sides = ShippedJson("module_side_features.json");
 			for (const Json& feature : sides["sideFeatures"])
 			{
@@ -241,9 +243,10 @@ namespace rare_side_features_e2e
 			const struct { const char* name; const char* feature; const sas::AttributeId* attribute; float delta; } cases[] = {
 				{ "O1.Rare adds +14 Attack Power", "O1.Rare", &OwnerAttributeIds::AttackPower, 14.f },
 				{ "O2.Rare adds +14 Critical chance", "O2.Rare", &OwnerAttributeIds::CriticalChance, 14.f },
-				{ "O3.Rare adds +7 Attack Speed", "O3.Rare", &OwnerAttributeIds::AttackSpeed, 7.f },
-				{ "D1.Rare adds +43.75 Max Health", "D1.Rare", &OwnerAttributeIds::MaxHealth, 43.75f },
-				{ "G2.Rare adds +7 Ability Haste", "G2.Rare", &OwnerAttributeIds::AbilityHaste, 7.f },
+				{ "O3.Rare adds +10 Attack Speed", "O3.Rare", &OwnerAttributeIds::AttackSpeed, 10.f },
+				{ "O5.Rare adds +14 Energy Power", "O5.Rare", &OwnerAttributeIds::EnergyPower, 14.f },
+				{ "D1.Rare adds +50 Max Health", "D1.Rare", &OwnerAttributeIds::MaxHealth, 50.f },
+				{ "G2.Rare adds +8 Ability Haste", "G2.Rare", &OwnerAttributeIds::AbilityHaste, 8.f },
 				{ "G4.Rare adds +1.4 horizontal movement", "G4.Rare", &OwnerAttributeIds::MoveSpeedHorizontal, 1.4f },
 				{ "G4.Rare adds +1.4 vertical movement", "G4.Rare", &OwnerAttributeIds::MoveSpeedVertical, 1.4f },
 				{ "G5.Rare adds +2 Luck", "G5.Rare", &OwnerAttributeIds::Luck, 2.f },
@@ -269,9 +272,9 @@ namespace rare_side_features_e2e
 				f.Install(kRareHost, 1, 3, RareId(feature).c_str());
 				report.CheckValue(name, expected, read(f) / base, feature);
 			};
-			ratioCheck("D4.Rare scales shield regeneration by 1.2625", "D4.Rare", 1.2625f, [](Fixture& f) { return NormalRegen(f); });
+			ratioCheck("D4.Rare scales shield regeneration by 1.25", "D4.Rare", 1.25f, [](Fixture& f) { return NormalRegen(f); });
 			ratioCheck("D5.Rare scales Max Shield by 1.14", "D5.Rare", 1.14f, [](Fixture& f) { return f.ship->GetShieldComponent().GetMaxShield(); });
-			ratioCheck("G3.Rare scales Afterburner capacity by 1.175", "G3.Rare", 1.175f, [](Fixture& f) { return f.ship->GetShipRuntime().GetAfterburnerCapacity(); });
+			ratioCheck("G3.Rare scales Afterburner capacity by 1.20", "G3.Rare", 1.2f, [](Fixture& f) { return f.ship->GetShipRuntime().GetAfterburnerCapacity(); });
 		}
 
 		// Placement gates: small variant keeps the feature locked, rolls outside the host's pools are rejected.
@@ -329,7 +332,7 @@ namespace rare_side_features_e2e
 				auto fresh = Enemy(f);
 				const float first = Dealt(f, *fresh);
 				const float second = Dealt(f, *fresh);
-				report.CheckValue("O5.Rare multiplies the first hit by 1.2625", 1.2625f, first / second, "first vs repeat hit");
+				report.CheckValue("O5.Rare no longer multiplies the first hit", base, first, "first hit");
 				report.CheckValue("O5.Rare leaves later hits at the base damage", base, second, "repeat hit");
 			}
 			{
@@ -342,7 +345,7 @@ namespace rare_side_features_e2e
 				auto target = Enemy(f);
 				StatusHit(*target, f.ship.get(), DamageTypeSchema::Electric);
 				const float after = Effect(*target, DamageStatusEffectIds::ElectricEffectId)->spec.duration;
-				report.CheckValue("O4.Rare adds +1.75 seconds to applied status durations", 1.75f, after - before, "electric status");
+				report.CheckValue("O4.Rare adds +1.5 seconds to applied status durations", 1.5f, after - before, "electric status");
 			}
 			{
 				Fixture f{ report, application };
@@ -364,18 +367,7 @@ namespace rare_side_features_e2e
 				auto& health = f.ship->GetHealthComponent();
 				const float before = health.GetHealth();
 				f.Kill();
-				report.CheckValue("D3.Rare restores 1.75% of Max Health on kill", 0.0175f * health.GetMaxHealth(), health.GetHealth() - before, "kill restore");
-			}
-			{
-				Fixture f{ report, application };
-				Wire(f);
-				const float armor = f.Owner(OwnerAttributeIds::Armor);
-				f.Install(kRareHost, 1, 3, RareId("D2.Rare").c_str());
-				auto enemy = Enemy(f);
-				ShipDealt(f, *enemy);
-				report.CheckValue("D2.Rare adds +21 Armor after damage", armor + 21.f, f.Owner(OwnerAttributeIds::Armor), "DamageTaken");
-				f.ship->GetModuleTriggerRuntime().Tick(2.01f);
-				report.CheckValue("D2.Rare Armor ends after 2 seconds", armor, f.Owner(OwnerAttributeIds::Armor), "t=2.01");
+				report.CheckValue("D3.Rare restores 1.5% of Max Health on kill", 0.015f * health.GetMaxHealth(), health.GetHealth() - before, "kill restore");
 			}
 		}
 
@@ -391,7 +383,7 @@ namespace rare_side_features_e2e
 				f.Install(kRareHost, 1, 3, RareId("R1").c_str());
 				report.CheckValue("R1 Guarded Strike is closed before a Defense ability", base, Dealt(f, *enemy, 10.f, primary), "no event");
 				ActivateEvent(f, GameplayTags::Ability::Defense);
-				report.CheckValue("R1 Guarded Strike raises the Primary shot by 1.15", 1.15f * base, Dealt(f, *enemy, 10.f, primary), "Defense window");
+				report.CheckValue("R1 Guarded Strike raises the Primary shot by 1.18", 1.18f * base, Dealt(f, *enemy, 10.f, primary), "Defense window");
 				report.CheckValue("R1 Guarded Strike ignores non-primary damage", base * 1.f, Dealt(f, *enemy), "non-primary");
 				TickCombat(f, 4.01f);
 				report.CheckValue("R1 Guarded Strike closes after 4 seconds", base, Dealt(f, *enemy, 10.f, primary), "t=4.01");
@@ -413,7 +405,7 @@ namespace rare_side_features_e2e
 				const float twoWith = Dealt(f, *enemy);
 				f.Remove(twoKinds);
 				const float twoWithout = Dealt(f, *enemy);
-				report.CheckValue("R5 Status Weaver multiplies damage by 1.20 with two status kinds", 1.20f, twoWith / twoWithout, "two kinds");
+				report.CheckValue("R5 Status Weaver multiplies damage by 1.18 with two status kinds", 1.18f, twoWith / twoWithout, "two kinds");
 			}
 			{
 				Fixture f{ report, application };
@@ -423,7 +415,7 @@ namespace rare_side_features_e2e
 				f.Install(kRareHost, 1, 3, RareId("R6").c_str());
 				report.CheckValue("R6 Fleet Guard is closed before a Movement ability", base, ShipDealt(f, *enemy), "no event");
 				ActivateEvent(f, GameplayTags::Ability::Movement);
-				report.CheckValue("R6 Fleet Guard reduces incoming damage to 0.85", 0.85f * base, ShipDealt(f, *enemy), "Movement window");
+				report.CheckValue("R6 Fleet Guard reduces incoming damage to 0.86", 0.86f * base, ShipDealt(f, *enemy), "Movement window");
 				TickCombat(f, 3.01f);
 				report.CheckValue("R6 Fleet Guard closes after 3 seconds", base, ShipDealt(f, *enemy), "t=3.01");
 			}
@@ -437,7 +429,7 @@ namespace rare_side_features_e2e
 				shield.ChangeShield(-shield.GetShield());
 				shield.ChangeShield(0.5f * shield.GetMaxShield());
 				Hit(*f.ship, enemy.get(), shield.GetShield(), Plain());
-				report.CheckValue("R2 Reactive Plating adds +30 Armor when the shield breaks", armor + 30.f, f.Owner(OwnerAttributeIds::Armor), "ShieldBroken");
+				report.CheckValue("R2 Reactive Plating adds +35 Armor when the shield breaks", armor + 35.f, f.Owner(OwnerAttributeIds::Armor), "ShieldBroken");
 				f.ship->GetModuleTriggerRuntime().Tick(4.01f);
 				report.CheckValue("R2 Reactive Plating ends after 4 seconds", armor, f.Owner(OwnerAttributeIds::Armor), "t=4.01");
 			}

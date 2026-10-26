@@ -19,6 +19,7 @@ namespace vega
 
 		void InitializeFromShipDefinition(const ShipDefinition& shipDefinition);
 		void SetShipLevel(int level);
+		int GetShipLevel() const noexcept { return mShipLevel; }
 		void RecalculateAttributes();
 		// Systems default to enabled. Disabling zeroes the system's base values; level growth and
 		// shield contributions are kept and return when the system is enabled again.

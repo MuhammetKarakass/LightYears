@@ -47,6 +47,7 @@ namespace
 		rejects("incoming rule cannot generate outgoing bonus hits", Json{ { "damageRules", Json::array({ entry }) } });
 		const auto package = content::ModuleLoader::ParseRulePackage(Json{ { "eventActions", Json::array({ validAction }) } }, "P3 valid fixture", 3, false);
 		report.Check(package.eventActions.size() == 1 && HasModuleRulePackageLevelCoverage(package, 3) && !HasModuleRulePackageLevelCoverage(package, 4), "resolver coverage includes new action tables");
+		report.Check(!content::ModuleSideFeatureCatalog::FindById("Module.SideFeature.Shared.D2"), "retired shared D2 is absent from the catalog");
 	}
 	struct Fixture
 	{
@@ -188,15 +189,6 @@ namespace
 		const auto bigRegen = f.Install("Module.Defense.LootShield.Uncommon", 2, 1, "Module.SideFeature.Shared.D4");
 		f.Equal("D4 uses the existing ship modifier path", regen * 1.15f, f.ship->GetShipRuntime().GetAttributes().GetCurrentValue(ShipAttributeIds::ShieldRegen));
 		f.Remove(bigRegen);
-		const float armor = f.Owner(OwnerAttributeIds::Armor);
-		const auto guard = f.Install("Module.Defense.LootShield.Uncommon", 2, 1, "Module.SideFeature.Shared.D2");
-		DamagePayload hit;
-		hit.criticalPolicy = DamageCriticalPolicy::Disabled;
-		hit.kineticStacks = 0;
-		ApplyCombatDamage(*f.ship, 1.f, nullptr, {}, hit);
-		f.Equal("D2 reuses DamageTaken instead of introducing another behavior", armor + 12.f, f.Owner(OwnerAttributeIds::Armor));
-		f.Remove(guard);
-		f.Equal("removing D2 clears its active armor buff", armor, f.Owner(OwnerAttributeIds::Armor));
 		for (int variant = 0; variant < 3; ++variant)
 			for (int level = 1; level <= 3; ++level)
 			{
@@ -233,11 +225,11 @@ namespace
 		f.Remove(overflow);
 		const float speed = f.Owner(OwnerAttributeIds::AttackSpeed);
 		const auto o3 = f.Install("Module.Offense.SharpScale.Uncommon", 1, 1, "Module.SideFeature.Shared.O3");
-		f.Equal("O3 is a flat Attack Speed bonus from the moment it is equipped", speed + 4.f, f.Owner(OwnerAttributeIds::AttackSpeed));
+		f.Equal("O3 is a flat Attack Speed bonus from the moment it is equipped", speed + 5.f, f.Owner(OwnerAttributeIds::AttackSpeed));
 		f.Kill();
-		f.Equal("O3 does not change on kill", speed + 4.f, f.Owner(OwnerAttributeIds::AttackSpeed));
+		f.Equal("O3 does not change on kill", speed + 5.f, f.Owner(OwnerAttributeIds::AttackSpeed));
 		f.ship->GetModuleTriggerRuntime().Tick(5.f);
-		f.Equal("O3 does not expire", speed + 4.f, f.Owner(OwnerAttributeIds::AttackSpeed));
+		f.Equal("O3 does not expire", speed + 5.f, f.Owner(OwnerAttributeIds::AttackSpeed));
 		f.Remove(o3);
 		f.Equal("O3 releases its modifier when removed", speed, f.Owner(OwnerAttributeIds::AttackSpeed));
 		const auto d3 = f.Install("Module.Defense.GritYourTeeth.Uncommon", 1, 1, "Module.SideFeature.Shared.D3");
@@ -337,13 +329,13 @@ namespace
 		f.Remove(clock);
 		offense->Tick(100.f);
 		defense->Tick(100.f);
-		const auto lucky = f.Install("Module.Utility.LuckyCast.Uncommon");
+		const auto lucky = f.Install("Module.Offense.HuntClock.Uncommon", 1, 1, "Module.SideFeature.Shared.LuckyCast");
 		auto& attributes = abilities.GetAttributes();
-		attributes.SetBaseValue(OwnerAttributeIds::Luck, 20.f);
+		attributes.SetBaseValue(OwnerAttributeIds::Luck, 40.f);
 		const float full = offense->GetCooldownDuration();
 		report.Check(offense->TryActivate(), "Lucky Cast real ability activates at guaranteed Luck probability");
 		if (offense->IsActive()) offense->Cancel(sas::AbilityEndReason::Completed);
-		f.Equal("Lucky Cast halves cooldown that starts on ability end", full * .5f, offense->GetCooldownRemaining());
+		f.Equal("Lucky Cast refunds fifteen percent of the cooldown that starts on ability end", full * .85f, offense->GetCooldownRemaining());
 		offense->Tick(100.f);
 		const auto zeroLuck = attributes.AddModifier({ OwnerAttributeIds::Luck, sas::AttributeModifierOperation::Override, 0.f, 100000 });
 		f.Equal("zero-Luck scenario has exactly zero effective Luck", 0.f, f.Owner(OwnerAttributeIds::Luck));
@@ -360,7 +352,7 @@ namespace
 		offense = abilities.GetAbility(handle);
 		attributes.RemoveModifier(zeroLuck);
 		report.Check(offense->TryActivate(), "Lucky Cast activates OnActivation cooldown ability");
-		f.Equal("Lucky Cast halves cooldown already started on activation", full * .5f, offense->GetCooldownRemaining());
+		f.Equal("Lucky Cast refunds fifteen percent of the cooldown already started on activation", full * .85f, offense->GetCooldownRemaining());
 		if (offense->IsActive()) offense->Cancel(sas::AbilityEndReason::Completed);
 		f.Remove(lucky);
 		offense->Tick(100.f);

@@ -6,7 +6,7 @@ int main(int argc, char** argv)
 	using namespace uncommon_completion_e2e;
 	if (argc != 2) return 2;
 	Report report;
-	report.artifact["input"] = { { "levels", { 1, 2, 3 } }, { "equipRemoveCyclesPerSide", 10 }, { "GoldPerSidePerKill", 1 }, { "O4BonusSeconds", 1 }, { "O5FirstHitMultiplier", 1.15 }, { "GlassHealthThreshold", .5 }, { "GlassCriticalChancePoints", 10 }, { "GritHealthThreshold", .35 }, { "GritShieldRegenMultiplier", 2 }, { "MovementFadeSeconds", 1.5 } };
+	report.artifact["input"] = { { "levels", { 1, 2, 3 } }, { "equipRemoveCyclesPerSide", 10 }, { "GoldPerSidePerKill", 1 }, { "O4BonusSeconds", 1 }, { "O5EnergyPower", 8 }, { "GlassHealthThreshold", .5 }, { "GlassCriticalChancePoints", 10 }, { "GritHealthThreshold", .35 }, { "GritShieldRegenMultiplier", 2 }, { "MovementFadeSeconds", 1.5 } };
 	try
 	{
 		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");

@@ -225,6 +225,11 @@ namespace vega::content
 			modifier.target = ParseTarget(object.at("target").get<std::string>());
 			modifier.modifier = ParseModifier(object, context, minimumLevelCount, modifier.magnitudeByLevel);
 			modifier.affectedByZoneBonus = object.value("affectedByZoneBonus", defaultAffectedByZoneBonus);
+			if (object.contains("perShipLevel"))
+			{
+				modifier.perShipLevel = ParseFiniteFloat(object.at("perShipLevel"), context + ".perShipLevel");
+				if (modifier.perShipLevel < 0.f) throw std::runtime_error(context + ".perShipLevel must not be negative");
+			}
 			return modifier;
 		}
 

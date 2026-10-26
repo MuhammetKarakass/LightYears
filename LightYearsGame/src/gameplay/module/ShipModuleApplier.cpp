@@ -304,6 +304,14 @@ namespace vega
 		if (anyFinished) Rebuild();
 	}
 
+	void ShipModuleApplier::OnShipLevelChanged()
+	{
+		if (mShuttingDown || !mHasApplied || mResolvedShipLevel == mShipRuntime.GetShipLevel()) return;
+		// A full rebuild resets transient module runtimes, so only loadouts with a ship-level term pay for it.
+		if (!mResolved.usesShipLevel) { mResolvedShipLevel = mShipRuntime.GetShipLevel(); return; }
+		Rebuild();
+	}
+
 	void ShipModuleApplier::Rebuild()
 	{
 		mMovementAbilityCount = mAbilities.CountLoadoutAbilitiesWithTag(GameplayTags::Ability::Movement);
@@ -314,8 +322,9 @@ namespace vega
 			if (!IsRebooting(placement.instanceId)) active.push_back(placement);
 		}
 
-		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); } };
+		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); }, mShipRuntime.GetShipLevel() };
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
+		mResolvedShipLevel = rules.shipLevel;
 		ResolveMonochromeCoreLoadout(mResolved.epicOffense, mAbilities);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
 		mCombatRuntime.SetModuleStatusRules(mResolved.statusRules);
@@ -441,8 +450,9 @@ namespace vega
 		{
 			if (!IsRebooting(placement.instanceId)) active.push_back(placement);
 		}
-		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); } };
+		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); }, mShipRuntime.GetShipLevel() };
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
+		mResolvedShipLevel = rules.shipLevel;
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
 	}

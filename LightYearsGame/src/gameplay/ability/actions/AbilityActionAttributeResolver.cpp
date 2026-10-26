@@ -1,6 +1,6 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 
-#include "attributes/AttributeMath.h"
+#include "gameplay/ability/AbilityHaste.h"
 #include "attributes/AttributeSystem.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
@@ -103,7 +103,7 @@ namespace vega::AbilityActionAttributeResolver
 			}
 			if (attribute.id == CommonAttributeIds::Interval && value > 0.f && !weaponDefinition)
 			{
-				value *= sas::AttributeMath::GetAbilityCooldownMultiplier(
+				value *= GetAbilityHasteCooldownMultiplier(
 					context.abilitySystem->GetAttributes().GetCurrentValue(
 						OwnerAttributeIds::AbilityHaste
 					)

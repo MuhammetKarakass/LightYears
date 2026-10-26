@@ -42,10 +42,6 @@
           "weight": 1
         },
         {
-          "sideFeatureId": "Module.SideFeature.Shared.D2",
-          "weight": 1
-        },
-        {
           "sideFeatureId": "Module.SideFeature.Shared.D4",
           "weight": 1
         },
@@ -141,10 +137,6 @@
           "weight": 1
         },
         {
-          "sideFeatureId": "Module.SideFeature.Shared.D2.Rare",
-          "weight": 1
-        },
-        {
           "sideFeatureId": "Module.SideFeature.Shared.D4.Rare",
           "weight": 1
         },
@@ -234,10 +226,6 @@
       "choices": [
         {
           "sideFeatureId": "Module.SideFeature.Shared.D1.Epic",
-          "weight": 1
-        },
-        {
-          "sideFeatureId": "Module.SideFeature.Shared.D2.Epic",
           "weight": 1
         },
         {
@@ -339,6 +327,7 @@
             "target": "Owner",
             "attributeId": "Owner.AttackPower",
             "operation": "Add",
+            "perShipLevel": 0.5,
             "magnitude": [
               8,
               8,
@@ -383,6 +372,7 @@
             "target": "Owner",
             "attributeId": "Owner.MaxHealth",
             "operation": "Add",
+            "perShipLevel": 1,
             "magnitude": [
               25,
               25,
@@ -546,9 +536,9 @@
             "attributeId": "Owner.AttackSpeed",
             "operation": "Add",
             "magnitude": [
-              4,
-              4,
-              4
+              5,
+              5,
+              5
             ]
           }
         ]
@@ -660,30 +650,6 @@
           }
         ]
       }
-    },
-    {
-      "id": "Module.SideFeature.Shared.D2",
-      "displayName": "Damage Guard",
-      "description": "After taking damage, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
-      "poolId": "Module.SidePool.Defense",
-      "levelCount": 3,
-      "rules": {
-        "triggerBuffs": [
-          {
-            "trigger": "DamageTaken",
-            "durationSeconds": 2,
-            "modifiers": [
-              {
-                "target": "Owner",
-                "attributeId": "Owner.Armor",
-                "operation": "Add",
-                "magnitude": 12
-              }
-            ]
-          }
-        ]
-      },
-      "requiredRarity": "Uncommon"
     },
     {
       "id": "Module.SideFeature.Shared.D4",
@@ -892,14 +858,21 @@
     },
     {
       "id": "Module.SideFeature.Shared.O5",
-      "displayName": "Opening Hit",
-      "description": "First successful hit per enemy deals {damage.0.bonusPercent}% more damage.",
+      "displayName": "Energy Power",
+      "description": "Energy Power +{Owner.Energy.Power}.",
       "levelCount": 3,
       "rules": {
-        "damageRules": [
+        "attributeModifiers": [
           {
-            "condition": "FirstTargetHit",
-            "damageMultiplier": 1.15
+            "target": "Owner",
+            "attributeId": "Owner.Energy.Power",
+            "operation": "Add",
+            "perShipLevel": 0.5,
+            "magnitude": [
+              8,
+              8,
+              8
+            ]
           }
         ]
       },
@@ -997,6 +970,7 @@
             "target": "Owner",
             "attributeId": "Owner.AttackPower",
             "operation": "Add",
+            "perShipLevel": 1,
             "magnitude": [
               14,
               14,
@@ -1042,9 +1016,9 @@
             "attributeId": "Owner.AttackSpeed",
             "operation": "Add",
             "magnitude": [
-              7,
-              7,
-              7
+              10,
+              10,
+              10
             ]
           }
         ]
@@ -1061,7 +1035,7 @@
         "statusRules": {
           "durationBonuses": [
             {
-              "bonusSeconds": 1.75
+              "bonusSeconds": 1.5
             }
           ]
         }
@@ -1070,15 +1044,22 @@
     },
     {
       "id": "Module.SideFeature.Shared.O5.Rare",
-      "displayName": "Opening Hit Rare",
-      "description": "First successful hit per enemy deals {damage.0.bonusPercent}% more damage.",
+      "displayName": "Energy Power Rare",
+      "description": "Energy Power +{Owner.Energy.Power}.",
       "poolId": "Module.SidePool.RareOffense",
       "levelCount": 3,
       "rules": {
-        "damageRules": [
+        "attributeModifiers": [
           {
-            "condition": "FirstTargetHit",
-            "damageMultiplier": 1.2625
+            "target": "Owner",
+            "attributeId": "Owner.Energy.Power",
+            "operation": "Add",
+            "perShipLevel": 1,
+            "magnitude": [
+              14,
+              14,
+              14
+            ]
           }
         ]
       },
@@ -1096,34 +1077,11 @@
             "target": "Owner",
             "attributeId": "Owner.MaxHealth",
             "operation": "Add",
+            "perShipLevel": 2,
             "magnitude": [
-              43.75,
-              43.75,
-              43.75
-            ]
-          }
-        ]
-      },
-      "requiredRarity": "Rare"
-    },
-    {
-      "id": "Module.SideFeature.Shared.D2.Rare",
-      "displayName": "Damage Guard Rare",
-      "description": "After taking damage, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
-      "poolId": "Module.SidePool.RareDefense",
-      "levelCount": 3,
-      "rules": {
-        "triggerBuffs": [
-          {
-            "trigger": "DamageTaken",
-            "durationSeconds": 2,
-            "modifiers": [
-              {
-                "target": "Owner",
-                "attributeId": "Owner.Armor",
-                "operation": "Add",
-                "magnitude": 21
-              }
+              50,
+              50,
+              50
             ]
           }
         ]
@@ -1141,7 +1099,7 @@
           {
             "trigger": "KillConfirmed",
             "kind": "RestoreHealth",
-            "amount": 0.0175
+            "amount": 0.015
           }
         ]
       },
@@ -1159,7 +1117,7 @@
             "target": "Ship",
             "attributeId": "Ship.Shield.Regen",
             "operation": "Multiply",
-            "magnitude": 1.2625
+            "magnitude": 1.25
           }
         ]
       },
@@ -1217,9 +1175,9 @@
             "attributeId": "Owner.AbilityHaste",
             "operation": "Add",
             "magnitude": [
-              7,
-              7,
-              7
+              8,
+              8,
+              8
             ]
           }
         ]
@@ -1239,9 +1197,9 @@
             "attributeId": "Ship.Afterburner.Capacity",
             "operation": "Multiply",
             "magnitude": [
-              1.175,
-              1.175,
-              1.175
+              1.2,
+              1.2,
+              1.2
             ]
           }
         ]
@@ -1312,7 +1270,7 @@
         "damageRules": [
           {
             "condition": "PrimaryShotOnly",
-            "damageMultiplier": 1.15,
+            "damageMultiplier": 1.18,
             "activeWhileTrigger": "AbilityActivated",
             "activeWhileEventTags": [
               "Ability.Defense"
@@ -1339,7 +1297,8 @@
                 "target": "Owner",
                 "attributeId": "Owner.Armor",
                 "operation": "Add",
-                "magnitude": 30
+                "perShipLevel": 0.5,
+                "magnitude": 35
               }
             ]
           }
@@ -1358,7 +1317,7 @@
           {
             "condition": "TargetStatusKindsAtLeast",
             "conditionValue": 2,
-            "damageMultiplier": 1.2
+            "damageMultiplier": 1.18
           }
         ]
       },
@@ -1375,7 +1334,7 @@
           {
             "incoming": true,
             "condition": "Always",
-            "damageMultiplier": 0.85,
+            "damageMultiplier": 0.86,
             "activeWhileTrigger": "AbilityActivated",
             "activeWhileEventTags": [
               "Ability.Movement"
@@ -1643,7 +1602,7 @@
           {
             "trigger": "AbilityActivated",
             "kind": "RefundUsedCooldown",
-            "amount": 0.25,
+            "amount": 0.15,
             "chancePerLuck": 0.03
           }
         ]
@@ -1932,10 +1891,11 @@
             "target": "Owner",
             "attributeId": "Owner.AttackPower",
             "operation": "Add",
+            "perShipLevel": 1.5,
             "magnitude": [
-              20,
-              20,
-              20
+              22,
+              22,
+              22
             ]
           }
         ]
@@ -1955,9 +1915,9 @@
             "attributeId": "Owner.CriticalChance",
             "operation": "Add",
             "magnitude": [
-              20,
-              20,
-              20
+              22,
+              22,
+              22
             ]
           }
         ]
@@ -1976,9 +1936,9 @@
             "attributeId": "Owner.AttackSpeed",
             "operation": "Add",
             "magnitude": [
-              10,
-              10,
-              10
+              17,
+              17,
+              17
             ]
           }
         ]
@@ -1995,7 +1955,7 @@
         "statusRules": {
           "durationBonuses": [
             {
-              "bonusSeconds": 2.5
+              "bonusSeconds": 2
             }
           ]
         }
@@ -2005,14 +1965,21 @@
     },
     {
       "id": "Module.SideFeature.Shared.O5.Epic",
-      "displayName": "Opening Hit Epic",
-      "description": "First successful hit per enemy deals {damage.0.bonusPercent}% more damage.",
+      "displayName": "Energy Power Epic",
+      "description": "Energy Power +{Owner.Energy.Power}.",
       "levelCount": 3,
       "rules": {
-        "damageRules": [
+        "attributeModifiers": [
           {
-            "condition": "FirstTargetHit",
-            "damageMultiplier": 1.375
+            "target": "Owner",
+            "attributeId": "Owner.Energy.Power",
+            "operation": "Add",
+            "perShipLevel": 1.5,
+            "magnitude": [
+              22,
+              22,
+              22
+            ]
           }
         ]
       },
@@ -2031,34 +1998,11 @@
             "target": "Owner",
             "attributeId": "Owner.MaxHealth",
             "operation": "Add",
+            "perShipLevel": 3,
             "magnitude": [
-              62.5,
-              62.5,
-              62.5
-            ]
-          }
-        ]
-      },
-      "requiredRarity": "Epic"
-    },
-    {
-      "id": "Module.SideFeature.Shared.D2.Epic",
-      "displayName": "Damage Guard Epic",
-      "description": "After taking damage, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
-      "poolId": "Module.SidePool.EpicDefense",
-      "levelCount": 3,
-      "rules": {
-        "triggerBuffs": [
-          {
-            "trigger": "DamageTaken",
-            "durationSeconds": 2,
-            "modifiers": [
-              {
-                "target": "Owner",
-                "attributeId": "Owner.Armor",
-                "operation": "Add",
-                "magnitude": 30
-              }
+              85,
+              85,
+              85
             ]
           }
         ]
@@ -2075,7 +2019,7 @@
           {
             "trigger": "KillConfirmed",
             "kind": "RestoreHealth",
-            "amount": 0.025
+            "amount": 0.02
           }
         ]
       },
@@ -2094,7 +2038,7 @@
             "target": "Ship",
             "attributeId": "Ship.Shield.Regen",
             "operation": "Multiply",
-            "magnitude": 1.375
+            "magnitude": 1.4
           }
         ]
       },
@@ -2113,9 +2057,9 @@
             "attributeId": "Ship.Shield.Max",
             "operation": "Multiply",
             "magnitude": [
-              1.2,
-              1.2,
-              1.2
+              1.22,
+              1.22,
+              1.22
             ]
           }
         ]
@@ -2152,9 +2096,9 @@
             "attributeId": "Owner.AbilityHaste",
             "operation": "Add",
             "magnitude": [
-              10,
-              10,
-              10
+              12,
+              12,
+              12
             ]
           }
         ]
@@ -2174,9 +2118,9 @@
             "attributeId": "Ship.Afterburner.Capacity",
             "operation": "Multiply",
             "magnitude": [
-              1.25,
-              1.25,
-              1.25
+              1.3,
+              1.3,
+              1.3
             ]
           }
         ]
@@ -2196,9 +2140,9 @@
             "attributeId": "Owner.MoveSpeedHorizontal",
             "operation": "Add",
             "magnitude": [
-              2,
-              2,
-              2
+              2.2,
+              2.2,
+              2.2
             ]
           },
           {
@@ -2206,9 +2150,9 @@
             "attributeId": "Owner.MoveSpeedVertical",
             "operation": "Add",
             "magnitude": [
-              2,
-              2,
-              2
+              2.2,
+              2.2,
+              2.2
             ]
           }
         ]
@@ -2274,7 +2218,7 @@
             ],
             "kind": "RestoreHealth",
             "healthAtMost": 0.4,
-            "amount": 0.21
+            "amount": 0.18
           }
         ]
       }
@@ -2295,7 +2239,7 @@
             ],
             "kind": "RestoreHealth",
             "healthAtMost": 0.4,
-            "amount": 0.3
+            "amount": 0.25
           }
         ]
       }
@@ -2310,7 +2254,7 @@
         "damageRules": [
           {
             "condition": "PrimaryShotOnly",
-            "damageMultiplier": 1.09,
+            "damageMultiplier": 1.1,
             "activeWhileTrigger": "AbilityActivated",
             "activeWhileEventTags": [
               "Ability.Defense"
@@ -2331,7 +2275,7 @@
         "damageRules": [
           {
             "condition": "PrimaryShotOnly",
-            "damageMultiplier": 1.21,
+            "damageMultiplier": 1.28,
             "activeWhileTrigger": "AbilityActivated",
             "activeWhileEventTags": [
               "Ability.Defense"
@@ -2358,7 +2302,8 @@
                 "target": "Owner",
                 "attributeId": "Owner.Armor",
                 "operation": "Add",
-                "magnitude": 17
+                "perShipLevel": 0.25,
+                "magnitude": 18
               }
             ]
           }
@@ -2382,7 +2327,8 @@
                 "target": "Owner",
                 "attributeId": "Owner.Armor",
                 "operation": "Add",
-                "magnitude": 43
+                "perShipLevel": 1,
+                "magnitude": 60
               }
             ]
           }
@@ -2401,7 +2347,7 @@
           {
             "condition": "TargetStatusKindsAtLeast",
             "conditionValue": 2,
-            "damageMultiplier": 1.11
+            "damageMultiplier": 1.1
           }
         ]
       },
@@ -2418,7 +2364,7 @@
           {
             "condition": "TargetStatusKindsAtLeast",
             "conditionValue": 2,
-            "damageMultiplier": 1.29
+            "damageMultiplier": 1.25
           }
         ]
       },
@@ -2435,7 +2381,7 @@
           {
             "incoming": true,
             "condition": "Always",
-            "damageMultiplier": 0.91,
+            "damageMultiplier": 0.92,
             "activeWhileTrigger": "AbilityActivated",
             "activeWhileEventTags": [
               "Ability.Movement"
@@ -2457,7 +2403,7 @@
           {
             "incoming": true,
             "condition": "Always",
-            "damageMultiplier": 0.79,
+            "damageMultiplier": 0.8,
             "activeWhileTrigger": "AbilityActivated",
             "activeWhileEventTags": [
               "Ability.Movement"

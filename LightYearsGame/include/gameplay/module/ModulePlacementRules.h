@@ -26,6 +26,8 @@ namespace vega
 		const ModuleZoneTable& zoneTable;
 		ModuleSideFeatureLookup sideFeatureLookup;
 		std::function<int(const GameplayTag&)> countLoadoutAbilities;
+		// Ship level; perShipLevel attribute terms grow by (shipLevel - 1) steps. Defaults to 1 for hand-built contexts.
+		int shipLevel = 1;
 	};
 
 	enum class ModulePlacementFailure

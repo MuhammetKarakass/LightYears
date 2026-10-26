@@ -206,7 +206,7 @@ Heat Laser JSON'u DPS saklar: L1 `52 + 0,76×EP`; tick karşılığı bunun dör
 | MaxHP | Gövde dayanıklılığı; HP ölçekli yetenekler | HP yatırımının yalnız savunma olduğu varsayılamaz |
 | Armor | Kalkanı aşan gövde hasarını azaltır | Kalkanı korumaz; 20 armor, %20 azaltım değildir |
 | AttackSpeed | Silah/yetenek kuralına göre ritim veya davranış | Her kaynaktaki katsayı aynı değildir |
-| AbilityHaste | İlgili ability cooldown çözümüne katkı | Global 0,25 sn combat tick'i hızlandırmaz |
+| AbilityHaste | Ability cooldown: `bekleme / (1 + Haste/100)`; +100 Haste beklemeyi yarıya indirir (2026-10-26) | Global 0,25 sn combat tick'i hızlandırmaz |
 | Luck | İlgili yetenekte zincir/hedef/üretim; combat/loot şansı | Her Luck puanı doğrudan aynı yüzdeye dönüşmez |
 | CriticalChance / Damage | Kritik olasılığı ve kritik çarpanı | Empowered her silahta garantili kritik değildir |
 

@@ -10,6 +10,7 @@
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
+#include "gameplay/ability/AbilityHaste.h"
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
 #include "gameplay/ability/validation/GameAbilityDefinitionValidator.h"
@@ -6650,7 +6651,7 @@ int main(int argc, char** argv)
 		GetGlobalAbilityCooldownTotalReduction(dashDefinition->cooldown, 4);
 	if (!NearlyEqual(
 		cooldownDashAbilities.GetAbility(cooldownDashHandle)->GetCooldownDuration(),
-		expectedLevelFiveDashCooldown * sas::AttributeMath::GetAbilityCooldownMultiplier(100.f)
+		expectedLevelFiveDashCooldown * vega::GetAbilityHasteCooldownMultiplier(100.f)
 	))
 	{
 		return Fail("Basic Dash cooldown did not use central Ability Haste math");
@@ -8629,7 +8630,7 @@ int main(int argc, char** argv)
 			{
 				return Fail("Could not find ability on haste owner");
 			}
-			const float expectedCooldown = 16.f * sas::AttributeMath::GetAbilityCooldownMultiplier(100.f);
+			const float expectedCooldown = 16.f * vega::GetAbilityHasteCooldownMultiplier(100.f);
 			if (!NearlyEqual(ability->GetCooldownDuration(), expectedCooldown))
 			{
 				return Fail("Reclaimer Protocol cooldown did not scale with Ability Haste");

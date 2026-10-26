@@ -97,6 +97,7 @@ namespace
 			}
 		}
 		report.Check(!content::ModuleSideFeatureCatalog::FindById(Shared("R3")) && !content::ModuleSideFeatureCatalog::FindById(Shared("R4")), "retired R3/R4 content no longer exists");
+		report.Check(!content::ModuleSideFeatureCatalog::FindById(Shared("D2")) && !content::ModuleSideFeatureCatalog::FindById(Shared("D2.Rare")) && !content::ModuleSideFeatureCatalog::FindById(Shared("D2.Epic")), "retired shared D2 content no longer exists");
 		const auto* giant = content::ModuleContentCatalog::FindById("Module.Offense.GiantSlayer.Rare");
 		report.Check(IsModuleSideFeatureAllowed(*giant, &Feature("O1.Rare")), "Giant Slayer replaces retired R3 with Rare O1");
 		auto forged = *content::ModuleContentCatalog::FindById(kCore); forged.rarity = ModuleRarity::Epic;
@@ -106,7 +107,7 @@ namespace
 	{
 		const ModuleRarity rarities[] = { ModuleRarity::Uncommon, ModuleRarity::Rare, ModuleRarity::Epic };
 		const char* suffixes[] = { ".Uncommon", "", ".Epic" };
-		const float guarded[] = { 1.09f, 1.15f, 1.21f }, plating[] = { 17.f, 30.f, 43.f }, weaver[] = { 1.11f, 1.20f, 1.29f }, fleet[] = { .91f, .85f, .79f };
+		const float guarded[] = { 1.10f, 1.18f, 1.28f }, plating[] = { 18.f, 35.f, 60.f }, weaver[] = { 1.10f, 1.18f, 1.25f }, fleet[] = { .92f, .86f, .80f };
 		for (int rarity = 0; rarity < 3; ++rarity)
 			for (int level : { 1, 3 })
 			{
@@ -123,22 +124,20 @@ namespace
 				const auto run = install("R6"); CastMovement(f); f.ship->GetShieldComponent().ChangeShield(-10000.f);
 				f.Equal("Fleet Guard scales by rarity", 10.f * fleet[rarity], Hit(*f.ship, enemy.get(), 10.f, Plain())); f.Remove(run);
 			}
-		const float scales[] = { 1.f, 1.75f, 2.5f };
 		for (int rarity = 0; rarity < 3; ++rarity)
 		{
 			const std::string suffix = rarity == 0 ? "" : rarity == 1 ? ".Rare" : ".Epic";
 			Fixture f{ report, application }; auto host = Host(f, rarities[rarity]);
-			const struct { const char* code; const sas::AttributeId* attribute; float base; bool discrete; } stats[] = {
-				{ "O1", &OwnerAttributeIds::AttackPower, 8.f, false }, { "O2", &OwnerAttributeIds::CriticalChance, 8.f, false }, { "O3", &OwnerAttributeIds::AttackSpeed, 4.f, false },
-				{ "D1", &OwnerAttributeIds::MaxHealth, 25.f, false }, { "G2", &OwnerAttributeIds::AbilityHaste, 4.f, false }, { "G4", &OwnerAttributeIds::MoveSpeedHorizontal, .8f, false }, { "G5", &OwnerAttributeIds::Luck, 1.f, true }
+			const struct { const char* code; const sas::AttributeId* attribute; float values[3]; } stats[] = {
+				{ "O1", &OwnerAttributeIds::AttackPower, { 8.f, 14.f, 22.f } }, { "O2", &OwnerAttributeIds::CriticalChance, { 8.f, 14.f, 22.f } }, { "O3", &OwnerAttributeIds::AttackSpeed, { 5.f, 10.f, 17.f } },
+				{ "D1", &OwnerAttributeIds::MaxHealth, { 25.f, 50.f, 85.f } }, { "G2", &OwnerAttributeIds::AbilityHaste, { 4.f, 8.f, 12.f } }, { "G4", &OwnerAttributeIds::MoveSpeedHorizontal, { .8f, 1.4f, 2.2f } }, { "G5", &OwnerAttributeIds::Luck, { 1.f, 2.f, 3.f } }
 			};
 			for (const auto& stat : stats)
 			{
 				const float base = f.Owner(*stat.attribute); const auto instance = f.Install(host->moduleId.ToString().c_str(), 1, 3, Shared(stat.code + suffix).c_str());
-				const float bonus = stat.discrete ? std::round(stat.base * scales[rarity]) : stat.base * scales[rarity];
-				f.Equal("O/D/G stat obeys exact rarity scale and discrete rounding", base + bonus, f.Owner(*stat.attribute)); f.Remove(instance);
+				f.Equal("O/D/G stat uses its exact rarity value", base + stat.values[rarity], f.Owner(*stat.attribute)); f.Remove(instance);
 			}
-			const auto& d6 = Feature("D6" + suffix); f.Equal("Desperate Patch amount uses rarity scale", .12f * scales[rarity], d6.rules.eventActions.front().amount);
+			const auto& d6 = Feature("D6" + suffix); f.Equal("Desperate Patch amount uses its exact rarity value", rarity == 0 ? .12f : rarity == 1 ? .18f : .25f, d6.rules.eventActions.front().amount);
 		}
 	}
 	void ZoneChecks(Report& report, Application& application)
@@ -172,19 +171,17 @@ namespace
 			Fixture f{ report, application }; const ModuleRarity category = rarity == 0 ? ModuleRarity::Uncommon : rarity == 1 ? ModuleRarity::Rare : ModuleRarity::Epic;
 			const auto host = Host(f, category); const float scale = rarity == 0 ? 1.f : rarity == 1 ? 1.75f : 2.5f; const std::string suffix = rarity == 0 ? "" : rarity == 1 ? ".Rare" : ".Epic";
 			const auto install = [&](const char* code) { return f.Install(host->moduleId.ToString().c_str(), 1, 3, Shared(code + suffix).c_str()); };
-			const auto enemy = Enemy(f); const float firstBase = Hit(*enemy, f.ship.get(), 10.f, Plain()); const auto opening = install("O5");
-			const auto fresh = Enemy(f); f.Equal("Opening Hit scales its bonus above one by rarity", firstBase * (1.f + .15f * scale), Hit(*fresh, f.ship.get(), 10.f, Plain())); f.Remove(opening);
+			const auto enemy = Enemy(f); const float power = f.Owner(OwnerAttributeIds::EnergyPower); const auto opening = install("O5");
+			f.Equal("Shared O5 adds flat Energy Power by rarity", power + (rarity == 0 ? 8.f : rarity == 1 ? 14.f : 22.f), f.Owner(OwnerAttributeIds::EnergyPower)); f.Remove(opening);
 			StatusHit(*enemy, f.ship.get(), DamageTypeSchema::Electric); const float duration = Effect(*enemy, DamageStatusEffectIds::ElectricEffectId)->spec.duration;
 			const auto lasting = install("O4"); const auto statusTarget = Enemy(f); StatusHit(*statusTarget, f.ship.get(), DamageTypeSchema::Electric);
-			f.Equal("Lasting Status uses exact rarity seconds", duration + scale, Effect(*statusTarget, DamageStatusEffectIds::ElectricEffectId)->spec.duration); f.Remove(lasting);
+			f.Equal("Lasting Status uses exact rarity seconds", duration + (rarity == 0 ? 1.f : rarity == 1 ? 1.5f : 2.f), Effect(*statusTarget, DamageStatusEffectIds::ElectricEffectId)->spec.duration); f.Remove(lasting);
 			const float regen = f.ship->GetShipRuntime().GetAttributes().GetCurrentValue(ShipAttributeIds::ShieldRegen); const auto recharge = install("D4");
-			f.Equal("Shield Recharge scales its bonus above one", regen * (1.f + .15f * scale), f.ship->GetShipRuntime().GetAttributes().GetCurrentValue(ShipAttributeIds::ShieldRegen)); f.Remove(recharge);
-			const float shieldMax = f.ship->GetShieldComponent().GetMaxShield(); const auto shield = install("D5"); f.Equal("Max Shield scales its percent bonus", shieldMax * (1.f + .08f * scale), f.ship->GetShieldComponent().GetMaxShield()); f.Remove(shield);
-			const float capacity = f.ship->GetShipRuntime().GetAfterburnerCapacity(); const auto fuel = install("G3"); f.Equal("Afterburner capacity uses exact rarity scale", capacity * (1.f + .1f * scale), f.ship->GetShipRuntime().GetAfterburnerCapacity()); f.Remove(fuel);
-			NoArmor(f); const float armor = f.Owner(OwnerAttributeIds::Armor); const auto guard = install("D2"); Hit(*f.ship, enemy.get(), 1.f, Plain());
-			f.Equal("Damage Guard Armor uses exact rarity scale", armor + 12.f * scale, f.Owner(OwnerAttributeIds::Armor)); f.Remove(guard);
+			f.Equal("Shield Recharge uses its exact rarity multiplier", regen * (rarity == 0 ? 1.15f : rarity == 1 ? 1.25f : 1.4f), f.ship->GetShipRuntime().GetAttributes().GetCurrentValue(ShipAttributeIds::ShieldRegen)); f.Remove(recharge);
+			const float shieldMax = f.ship->GetShieldComponent().GetMaxShield(); const auto shield = install("D5"); f.Equal("Max Shield uses its exact rarity multiplier", shieldMax * (rarity == 0 ? 1.08f : rarity == 1 ? 1.14f : 1.22f), f.ship->GetShieldComponent().GetMaxShield()); f.Remove(shield);
+			const float capacity = f.ship->GetShipRuntime().GetAfterburnerCapacity(); const auto fuel = install("G3"); f.Equal("Afterburner capacity uses exact rarity multiplier", capacity * (rarity == 0 ? 1.1f : rarity == 1 ? 1.2f : 1.3f), f.ship->GetShipRuntime().GetAfterburnerCapacity()); f.Remove(fuel);
 			const auto recovery = install("D3"); auto& health = f.ship->GetHealthComponent(); health.ChangeHealth(-50.f); const float before = health.GetHealth(); f.Kill();
-			f.Equal("Hunt Recovery heals its rarity fraction", before + .01f * scale * health.GetMaxHealth(), health.GetHealth()); f.Remove(recovery);
+			f.Equal("Hunt Recovery heals its exact rarity fraction", before + (rarity == 0 ? .01f : rarity == 1 ? .015f : .02f) * health.GetMaxHealth(), health.GetHealth()); f.Remove(recovery);
 			const auto wallet = std::make_shared<RunGold>(); f.ship->GetModuleApplier().SetGoldWallet(wallet); const auto gold = install("G1"); f.Kill();
 			f.Equal("Hunt Gold uses nearest integer with halves upward", std::round(scale), static_cast<float>(wallet->GetAmount())); f.Remove(gold);
 		}
@@ -236,7 +233,7 @@ namespace
 			Fixture f{ report, application }; const auto host = Host(f, rarity); const std::string suffix = rarity == ModuleRarity::Uncommon ? "" : rarity == ModuleRarity::Rare ? ".Rare" : ".Epic";
 			f.Install(host->moduleId.ToString().c_str(), 1, 3, Shared("D6" + suffix).c_str()); NoArmor(f); auto& health = f.ship->GetHealthComponent();
 			health.ChangeHealth(.4f * health.GetMaxHealth() - health.GetHealth()); const float before = health.GetHealth();
-			Use(f, "Ability.Defense.DirectionalBarrier.Basic", sas::AbilitySlot::Ability1); const float fraction = rarity == ModuleRarity::Uncommon ? .12f : rarity == ModuleRarity::Rare ? .21f : .3f;
+			Use(f, "Ability.Defense.DirectionalBarrier.Basic", sas::AbilitySlot::Ability1); const float fraction = rarity == ModuleRarity::Uncommon ? .12f : rarity == ModuleRarity::Rare ? .18f : .25f;
 			f.Equal("Desperate Patch heals at the inclusive forty-percent threshold", before + health.GetMaxHealth() * fraction, health.GetHealth());
 			const float healed = health.GetHealth(); Use(f, "Ability.Defense.DirectionalBarrier.Basic", sas::AbilitySlot::Ability1); f.Equal("Desperate Patch does not heal above threshold", healed, health.GetHealth());
 			health.ChangeHealth(.3f * health.GetMaxHealth() - health.GetHealth()); const float low = health.GetHealth(); CastMovement(f); f.Equal("Desperate Patch excludes Movement uses", low, health.GetHealth());
@@ -294,6 +291,31 @@ namespace
 		f.Equal("the retained counter awards five percent at the next fifteen-use threshold", 1.2f, respawn.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
 		Fixture fresh{ report, application }; f.Equal("a new run state starts without overflow", 1.f, fresh.ship->GetModuleApplier().GetAbilityMainEffectMultiplier(utility));
 	}
+	void ShipLevelChecks(Report& report, Application& application)
+	{
+		// Ship level one keeps the authored values; a later level change reaches the live applier without a fresh install.
+		{
+			Fixture f{ report, application }; auto host = Host(f, ModuleRarity::Uncommon);
+			const float base = f.Owner(OwnerAttributeIds::AttackPower); const auto instance = f.Install(host->moduleId.ToString().c_str(), 1, 3, Shared("O1").c_str());
+			f.Equal("ship level one keeps the Uncommon O1 value", base + 8.f, f.Owner(OwnerAttributeIds::AttackPower));
+			f.ship->GetShipRuntime().SetShipLevel(5); f.ship->GetModuleApplier().OnShipLevelChanged();
+			f.Equal("Uncommon O1 adds half an Attack Power per extra ship level", base + 10.f, f.Owner(OwnerAttributeIds::AttackPower)); f.Remove(instance);
+		}
+		{
+			Fixture f{ report, application }; auto host = Host(f, ModuleRarity::Epic);
+			const float base = f.Owner(OwnerAttributeIds::MaxHealth); const auto instance = f.Install(host->moduleId.ToString().c_str(), 1, 3, Shared("D1.Epic").c_str());
+			f.Equal("ship level one keeps the Epic D1 value", base + 85.f, f.Owner(OwnerAttributeIds::MaxHealth));
+			f.ship->GetShipRuntime().SetShipLevel(5); f.ship->GetModuleApplier().OnShipLevelChanged();
+			f.Equal("Epic D1 adds three Max Health per extra ship level", base + 97.f, f.Owner(OwnerAttributeIds::MaxHealth)); f.Remove(instance);
+		}
+		{
+			Fixture f{ report, application }; auto host = Host(f, ModuleRarity::Rare); const auto enemy = Enemy(f); NoArmor(f);
+			const float armor = f.Owner(OwnerAttributeIds::Armor); const auto plate = f.Install(host->moduleId.ToString().c_str(), 1, 3, Shared("R2").c_str());
+			f.ship->GetShipRuntime().SetShipLevel(5); f.ship->GetModuleApplier().OnShipLevelChanged();
+			auto& shield = f.ship->GetShieldComponent(); shield.ChangeShield(shield.GetMaxShield()); Hit(*f.ship, enemy.get(), shield.GetShield(), Plain());
+			f.Equal("Rare Reactive Plating adds half an Armor per extra ship level after a shield break", armor + 37.f, f.Owner(OwnerAttributeIds::Armor)); f.Remove(plate);
+		}
+	}
 }
 
 int main(int argc, char** argv)
@@ -305,7 +327,7 @@ int main(int argc, char** argv)
 		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "side-pool content registration failed" };
 		std::string title = "Module side pools E2E"; Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false);
-		PoolChecks(report); ScaleChecks(report, application); OtherScaleChecks(report, application); ZoneChecks(report, application); RecoveryChecks(report, application); DeferredChecks(report, application); PatchChecks(report, application); MomentumChecks(report, application); OverflowChecks(report, application); report.artifact["passed"] = true;
+		PoolChecks(report); ScaleChecks(report, application); OtherScaleChecks(report, application); ZoneChecks(report, application); RecoveryChecks(report, application); DeferredChecks(report, application); PatchChecks(report, application); MomentumChecks(report, application); OverflowChecks(report, application); ShipLevelChecks(report, application); report.artifact["passed"] = true;
 	}
 	catch (const std::exception& exception) { report.artifact["error"] = exception.what(); std::cerr << exception.what() << '\n'; }
 	report.artifact["test"] = "ModuleSidePoolsE2E"; WriteArtifact(argv[1], report.artifact); return report.artifact.value("passed", false) ? 0 : 1;
