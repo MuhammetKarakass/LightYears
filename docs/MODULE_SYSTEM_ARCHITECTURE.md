@@ -226,7 +226,7 @@ ResolvedModuleEffects Resolve(const ShipSchematic&, const ModuleCatalog&, const 
 ```
 
 Bölge bonusu kuralı (tek yer):
-- **Planlı Legendary istisnası (kullanıcı, 2026-10-14):** Legendary hiçbir bölge bonusu almaz; aile bölgesi ve Gövde için `b = 0` olmalıdır. Legendary tek sabit boyutlu ve yansızdır; Epic normal kuralları izler. Bu tasarım kararı runtime'da uygulanmış sayılmaz. [Sözleşme sahibi](MODULE_SYSTEM_DESIGN.md#61-epic--legendary-ayrımı--kullanıcı-kararı-2026-10-14).
+- **Planlı Legendary sözleşmesi (2026-10-26 düzeltmesi):** Legendary normal bölge seviye bonuslarını alır: aile bölgesi +1, Gövde +2, başka aile bölgesi +0. Önceki bölge muafiyeti geçersizdir. Legendary tek sabit boyutlu, seviyeli ve yansızdır; Epic normal kuralları izler. Bu tasarım kararı runtime'da uygulanmış sayılmaz. [Sözleşme sahibi](MODULE_SYSTEM_DESIGN.md#61-epic--legendary-ayrımı--kullanıcı-kararı-2026-10-14).
 - Modülün **tüm hücreleri tek bölgede** ise o bölge değerlendirilir; taşan modül bonus almaz.
 - **Seviye bonusu (2026-10-24):** `ModuleZoneEntry::levelBonus` (JSON `levelBonus`): aile bölgesi 1, Gövde 2, eşleşmeyen 0; `kMaxZoneLevelBonus = 2`. `ModuleResolver::GetZoneLevelBonus` parçalı yerleşimde en düşük hücre değerini alır.
 - Ana paket `placement.level + levelBonus` etkin seviyesinde çözülür; `ModuleLevelTable::ValueAtLevel` tablo dışındaki seviyeleri son basamakla doğrusal uzatır. `affectedByZoneBonus = false` modifier'lar, `zoneEffects` ve yan özellik paketi yerleşim seviyesinde kalır. Koşu sayaçları (`ModuleRunCounterRuntime`, Tempered Hull armor sınırı) aynı etkin seviyeyi `FindZoneLevelBonus` ile okur. Eski `b = 0.25 / 0.10` çarpanı ve `AmplifyZone`/`OutOfZoneMainBonus` kaldırıldı.

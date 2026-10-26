@@ -73,7 +73,7 @@ Kurallar:
 - **Yerleşim seviyesi (kullanıcı, 2026-10-24):** bölge bonusu yüzde değil seviyedir. Modül kendi aile bölgesinde **+1**, Gövde'de **+2** seviye çalışır; başka ailenin bölgesinde **+0**, ceza yok. Örnek: L1 Hunt Clock: Utility normalde %5 iade eder; Sensör'de L2 değeri %6, Gövde'de L3 değeri %7 verir.
 - Gerekçe: nadirlik yükseldikçe modülün değeri davranışa kayar ve "ana değer +%25" görünmez olur. Seviye basamakları her modül için anlamlı olacak şekilde yazıldığından bonus her nadirlikte hissedilir; yüksek nadirlikleri rastgele yerleştirmek kötü seçim kalır, yerleşim yasağı gerekmez. Gövde dar ve her aileye açık olduğu için oyuncunun en önemli modülüne ayırdığı yerdir; bu yüzden aile bölgesinden yüksektir.
 - Yerleşimden gelen seviye en fazla +2'dir. Etkin seviye = modül seviyesi + yerleşim seviyesi. Gelişim yeteneklerdeki gibi seviye başına formülle tutulur (ör. Hunt Clock seviye başına +1 puan); L4/L5 için ayrı değer yazılmaz, formül etkin seviyeye uygulanır (kullanıcı, 2026-10-24).
-- Seviye merdiveni olmayan tek değerli modüller (ör. Zone Cooler) yerleşim seviyesi almaz; kendi bölge davranışları geçerlidir. Legendary hiçbir bölge bonusu almaz (§6.1).
+- Seviye merdiveni olmayan tek değerli modüller (ör. Zone Cooler) yerleşim seviyesi almaz; kendi bölge davranışları geçerlidir. Legendary normal bölge seviye bonuslarını alır (§6.1; 2026-10-26 düzeltmesi).
 - F1 parçalı modülde yerleşim seviyesini en zayıf konumdaki parça belirler.
 - Zone Overclocker, Misfit Wiring ve Z1/Z2 yanları bu kararla tasarımdan çıkarıldı.
 - Bonus yalnız modülün **ana özelliğine** uygulanır; nadirlikten gelen yan statlara uygulanmaz.
@@ -149,8 +149,8 @@ Bu arketipler ve örnek sayılar ilk modül taslağından kalır. Güncel Common
 
 - **Epic**, diğer normal nadirlikler gibi modül kurallarını izler. Düz stat, koşullu bonus, tetik veya davranış değişimi içerebilir; kimliği tamamen değiştirmesi zorunlu değildir. Boyut, yan özellik ve bölge bonusu normal modül sözleşmesine göre belirlenir. Epic için otomatik iki yan özellik kuralı yoktur.
 - **Normal nadirlik sürekliliği (kullanıcı netleştirmesi, 2026-10-14):** Uncommon ve Rare için kullanılan tasarım mantığı Epic'te de devam eder; her nadirlik bir öncekinin üst güç/etki basamağıdır. Epic için ayrı bir mekanik tasarım yaklaşımı aranmaz. Bu ilke aynı modülün her nadirlikte kopyasını veya sabit bir yüzde artışını zorunlu kılmaz. Legendary'nin kimlik dönüşümü sözleşmesi ayrı kalır.
-- **Legendary**, oynanış/build kimliğini tamamen değiştiren güçlü bir davranış değişimidir. Her Legendary yalnız **bir sabit boyutta** bulunur; bu, bir hücre demek değildir. Yan özelliği yoktur ve aile bölgesi/Gövde dahil **hiçbir bölge bonusu almaz**. Etkisi birden fazla kategoriyi kapsayabilir; bu kapsam yeni aile veya birden fazla aile kimliği gerektirdiği anlamına gelmez.
-- Bu karar güncel tasarım sözleşmesidir; aşağıdaki tarihsel nadirlik yorumlarından önce gelir. Legendary'nin ilerleme/seviye, birlikte takılma sayısı ve loot kuralları bu kararla belirlenmiş değildir. Runtime değişikliği yapılmış sayılmaz.
+- **Legendary**, oynanış/build kimliğini tamamen değiştiren güçlü bir davranış değişimidir. Her Legendary yalnız **bir sabit boyutta** bulunur; bu, bir hücre demek değildir. Yan özelliği yoktur. **Normal bölge seviye bonuslarını alır:** aile bölgesi +1, Gövde +2, başka aile bölgesi +0 (kullanıcı düzeltmesi, 2026-10-26; önceki bölge muafiyeti geçersiz). Etkisi birden fazla kategoriyi kapsayabilir; bu kapsam yeni aile veya birden fazla aile kimliği gerektirdiği anlamına gelmez.
+- Bu karar güncel tasarım sözleşmesidir; aşağıdaki tarihsel nadirlik yorumlarından önce gelir. Legendary diğer modüller gibi seviyelidir (kullanıcı, 2026-10-26); modül bazında gelişim, birlikte takılma sayısı ve loot kuralları açıktır. Runtime değişikliği yapılmış sayılmaz.
 
 ### 6.2 Önceki yön ve tarihsel taslak
 
