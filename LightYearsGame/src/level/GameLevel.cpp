@@ -14,6 +14,7 @@
 #include "presentation/hud/ability/AbilityBarHUDController.h"
 #include "presentation/hud/vitals/VitalsHUDController.h"
 #include "presentation/hud/modules/ModuleScreenHUDController.h"
+#include "presentation/hud/weaponChoice/WeaponChoiceHUDController.h"
 #include "presentation/hud/notification/NotificationHUDController.h"
 
 namespace vega
@@ -125,6 +126,7 @@ namespace vega
 		AddHUDController(std::make_shared<AbilityBarHUDController>(mGameHUD));
 		AddHUDController(std::make_shared<VitalsHUDController>(mGameHUD));
 		AddHUDController(std::make_shared<ModuleScreenHUDController>(mGameHUD));
+		AddHUDController(std::make_shared<WeaponChoiceHUDController>(mGameHUD));
 		auto notificationController = std::make_shared<NotificationHUDController>(mGameHUD);
 		mNotificationHUD = notificationController;
 		AddHUDController(std::move(notificationController));

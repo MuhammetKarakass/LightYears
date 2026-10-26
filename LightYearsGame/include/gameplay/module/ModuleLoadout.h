@@ -7,6 +7,7 @@
 #include "gameplay/module/ModulePlacementRules.h"
 
 #include <SFML/System/Vector2.hpp>
+#include <string>
 
 #include <cstdint>
 
@@ -39,6 +40,8 @@ namespace vega
 		int reviveChargesSpent = 0;
 		// Binding survives moves and loadout copies. Installing from inventory chooses the schematic slot at its new cell.
 		sas::AbilitySlot abilitySlot = sas::AbilitySlot::None;
+		// Second Hardpoint: the Primary weapon chosen when the module entered the inventory; empty until chosen.
+		std::string secondaryWeaponId;
 	};
 
 	// Installed placements plus the not-installed inventory. Every installing
@@ -64,6 +67,8 @@ namespace vega
 		std::uint32_t AddToInventory(const ModuleRulesContext& rules, const ModuleDefinition& module, int variantIndex, ModuleRarity rarity, int level, sas::ContentId sideFeatureId = {}, List<sas::AttributeModifier> rolledSideStats = {});
 		bool SetLevel(const ModuleRulesContext& rules, std::uint32_t instanceId, int level);
 		bool SetSideFeature(const ModuleRulesContext& rules, std::uint32_t instanceId, const sas::ContentId& sideFeatureId);
+		// Stores the weapon an owned item carries (Second Hardpoint). False for unknown ids.
+		bool SetSecondaryWeapon(std::uint32_t instanceId, const std::string& weaponId);
 		ModulePlacementFailure Install(const ModuleRulesContext& rules, std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		ModulePlacementFailure Move(
 			const ModuleRulesContext& rules,

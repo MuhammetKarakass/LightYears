@@ -10,6 +10,7 @@
 #include <exception>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace vega
@@ -573,7 +574,36 @@ namespace vega
 		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
 		const ModuleDefinition* definition = content::ModuleContentCatalog::FindById(moduleId);
 		if (!rules || !definition) return 0;
-		return mModuleLoadout.AddToInventory(*rules, *definition, variantIndex, rarity, level, std::move(sideFeatureId));
+		const std::uint32_t instanceId = mModuleLoadout.AddToInventory(*rules, *definition, variantIndex, rarity, level, std::move(sideFeatureId));
+		if (instanceId != 0 && definition->legendary && std::holds_alternative<ModuleLegendarySecondHardpointRule>(*definition->legendary))
+		{
+			mPendingSecondaryWeaponChoices.push_back(instanceId);
+			onSecondaryWeaponChoiceRequested.Broadcast(instanceId);
+		}
+		return instanceId;
+	}
+
+	List<std::string> Player::GetSecondaryWeaponOptions() const
+	{
+		const std::string& ownWeapon = content::ShipContentCatalog::GetPlayerShipDefinition(mShipId).primaryWeaponId;
+		List<std::string> options;
+		for (const std::string& shipId : content::ShipContentCatalog::GetPlayerShipIds())
+		{
+			const std::string& weaponId = content::ShipContentCatalog::GetPlayerShipDefinition(shipId).primaryWeaponId;
+			if (!weaponId.empty() && weaponId != ownWeapon && std::find(options.begin(), options.end(), weaponId) == options.end()) options.push_back(weaponId);
+		}
+		return options;
+	}
+
+	bool Player::ChooseSecondaryWeapon(std::uint32_t instanceId, const std::string& weaponId)
+	{
+		const auto pending = std::find(mPendingSecondaryWeaponChoices.begin(), mPendingSecondaryWeaponChoices.end(), instanceId);
+		const List<std::string> options = GetSecondaryWeaponOptions();
+		if (pending == mPendingSecondaryWeaponChoices.end() || std::find(options.begin(), options.end(), weaponId) == options.end() ||
+			!mModuleLoadout.SetSecondaryWeapon(instanceId, weaponId)) return false;
+		mPendingSecondaryWeaponChoices.erase(pending);
+		if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		return true;
 	}
 
 	bool Player::SetModuleLevel(std::uint32_t instanceId, int level)
@@ -686,6 +716,7 @@ namespace vega
 		mGold = std::make_shared<RunGold>();
 		mShipProgression.ResetForNewRun();
 		mModuleLoadout = ModuleLoadout{};
+		mPendingSecondaryWeaponChoices.clear();
 		mTestModulesGranted = false;
 		mPurchasedAbilityLevels.clear();
 		mFieldMasteryRunState = std::make_shared<FieldMasteryRunState>();

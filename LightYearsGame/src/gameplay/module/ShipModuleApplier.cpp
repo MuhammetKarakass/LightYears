@@ -367,6 +367,13 @@ namespace vega
 		mOwnerBurstRuntime.Replace(mResolved.ownerBurstRules);
 		mEpicUtilityMovementRuntime.Replace(mResolved.epicRules);
 		mLegendarySecondHardpointRuntime.Replace(mResolved.legendaryRules.secondHardpoints);
+		// The weapon chosen for the placement (Player::ChooseSecondaryWeapon) becomes the runtime's second weapon.
+		for (const ResolvedModuleLegendarySecondHardpointRule& rule : mResolved.legendaryRules.secondHardpoints)
+		{
+			const auto placement = std::find_if(mPlacements.begin(), mPlacements.end(), [&rule](const ModulePlacement& candidate) { return candidate.instanceId == rule.instanceId; });
+			if (placement != mPlacements.end() && !placement->secondaryWeaponId.empty() && mLegendarySecondHardpointRuntime.GetSecondWeaponId() != placement->secondaryWeaponId)
+				mLegendarySecondHardpointRuntime.AssignSecondWeapon(placement->secondaryWeaponId);
+		}
 		mLegendaryMeltdownBarrelRuntime.Replace(mResolved.legendaryRules.meltdownBarrels);
 		mLegendaryPrimedArsenalRuntime.Replace(mResolved.legendaryRules.primedArsenals);
 		mLegendaryReactionCoreRuntime.Replace(mResolved.legendaryRules.reactionCores);

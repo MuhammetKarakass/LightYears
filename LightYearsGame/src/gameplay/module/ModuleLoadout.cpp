@@ -79,6 +79,16 @@ namespace vega
 		return nullptr;
 	}
 
+	bool ModuleLoadout::SetSecondaryWeapon(std::uint32_t instanceId, const std::string& weaponId)
+	{
+		ModulePlacement* item = FindOwnedItem(instanceId);
+		if (!item || weaponId.empty()) return false;
+		if (item->secondaryWeaponId == weaponId) return true;
+		item->secondaryWeaponId = weaponId;
+		++mRevision;
+		return true;
+	}
+
 	bool ModuleLoadout::SetLevel(const ModuleRulesContext& rules, std::uint32_t instanceId, int level)
 	{
 		ModulePlacement* item = FindOwnedItem(instanceId);

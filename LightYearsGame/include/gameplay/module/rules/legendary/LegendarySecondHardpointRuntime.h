@@ -23,6 +23,8 @@ namespace vega
 		const List<ResolvedModuleLegendarySecondHardpointRule>& GetRules() const { return mRules; }
 		// Run acquisition is intentionally external. Only a catalog weapon ID can be assigned.
 		bool AssignSecondWeapon(const std::string& weaponId);
+		// Id of the assigned second weapon; empty when none.
+		std::string GetSecondWeaponId() const { return mSecondWeapon ? mSecondWeapon->weaponId : std::string{}; }
 		bool SwitchWeapon();
 		bool IsSwitching() const { return mSwitchRemaining > 0.f; }
 		float GetSwitchRemaining() const { return mSwitchRemaining; }

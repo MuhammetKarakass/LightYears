@@ -50,6 +50,12 @@ namespace vega
 		bool TryUninstallModule(std::uint32_t instanceId);
 		// Read-only rules for the ship's schematic; empty for ships without one.
 		std::optional<ModuleRulesContext> BuildModuleRules() const;
+		// Second Hardpoint: such a module asks for its second Primary weapon as soon as it enters the inventory. The options are
+		// every player Primary weapon except the current ship's own; the choice is stored on the module and reaches the ship.
+		const List<std::uint32_t>& GetPendingSecondaryWeaponChoices() const { return mPendingSecondaryWeaponChoices; }
+		List<std::string> GetSecondaryWeaponOptions() const;
+		bool ChooseSecondaryWeapon(std::uint32_t instanceId, const std::string& weaponId);
+		Delegate<std::uint32_t> onSecondaryWeaponChoiceRequested;
 
 		unsigned int GetLifeCount() const { return mLifeCount; };
 		unsigned int GetScore() const { return mScore; };
@@ -98,6 +104,7 @@ namespace vega
 		std::shared_ptr<FieldMasteryRunState> mFieldMasteryRunState = std::make_shared<FieldMasteryRunState>();
 		PurchasedAbilityLevels mPendingTestAbilityLevels;
 		ModuleLoadout mModuleLoadout;
+		List<std::uint32_t> mPendingSecondaryWeaponChoices;
 		// Players live by value; callback validity must not depend on shared Object ownership.
 		std::shared_ptr<bool> mModuleCreditLifetime = std::make_shared<bool>(true);
 		unsigned int mLifeCount;

@@ -4,6 +4,9 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 
+#include <algorithm>
+#include <iterator>
+
 namespace vega
 {
 	namespace
@@ -116,6 +119,15 @@ namespace vega
 			return false;
 		}
 		mInventory.Add(abilityId);
+		// Twin Rack fills its second set with abilities found in the run: when all four slots already carry an ability,
+		// the new one takes the first slot (Q, E, F, R) whose second ability is still empty.
+		if (mAbilitySystem.IsTwinRackEnabled())
+		{
+			const sas::AbilitySlot slots[]{ sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 };
+			const bool firstSetFull = std::all_of(std::begin(slots), std::end(slots), [this](sas::AbilitySlot slot) { return mLoadout.FindAbility(slot) != nullptr; });
+			const auto freeSecond = std::find_if(std::begin(slots), std::end(slots), [this](sas::AbilitySlot slot) { return mLoadout.FindSecondAbility(slot) == nullptr; });
+			if (firstSetFull && freeSecond != std::end(slots)) AssignSecondAbility(abilityId, *freeSecond, failureReason);
+		}
 		return true;
 	}
 
