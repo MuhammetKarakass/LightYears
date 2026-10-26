@@ -6,6 +6,7 @@ Güncel tasarım sahibi [modules.md](modules.md). Bu belge seçimlerin dayanağ�
 
 | Sohbet | Kimlik | İnceleme kapsamı |
 |---|---|---|
+| 12 Legendary uygulandı (2026-10-27) | On iki Legendary modülün runtime'ı ve E2E testi game-main'de. Yeni mekanikler modül runtime'larına gömülmedi; ortak sistemlerde: statü stack olayı ve tepkime çifti, kontrol stun'ı, zamanlı çekme, atış sapması, armor kırma, parça dağıtımı, ölümcül vuruş yakalayıcıları, ele geçirme, düşmanın dış kontrolü, gövde askıya alma ve possession. | Kullanıcı: "modüller ile yeni mekanikler geliyor ... modüllerin içine gömme mekanik olarak yaz" ve "sen yap gpt modellerine yaptırma". Uygulamada seçilen açık ayrıntılar (şarapnel yarıçapı 250, Parasite ödülünün ele geçirmede verilmesi vb.) kullanıcıya sunuldu, kullanıcı kararı sayılmaz. |
 | Modüllerle devam et | 01a16849-aac1-77a3-b57a-8b484ff556c4 | Bu konuşmanın bütün modül seçimleri/düzenleme düzeltmeleri. |
 | Suggest epic modules beyond utility | 01a13b67-65af-75e3-8a78-bf1a2ebab4aa | Erişilebilir tüm sayfalar; son 2026-10-23 sadeleştirme dahil. |
 | Epic modül seviyesini tasarla | 01a131fc-28f4-74b0-b8c1-f8c43598de2e | Erişilebilir tüm sayfalar; beğenilenler, retler, çeşitlilik/yolculuk fikirleri. |
