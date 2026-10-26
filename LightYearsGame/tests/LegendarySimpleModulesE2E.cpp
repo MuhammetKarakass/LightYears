@@ -216,7 +216,7 @@ namespace
 			f.Equal("Underdog horizontal rating uses W_movement", horizontal + (.05f + .0075f * n) * static_cast<float>(rule.movementWeight), f.Owner(OwnerAttributeIds::MoveSpeedHorizontal));
 			f.Equal("Underdog vertical rating uses W_movement", vertical + (.05f + .0075f * n) * static_cast<float>(rule.movementWeight), f.Owner(OwnerAttributeIds::MoveSpeedVertical));
 			f.Equal("Underdog Primary fire rate uses W_primary", fireRate * (1.f + (.375f + .05f * n) * static_cast<float>(rule.primaryWeight) * .01f), asc.ApplyPrimaryWeaponModifiers(fireRateAttribute));
-			f.Equal("Underdog Utility haste uses W_utility", cooldown * std::max(0.f, 1.f - (.25f + .025f * n) * static_cast<float>(rule.utilityWeight) * .01f), asc.GetScopedAbilityCooldownMultiplier(utility.GetDefinition()));
+			f.Equal("Underdog Utility haste uses W_utility", cooldown / (1.f + (.25f + .025f * n) * static_cast<float>(rule.utilityWeight) * .01f), asc.GetScopedAbilityCooldownMultiplier(utility.GetDefinition()));
 		}
 	}
 

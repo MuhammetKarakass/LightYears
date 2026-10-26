@@ -1,4 +1,5 @@
 #include "gameplay/module/rules/legendary/LegendaryUnderdogCoreRuntime.h"
+#include "gameplay/ability/AbilityHaste.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/ability/ScopedAbilityRule.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -51,7 +52,8 @@ namespace vega
 			{
 				ScopedAbilityCooldownRule cooldownRule;
 				cooldownRule.requiredAbilityTags.push_back(GameplayTags::Ability::Utility);
-				cooldownRule.multiplier = std::max(0.f, 1.f - utilityPercent * .01f);
+				// Utility Haste uses the shared Haste formula: cooldown / (1 + Haste/100).
+				cooldownRule.multiplier = GetAbilityHasteCooldownMultiplier(utilityPercent);
 				mCooldownHandles.push_back(mAbilities.AddScopedAbilityCooldownRule(std::move(cooldownRule)));
 			}
 		}
