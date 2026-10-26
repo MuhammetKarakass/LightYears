@@ -44,8 +44,8 @@ namespace vega
 						{
 							if (candidate.instanceId == placement.instanceId) continue;
 							const auto* module = rules.lookup(candidate.moduleId);
-							if (!module || !GameplayTagSchema::IsModuleAbilitySlotSystem(module->systemCategory)) continue;
-							const sas::AbilitySlot slot = AbilitySlotForModuleSystem(module->systemCategory);
+							if (!module || !GameplayTagSchema::IsModuleAbilitySlotSystem(ModuleSystemForPlacement(rules, *module, candidate))) continue;
+							const sas::AbilitySlot slot = AbilitySlotForModuleSystem(ModuleSystemForPlacement(rules, *module, candidate));
 							if (slot == sas::AbilitySlot::None || std::find(result.begin(), result.end(), slot) != result.end()) continue;
 							const List<sf::Vector2i> candidateCells = ModulePlacementRules::GetCoveredCells(*module, candidate);
 							if (std::find(candidateCells.begin(), candidateCells.end(), probe) == candidateCells.end()) continue;
@@ -95,7 +95,7 @@ namespace vega
 					{
 						const InstalledRules installed = FindInstalledRules(rules, placement);
 						if (!installed.module) continue;
-						const sas::AbilitySlot slot = AbilitySlotForModuleSystem(installed.module->systemCategory);
+						const sas::AbilitySlot slot = AbilitySlotForModuleSystem(ModuleSystemForPlacement(rules, *installed.module, placement));
 						if (slot != sas::AbilitySlot::None) filled[static_cast<int>(slot) - static_cast<int>(sas::AbilitySlot::Ability1)] = true;
 					}
 					return static_cast<int>(std::count(filled, filled + 4, false));
@@ -443,6 +443,7 @@ namespace vega
 
 		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
 		{
+			if (module.abilityModule) return 0;
 			const auto zoneLevelBonus = [&rules, &module, &placement](const GameplayTag& zone) -> int
 			{
 				const ModuleZoneEntry* entry = zone.IsValid() ? rules.zoneTable.FindZone(zone) : nullptr;
@@ -556,9 +557,12 @@ namespace vega
 						}
 				}
 
-				if (module->systemCategory.IsValid())
+				const auto system = ModuleSystemForPlacement(rules, *module, placement);
+				if (system.IsValid()) effects.enabledSystems.push_back(system);
+				if (module->abilityModule && system.IsValid())
 				{
-					effects.enabledSystems.push_back(module->systemCategory);
+					const auto slot = AbilitySlotForModuleSystem(system);
+					effects.abilityModules.push_back({ slot, *module->abilityModule });
 				}
 			}
 			// Layout-dependent damage rules read the installed layout once: empty-cell scaling and the ability-slot gate.

@@ -140,6 +140,7 @@ namespace vega
 		}
 
 		mDefinition.mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectMultiplier(mDefinition);
+		mAbilityModuleCooldownMultiplierSnapshot = mAbilitySystem.GetAbilityModuleCooldownMultiplier(mDefinition);
 
 		GameAbilityBehaviorContext behaviorContext{
 			mAbilitySystem,
@@ -361,13 +362,13 @@ namespace vega
 		 */
 		const float moduleMultiplier = IsOnCooldown() && mCooldownModuleMultiplierSnapshot
 			? *mCooldownModuleMultiplierSnapshot
-			: mAbilitySystem.GetScopedAbilityCooldownMultiplier(mDefinition);
+			: mAbilitySystem.GetScopedAbilityCooldownMultiplier(mDefinition, IsActive() ? mAbilityModuleCooldownMultiplierSnapshot : std::nullopt);
 		return ResolveCooldownDurationWithModuleMultiplier(moduleMultiplier);
 	}
 
 	float GameAbility::ResolveCooldownDurationForStart() const
 	{
-		mCooldownModuleMultiplierSnapshot = mAbilitySystem.GetScopedAbilityCooldownMultiplier(mDefinition);
+		mCooldownModuleMultiplierSnapshot = mAbilitySystem.GetScopedAbilityCooldownMultiplier(mDefinition, mAbilityModuleCooldownMultiplierSnapshot);
 		return ResolveCooldownDurationWithModuleMultiplier(*mCooldownModuleMultiplierSnapshot);
 	}
 

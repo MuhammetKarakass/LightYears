@@ -6,7 +6,7 @@
 
 - [Sayım ve okuma kuralları](#sayım-ve-okuma-kuralları)
 - [Common](#common-modüller--13), [Uncommon](#uncommon-modüller--26), [Rare](#rare-modüller--23)
-- [Epic modüller](#epic-modüller--18)
+- [Epic modüller](#epic-modüller--17)
 - [Legendary modüller](#legendary-modüller--4)
 - [Nadirlik dışı özel eşya](#nadirlik-dışı-özel-eşya--1)
 - [Yan özellikler](#yan-özellikler)
@@ -22,7 +22,7 @@
 
 ## Sayım ve okuma kuralları
 
-**84 seçilmiş ana modül:** 70 canlı ana tanım, 14 planlı ana tasarım. Common13, Uncommon26, Rare23, Epic18, Legendary4. Courier Hold nadirlik dışı özel eşyadır, sayıma dahil değil. Resonant Barrel'in ailesi yerleşime göre değiştiği için "Ailesiz" sütununda sayılır. Hunt Clock dört ayrı içerik olarak sayılır; aile karşılaştırmasında ayrı seri sütunundadır. Sistemler, eski JSON tanımları, yan özellikler ve seçilmemiş adaylar ana sayıma dahil değildir.
+**83 seçilmiş ana modül:** 70 canlı ana tanım, 13 planlı ana tasarım. Common13, Uncommon26, Rare23, Epic17, Legendary4. Courier Hold ve Ultimate Protocol nadirlik dışıdır, sayıma dahil değil (Ultimate Protocol 2026-10-25 nadirliksiz yetenek modülü oldu). Resonant Barrel'in ailesi yerleşime göre değiştiği için "Ailesiz" sütununda sayılır. Hunt Clock dört ayrı içerik olarak sayılır; aile karşılaştırmasında ayrı seri sütunundadır. Sistemler, eski JSON tanımları, yan özellikler ve seçilmemiş adaylar ana sayıma dahil değildir.
 
 **Canlı JSON kaydı:** 70 ana + 14 sistem + 9 eski tanım = 93. Bu, loot/denge/oynanış kabulü değildir. JSON sayımı bu denetimde yeniden okundu; runtime/E2E kanıtları 2026-10-13–14 tarihlidir.
 
@@ -38,9 +38,9 @@
 | Common | 2 | 4 | 4 | 2 | 1 | 0 | 0 | 0 | 13 |
 | Uncommon | 4 | 5 | 6 | 3 | 4 | 4 | 0 | 0 | 26 |
 | Rare | 0 | 6 | 7 | 5 | 5 | 0 | 0 | 0 | 23 |
-| Epic | 2 | 4 | 3 | 4 | 3 | 0 | 1 | 1 | 18 |
+| Epic | 2 | 4 | 3 | 4 | 3 | 0 | 0 | 1 | 17 |
 | Legendary | 1 | 0 | 0 | 1 | 1 | 0 | 1 | 0 | 4 |
-| **Toplam** | **9** | **19** | **20** | **15** | **14** | **4** | **2** | **1** | **84** |
+| **Toplam** | **9** | **19** | **20** | **15** | **14** | **4** | **1** | **1** | **83** |
 
 ### Canlı ana tanımlar · 70
 
@@ -149,7 +149,7 @@ Canlı Rare Utility: Triple Core, Spare Capacitor, Release Valve. Danger Pay/Int
 | Speed Lance | Movement · 2/3 hücre | Movement kullanımından sonraki 1sn pencerede en yüksek hız ölçülür, pencere sonunda otomatik delici Energy mızrağı çıkar; hasar=hız×0,4; menzil900, hız1800/sn (uçuş0,5sn). Delme ana özellik, yan gerektirmez. | Ana hız katsayısı0,4; seçilmemiş seviye büyümesi yok. | Özel: Echo Lance (0,4sn sonra aynı yönde %50 hasarlı ikinci delici mızrak,ilk hız örneğini kullanır) / Charged Lance (ilk hedefe2 Electric stack,sonraki hedeflere yok). Ortak G2/G3/G4; havuz kabul. Maksimum3 hücrede tek yan açılır. | Uygulandı. Hız katsayısı 0,40 → 0,45 → 0,50 (karar 2026-10-24, uygulama Sol'a bekliyor). |
 | Shield Battery | Defense · 2/3 hücre merdiveni | Kalkan doluyken yenilenme ek rezerv biriktirir; gelen hasar önce rezervi tüketir. | Açık; eski Epic taslağındaki MaxShield %40 rezerv tavanı öneridir, Rare için henüz seçilmedi. | 2 hücrede ana rezerv, 3 hücrede aynı ana güç + tek yan; kullanıcı seçimi (2026-10-24). İlk özel yan Kapasitör Odağı seçildi: mevcut rezervden EP; %25 oran öneri. İkinci özel Kesintisiz Depolama seçildi: normal kalkan doluyken rezerv hasar altında da dolar; normal depolama hızının %25 oranı öneri. Üç ortak açık; Parazit Filtresi reddedildi. | Uygulandı (2026-10-24): rezerv tavanı MaxShield %30/35/40 (ajan yer tutucusu); Kapasitör Odağı %25 ve Kesintisiz Depolama %25 (öneri). Birden fazla Battery tek rezerv kullanır (en büyük tavan). Rezervin HUD göstergesi yok. Ortak D4/D5/Uyumlu Yuva; Kapasitör Odağı %25 ve Kesintisiz Depolama %25 onaylı; rezerv kalkan çubuğunun ucunda ek parça olarak gösterilir (karar 2026-10-24, uygulama Sol'a bekliyor). |
 
-## Epic modüller · 18
+## Epic modüller · 17
 
 **2026-10-24: Pathfinder Array dışındaki 14 Epic uygulandı**; sayıların bir kısmı öneri veya ajan yer tutucusudur. Epic normal nadirlik kurallarını izler; güçlü stat, koşul, tetik veya kısmi davranış değişimi içerebilir. Nadirlik ve ana mekanik seçimi, bütün sayıların veya boyutların onaylandığı anlamına gelmez. **Öneri** diye işaretlenen değerler kesin denge değildir. Boyut ve yan havuzu henüz kapanmamış kayıtlar aşağıda belirtilir.
 
@@ -193,7 +193,6 @@ Canlı Rare Utility: Triple Core, Spare Capacitor, Release Valve. Danger Pay/Int
 | Cascade Reactor | Sabit 2 hücre; yan yok | Farklı ailelerden yetenekleri art arda kullanmak sonraki yeteneğin gücünü artırır. İlk kullanım zinciri başlatır ve bonus almaz; sonraki farklı aileli kullanımlar sırasıyla1/2/3 adım bonusunu alır. En fazla3 adım; iki aile dönüşümlü ilerleyebilir. | Pencere5sn; her uygun kullanımda yenilenir. Aynı aile tekrarı veya pencere aşımı zinciri sıfırlar. Adım başına20+2×(L−1) yüzde puanı: L1 +%20/40/60; L2 +%22/44/66; L3 +%24/48/72. Seviye yalnız gücü artırır; pencere ve adım tavanı sabit. Etkilenen sayısal güç değerlerinin hasar/iyileşme/kalkan kapsamı ve Combo Sequencer ile ayrışma/birleştirme açık. **Uygulandı (2026-10-24)**; güç kapsamı yer tutucu olarak yalnız yetenek hasarı. Bonus ana etki miktarını büyütür: hasar, iyileşme, kalkan, Movement mesafe/hız, Utility etki gücü; süre/yarıçap/menzil/bekleme değişmez (karar 2026-10-24, uygulama Sol'a bekliyor). |
 | Confluence Core | Sabit 1 hücre; yan yok | Her ailedeki takılı ana modül sayısı o ailenin stat katkısını çarpar. Offense AP/EP, Defense MaxHealth, Primary Attack Speed, Movement hareket puanı, Utility bekleme yenilenme hızı verir. Aynı aileyi yalnız bir kez sayan önceki model geçersiz. | Modül başına: Offense AP/EP2+(L−1); Defense MaxHealth10+5×(L−1); Primary AS +[1+0,5×(L−1)]%; Movement hareket puanı0,25+0,10×(L−1); Utility bekleme yenilenmesi +[1+0,5×(L−1)]%. Örnek L1:5 Offense ve4 Defense →AP+10/EP+10/MaxHealth+40. Kendisi, sistem/slot kabukları ve parçalar ayrı modül sayılmaz; ayrı seri/ailesiz kayıtların kapsamı açık. **Uygulandı (2026-10-24)**: Primary AS ateş hızına, Utility yenilenme Utility cooldown çarpanına, hareket puanı yatay/dikey hareket değerine eşlendi. Ailesine göre sayar (Hunt Clock serisi kendi ailesiyle); ailesiz ve Yetenek modülü sınıfı sayılmaz (karar 2026-10-24). |
 | Field Mastery | 2/3 hücre; 3 hücre L, büyükte tek yan | Her Utility yeteneği ayrı kullanım sayacıyla koşu boyunca kalıcı +1 seviye kazanır. Takılıyken Utility Scrap ile geliştirilemez. Önceden satın alınan ve modülle kazanılan seviyeler sökünce korunur. Modülün ayrı +2 tavanı yoktur; yeteneğin kendi azami seviyesi geçerlidir. | İki boyutta ana etki aynı;3 hücrede tek yan açılır. Bilgi Aktarımı özel yanı seçildi: bu modülle Utility yeteneğine seviye kazandırınca diğer takılı Utility yeteneklerinin kullanım sayaçlarına+2. Sabit yan; seviye ile artmaz. İkinci özel ve üç ortak açık. Ana eşik15 →14 →13 →12 korunur. Sök-tak koruması, sayaç aktarımının tavan/zincir işlemesi ve kazanılan her seviyede gereken kullanımın1 azalması fikrinin modül eşiğiyle birleşimi açık. **Uygulandı (2026-10-24)**; Scrap kilidi oynanış katmanında, kullanım sayaçları respawn'da sıfırlanır (kazanılan seviyeler korunur). İkinci özel Ustalık Taşması (azami seviyedeki Utility yeteneğinin her 15 kullanımı koşu boyunca Utility etkilerine +%5); ortak G2/G5/Gövde Bağı; sayaçlar koşu boyunca korunur, sökülünce dondurulur (karar 2026-10-24, uygulama Sol'a bekliyor). |
-| Ultimate Protocol | Yetenek modülü · 2 hücre taslağı | Yalnız R slotundaki yeteneği ultimate'e dönüştürür. | Epic seçildi (karar 2026-10-24). Bekleme ×2 / etki ×1,6 öneri; gelişim ve yan sözleşmesi açık. |
 | Resonant Barrel | Sabit 2 hücre; yan yok; aile yerleştiği bölgeye göre | Başarılı Primary atışı (atış başına tek) aile bölgesinde o ailenin yeteneklerine, Gövde'de bütün ailelere bekleme iadesi verir; Burun'da etkisiz. | Aile bölgesinde 0,25/0,30/0,35 sn, Gövde'de 0,10/0,12/0,14 sn; Zone Cooler gibi etkin seviyeyle ölçeklenir. Planlı (karar 2026-10-24, uygulama Sol'a bekliyor). |
 
 ## Legendary modüller · 4
@@ -209,10 +208,11 @@ Tamamı **planlı tasarım**. Legendary oynanış kimliğini tamamen değiştiri
 
 ## Nadirlik dışı özel eşya · 1
 
-Ana modül sayımına dahil değildir (karar 2026-10-24). Combo Sequencer Legendary'ye, Ultimate Protocol Epic'e taşındı.
+Ana modül sayımına dahil değildir (karar 2026-10-24). Combo Sequencer Legendary'ye taşındı. Ultimate Protocol 2026-10-25'te nadirliksiz yetenek modülü oldu.
 
 | Eşya | Sınıf · boyut | Seçilmiş yön | Tamamlanacak kararlar |
 |---|---|---|---|
+| Ultimate Protocol | Yetenek modülü · 1 hücre · nadirlik/yan/seviye yok | Bir yetenek tuşunun (Q/W/E/R, hangisi olursa) standart slot modülünün yerine takılır; o tuştaki yetenek ultimate olur: ana etki ×1,6, bekleme ×2, sabit değerler, bölgeden etkilenmez. Birden fazla tuşa takılabilir; sınırlama yok (oyuncu serbest). Cascade çarpanıyla çarpılır; tavanlı etkiler kendi tavanında kalır (Barrier 180°). Ana etkisi olmayan yetenekte (Void Gate) yalnız bekleme uzar. | Edinim mağaza/rota sistemiyle gelir. **Uygulandı (2026-10-26)**: slot bağı takıldığı standart slot hücresinden seçilir, taşımada korunur; geliştirici envanteri 4 kopya verir. |
 | Courier Hold | Nadirliksiz özel eşya · boyut açık | Mağazada satılan mühürlü kargo gemide yer kaplar; sonraki bölüme ulaştırınca güçlü ödül verir. Geliştirilemez. | Mağaza ve rota ödül sistemiyle tasarlanır: ödül, hücre sayısı, ölüm/kargo kaybı. |
 
 ## Yan özellikler
@@ -429,7 +429,7 @@ Bu kayıtlar içerik dosyasında durur; seçilmiş 84 ana modüle dahil değildi
 | Danger Pay | Planlı; Threat koşulu ve Gold/Scrap ödül akışı eksik. |
 | Interest Ledger | Planlı; nokta tamamlanma olayı eksik. |
 | Shield Battery / Shield Rupture | Uygulandı (2026-10-24); rezerv tavanı, patlama yarıçapı ve pencere yer tutucu, ortak yan havuzu yok. |
-| Epic18 / Legendary4 | Pathfinder dışındaki 14 Epic uygulandı (2026-10-24); Phase Slip ve Momentum Drive kısmen. Ultimate Protocol, Resonant Barrel, Monochrome Core ve Legendary dördü planlı. 2026-10-24 kararlarının uygulaması Sol'a bekliyor. Alternating Current 2026-10-24'te Prism Core yanına taşındı; Storm Capacitor da ana sayım dışında Prism Core yanıdır. |
+| Epic17 / Legendary4 | Pathfinder dışındaki 14 Epic uygulandı (2026-10-24); Phase Slip ve Momentum Drive kısmen. Resonant Barrel ve Monochrome Core 2026-10-25 uygulandı; Legendary dördü planlı. Ultimate Protocol 2026-10-25 Epic sayımından çıktı (nadirliksiz yetenek modülü). 2026-10-24 kararlarının uygulaması Sol'a bekliyor. Alternating Current 2026-10-24'te Prism Core yanına taşındı; Storm Capacitor da ana sayım dışında Prism Core yanıdır. |
 | Yan özellikler | Yeni seviyeler için seçilmemiş büyüme eklenmez. Four Corners’ın hasarsız etkileri ve planlı yolculuk yanlarının sistem bağlantıları açık. |
 | Ekonomi ve oyuncu akışı | Koşu Gold cüzdanı/harcama API’si var; mağaza, loot, yükseltme harcaması/yeniden seçim, modül kalıcılığı ve Rare sunumu ayrı kapsam. |
 

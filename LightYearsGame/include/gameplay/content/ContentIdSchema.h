@@ -27,6 +27,7 @@ namespace vega::content
 
 	struct ParsedModuleId
 	{
+		bool abilityModule = false;
 		// Ability category tag name that mirrors the ID's family segment.
 		std::string family;
 	};
@@ -201,11 +202,7 @@ namespace vega::content
 			return true;
 		}
 
-		static bool ParseModuleId(
-			const std::string& id,
-			ParsedModuleId& parsed,
-			std::string* failureReason = nullptr
-		)
+		static bool ParseModuleId(const std::string& id, ParsedModuleId& parsed, std::string* failureReason = nullptr)
 		{
 			if (!IsCanonical(id))
 			{
@@ -213,6 +210,12 @@ namespace vega::content
 					failureReason,
 					"Content ID must use non-empty dot-separated identifier segments."
 				);
+			}
+			parsed = {};
+			if (id.rfind("Module.AbilityModule.", 0) == 0 && !SegmentAt(id, 2).empty() && SegmentAt(id, 3).empty())
+			{
+				parsed.abilityModule = true;
+				return true;
 			}
 			const char* formatError =
 				"Module ID must use Module.<Family>.<Name>.<Variant> with Family in Primary, Offense, Defense, Movement, Utility.";

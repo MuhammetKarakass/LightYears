@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "abilities/AbilityTypes.h"
 
 namespace vega
 {
@@ -12,6 +13,8 @@ namespace vega
 	public:
 		virtual ~ModuleSystemGate() = default;
 		virtual float GetAbilityMainEffectMultiplier(const List<GameplayTag>&) const { return 1.f; }
+		virtual float GetAbilitySlotMainEffectMultiplier(sas::AbilitySlot) const { return 1.f; }
+		virtual float GetAbilitySlotCooldownMultiplier(sas::AbilitySlot) const { return 1.f; }
 		virtual bool IsModuleSystemEnabled(const GameplayTag& systemTag) const = 0;
 	};
 }

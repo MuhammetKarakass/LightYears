@@ -53,6 +53,8 @@ Kullanıcının elektrik stack sınırı/stack başına çarpan ve Ignite yanmas
 
 Mevcut runtime'da gemi modülü aileleri yeteneklerin kategorileriyle **aynıdır**: Primary, Offense, Defense, Movement ve Utility. Bir modülün ailesi hem bölge bonusunu hem de (yetenek kapsamlı modüllerde) hangi yetenekleri etkilediğini belirler.
 
+**Yetenek modülü (karar 2026-10-25):** yetenek tuşunun standart slot modülünün yerine takılan, o tuştaki yeteneği değiştiren nadirliksiz, yansız, seviyesiz 1 hücrelik modül; ilk üye Ultimate Protocol ([karar](MODULE_DESIGN_DECISIONS.md)). Aşağıdaki 2026-10-13 notu tarihçedir.
+
 **Planlı sınıf ayrımı (kullanıcı, 2026-10-13):** Combo Sequencer ve Ultimate Protocol, Utility ailesi yerine ayrı **Yetenek modülü** sınıfında izlenir. Bu tasarım sınıfı beş gemi ailesinden ve mevcut Q/E/F/R sistem kabuklarından ayrıdır; yeni bir aktif yetenek ailesi veya runtime enum'u uygulanmış değildir. Yerleşim, bölge bonusu ve yetenek kabuğuna bağlanma kuralları henüz açık. Diğer yetenek odaklı modüller otomatik taşınmaz. Ayrıntılar ve güncel sayım [modül kataloğunda](modules.md#sayısal-envanter--2026-10-13).
 
 | Bölge | Konum | Bonus aldığı aile | Varsayılan modül |

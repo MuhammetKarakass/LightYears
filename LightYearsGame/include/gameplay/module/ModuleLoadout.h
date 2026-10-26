@@ -1,6 +1,7 @@
 #pragma once
 
 #include "attributes/AttributeSystem.h"
+#include "abilities/AbilityTypes.h"
 #include "content/ContentId.h"
 #include "framework/Core.h"
 #include "gameplay/module/ModulePlacementRules.h"
@@ -36,6 +37,8 @@ namespace vega
 		List<sf::Vector2i> fragmentCells;
 		// Last Stand revive charges spent on this placement. Kept with the placement like runCounter; a new run clears it with the loadout.
 		int reviveChargesSpent = 0;
+		// Binding survives moves and loadout copies. Installing from inventory chooses the schematic slot at its new cell.
+		sas::AbilitySlot abilitySlot = sas::AbilitySlot::None;
 	};
 
 	// Installed placements plus the not-installed inventory. Every installing
@@ -61,12 +64,7 @@ namespace vega
 		std::uint32_t AddToInventory(const ModuleRulesContext& rules, const ModuleDefinition& module, int variantIndex, ModuleRarity rarity, int level, sas::ContentId sideFeatureId = {}, List<sas::AttributeModifier> rolledSideStats = {});
 		bool SetLevel(const ModuleRulesContext& rules, std::uint32_t instanceId, int level);
 		bool SetSideFeature(const ModuleRulesContext& rules, std::uint32_t instanceId, const sas::ContentId& sideFeatureId);
-		ModulePlacementFailure Install(
-			const ModuleRulesContext& rules,
-			std::uint32_t instanceId,
-			sf::Vector2i origin,
-			int rotationQuarterTurns
-		);
+		ModulePlacementFailure Install(const ModuleRulesContext& rules, std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		ModulePlacementFailure Move(
 			const ModuleRulesContext& rules,
 			std::uint32_t instanceId,

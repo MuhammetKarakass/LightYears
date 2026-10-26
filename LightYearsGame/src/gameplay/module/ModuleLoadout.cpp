@@ -1,6 +1,7 @@
 #include "gameplay/module/ModuleLoadout.h"
 
 #include "gameplay/tags/GameplayTagSchema.h"
+#include "gameplay/module/ModuleAbilitySlots.h"
 
 #include <algorithm>
 #include <utility>
@@ -51,6 +52,7 @@ namespace vega
 		if (!canonical || variantIndex < 0 || static_cast<std::size_t>(variantIndex) >= canonical->sizeVariants.size() ||
 			level < 1 || level > canonical->levelCount ||
 			!HasModuleRulePackageLevelCoverage(canonical->sizeVariants[static_cast<std::size_t>(variantIndex)], level)) return 0;
+		if (canonical->abilityModule && (!rolledSideStats.empty() || sideFeatureId.IsValid())) return 0;
 		if (sideFeatureId.IsValid())
 		{
 			const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(sideFeatureId) : nullptr;
@@ -61,7 +63,7 @@ namespace vega
 		item.instanceId = mNextInstanceId++;
 		item.moduleId = canonical->moduleId;
 		item.variantIndex = variantIndex;
-		item.rarity = rarity;
+		item.rarity = canonical->abilityModule ? ModuleRarity::None : rarity;
 		item.rolledSideStats = std::move(rolledSideStats);
 		item.level = level;
 		item.sideFeatureId = std::move(sideFeatureId);
@@ -105,6 +107,7 @@ namespace vega
 		if (!module || item->variantIndex < 0 || static_cast<std::size_t>(item->variantIndex) >= module->sizeVariants.size() ||
 		item->level < 1 || item->level > module->levelCount ||
 		!HasModuleRulePackageLevelCoverage(module->sizeVariants[static_cast<std::size_t>(item->variantIndex)], item->level)) return false;
+		if (module->abilityModule && sideFeatureId.IsValid()) return false;
 		if (sideFeatureId.IsValid())
 		{
 			const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(sideFeatureId) : nullptr;
@@ -117,11 +120,7 @@ namespace vega
 		return true;
 	}
 
-	ModulePlacementFailure ModuleLoadout::Install(
-		const ModuleRulesContext& rules,
-		std::uint32_t instanceId,
-		sf::Vector2i origin,
-		int rotationQuarterTurns)
+	ModulePlacementFailure ModuleLoadout::Install(const ModuleRulesContext& rules, std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns)
 	{
 		const auto found = FindById(mInventory, instanceId);
 		if (found == mInventory.end()) return ModulePlacementFailure::UnknownModule;
@@ -129,6 +128,8 @@ namespace vega
 		ModulePlacement candidate = *found;
 		candidate.origin = origin;
 		candidate.rotationQuarterTurns = rotationQuarterTurns;
+		const auto* module = rules.lookup ? rules.lookup(candidate.moduleId) : nullptr;
+		if (module && module->abilityModule) candidate.abilitySlot = AbilityModuleSlotAtCell(rules, origin);
 		const ModulePlacementFailure failure = ModulePlacementRules::CanPlace(rules, mPlacements, candidate);
 		if (failure != ModulePlacementFailure::None) return failure;
 
@@ -198,12 +199,12 @@ namespace vega
 	ModulePlacementFailure ModuleLoadout::TrySwapAbilitySlots(const ModuleRulesContext& rules, ModulePlacement moved, sf::Vector2i destination)
 	{
 		const ModuleDefinition* movedModule = rules.lookup ? rules.lookup(moved.moduleId) : nullptr;
-		if (!movedModule || moved.fragmented || !GameplayTagSchema::IsModuleAbilitySlotSystem(movedModule->systemCategory)) return ModulePlacementFailure::Overlap;
+		if (!movedModule || moved.fragmented || !GameplayTagSchema::IsModuleAbilitySlotSystem(ModuleSystemForPlacement(rules, *movedModule, moved))) return ModulePlacementFailure::Overlap;
 		for (ModulePlacement& other : mPlacements)
 		{
 			if (other.instanceId == moved.instanceId || other.fragmented) continue;
 			const ModuleDefinition* otherModule = rules.lookup(other.moduleId);
-			if (!otherModule || !GameplayTagSchema::IsModuleAbilitySlotSystem(otherModule->systemCategory)) continue;
+			if (!otherModule || !GameplayTagSchema::IsModuleAbilitySlotSystem(ModuleSystemForPlacement(rules, *otherModule, other))) continue;
 			const List<sf::Vector2i> covered = ModulePlacementRules::GetCoveredCells(*otherModule, other);
 			if (std::find(covered.begin(), covered.end(), destination) == covered.end()) continue;
 			const sf::Vector2i otherOrigin = other.origin;

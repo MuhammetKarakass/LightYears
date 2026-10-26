@@ -5234,6 +5234,13 @@
         "shape": [[0, 0], [1, 0]],
         "monochromeCoreRules": [{"pairMultiplier": [1.25, 1.30, 1.35], "additionalAbilityBonus": 0.25}]
       }]
+    },
+    {
+      "id": "Module.AbilityModule.UltimateProtocol",
+      "displayName": "Ultimate Protocol",
+      "description": "The ability in its slot becomes an ultimate: main effect x{abilityModule.mainEffectMultiplier}, cooldown x{abilityModule.cooldownMultiplier}.",
+      "abilityModule": { "mainEffectMultiplier": 1.6, "cooldownMultiplier": 2.0 },
+      "sizeVariants": [{ "shape": [[0, 0]] }]
     }
   ]
 }

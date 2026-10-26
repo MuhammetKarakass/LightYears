@@ -260,7 +260,7 @@ namespace vega::content
 
 		void ValidateDescription(const ModuleDefinition& definition, const std::string& context)
 		{
-			for (const auto& variant : definition.sizeVariants) ValidateModuleDescriptionTemplate(definition.description, variant, context);
+			for (const auto& variant : definition.sizeVariants) ValidateModuleDescriptionTemplate(definition.description, variant, context, definition.abilityModule ? &*definition.abilityModule : nullptr);
 		}
 	}
 }

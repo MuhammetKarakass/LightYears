@@ -295,10 +295,16 @@ namespace vega
 			out.Number(key + "bossSlowPercent", rule.bossSlowFraction * 100.f); out.Number(key + "seconds", rule.seconds);
 		}
 	}
-	void ValidateModuleDescriptionTemplate(const std::string& text, const ModuleRulePackage& rules, const std::string& context)
+	void VisitAbilityModuleDescriptionValues(const AbilityModuleRules& rules, const ModuleDescriptionValueVisitor& visitor)
+	{
+		visitor("abilityModule.mainEffectMultiplier", rules.mainEffectMultiplier);
+		visitor("abilityModule.cooldownMultiplier", rules.cooldownMultiplier);
+	}
+	void ValidateModuleDescriptionTemplate(const std::string& text, const ModuleRulePackage& rules, const std::string& context, const AbilityModuleRules* abilityModule)
 	{
 		std::set<std::string> keys;
 		VisitModuleDescriptionValues(rules, 1, [&keys](const std::string& key, float) { keys.insert(key); });
+		if (abilityModule) VisitAbilityModuleDescriptionValues(*abilityModule, [&keys](const std::string& key, float) { keys.insert(key); });
 		std::size_t at = 0;
 		while (true)
 		{

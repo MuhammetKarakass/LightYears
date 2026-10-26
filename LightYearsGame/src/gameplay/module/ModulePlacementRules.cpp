@@ -1,6 +1,7 @@
 #include "gameplay/module/ModulePlacementRules.h"
 
 #include "gameplay/module/ModuleLoadout.h"
+#include "gameplay/module/ModuleAbilitySlots.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
 
@@ -66,24 +67,22 @@ namespace vega
 			{
 				if (candidate.instanceId == placement.instanceId) continue;
 				const auto* module = rules.lookup(candidate.moduleId);
-				if (!module || !GameplayTagSchema::IsModuleAbilitySlotSystem(module->systemCategory) ||
+				if (!module || !GameplayTagSchema::IsModuleAbilitySlotSystem(ModuleSystemForPlacement(rules, *module, candidate)) ||
 					!SharesCellEdge(*owner, placement, *module, candidate)) continue;
-				if (std::find(result.begin(), result.end(), module->systemCategory) == result.end()) result.push_back(module->systemCategory);
+				const auto system = ModuleSystemForPlacement(rules, *module, candidate);
+				if (std::find(result.begin(), result.end(), system) == result.end()) result.push_back(system);
 			}
 			std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) { return a.name < b.name; });
 			if (result.size() > maximumCount) result.resize(maximumCount);
 			return result;
 		}
 
-		ModulePlacementFailure CanPlace(
-			const ModuleRulesContext& rules,
-			const List<ModulePlacement>& installed,
-			const ModulePlacement& candidate,
-			std::uint32_t ignoredInstanceId)
+		ModulePlacementFailure CanPlace(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& candidate, std::uint32_t ignoredInstanceId)
 		{
 			const ModuleDefinition* module = rules.lookup ? rules.lookup(candidate.moduleId) : nullptr;
 			if (!module) return ModulePlacementFailure::UnknownModule;
 			if (!FindVariant(*module, candidate.variantIndex)) return ModulePlacementFailure::InvalidVariant;
+			if (module->abilityModule && (candidate.sideFeatureId.IsValid() || !candidate.rolledSideStats.empty())) return ModulePlacementFailure::InvalidSideFeature;
 			if (candidate.level < 1 || candidate.level > module->levelCount ||
 				!HasModuleRulePackageLevelCoverage(module->sizeVariants[static_cast<std::size_t>(candidate.variantIndex)], candidate.level))
 				return ModulePlacementFailure::InvalidLevel;
@@ -98,12 +97,14 @@ namespace vega
 
 			const List<sf::Vector2i> cells = GetCoveredCells(*module, candidate);
 			const GameplayTag* systemZone = nullptr;
-			if (module->systemCategory.IsValid())
+			const auto system = ModuleSystemForPlacement(rules, *module, candidate);
+			if (module->abilityModule && !system.IsValid()) return ModulePlacementFailure::SystemZoneMismatch;
+			if (system.IsValid())
 			{
-				systemZone = rules.zoneTable.FindSystemZone(module->systemCategory);
+				systemZone = rules.zoneTable.FindSystemZone(system);
 				if (!systemZone) return ModulePlacementFailure::SystemZoneMismatch;
 			}
-			const bool isAbilitySlot = GameplayTagSchema::IsModuleAbilitySlotSystem(module->systemCategory);
+			const bool isAbilitySlot = GameplayTagSchema::IsModuleAbilitySlotSystem(system);
 			for (const sf::Vector2i& cell : cells)
 			{
 				if (!rules.schematic.IsInBounds(cell.x, cell.y)) return ModulePlacementFailure::OutOfBounds;
@@ -129,13 +130,13 @@ namespace vega
 				if (ignoredInstanceId != 0 && other.instanceId == ignoredInstanceId) continue;
 				const ModuleDefinition* otherModule = rules.lookup(other.moduleId);
 				if (!otherModule) continue;
-				if (other.moduleId == candidate.moduleId) return ModulePlacementFailure::DuplicateModule;
+				if (!module->abilityModule && other.moduleId == candidate.moduleId) return ModulePlacementFailure::DuplicateModule;
 				if (AreConflicting(*module, *otherModule)) return ModulePlacementFailure::ModuleConflict;
 				for (const sf::Vector2i& cell : GetCoveredCells(*otherModule, other))
 				{
 					if (taken.count({ cell.x, cell.y })) return ModulePlacementFailure::Overlap;
 				}
-				if (module->systemCategory.IsValid() && otherModule->systemCategory == module->systemCategory)
+				if (system.IsValid() && ModuleSystemForPlacement(rules, *otherModule, other) == system)
 				{
 					duplicateSystem = true;
 				}
@@ -143,11 +144,7 @@ namespace vega
 			return duplicateSystem ? ModulePlacementFailure::DuplicateSystem : ModulePlacementFailure::None;
 		}
 
-		ModulePlacementFailure CanPlace(
-			const ModuleRulesContext& rules,
-			const ModuleLoadout& loadout,
-			const ModulePlacement& candidate,
-			std::uint32_t ignoredInstanceId)
+		ModulePlacementFailure CanPlace(const ModuleRulesContext& rules, const ModuleLoadout& loadout, const ModulePlacement& candidate, std::uint32_t ignoredInstanceId)
 		{
 			return CanPlace(rules, loadout.GetPlacements(), candidate, ignoredInstanceId);
 		}

@@ -192,7 +192,7 @@ namespace vega
 
 	float LightYearsAbilitySystemComponent::GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition) const
 	{
-		return mModuleSystemGate && sas::IsLoadoutAbilitySlot(definition.slot) ? mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags) : 1.f;
+		return mModuleSystemGate && sas::IsLoadoutAbilitySlot(definition.slot) ? mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags) * mModuleSystemGate->GetAbilitySlotMainEffectMultiplier(definition.slot) : 1.f;
 	}
 
 	bool LightYearsAbilitySystemComponent::IsModuleAbilityAvailable(const std::string& abilityId) const
@@ -589,15 +589,18 @@ namespace vega
 		return true;
 	}
 
-	float LightYearsAbilitySystemComponent::GetScopedAbilityCooldownMultiplier(
-		const GameAbilityDefinition& definition
-	) const
+	float LightYearsAbilitySystemComponent::GetAbilityModuleCooldownMultiplier(const GameAbilityDefinition& definition) const
+	{
+		return mModuleSystemGate && sas::IsLoadoutAbilitySlot(definition.slot) ? mModuleSystemGate->GetAbilitySlotCooldownMultiplier(definition.slot) : 1.f;
+	}
+
+	float LightYearsAbilitySystemComponent::GetScopedAbilityCooldownMultiplier(const GameAbilityDefinition& definition, std::optional<float> abilityModuleSnapshot) const
 	{
 		if (!sas::IsLoadoutAbilitySlot(definition.slot)) return 1.f;
 
 		GameplayTagContainer abilityTags;
 		for (const GameplayTag& tag : definition.abilityTags) abilityTags.AddTag(tag);
-		float multiplier = 1.f;
+		float multiplier = abilityModuleSnapshot.value_or(GetAbilityModuleCooldownMultiplier(definition));
 		for (const auto& entry : mScopedAbilityCooldownRules)
 		{
 			if (entry.second.requiredSlot != sas::AbilitySlot::None && entry.second.requiredSlot != definition.slot) continue;

@@ -183,6 +183,7 @@ namespace vega
 		PrimaryWeaponAbilityState mPrimaryWeaponState;
 		std::optional<GameAbilityDefinition> mPreparedLevelDefinition;
 		mutable std::optional<float> mCooldownModuleMultiplierSnapshot;
+		std::optional<float> mAbilityModuleCooldownMultiplierSnapshot;
 		unique_ptr<GameAbilityBehavior> mBehavior;
 		float mPendingActivationCooldownMultiplier = 1.f;
 		bool mBehaviorStarted = false;

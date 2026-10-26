@@ -120,6 +120,8 @@ namespace vega
 	{
 		struct ZoneBonus { std::uint32_t instanceId; int levelBonus; };
 		List<ZoneBonus> zoneBonuses;
+		struct AbilityModule { sas::AbilitySlot slot; AbilityModuleRules rules; };
+		List<AbilityModule> abilityModules;
 		List<sas::AttributeModifier> ownerModifiers;
 		List<sas::AttributeModifier> shipModifiers;
 		List<sas::AttributeModifier> primaryWeaponModifiers;

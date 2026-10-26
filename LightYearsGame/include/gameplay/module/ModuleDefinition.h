@@ -31,7 +31,8 @@ namespace vega
 		Uncommon,
 		Rare,
 		Epic,
-		Legendary
+		Legendary,
+		None
 	};
 
 	// Cell offsets relative to the module's own origin; (0,0)-based.
@@ -728,6 +729,12 @@ namespace vega
 		List<sas::ContentId> allowedFeatureIds;
 	};
 
+	struct AbilityModuleRules
+	{
+		float mainEffectMultiplier = 1.f;
+		float cooldownMultiplier = 1.f;
+	};
+
 	struct ModuleDefinition
 	{
 		sas::ContentId moduleId;
@@ -737,6 +744,8 @@ namespace vega
 		GameplayTag family;
 		// One of GameplayTags::Module::System::*; empty for a normal module.
 		GameplayTag systemCategory;
+		// Replaces any one standard ability-slot shell. No family, rarity, progression or zone scaling.
+		std::optional<AbilityModuleRules> abilityModule;
 		List<ModuleSizeVariant> sizeVariants;
 		ModuleRarity rarity = ModuleRarity::Common;
 		int levelCount = 3;

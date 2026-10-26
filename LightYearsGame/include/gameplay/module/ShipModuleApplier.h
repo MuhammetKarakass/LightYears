@@ -70,6 +70,18 @@ namespace vega
 		// ModuleSystemGate: a ship that never had a loadout applied is unmanaged and
 		// keeps every system enabled.
 		float GetAbilityMainEffectMultiplier(const List<GameplayTag>& abilityTags) const override { return mHasApplied ? mEpicUtilityMovementRuntime.GetNextCascadeMultiplier(abilityTags) * mEpicUtilityMovementRuntime.GetUtilityEffectMultiplier(abilityTags) : 1.f; }
+		float GetAbilitySlotMainEffectMultiplier(sas::AbilitySlot slot) const override
+		{
+			float multiplier = 1.f;
+			if (mHasApplied) for (const auto& entry : mResolved.abilityModules) if (entry.slot == slot) multiplier *= entry.rules.mainEffectMultiplier;
+			return multiplier;
+		}
+		float GetAbilitySlotCooldownMultiplier(sas::AbilitySlot slot) const override
+		{
+			float multiplier = 1.f;
+			if (mHasApplied) for (const auto& entry : mResolved.abilityModules) if (entry.slot == slot) multiplier *= entry.rules.cooldownMultiplier;
+			return multiplier;
+		}
 		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const override { return (!mHasApplied || IsSystemEnabled(systemTag)) && !mEpicUtilityMovementRuntime.IsSystemLocked(systemTag); }
 		// Presentation read: a ship that never had a loadout applied (no schematic)
 		// is unmanaged and keeps every readout, so legacy flows behave as before.

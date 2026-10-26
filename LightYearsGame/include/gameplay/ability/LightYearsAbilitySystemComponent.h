@@ -51,7 +51,8 @@ namespace vega
 		void ClearScopedAbilityRules();
 		std::size_t AddScopedAbilityCooldownRule(ScopedAbilityCooldownRule rule);
 		bool RemoveScopedAbilityCooldownRule(std::size_t ruleHandle);
-		float GetScopedAbilityCooldownMultiplier(const GameAbilityDefinition& definition) const;
+		float GetScopedAbilityCooldownMultiplier(const GameAbilityDefinition& definition, std::optional<float> abilityModuleSnapshot = std::nullopt) const;
+		float GetAbilityModuleCooldownMultiplier(const GameAbilityDefinition& definition) const;
 		float GetScopedAbilityCooldownMinimum(const GameAbilityDefinition& definition) const;
 		sas::GameplayAttribute ApplyScopedAbilityModifiers(
 			const GameAbilityDefinition& definition,

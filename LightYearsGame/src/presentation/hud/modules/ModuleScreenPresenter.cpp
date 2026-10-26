@@ -68,6 +68,7 @@ namespace vega
 			case ModuleRarity::Rare: return "Rare";
 			case ModuleRarity::Epic: return "Epic";
 			case ModuleRarity::Legendary: return "Legendary";
+			case ModuleRarity::None: return "";
 			}
 			return {};
 		}
@@ -126,7 +127,7 @@ namespace vega
 			out.instanceId = placement.instanceId;
 			out.name = definition->displayName;
 			out.level = placement.level;
-			out.levelCount = definition->levelCount;
+			out.levelCount = definition->abilityModule ? 0 : definition->levelCount;
 			out.description = description;
 			for (const auto& variant : definition->sizeVariants) out.sizeLadder.push_back(static_cast<int>(variant.shape.cells.size()));
 			std::sort(out.sizeLadder.begin(), out.sizeLadder.end());
@@ -147,8 +148,13 @@ namespace vega
 			out.family = FamilyLabel(installed ? ModuleResolver::GetPlacementFamily(rules, *definition, placement) : definition->family);
 			out.rarity = RarityLabel(definition->rarity);
 			out.isSystem = definition->systemCategory.IsValid();
-			const sas::AbilitySlot abilitySlot = AbilitySlotForModuleSystem(definition->systemCategory);
-			if (abilitySlot != sas::AbilitySlot::None)
+			const sas::AbilitySlot abilitySlot = AbilitySlotForModuleSystem(ModuleSystemForPlacement(rules, *definition, placement));
+			if (definition->abilityModule)
+			{
+				out.family = "Ability";
+				if (installed && abilitySlot != sas::AbilitySlot::None) out.name += std::string{ " (" } + AbilityInputSchema::GetLabel(abilitySlot) + ")";
+			}
+			if (abilitySlot != sas::AbilitySlot::None && !definition->abilityModule)
 			{
 				const char* inputLabel = AbilityInputSchema::GetLabel(abilitySlot);
 				// Every ability slot shares one family (and so one color) whatever ability it holds.
@@ -381,7 +387,7 @@ namespace vega
 				const ModuleDefinition* definition = rules->lookup(placement.moduleId);
 				if (!definition || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= definition->sizeVariants.size()) return;
 				// An installed module works at its zone level; the side feature stays at the placement level.
-				const bool abilitySlotModule = AbilitySlotForModuleSystem(definition->systemCategory) != sas::AbilitySlot::None;
+				const bool abilitySlotModule = definition->abilityModule || AbilitySlotForModuleSystem(definition->systemCategory) != sas::AbilitySlot::None;
 				const int zoneLevelBonus = isInstalled && !abilitySlotModule ? ModuleResolver::GetZoneLevelBonus(*rules, *definition, placement) : 0;
 				const int mainLevel = placement.level + zoneLevelBonus;
 				const DescriptionKey key{ placement.moduleId.ToString(), placement.variantIndex, mainLevel, placement.level, placement.sideFeatureId.ToString() };
@@ -442,7 +448,7 @@ namespace vega
 				// Abilities can be equipped without mutating the module loadout.
 				const ModulePlacement* placement = isInstalled ? loadout.FindPlacement(view.instanceId) : loadout.FindInventoryItem(view.instanceId);
 				const ModuleDefinition* definition = placement ? rules->lookup(placement->moduleId) : nullptr;
-				const sas::AbilitySlot slot = definition ? AbilitySlotForModuleSystem(definition->systemCategory) : sas::AbilitySlot::None;
+				const sas::AbilitySlot slot = definition && !definition->abilityModule ? AbilitySlotForModuleSystem(definition->systemCategory) : sas::AbilitySlot::None;
 				if (slot != sas::AbilitySlot::None)
 				{
 					const GameAbility* ability = livingShip ? livingShip->GetAbilitySystemComponent().GetAbility(slot) : nullptr;
@@ -464,15 +470,16 @@ namespace vega
 			ModulePlacement candidate = *held;
 			candidate.origin = *mHoverCell;
 			candidate.rotationQuarterTurns = mHeldRotation;
+			if (heldDefinition->abilityModule && !heldInstalled) candidate.abilitySlot = AbilityModuleSlotAtCell(*rules, candidate.origin);
 			const ModulePlacementFailure failure = ModulePlacementRules::CanPlace(*rules, loadout, candidate, heldInstalled ? held->instanceId : 0u);
 			preview.active = true;
 			preview.cells = ModulePlacementRules::GetCoveredCells(*heldDefinition, candidate);
 			bool swapsSlots = false;
-			if (failure == ModulePlacementFailure::Overlap && heldInstalled && AbilitySlotForModuleSystem(heldDefinition->systemCategory) != sas::AbilitySlot::None)
+			if (failure == ModulePlacementFailure::Overlap && heldInstalled && AbilitySlotForModuleSystem(ModuleSystemForPlacement(*rules, *heldDefinition, candidate)) != sas::AbilitySlot::None)
 				for (const ModulePlacement& other : loadout.GetPlacements())
 				{
 					const ModuleDefinition* otherDefinition = other.instanceId != held->instanceId ? rules->lookup(other.moduleId) : nullptr;
-					if (!otherDefinition || AbilitySlotForModuleSystem(otherDefinition->systemCategory) == sas::AbilitySlot::None) continue;
+					if (!otherDefinition || AbilitySlotForModuleSystem(ModuleSystemForPlacement(*rules, *otherDefinition, other)) == sas::AbilitySlot::None) continue;
 					const List<sf::Vector2i> covered = ModulePlacementRules::GetCoveredCells(*otherDefinition, other);
 					if (std::find(covered.begin(), covered.end(), *mHoverCell) != covered.end()) { swapsSlots = true; break; }
 				}

@@ -33,6 +33,23 @@ namespace vega::content
 				throw std::runtime_error(failure);
 			}
 			const std::string context = "Module " + id;
+			if (parsedId.abilityModule)
+			{
+				for (const char* forbidden : { "rarity", "levelCount", "family", "systemCategory", "sideFeatures", "sharedPools", "sizeLadder" })
+					if (object.contains(forbidden)) throw std::runtime_error(context + " ability modules cannot declare " + forbidden);
+				definition.rarity = ModuleRarity::None;
+				definition.levelCount = 1; // Neutral internal placement level; no progression is exposed.
+				const Json& rules = object.at("abilityModule");
+				if (!rules.is_object()) throw std::runtime_error(context + " abilityModule must be an object");
+				for (const auto& field : rules.items())
+					if (field.key() != "mainEffectMultiplier" && field.key() != "cooldownMultiplier") throw std::runtime_error(context + " unknown abilityModule field " + field.key());
+				AbilityModuleRules values;
+				values.mainEffectMultiplier = ParseFiniteFloat(rules.at("mainEffectMultiplier"), context + " mainEffectMultiplier");
+				values.cooldownMultiplier = ParseFiniteFloat(rules.at("cooldownMultiplier"), context + " cooldownMultiplier");
+				if (values.mainEffectMultiplier <= 0.f || values.cooldownMultiplier <= 0.f) throw std::runtime_error(context + " ability multipliers must be positive");
+				definition.abilityModule = values;
+			}
+			else if (object.contains("abilityModule")) throw std::runtime_error(context + " abilityModule requires an ability module ID");
 			definition.displayName = object.value("displayName", id);
 			if (object.contains("rarity"))
 			{
@@ -46,7 +63,7 @@ namespace vega::content
 				if (!object.at("description").is_string()) throw std::runtime_error(context + " description must be a string");
 				definition.description = object.at("description").get<std::string>();
 			}
-			definition.family = ParseTag(object.at("family"), GameplayTagKind::AbilityCategory, context + " family");
+			if (!parsedId.abilityModule) definition.family = ParseTag(object.at("family"), GameplayTagKind::AbilityCategory, context + " family");
 			if (definition.family.name != parsedId.family)
 			{
 				throw std::runtime_error(context + " family does not match its ID family segment");
@@ -118,6 +135,12 @@ namespace vega::content
 				}
 			}
 			const Json& variants = object.at("sizeVariants");
+			if (parsedId.abilityModule)
+			{
+				if (!variants.is_array() || variants.size() != 1) throw std::runtime_error(context + " ability modules require exactly one size variant");
+				for (const auto& field : variants.front().items())
+					if (field.key() != "shape") throw std::runtime_error(context + " ability modules use fixed abilityModule rules only");
+			}
 			if (!variants.is_array() || variants.empty())
 			{
 				throw std::runtime_error(context + " must define at least one size variant");
@@ -152,6 +175,7 @@ namespace vega::content
 			if ((!definition.sideFeatures.empty() || !definition.sharedPools.empty()) &&
 				definition.sizeLadderCellCounts.size() != definition.sizeVariants.size())
 				throw std::runtime_error(context + " side-feature modules require an explicit sizeLadder");
+			if (parsedId.abilityModule && definition.sizeVariants.front().shape.cells.size() != 1) throw std::runtime_error(context + " ability modules must occupy exactly 1 cell");
 			ValidateDescription(definition, context);
 			ValidateZoneEffects(definition, zoneTable, context);
 			if (definition.systemCategory.IsValid())
