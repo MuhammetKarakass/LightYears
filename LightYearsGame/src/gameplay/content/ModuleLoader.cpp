@@ -176,6 +176,14 @@ namespace vega::content
 				definition.sizeLadderCellCounts.size() != definition.sizeVariants.size())
 				throw std::runtime_error(context + " side-feature modules require an explicit sizeLadder");
 			if (parsedId.abilityModule && definition.sizeVariants.front().shape.cells.size() != 1) throw std::runtime_error(context + " ability modules must occupy exactly 1 cell");
+			if (definition.rarity == ModuleRarity::Legendary)
+			{
+				if (definition.sizeVariants.size() != 1) throw std::runtime_error(context + " Legendary modules require exactly one size variant");
+				if (!definition.sideFeatures.empty() || !definition.sharedPools.empty()) throw std::runtime_error(context + " Legendary modules cannot declare side features or shared pools");
+				if (definition.levelCount != 3 || definition.systemCategory.IsValid() || definition.abilityModule) throw std::runtime_error(context + " Legendary modules must be normal L1-L3 main modules");
+				definition.legendary = ParseLegendaryRule(object.at("legendary"), definition.family, context, definition.levelCount);
+			}
+			else if (object.contains("legendary")) throw std::runtime_error(context + " legendary rules require Legendary rarity");
 			ValidateDescription(definition, context);
 			ValidateZoneEffects(definition, zoneTable, context);
 			if (definition.systemCategory.IsValid())

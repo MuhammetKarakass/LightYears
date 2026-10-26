@@ -89,6 +89,18 @@ namespace vega
 		, mEmergencyRuntime{ abilities, combatRuntime }
 		, mEpicOffenseRuntime{ abilities, combatRuntime }
 		, mEpicUtilityMovementRuntime{ abilities, combatRuntime }
+		, mLegendarySecondHardpointRuntime{ abilities, combatRuntime }
+		, mLegendaryMeltdownBarrelRuntime{ abilities, combatRuntime }
+		, mLegendaryPrimedArsenalRuntime{ abilities, combatRuntime }
+		, mLegendaryReactionCoreRuntime{ abilities, combatRuntime }
+		, mLegendaryNeuralHijackerRuntime{ abilities, combatRuntime }
+		, mLegendaryHardlightHullRuntime{ abilities, combatRuntime }
+		, mLegendaryBulwarkPulseRuntime{ abilities, combatRuntime }
+		, mLegendaryParasiteHullRuntime{ abilities, combatRuntime }
+		, mLegendaryBlinkDriveRuntime{ abilities, combatRuntime }
+		, mLegendaryIonCometRuntime{ abilities, combatRuntime }
+		, mLegendaryTwinRackRuntime{ abilities, combatRuntime }
+		, mLegendaryUnderdogCoreRuntime{ abilities, combatRuntime }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -126,6 +138,18 @@ namespace vega
 		try { mReviveBonus.Reset(); } catch (...) {}
 		mEmergencyRuntime.Clear();
 		mEpicOffenseRuntime.Shutdown();
+		mLegendarySecondHardpointRuntime.Clear();
+		mLegendaryMeltdownBarrelRuntime.Clear();
+		mLegendaryPrimedArsenalRuntime.Clear();
+		mLegendaryReactionCoreRuntime.Clear();
+		mLegendaryNeuralHijackerRuntime.Clear();
+		mLegendaryHardlightHullRuntime.Clear();
+		mLegendaryBulwarkPulseRuntime.Clear();
+		mLegendaryParasiteHullRuntime.Clear();
+		mLegendaryBlinkDriveRuntime.Clear();
+		mLegendaryIonCometRuntime.Clear();
+		mLegendaryTwinRackRuntime.Clear();
+		mLegendaryUnderdogCoreRuntime.Clear();
 		mTriggerBuffRuleApplier.Reset();
 		mAbilityRuleApplier.Reset();
 		mCooldownRuleApplier.Reset();
@@ -253,6 +277,18 @@ namespace vega
 		if (!mShuttingDown) mShieldRuptureRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mEpicOffenseRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mEpicUtilityMovementRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendarySecondHardpointRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryMeltdownBarrelRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryPrimedArsenalRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryReactionCoreRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryNeuralHijackerRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryHardlightHullRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryBulwarkPulseRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryParasiteHullRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryBlinkDriveRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryIonCometRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryTwinRackRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mLegendaryUnderdogCoreRuntime.Tick(deltaSeconds);
 		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
@@ -320,6 +356,18 @@ namespace vega
 		mGeneratedRuntime.Replace(mResolved.generatedRules);
 		mOwnerBurstRuntime.Replace(mResolved.ownerBurstRules);
 		mEpicUtilityMovementRuntime.Replace(mResolved.epicRules);
+		mLegendarySecondHardpointRuntime.Replace(mResolved.legendaryRules.secondHardpoints);
+		mLegendaryMeltdownBarrelRuntime.Replace(mResolved.legendaryRules.meltdownBarrels);
+		mLegendaryPrimedArsenalRuntime.Replace(mResolved.legendaryRules.primedArsenals);
+		mLegendaryReactionCoreRuntime.Replace(mResolved.legendaryRules.reactionCores);
+		mLegendaryNeuralHijackerRuntime.Replace(mResolved.legendaryRules.neuralHijackers);
+		mLegendaryHardlightHullRuntime.Replace(mResolved.legendaryRules.hardlightHulls);
+		mLegendaryBulwarkPulseRuntime.Replace(mResolved.legendaryRules.bulwarkPulses);
+		mLegendaryParasiteHullRuntime.Replace(mResolved.legendaryRules.parasiteHulls);
+		mLegendaryBlinkDriveRuntime.Replace(mResolved.legendaryRules.blinkDrives);
+		mLegendaryIonCometRuntime.Replace(mResolved.legendaryRules.ionComets);
+		mLegendaryTwinRackRuntime.Replace(mResolved.legendaryRules.twinRacks);
+		mLegendaryUnderdogCoreRuntime.Replace(mResolved.legendaryRules.underdogCores);
 		mTargetSlowRuntime.Replace(mResolved.targetSlowRules);
 		mShieldRuptureRuntime.Replace(mResolved.shieldRuptureRules);
 		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) mRunCounterRuntime.Replace(active, mLookup, mResolved, &ship->GetRuntimeModifiers());

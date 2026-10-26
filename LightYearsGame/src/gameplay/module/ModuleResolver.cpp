@@ -521,6 +521,7 @@ namespace vega
 
 				const StatusRuleCounts mainBegin = CountStatusRules(effects);
 					ResolvePackage(effects, variant, *module, placement, placement.level + zoneLevel, placement.level, placementZone, placementZoneEntry, false);
+				if (module->legendary) ResolveLegendaryRules(effects.legendaryRules, *module->legendary, placement.instanceId, placement.level + zoneLevel);
 					const StatusRuleCounts mainEnd = CountStatusRules(effects);
 				// Rolled side stats are never scaled and apply to the owner.
 				for (const sas::AttributeModifier& sideStat : placement.rolledSideStats)

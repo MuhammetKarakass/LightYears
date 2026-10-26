@@ -5236,6 +5236,543 @@
       }]
     },
     {
+      "id": "Module.Primary.SecondHardpoint.Legendary",
+      "displayName": "Second Hardpoint",
+      "description": "Carry a reserve Primary weapon; switching weapons marks targets for bonus damage.",
+      "family": "Ability.Primary",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "SecondHardpoint",
+        "markDamageBonus": [
+          0.2,
+          0.25,
+          0.3
+        ],
+        "markSeconds": 5,
+        "switchSeconds": 1
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Primary.MeltdownBarrel.Legendary",
+      "displayName": "Meltdown Barrel",
+      "description": "Replace the magazine with heat; overheating prepares a Thermal nova while cooling.",
+      "family": "Ability.Primary",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "MeltdownBarrel",
+        "novaBudgetFraction": [
+          0.3,
+          0.34,
+          0.38
+        ],
+        "focusSeconds": 2,
+        "novaRadius": 500,
+        "igniteStacks": 4,
+        "heatCapacity": 100
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.PrimedArsenal.Legendary",
+      "displayName": "Primed Arsenal",
+      "description": "Ready Offense abilities accumulate extra main effect power before use.",
+      "family": "Ability.Offense",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "PrimedArsenal",
+        "powerPerReadySecond": [
+          0.15,
+          0.2,
+          0.25
+        ],
+        "readyWindowSeconds": 6.666666666666667
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.ReactionCore.Legendary",
+      "displayName": "Reaction Core",
+      "description": "Consume two different target statuses to trigger one of six elemental reactions.",
+      "family": "Ability.Offense",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "ReactionCore",
+        "steamSeconds": [
+          2,
+          2.2,
+          2.4
+        ],
+        "steamDeviationDegrees": 25,
+        "magnetSeconds": 0.5,
+        "magnetSpeed": [
+          300,
+          340,
+          380
+        ],
+        "magnetRadius": 250,
+        "plasmaDamage": [
+          60,
+          72,
+          84
+        ],
+        "plasmaEnergyPowerCoefficient": [
+          0.6,
+          0.66,
+          0.72
+        ],
+        "plasmaRadius": 250,
+        "fractureSeconds": [
+          2,
+          2.15,
+          2.3
+        ],
+        "bossArmorReductionFraction": 0.5,
+        "stunSeconds": [
+          1,
+          1.1,
+          1.2
+        ],
+        "shrapnelCount": 6,
+        "shrapnelDamage": [
+          10,
+          12,
+          14
+        ],
+        "shrapnelAttackPowerCoefficient": [
+          0.1,
+          0.11,
+          0.12
+        ],
+        "shrapnelEnergyPowerCoefficient": [
+          0.1,
+          0.11,
+          0.12
+        ],
+        "shrapnelMaxHitsPerTarget": 2,
+        "targetCooldownSeconds": 1
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.NeuralHijacker.Legendary",
+      "displayName": "Neural Hijacker",
+      "description": "Lethal hits briefly turn eligible enemies into allies before they expire.",
+      "family": "Ability.Offense",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "NeuralHijacker",
+        "allySeconds": [
+          3,
+          3.4,
+          3.8
+        ],
+        "allyHealthFraction": 0.25,
+        "allyDamageMultiplier": 0.5
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.HardlightHull.Legendary",
+      "displayName": "Hardlight Hull",
+      "description": "Set maximum hull health to one and convert prior maximum health into extra shield.",
+      "family": "Ability.Defense",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "HardlightHull",
+        "healthToShieldFraction": [
+          0.5,
+          0.54,
+          0.58
+        ],
+        "maxHealth": 1
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.BulwarkPulse.Legendary",
+      "displayName": "Bulwark Pulse",
+      "description": "Successful Defense use releases an Energy wave scaled by maximum hull health.",
+      "family": "Ability.Defense",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "BulwarkPulse",
+        "baseDamage": [
+          50,
+          57,
+          64
+        ],
+        "healthCoefficient": [
+          2.25,
+          2.55,
+          2.85
+        ],
+        "healthThreshold": 100,
+        "radius": 500,
+        "cooldownSeconds": 6
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ParasiteHull.Legendary",
+      "displayName": "Parasite Hull",
+      "description": "On lethal damage, pilot a nearby enemy briefly while repairing your own ship.",
+      "family": "Ability.Defense",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "ParasiteHull",
+        "borrowedHealthBonus": [
+          0.2,
+          0.3,
+          0.4
+        ],
+        "borrowedDamageBonus": [
+          0.2,
+          0.3,
+          0.4
+        ],
+        "maximumSeconds": 10,
+        "repairMaxHealthFractionPerSecond": 0.03,
+        "minimumReturnHealthFraction": 0.03,
+        "cooldownSeconds": 90,
+        "possessionRange": 600
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.BlinkDrive.Legendary",
+      "displayName": "Blink Drive",
+      "description": "Replace Afterburner with sequentially recharging blinks that briefly boost movement speed.",
+      "family": "Ability.Movement",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "BlinkDrive",
+        "rechargeSeconds": [
+          6,
+          5.7,
+          5.4
+        ],
+        "movementSpeedBonus": [
+          0.2,
+          0.23,
+          0.26
+        ],
+        "charges": 3,
+        "useCooldownSeconds": 1,
+        "boostSeconds": 2,
+        "distance": 350
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.IonComet.Legendary",
+      "displayName": "Ion Comet",
+      "description": "Fast flight creates an Electric field; a charged controlled brake releases a burst.",
+      "family": "Ability.Movement",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "IonComet",
+        "tickDamage": [
+          6,
+          7.5,
+          9
+        ],
+        "tickEnergyPowerCoefficient": [
+          0.08,
+          0.09,
+          0.1
+        ],
+        "burstDamage": [
+          65,
+          75,
+          85
+        ],
+        "burstEnergyPowerCoefficient": [
+          0.5,
+          0.55,
+          0.6
+        ],
+        "minimumSpeed": 300,
+        "baseRadius": 300,
+        "radiusPerSpeed": 0.5,
+        "damageSpeedDivisor": 300,
+        "diminishingSpeedThreshold": 700,
+        "diminishingSpeedInterval": 200,
+        "diminishingSpeedFactor": 0.5,
+        "maximumCharge": 100,
+        "chargePerSecond": 20,
+        "chargeSpeedSpan": 300,
+        "brakeWindowSeconds": 0.3,
+        "brakeSpeedLossFraction": 0.4,
+        "tickElectricStacks": 1,
+        "burstElectricStacks": 4
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.TwinRack.Legendary",
+      "displayName": "Twin Rack",
+      "description": "Each ability slot carries two independent abilities; using one refunds its paired cooldown.",
+      "family": "Ability.Utility",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "TwinRack",
+        "pairedRefundFraction": [
+          0.1,
+          0.12,
+          0.14
+        ],
+        "cooldownMultiplier": 1.3,
+        "abilitiesPerSlot": 2
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.UnderdogCore.Legendary",
+      "displayName": "Underdog Core",
+      "description": "Gain family-based stats from installed main modules, with greater weight for lower rarity.",
+      "family": "Ability.Utility",
+      "rarity": "Legendary",
+      "levelCount": 3,
+      "legendary": {
+        "kind": "UnderdogCore",
+        "offensePowerPerWeight": [
+          1,
+          1.125,
+          1.25
+        ],
+        "defenseHealthPerWeight": [
+          4,
+          4.5,
+          5
+        ],
+        "primaryAttackSpeedPercentPerWeight": [
+          0.375,
+          0.425,
+          0.475
+        ],
+        "movementRatingPerWeight": [
+          0.05,
+          0.0575,
+          0.065
+        ],
+        "utilityHastePercentPerWeight": [
+          0.25,
+          0.275,
+          0.3
+        ],
+        "commonWeight": 5,
+        "uncommonWeight": 4,
+        "rareWeight": 3,
+        "epicWeight": 2,
+        "legendaryWeight": 1
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
       "id": "Module.AbilityModule.UltimateProtocol",
       "displayName": "Ultimate Protocol",
       "description": "The ability in its slot becomes an ultimate: main effect x{abilityModule.mainEffectMultiplier}, cooldown x{abilityModule.cooldownMultiplier}.",

@@ -164,6 +164,7 @@ namespace vega
 		// Epic Offense aggregate of every placed Prism Core, Blood Contract and side feature rule.
 		EpicOffenseEffects epicOffense;
 		ResolvedModuleEpicRules epicRules;
+		ResolvedModuleLegendaryRules legendaryRules;
 	};
 
 	namespace ModuleResolver

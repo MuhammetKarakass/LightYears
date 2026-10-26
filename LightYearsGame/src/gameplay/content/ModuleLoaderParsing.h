@@ -109,6 +109,8 @@ namespace vega::content
 
 		ModuleAttributeTarget ParseTarget(const std::string& value);
 
+		ModuleLegendaryRule ParseLegendaryRule(const Json& object, const GameplayTag& family, const std::string& context, int levelCount);
+
 		ModuleRarity ParseRarity(const std::string& value);
 
 		sas::ContentId ParseContentId(const Json& value, const std::string& context);

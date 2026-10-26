@@ -33,6 +33,7 @@ set(VEGA_GAMEPLAY_CORE_FILES
 	EnergySpearContentRegistration AbilityLifecycleDispatcher AbilityUseHistory FocusActionLocks
 	TemporalRateModifierLedger AbilityActionValidator GameAbilityDefinitionValidator
 	GameplayEffectDefinitionValidator GameContentBootstrap ShipSchematicValidator ModuleLoadout
+	LegendaryRules ModuleLoaderLegendary
 	ModulePlacementRules ModuleResolver ModuleLoader ModuleLoaderPrimitives ModuleLoaderRules ModuleLoaderSideRules ModuleLoaderVariant ModuleContentCatalog ModuleSideFeatureLoader ModuleSideFeatureCatalog ModuleRoller GameAbilitySettingContracts
 	LightYearsEffectBehaviorRuntime
 )
@@ -340,6 +341,8 @@ if(BUILD_TESTING)
 	vega_add_game_test(LightYearsModulePlanTransitionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModulePlanTransitionE2E.cpp)
 	vega_add_game_test(LightYearsModuleGoldHullE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModuleGoldHullE2E.cpp)
 	vega_add_game_test_case(LightYearsModuleGoldHullE2E LightYearsModuleGoldHullE2ETests ARGS "${VEGA_E2E}/ModuleGoldHull-2026-10-14.json" TIMEOUT 120)
+	vega_add_game_test(LightYearsLegendaryModulesE2E GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/LegendaryModulesE2E.cpp)
+	vega_add_game_test_case(LightYearsLegendaryModulesE2E LightYearsLegendaryModulesE2E ARGS "${VEGA_E2E}/legendary-modules.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsEpicStatModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/EpicStatModulesE2E.cpp)
 	vega_add_game_test_case(LightYearsEpicStatModulesE2E LightYearsEpicStatModulesE2ETests ARGS "${VEGA_E2E}/module-epic-stat-2026-10-24.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsModulePolarShieldE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/ModulePolarShieldE2E.cpp)

@@ -17,6 +17,18 @@
 #include "gameplay/module/rules/EpicUtilityMovementRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/module/rules/EpicOffenseRuntime.h"
+#include "gameplay/module/rules/legendary/LegendarySecondHardpointRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryMeltdownBarrelRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryPrimedArsenalRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryReactionCoreRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryNeuralHijackerRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryHardlightHullRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryBulwarkPulseRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryParasiteHullRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryBlinkDriveRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryIonCometRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryTwinRackRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryUnderdogCoreRuntime.h"
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <cstddef>
@@ -92,6 +104,18 @@ namespace vega
 		void SetAbilityLevelSink(std::function<void(const std::string&, int)> sink) { mEpicUtilityMovementRuntime.SetAbilityLevelSink(std::move(sink)); }
 		const ModuleEpicUtilityMovementRuntime& GetEpicUtilityMovementRuntime() const { return mEpicUtilityMovementRuntime; }
 		ModuleEpicUtilityMovementRuntime& GetEpicUtilityMovementRuntime() { return mEpicUtilityMovementRuntime; }
+		const LegendarySecondHardpointRuntime& GetLegendarySecondHardpointRuntime() const { return mLegendarySecondHardpointRuntime; }
+		const LegendaryMeltdownBarrelRuntime& GetLegendaryMeltdownBarrelRuntime() const { return mLegendaryMeltdownBarrelRuntime; }
+		const LegendaryPrimedArsenalRuntime& GetLegendaryPrimedArsenalRuntime() const { return mLegendaryPrimedArsenalRuntime; }
+		const LegendaryReactionCoreRuntime& GetLegendaryReactionCoreRuntime() const { return mLegendaryReactionCoreRuntime; }
+		const LegendaryNeuralHijackerRuntime& GetLegendaryNeuralHijackerRuntime() const { return mLegendaryNeuralHijackerRuntime; }
+		const LegendaryHardlightHullRuntime& GetLegendaryHardlightHullRuntime() const { return mLegendaryHardlightHullRuntime; }
+		const LegendaryBulwarkPulseRuntime& GetLegendaryBulwarkPulseRuntime() const { return mLegendaryBulwarkPulseRuntime; }
+		const LegendaryParasiteHullRuntime& GetLegendaryParasiteHullRuntime() const { return mLegendaryParasiteHullRuntime; }
+		const LegendaryBlinkDriveRuntime& GetLegendaryBlinkDriveRuntime() const { return mLegendaryBlinkDriveRuntime; }
+		const LegendaryIonCometRuntime& GetLegendaryIonCometRuntime() const { return mLegendaryIonCometRuntime; }
+		const LegendaryTwinRackRuntime& GetLegendaryTwinRackRuntime() const { return mLegendaryTwinRackRuntime; }
+		const LegendaryUnderdogCoreRuntime& GetLegendaryUnderdogCoreRuntime() const { return mLegendaryUnderdogCoreRuntime; }
 		bool HasApplied() const { return mHasApplied; }
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
 		std::size_t GetOwnedHandleCount() const;
@@ -160,6 +184,18 @@ namespace vega
 		ModuleEmergencyProtocolRuntime mEmergencyRuntime;
 		ModuleEpicOffenseRuntime mEpicOffenseRuntime;
 		ModuleEpicUtilityMovementRuntime mEpicUtilityMovementRuntime;
+		LegendarySecondHardpointRuntime mLegendarySecondHardpointRuntime;
+		LegendaryMeltdownBarrelRuntime mLegendaryMeltdownBarrelRuntime;
+		LegendaryPrimedArsenalRuntime mLegendaryPrimedArsenalRuntime;
+		LegendaryReactionCoreRuntime mLegendaryReactionCoreRuntime;
+		LegendaryNeuralHijackerRuntime mLegendaryNeuralHijackerRuntime;
+		LegendaryHardlightHullRuntime mLegendaryHardlightHullRuntime;
+		LegendaryBulwarkPulseRuntime mLegendaryBulwarkPulseRuntime;
+		LegendaryParasiteHullRuntime mLegendaryParasiteHullRuntime;
+		LegendaryBlinkDriveRuntime mLegendaryBlinkDriveRuntime;
+		LegendaryIonCometRuntime mLegendaryIonCometRuntime;
+		LegendaryTwinRackRuntime mLegendaryTwinRackRuntime;
+		LegendaryUnderdogCoreRuntime mLegendaryUnderdogCoreRuntime;
 		DelegateHandle mAbilityGrantedHandle;
 		DelegateHandle mAbilityRemovedHandle;
 		DelegateHandle mAbilityChangedHandle;

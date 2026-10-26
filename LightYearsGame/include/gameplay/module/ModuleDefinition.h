@@ -12,6 +12,7 @@
 #include "gameplay/module/rules/EpicDefenseRules.h"
 #include "gameplay/module/rules/EpicOffenseRules.h"
 #include "gameplay/module/rules/EpicUtilityMovementRules.h"
+#include "gameplay/module/rules/legendary/LegendaryRules.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -746,6 +747,7 @@ namespace vega
 		GameplayTag systemCategory;
 		// Replaces any one standard ability-slot shell. No family, rarity, progression or zone scaling.
 		std::optional<AbilityModuleRules> abilityModule;
+		std::optional<ModuleLegendaryRule> legendary;
 		List<ModuleSizeVariant> sizeVariants;
 		ModuleRarity rarity = ModuleRarity::Common;
 		int levelCount = 3;
