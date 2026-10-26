@@ -5416,6 +5416,7 @@
           0.12
         ],
         "shrapnelMaxHitsPerTarget": 2,
+        "shrapnelRadius": 250,
         "targetCooldownSeconds": 1
       },
       "sizeVariants": [

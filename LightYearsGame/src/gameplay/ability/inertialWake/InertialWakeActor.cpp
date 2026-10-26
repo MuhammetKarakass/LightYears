@@ -311,11 +311,7 @@ namespace vega
 		}
 	}
 
-	void InertialWakeActor::ApplyWakeHit(
-		Actor& target,
-		float speed,
-		float effectiveRatio
-	)
+	void InertialWakeActor::ApplyWakeHit(Actor& target, float speed, float effectiveRatio)
 	{
 		Actor* owner = GetOwnerActor();
 		if (!owner)
@@ -334,7 +330,7 @@ namespace vega
 		// limit is applied: high-speed builds retain their full kinetic payoff.
 		ApplyCombatDamage(
 			target,
-			std::max(0.f, speed * conversion),
+			std::max(0.f, speed * conversion * GetDamagePayload().mainEffectMultiplier),
 			owner,
 			GetDamageTags(),
 			GetDamagePayload(),

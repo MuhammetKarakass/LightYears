@@ -11,6 +11,7 @@
 namespace vega
 {
 	class World;
+	class EnemyActor;
 	class PlayerSpaceShip : public SpaceShip
 	{
 		VEGA_CLASS(PlayerSpaceShip)
@@ -24,6 +25,8 @@ namespace vega
 		virtual void ApplyDamage(float amt) override;
 		virtual void ReceiveDamage(DamageContext context) override;
 		virtual void Tick(float deltaTime) override;
+		bool HandleWeaponInput(const sf::Event& event);
+		bool AssignSecondPrimaryWeapon(const std::string& weaponId);
 		void SetSpeed(float speed) { mPlayerMovement.SetSpeed(speed); }
 		float GetSpeed() const { return mPlayerMovement.GetSpeed(); }
 		// Units this ship travelled on the last tick (velocity times time; teleports do not count). The Player accrues them into run counters.
@@ -45,13 +48,20 @@ namespace vega
 		bool IsAfterburning() const { return mPlayerMovement.IsAfterburning(); }
 		float GetAfterburnerCameraZoomOut() const { return mPlayerMovement.GetAfterburnerCameraZoomOut(); }
 
+		// Possession (Parasite Hull): the player steers the host. This ship's body is suspended and follows the host, so the
+		// camera follows it; movement, aim and Primary go to the host; Q/E/F/R and the Afterburner do nothing meanwhile.
+		bool BeginPossession(EnemyActor& host);
+		// Releases the host (which keeps whatever state it has) and puts this ship back at location.
+		void EndPossession(const sf::Vector2f& location);
+		bool IsPossessing() const { return mPlayerMovement.HasPossessedHost(); }
+
 		virtual void SetupCollisionLayers() override;
 		
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 		virtual float GetMovementSpeedCapMultiplier() const override;
 		virtual float GetMovementTurnCapabilityMultiplier() const override;
 		virtual bool IsAfterburnerRechargeBlocked() const override;
-		virtual bool TryPreventLethalDamage(float remainingDamage) override;
+		virtual LethalDamageResolution ResolveLethalDamage(const DamageContext& context) override;
 
 	private:
 		std::string mShip;

@@ -20,6 +20,7 @@ namespace vega
 		shared_ptr<const VitalsViewModel> mViewModel;
 		UIRevisionWatcher mWatcher;
 		weak_ptr<ValueGauge> mEnergyGauge;
+		weak_ptr<TextWidget> mBlinkInfo;
 		weak_ptr<ValueGauge> mShieldGauge;
 		weak_ptr<StackPanel> mGauges;
 		weak_ptr<Panel> mReserveTrack;

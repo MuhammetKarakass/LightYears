@@ -6,6 +6,7 @@
 #include "attributes/AttributeMath.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/module/rules/legendary/LegendaryMeltdownBarrelRuntime.h"
 
 #include <algorithm>
 #include <cmath>
@@ -178,11 +179,7 @@ namespace vega
 				);
 			}
 
-			void TickFire(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponRuntimeState& state,
-				float deltaTime
-			) const override
+			void TickFire(const PrimaryWeaponExecutionContext& context, PrimaryWeaponRuntimeState& state, float deltaTime) const override
 			{
 				if (state.handler && !state.handler->UsesIntervalFire())
 				{
@@ -207,6 +204,9 @@ namespace vega
 					);
 					if (capacity > 0.f && current >= capacity)
 					{
+						if (const auto* combatant = dynamic_cast<const Combatant*>(&context.owner))
+							if (auto* meltdown = combatant->GetAbilitySystemComponent().GetMeltdownBarrelRuntime())
+								meltdown->Overheat(context, state, sas::FindAttributeValue(context.attributes, PrimaryWeaponSchema::Feature::Heat::OverheatCooldown, 0.f));
 						state.RequestCooldown(std::max(0.f, sas::FindAttributeValue(
 							context.attributes,
 							PrimaryWeaponSchema::Feature::Heat::OverheatCooldown,
@@ -233,12 +233,9 @@ namespace vega
 			}
 
 		private:
-			static void DissipateHeat(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponRuntimeState& state,
-				float deltaTime
-			)
+			static void DissipateHeat(const PrimaryWeaponExecutionContext& context, PrimaryWeaponRuntimeState& state, float deltaTime)
 			{
+				const float previousHeat = state.GetFeatureValue(PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue);
 				const float dissipation = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Dissipation,
@@ -253,6 +250,9 @@ namespace vega
 						) - dissipation * deltaTime
 					)
 				);
+				if (const auto* combatant = dynamic_cast<const Combatant*>(&context.owner))
+					if (auto* meltdown = combatant->GetAbilitySystemComponent().GetMeltdownBarrelRuntime())
+						meltdown->Cool(context, state, previousHeat, state.GetFeatureValue(PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue));
 			}
 		};
 	}

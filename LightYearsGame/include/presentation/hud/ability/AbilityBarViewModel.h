@@ -33,7 +33,8 @@ namespace vega
 
 	struct AbilityBarViewModel
 	{
-		std::array<AbilitySlotViewData, 4> slots{};
+		std::string weaponReadout;
+		std::array<AbilitySlotViewData, 8> slots{};
 		std::uint32_t shipGeneration{ 0 };
 		UIRevision revision;
 	};

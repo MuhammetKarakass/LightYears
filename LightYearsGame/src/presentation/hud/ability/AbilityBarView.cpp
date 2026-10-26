@@ -26,6 +26,12 @@ namespace vega
 		SetBackgroundColor(sf::Color::Transparent);
 		const UILayout rootLayout = UILayout::Anchored(UIAnchor::Bottom, { 50.f, -44.f });
 		SetLayout(rootLayout);
+		mWeaponReadout = AddChild<TextWidget>("", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf", 12);
+		if (auto readout = mWeaponReadout.lock())
+		{
+			readout->SetLayout(UILayout::Anchored(UIAnchor::BottomLeft, { -620.f, -170.f }));
+			readout->SetFillColor(sf::Color{ 220, 235, 255, 255 });
+		}
 		auto bar = AddChild<StackPanel>(UIOrientation::Horizontal, 28.f);
 		if (auto locked = bar.lock())
 		{
@@ -34,13 +40,20 @@ namespace vega
 		}
 
 		if (mViewModel) mIconGeneration = mViewModel->shipGeneration;
+		for (auto& group : mGroups) group = bar.lock()->AddChild<Panel>(sf::Vector2f{ 150.f, 200.f });
 		for (std::size_t index = 0; index < mSlots.size(); ++index)
 		{
-			auto column = bar.lock()->AddChild<Panel>(sf::Vector2f{ 150.f, 200.f });
+			auto column = mGroups[index % 4].lock()->AddChild<Panel>(sf::Vector2f{ 150.f, 200.f });
 			if (auto locked = column.lock())
 			{
 				UILayout layout;
 				layout.size = { 150.f, 200.f };
+				if (index >= 4)
+				{
+					layout = UILayout::Anchored(UIAnchor::BottomLeft, { 0.f, -220.f });
+					layout.pivot = { 0.f, 1.f };
+					layout.size = { 150.f, 200.f };
+				}
 				locked->SetLayout(layout);
 				locked->SetVisibility(false);
 			}
@@ -74,8 +87,11 @@ namespace vega
 	{
 		Panel::Tick(deltaTime);
 		if (!mViewModel || !mWatcher.Consume(mViewModel->revision)) return;
+		if (auto readout = mWeaponReadout.lock()) readout->SetString(mViewModel->weaponReadout);
 		const bool generationChanged = mIconGeneration != mViewModel->shipGeneration;
 		mIconGeneration = mViewModel->shipGeneration;
+		for (std::size_t index = 0; index < mGroups.size(); ++index)
+			if (auto group = mGroups[index].lock()) group->SetVisibility(mViewModel->slots[index].visible || mViewModel->slots[index + 4].visible);
 		for (std::size_t index = 0; index < mSlots.size(); ++index)
 		{
 			const AbilitySlotViewData& data = mViewModel->slots[index];
@@ -120,7 +136,10 @@ namespace vega
 				}
 				else if (data.state == AbilitySlotState::Active)
 				{
-					state->SetString("ACTIVE");
+					char buffer[32];
+					if (data.cooldownTenths > 0) snprintf(buffer, sizeof(buffer), "ACTIVE %.1fs", static_cast<float>(data.cooldownTenths) / 10.f);
+					else snprintf(buffer, sizeof(buffer), "ACTIVE");
+					state->SetString(buffer);
 					state->SetFillColor(data.accentColor);
 				}
 				else

@@ -33,6 +33,7 @@ namespace vega
 		void AddShipXP(float amount);
 		void AwardScrap(unsigned int amount);
 		bool TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason = nullptr);
+		bool TryPurchaseAbilityLevel(sas::AbilitySlot slot, bool second, std::string* failureReason = nullptr);
 		void FlushPendingTestAbilityLevels(World* expectedWorld = nullptr);
 
 		// Run-state module loadout; survives respawn. Mutations are validated by ModuleLoadout and

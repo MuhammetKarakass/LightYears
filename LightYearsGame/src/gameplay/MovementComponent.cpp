@@ -50,6 +50,8 @@ namespace vega
 		mStepSeconds = std::max(0.f, deltaTime);
 		mStepDistance = 0.f;
 		mStepStartLocation = GetShip().GetActorLocation();
+		mMovementInterrupted = mExternalMovementPending || mMovementInfluences.HasForcedMovement() || GetVectorLength(mMovementInfluences.ResolveAcceleration()) > .001f;
+		mExternalMovementPending = false;
 		mMovementPolicies.Tick(deltaTime);
 		const auto& ownedTags = GetShip().GetAbilitySystemComponent().GetOwnedTags();
 		const auto applyForcedMovement = [&]()
@@ -158,19 +160,16 @@ namespace vega
 		TickInfluenceImpulses(deltaTime);
 	}
 
-	void MovementComponent::ApplyInfluenceImpulse(
-		const movement::ImpulseRequest& request
-	)
+	void MovementComponent::ApplyInfluenceImpulse(const movement::ImpulseRequest& request)
 	{
 		mMovementInfluences.ApplyImpulse(request);
+		mExternalMovementPending = true;
 	}
 
-	void MovementComponent::ApplyInfluenceAcceleration(
-		const sf::Vector2f& acceleration,
-		float deltaTime
-	)
+	void MovementComponent::ApplyInfluenceAcceleration(const sf::Vector2f& acceleration, float deltaTime)
 	{
 		GetShip().SetVelocity(GetShip().GetVelocity() + acceleration * std::max(0.f, deltaTime));
+		mExternalMovementPending = true;
 	}
 
 	void MovementComponent::SetInfluenceAccelerationSource(
@@ -241,6 +240,7 @@ namespace vega
 		for (const sf::Vector2f& offset : mMovementInfluences.AdvanceImpulses(deltaTime))
 		{
 			MoveOwner(offset);
+			if (GetVectorLength(offset) > .001f) mMovementInterrupted = true;
 		}
 	}
 
@@ -578,8 +578,16 @@ namespace vega
 	void MovementComponent::MoveOwner(const sf::Vector2f& requestedOffset)
 	{
 		const sf::Vector2f offset = movement::ConstrainMovementAgainstStaticGeometry(GetShip(), requestedOffset);
+		if (GetVectorLength(offset - requestedOffset) > .001f) mMovementInterrupted = true;
 		mStepDistance += GetVectorLength(offset);
 		GetShip().AddActorLocationOffset(offset);
+	}
+
+	void MovementComponent::TeleportTo(const sf::Vector2f& destination)
+	{
+		mTotalTeleportOffset += destination - GetShip().GetActorLocation();
+		++mTeleportRevision;
+		GetShip().SetActorLocation(destination);
 	}
 
 	float MovementComponent::GetShortestAngleDelta(float targetAngle, float currentAngle) const

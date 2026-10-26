@@ -99,6 +99,7 @@ namespace vega
 		);
 
 		void RefundActivationCooldown(float fraction);
+		void ScaleRemainingCooldown(float multiplier);
 		const std::shared_ptr<DamageHitGroup>& GetDamageHitGroup() const { return mDamageHitGroup; }
 		bool IsInputHeld() const { return this->mRuntimeState.IsInputHeld(); }
 		bool IsPressedThisFrame() const { return this->mRuntimeState.IsPressedThisFrame(); }

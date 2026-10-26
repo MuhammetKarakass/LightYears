@@ -37,6 +37,14 @@ namespace vega
 		float GetShipXPReward() const noexcept { return mShipXPReward; }
 		float GetCollisionDamage() const noexcept { return mCollisionDamage; }
 
+		// Reward drop, score and ship XP of this enemy; granted at most once (a takeover may grant them before the death).
+		bool GrantKillRewards();
+		bool HasGrantedKillRewards() const noexcept { return mKillRewardsGranted; }
+		// While set, the enemy follows the given intent instead of its behavior (possession). Cleared by the controller.
+		void SetExternalIntent(const EnemyBehaviorIntent& intent);
+		void ClearExternalControl();
+		bool IsExternallyControlled() const noexcept { return mExternallyControlled; }
+
 		Delegate<unsigned int> onScoreAwarded;
 		Delegate<float> onShipXPAwarded;
 
@@ -63,5 +71,8 @@ namespace vega
 		bool mWindowCullEnabled = true;
 		bool mHasChassisPrimaryWeapon = false;
 		bool mSpawnContextLocked = false;
+		bool mKillRewardsGranted = false;
+		bool mExternallyControlled = false;
+		EnemyBehaviorIntent mExternalIntent;
 	};
 }

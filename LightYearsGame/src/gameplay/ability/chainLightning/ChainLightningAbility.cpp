@@ -600,6 +600,7 @@ namespace vega
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags();
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
+		payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 		payload.electricStacks = std::max(
 			1,
 			static_cast<int>(std::lround(sas::FindAttributeValue(

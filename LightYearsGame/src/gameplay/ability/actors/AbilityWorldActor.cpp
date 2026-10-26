@@ -97,6 +97,7 @@ namespace vega
 	void AbilityWorldActor::SetSourceAbilityInstance(GameAbility* instance)
 	{
 		mDamagePayload.hitGroup = instance ? instance->GetDamageHitGroup() : nullptr;
+		mDamagePayload.mainEffectMultiplier = instance ? instance->GetDefinition().mainEffectGroupMultiplier : 1.f;
 		mSourceAbilityHandle = instance
 			? instance->GetHandle()
 			: sas::AbilityHandle{};
@@ -419,8 +420,10 @@ namespace vega
 	void AbilityWorldActor::RebuildDamagePayload()
 	{
 		const auto group = mDamagePayload.hitGroup;
+		const float mainEffectMultiplier = mDamagePayload.mainEffectMultiplier;
 		mDamagePayload = DamageTypeSystem::BuildPayload(mDamageTags, mDamageAttributes);
 		mDamagePayload.hitGroup = group;
+		mDamagePayload.mainEffectMultiplier = mainEffectMultiplier;
 	}
 
 	bool AbilityWorldActor::HasAbilityUpgrade(const std::string& upgradeId) const

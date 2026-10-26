@@ -199,6 +199,22 @@
       "disposition": "Harmful",
       "category": "Runtime.KineticArmorRend",
       "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Debuff.ShotDeviation",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "disposition": "Harmful",
+      "category": "Debuff.ShotDeviation",
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Debuff.ArmorBreak",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "disposition": "Harmful",
+      "category": "Debuff.ArmorBreak",
+      "sourceParameterized": true
     }
   ]
 }

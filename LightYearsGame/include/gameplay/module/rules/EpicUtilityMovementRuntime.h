@@ -116,6 +116,7 @@ namespace vega
 
 		bool mHasLastLocation = false;
 		sf::Vector2f mLastLocation{};
+		sf::Vector2f mLastTeleportOffset{};
 		float mAssaultDamageBonus = 0.f;
 		float mAssaultArmorBonus = 0.f;
 		sas::AttributeModifierHandle mAssaultArmorHandle;

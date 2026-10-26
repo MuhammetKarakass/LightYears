@@ -17,6 +17,7 @@ namespace vega
 		explicit AbilityLoadoutView(const LightYearsAbilitySystemComponent& system) : mSystem(system) {}
 		// Pointer lifetime follows the runtime definition; copy the id across mutations.
 		const std::string* FindAbility(sas::AbilitySlot slot) const;
+		const std::string* FindSecondAbility(sas::AbilitySlot slot) const;
 		sas::AbilitySlot FindSlot(const std::string& abilityId) const;
 	private:
 		const LightYearsAbilitySystemComponent& mSystem;
@@ -26,6 +27,8 @@ namespace vega
 	{
 	public:
 		explicit AbilityLoadoutManager(LightYearsAbilitySystemComponent& abilitySystem);
+		// Explicit test/debug assignment until the run acquisition flow is designed.
+		bool AssignSecondAbility(const std::string& abilityId, sas::AbilitySlot slot, std::string* failureReason = nullptr);
 
 		bool AcquireAbility(
 			const std::string& abilityId,

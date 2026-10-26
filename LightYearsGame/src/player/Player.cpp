@@ -180,13 +180,13 @@ namespace vega
 			return false;
 		}
 
-		sas::AbilitySystemComponent& abilities = ship.GetAbilitySystemComponent();
+		auto& abilities = ship.GetAbilitySystemComponent();
 		const auto snapshots = abilities.BuildAbilitySnapshots();
 		std::unordered_set<std::string> processedAbilityIds;
 		bool foundAbility = false;
 		for (const sas::AbilityRuntimeSnapshot& snapshot : snapshots)
 		{
-			GameAbility* ability = abilities.FindAbility<GameAbility>(snapshot.handle);
+			GameAbility* ability = abilities.GetAbility(snapshot.handle);
 			if (!ability)
 			{
 				continue;
@@ -241,7 +241,7 @@ namespace vega
 			return;
 		}
 
-		sas::AbilitySystemComponent& abilities = ship->GetAbilitySystemComponent();
+		auto& abilities = ship->GetAbilitySystemComponent();
 		if (abilities.IsExecutingAbilityInstanceOperation())
 		{
 			return;
@@ -263,7 +263,7 @@ namespace vega
 		std::exception_ptr operationError;
 		for (const auto& pending : pendingTargets)
 		{
-			GameAbility* ability = abilities.FindAbilityById<GameAbility>(pending.first);
+			GameAbility* ability = abilities.GetAbilityById(pending.first);
 			if (!ability)
 			{
 				continue;
@@ -290,8 +290,7 @@ namespace vega
 				}
 			}
 
-			const GameAbility* updatedAbility =
-				abilities.FindAbilityById<GameAbility>(pending.first);
+			const GameAbility* updatedAbility = abilities.GetAbilityById(pending.first);
 			const auto pendingTarget = mPendingTestAbilityLevels.find(pending.first);
 			if (updatedAbility && pendingTarget != mPendingTestAbilityLevels.end() &&
 				updatedAbility->GetLevel() >= pendingTarget->second)
@@ -325,6 +324,11 @@ namespace vega
 
 	bool Player::TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason)
 	{
+		return TryPurchaseAbilityLevel(slot, false, failureReason);
+	}
+
+	bool Player::TryPurchaseAbilityLevel(sas::AbilitySlot slot, bool second, std::string* failureReason)
+	{
 		if (mAbilityPurchaseInProgress)
 		{
 			if (failureReason)
@@ -350,10 +354,8 @@ namespace vega
 			return false;
 		}
 
-		sas::AbilitySystemComponent& abilities =
-			ship->GetAbilitySystemComponent();
-		GameAbility* ability =
-			abilities.FindAbility<GameAbility>(slot);
+		auto& abilities = ship->GetAbilitySystemComponent();
+		GameAbility* ability = second ? (abilities.IsTwinRackEnabled() ? abilities.GetSecondAbility(slot) : nullptr) : abilities.GetAbility(slot);
 		if (!ability)
 		{
 			if (failureReason)
@@ -484,14 +486,10 @@ namespace vega
 
 	void Player::RestorePurchasedAbilityLevels(PlayerSpaceShip& ship)
 	{
-		sas::AbilitySystemComponent& abilities =
-			ship.GetAbilitySystemComponent();
+		auto& abilities = ship.GetAbilitySystemComponent();
 		for (auto& purchasedLevel : mPurchasedAbilityLevels)
 		{
-			GameAbility* ability =
-				abilities.FindAbilityById<GameAbility>(
-					purchasedLevel.first
-				);
+			GameAbility* ability = abilities.GetAbilityById(purchasedLevel.first);
 			if (!ability)
 			{
 				continue;

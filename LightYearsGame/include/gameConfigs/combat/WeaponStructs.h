@@ -135,6 +135,7 @@ struct PrimaryWeaponFrostMeterState
 
 struct PrimaryWeaponShotMetadata
 {
+	sas::ContentId weaponId;
 	std::shared_ptr<vega::DamageHitGroup> moduleHitGroup = std::make_shared<vega::DamageHitGroup>(vega::DamageHitGroup::Kind::PrimaryShot);
 	bool isEmpowered = false;
 	float shotDamageMultiplier = 1.f;
@@ -175,6 +176,7 @@ struct PrimaryWeaponShotMetadata
 // to a payload already built from the weapon's attributes.
 inline void ApplyShotMetadataToPayload(vega::DamagePayload& payload, const PrimaryWeaponShotMetadata& metadata)
 {
+	payload.primaryWeaponId = metadata.weaponId;
 	payload.hitGroup = metadata.moduleHitGroup;
 	payload.criticalPolicy = metadata.criticalPolicy;
 	payload.roundDamageUp = metadata.roundFinalDamageUp;

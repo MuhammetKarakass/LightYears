@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gameplay/module/rules/legendary/LegendaryTwinRackRules.h"
+#include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 
 namespace vega
 {
@@ -21,6 +22,8 @@ namespace vega
 		const List<ResolvedModuleLegendaryTwinRackRule>& GetRules() const { return mRules; }
 
 	private:
+		void OnAbilityUse(const sas::AbilityLifecycleEvent& event);
+		AbilityLifecycleObserverHandle mUseObserver;
 		LightYearsAbilitySystemComponent& mAbilities;
 		CombatRuntime& mCombatRuntime;
 		List<ResolvedModuleLegendaryTwinRackRule> mRules;

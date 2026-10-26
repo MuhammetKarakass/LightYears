@@ -6,6 +6,8 @@
 
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
+#include "gameplay/damage/ArmorBreak.h"
+#include "gameplay/weapon/ShotDeviation.h"
 #include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
@@ -370,6 +372,29 @@ namespace EffectData
 		definition.sourceParameterized = true;
 		return definition;
 	}();
+	// Shared timed debuffs (ShotDeviation.h, ArmorBreak.h); their values travel in the applied spec.
+	inline const sas::GameplayEffectDefinition ShotDeviationEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = vega::ShotDeviationIds::EffectId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.category = "Debuff.ShotDeviation";
+		definition.disposition = sas::GameplayEffectDisposition::Harmful;
+		definition.sourceParameterized = true;
+		return definition;
+	}();
+	inline const sas::GameplayEffectDefinition ArmorBreakEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = vega::ArmorBreakIds::EffectId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.category = "Debuff.ArmorBreak";
+		definition.disposition = sas::GameplayEffectDisposition::Harmful;
+		definition.sourceParameterized = true;
+		return definition;
+	}();
 	inline const sas::GameplayEffectDefinition DirectionalBarrierActiveEffect = []
 	{
 		sas::GameplayEffectDefinition definition;
@@ -436,6 +461,8 @@ namespace EffectData
 			&CryoFrozenEffect,
 			&CryoFreezeCooldownEffect,
 			&KineticArmorRendEffect,
+			&ShotDeviationEffect,
+			&ArmorBreakEffect,
 			&DirectionalBarrierActiveEffect,
 			&CryostasisIceShellEffect,
 			&IroncladProtocolDamageReductionEffect

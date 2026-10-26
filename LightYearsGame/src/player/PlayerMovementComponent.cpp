@@ -4,7 +4,9 @@
 #include "player/PlayerSpaceShip.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameplay/tags/GameplayTags.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/input/AbilityInputSchema.h"
+#include "enemy/EnemyActor.h"
 #include <framework/MathUtility.h>
 #include <framework/World.h>
 
@@ -38,6 +40,27 @@ namespace vega
 
 	void PlayerMovementComponent::Tick(float deltaTime)
 	{
+		if (GetPlayer().IsInPortalTransit()) { ApplyInput({}, false, deltaTime); return; }
+		SetInput();
+		if (const auto host = mPossessedHost.lock(); host && !host->GetIsPendingDestroy())
+		{
+			SteerPossessedHost(*host);
+			return;
+		}
+		ApplyInput(mMoveInput, mAfterburnerRequested, deltaTime);
+	}
+
+	void PlayerMovementComponent::StopAfterburner()
+	{
+		mAfterburnerIsActive = false;
+		mAfterburnerIntensity = 0.f;
+	}
+
+	void PlayerMovementComponent::ApplyInput(const sf::Vector2f& localInput, bool afterburnerRequested, float deltaTime)
+	{
+		mMoveInput = localInput;
+		mAfterburnerRequested = afterburnerRequested;
+		GetPlayer().GetMovementComponent().SetAbilityWorldMovementInput(ResolveAbilityWorldMovementInput());
 		if (GetPlayer().IsInPortalTransit())
 		{
 			mMoveInput = { 0.f, 0.f };
@@ -48,7 +71,6 @@ namespace vega
 			return;
 		}
 
-		SetInput();
 		if (GetPlayer().GetAbilitySystemComponent().HasOwnedTag(
 			GameplayTags::State::Effect::Control::Stunned
 		))
@@ -61,7 +83,12 @@ namespace vega
 			GetPlayer().SetVelocity({ 0.f, 0.f });
 			return;
 		}
+		const auto before = GetPlayer().GetVelocity();
+		const auto direction = ResolveAbilityWorldMovementInput();
+		const bool braking = before.x * direction.x + before.y * direction.y < -.001f;
+		const float slowMultiplier = GetPlayer().GetAbilitySystemComponent().GetAttributes().GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, .05f);
 		ConsumeInput(deltaTime);
+		GetPlayer().GetModuleApplier().GetLegendaryIonCometRuntime().ObservePlayerControl(GetVectorLength(before) * slowMultiplier, braking, deltaTime);
 	}
 
 	void PlayerMovementComponent::SetSpeed(float speed)
@@ -99,6 +126,7 @@ namespace vega
 				// Primary fire is held; ability keys are tapped so every press is a new activation attempt.
 				const bool pressed = binding.slot == sas::AbilitySlot::PrimaryFire || std::fmod(seconds, 0.4f) < 0.2f;
 				combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(binding.slot, pressed);
+				if (binding.slot == sas::AbilitySlot::PrimaryFire) mPrimaryFireHeld = pressed;
 			}
 			if (GetPlayer().GetMovementComponent().GetMovementMode() == ShipMovementMode::LegacyVelocity)
 			{
@@ -155,12 +183,12 @@ namespace vega
 		);
 
 		CombatRuntime& combatRuntime = GetPlayer().GetCombatRuntime();
+		const bool control = isKeyPressed(sf::Keyboard::Key::LControl) || isKeyPressed(sf::Keyboard::Key::RControl);
 		for (const AbilityInputBinding& binding : AbilityInputSchema::GetBindings())
 		{
-			combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
-				binding.slot,
-				isKeyPressed(binding.key)
-			);
+			const bool pressed = isKeyPressed(binding.key);
+			combatRuntime.GetAbilitySystemComponent().SetLoadoutKeyInput(binding.slot, pressed, control);
+			if (binding.slot == sas::AbilitySlot::PrimaryFire) mPrimaryFireHeld = pressed;
 		}
 
 		if (GetPlayer().GetMovementComponent().GetMovementMode() == ShipMovementMode::LegacyVelocity)
@@ -290,8 +318,39 @@ namespace vega
 		mMoveInput = { 0.f, 0.f };
 	}
 
+	void PlayerMovementComponent::SteerPossessedHost(EnemyActor& host)
+	{
+		// The own ship is suspended: its abilities and Afterburner stay idle and it rides along with the host.
+		for (const AbilityInputBinding& binding : AbilityInputSchema::GetBindings()) GetPlayer().GetAbilitySystemComponent().SetLoadoutKeyInput(binding.slot, false, false);
+		mAfterburnerRequested = false;
+		mAfterburnerIsActive = false;
+		mAfterburnerIntensity = 0.f;
+		mSmoothedMoveInput = { 0.f, 0.f };
+		GetPlayer().SetActorLocation(host.GetActorLocation());
+		GetPlayer().SetActorRotation(host.GetActorRotation());
+
+		EnemyBehaviorIntent intent;
+		const float forwardInput = std::clamp(-mMoveInput.y, -1.f, 1.f);
+		const float strafeInput = std::clamp(mMoveInput.x, -1.f, 1.f);
+		intent.movementDirection = host.GetActorForwardDirection() * forwardInput + GetAdaptiveScreenStrafeDirection() * strafeInput;
+		if (const World* world = GetPlayer().GetWorld()) intent.aimTargetLocation = world->GetMouseWorldPosition();
+		else intent.aimTargetLocation = host.GetActorLocation() + host.GetActorForwardDirection();
+		intent.slotCommands.push_back({ sas::AbilitySlot::PrimaryFire, mPrimaryFireHeld });
+		host.SetExternalIntent(intent);
+		mMoveInput = { 0.f, 0.f };
+	}
+
 	void PlayerMovementComponent::UpdateAfterburnerState(float deltaTime)
 	{
+		auto& blink = GetPlayer().GetModuleApplier().GetLegendaryBlinkDriveRuntime();
+		const bool pressed = mAfterburnerRequested && !mAfterburnerWasRequested;
+		mAfterburnerWasRequested = mAfterburnerRequested;
+		if (blink.IsInstalled())
+		{
+			StopAfterburner();
+			if (pressed) blink.TryBlink(ResolveAbilityWorldMovementInput());
+			return;
+		}
 		mAfterburnerIsActive = false;
 		if (mAfterburnerRequested && deltaTime > 0.f &&
 			GetPlayer().GetShipRuntime().IsSystemEnabled(ShipSystem::Afterburner))

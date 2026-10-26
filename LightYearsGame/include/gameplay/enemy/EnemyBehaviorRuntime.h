@@ -25,6 +25,8 @@ namespace vega
 		sf::Vector2f aimTargetLocation{};
 		weak_ptr<Actor> target;
 		List<EnemySlotCommand> slotCommands;
+		// Set by an external controller (possession): aim and thrust apply even without a target.
+		bool directControl = false;
 
 		bool HasTarget() const noexcept { return !target.expired(); }
 	};

@@ -349,6 +349,8 @@ namespace
 		const List<shared_ptr<Actor>> targets = targeting::FindOpposingCombatants(
 			*world, context.owner, context.owner.GetActorLocation(), radius);
 		std::size_t harvestedCount = 0;
+		DamagePayload payload;
+		payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 		for (const shared_ptr<Actor>& target : targets)
 		{
 			if (!target || target->GetIsPendingDestroy())
@@ -357,7 +359,7 @@ namespace
 			}
 			++harvestedCount;
 			ApplyCombatDamage(*target, pulseDamage, &context.owner,
-				{ DamageTypeSchema::Energy }, DamagePayload{},
+				{ DamageTypeSchema::Energy }, payload,
 				sas::ContentId{ context.definition.abilityId }, context.definition.abilityTags);
 			if (auto* combatant = dynamic_cast<Combatant*>(target.get()))
 			{

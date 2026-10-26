@@ -145,6 +145,7 @@ namespace vega
 				AbilityData::NanoPlague::DefaultBaseSpreadTargetCount))));
 		settings.sourceAbilityId = sas::ContentId{ context.definition.abilityId };
 		settings.sourceAbilityTags = context.definition.abilityTags;
+		settings.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 
 		const shared_ptr<NanoPlagueControllerActor> controller =
 			NanoPlagueControllerActor::FindOrCreate(*world, context.owner, *profile);

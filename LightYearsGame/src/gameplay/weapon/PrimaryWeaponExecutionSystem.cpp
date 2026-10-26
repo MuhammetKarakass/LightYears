@@ -6,6 +6,8 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/time/IntervalDebt.h"
+#include "gameplay/module/rules/legendary/LegendaryMeltdownBarrelRuntime.h"
+#include "gameplay/module/rules/legendary/LegendarySecondHardpointRuntime.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 
 #include "gameplay/weapon/PrimaryWeaponHandlerRegistry.h"
@@ -21,6 +23,11 @@ namespace vega
 {
 	namespace
 	{
+		LegendaryMeltdownBarrelRuntime* Meltdown(const PrimaryWeaponExecutionContext& context)
+		{
+			const auto* combatant = dynamic_cast<const Combatant*>(&context.owner);
+			return combatant ? combatant->GetAbilitySystemComponent().GetMeltdownBarrelRuntime() : nullptr;
+		}
 		struct RuntimeConfiguration
 		{
 			std::string weaponId;
@@ -219,6 +226,8 @@ namespace vega
 			}
 			const int finalMagazineRounds = FindIntegerAttribute(
 				context.attributes, PrimaryWeaponSchema::Empowered::FinalMagazineRounds);
+			if (const auto* meltdown = Meltdown(context); meltdown && state.meltdownCycle && state.meltdownCycle->active)
+				return finalMagazineRounds > 0 && state.meltdownCycle->heat + 0.0001f >= meltdown->GetHeatCapacity() * (1.f - static_cast<float>(finalMagazineRounds) / context.definition.magazine->capacity);
 			return finalMagazineRounds > 0 && state.magazineState.roundsRemaining <= finalMagazineRounds;
 		}
 
@@ -514,11 +523,10 @@ namespace vega
 			state.handler->UsesIntervalFire();
 	}
 
-	bool PrimaryWeaponExecutionSystem::FireOnce(
-		const PrimaryWeaponExecutionContext& context,
-		PrimaryWeaponRuntimeState& state
-	)
+	bool PrimaryWeaponExecutionSystem::FireOnce(const PrimaryWeaponExecutionContext& context, PrimaryWeaponRuntimeState& state)
 	{
+		if (const auto* meltdown = Meltdown(context); meltdown && !meltdown->CanFire(state)) return false;
+		if (auto* meltdown = Meltdown(context); meltdown && (!state.meltdownCycle || !state.meltdownCycle->active)) meltdown->CoolMagazine(context, state, 0.f);
 		if (!context.ShouldContinue() || !state.isInitialized || !state.isFiring ||
 			!state.handler || !state.typeState)
 		{
@@ -535,6 +543,7 @@ namespace vega
 		}
 
 		PrimaryWeaponShotMetadata shotMetadata;
+		shotMetadata.weaponId = sas::ContentId{ context.definition.weaponId };
 		shotMetadata.roundFinalDamageUp = context.definition.damageRoundingPolicy == PrimaryWeaponDamageRoundingPolicy::CeilFinalDamage;
 		if (context.definition.magazine.has_value())
 		{
@@ -597,11 +606,13 @@ namespace vega
 
 		if (context.definition.magazine.has_value())
 		{
+			const auto* meltdown = Meltdown(context);
+			const bool usesHeat = meltdown && meltdown->Supports(context.definition);
 			// The last rounds still fire a full shot; the magazine clamps at
 			// zero and reloads (e.g. 1 round left on a twin gun fires both).
 			++state.magazineState.shotsFired;
-			state.magazineState.roundsRemaining -= ResolveRoundsPerShot(context.definition);
-			if (state.magazineState.roundsRemaining <= 0)
+			if (!usesHeat) state.magazineState.roundsRemaining -= ResolveRoundsPerShot(context.definition);
+			if (!usesHeat && state.magazineState.roundsRemaining <= 0)
 			{
 				state.magazineState.roundsRemaining = 0;
 				const float reloadDuration = CalculateReloadDuration(
@@ -617,14 +628,11 @@ namespace vega
 			if (!runtimeContext.ShouldContinue()) break;
 			feature->AfterFire(runtimeContext, state);
 		}
+		if (auto* meltdown = Meltdown(context)) meltdown->RecordTrigger(runtimeContext, state);
 		return true;
 	}
 
-	void PrimaryWeaponExecutionSystem::TickFire(
-		const PrimaryWeaponExecutionContext& context,
-		PrimaryWeaponRuntimeState& state,
-		float deltaTime
-	)
+	void PrimaryWeaponExecutionSystem::TickFire(const PrimaryWeaponExecutionContext& context, PrimaryWeaponRuntimeState& state, float deltaTime)
 	{
 		if (!context.ShouldContinue() || !state.isInitialized || !state.isFiring ||
 			!state.handler || !state.typeState)
@@ -633,6 +641,11 @@ namespace vega
 		}
 		const PrimaryWeaponExecutionContext runtimeContext =
 			WithRuntimeState(context, state);
+		if (auto* meltdown = Meltdown(context); meltdown && !meltdown->CanFire(state))
+		{
+			meltdown->CoolMagazine(runtimeContext, state, deltaTime);
+			return;
+		}
 		state.handler->TickFire(runtimeContext, *state.typeState, deltaTime);
 		for (const PrimaryWeaponFeatureHandler* feature : state.features)
 		{
@@ -825,17 +838,25 @@ namespace vega
 		return result;
 	}
 
-	void PrimaryWeaponExecutionSystem::TickInactive(
-		const PrimaryWeaponExecutionContext& context,
-		PrimaryWeaponRuntimeState& state,
-		float deltaTime
-	)
+	void PrimaryWeaponExecutionSystem::TickInactive(const PrimaryWeaponExecutionContext& context, PrimaryWeaponRuntimeState& state, float deltaTime)
 	{
 		if (!context.ShouldContinue() || !state.isInitialized || state.isFiring || deltaTime <= 0.f)
 		{
 			return;
 		}
-		AdvanceMagazineReload(context.definition, state, deltaTime);
+		auto* meltdown = Meltdown(context);
+		if (!meltdown || !meltdown->CoolMagazine(context, state, deltaTime))
+		{
+			if (const auto* combatant = dynamic_cast<const Combatant*>(&context.owner))
+				if (auto* hardpoint = combatant->GetAbilitySystemComponent().GetSecondHardpointRuntime())
+				{
+					const auto* second = hardpoint->GetSecondWeapon();
+					const bool isSecond = second && second->weaponId == context.definition.weaponId;
+					if (isSecond != hardpoint->IsSecondWeaponActive()) hardpoint->AdvanceReserveReload(context, state, deltaTime);
+				}
+			AdvanceMagazineReload(context.definition, state, deltaTime);
+		}
+		else state.magazineState.reloadRemaining = std::max(0.0, state.magazineState.reloadRemaining - deltaTime);
 		state.fireIntervalRemaining = std::max(0.f, state.fireIntervalRemaining - deltaTime);
 		const PrimaryWeaponExecutionContext runtimeContext =
 			WithRuntimeState(context, state);
@@ -857,6 +878,7 @@ namespace vega
 		{
 			state.magazineState.roundsRemaining = definition.magazine->capacity;
 			state.magazineState.shotsFired = 0;
+			state.magazineState.reserveReloadRemaining = 0.0;
 		}
 	}
 

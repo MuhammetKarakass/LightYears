@@ -21,10 +21,7 @@ namespace vega
 				return PrimaryWeaponType::ProjectileShotgun;
 			}
 
-			bool FireOnce(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponTypeRuntimeState&
-			) const override
+			bool FireOnce(const PrimaryWeaponExecutionContext& context, PrimaryWeaponTypeRuntimeState&) const override
 			{
 				const int pelletCount = std::max(
 					1,
@@ -68,6 +65,8 @@ namespace vega
 					1.f
 				);
 				const float baseDamage = ResolvePrimaryWeaponShotDamage(context);
+				auto payload = DamageTypeSystem::BuildPayload(context.damageTags, context.attributes);
+				payload.primaryWeaponId = context.shotMetadata.weaponId;
 				const shared_ptr<ShotgunVolleyImpactGroup> impactGroup =
 					std::make_shared<ShotgunVolleyImpactGroup>(
 						context.owner,
@@ -75,10 +74,7 @@ namespace vega
 						baseDamage,
 						damageReduction,
 						minimumDamageMultiplier,
-						DamageTypeSystem::BuildPayload(
-							context.damageTags,
-							context.attributes
-						)
+						payload
 					);
 				return PrimaryWeaponProjectileSpawner::FireSet(
 					context,

@@ -8,6 +8,7 @@
 #include "gameplay/movement/MovementPolicyController.h"
 
 #include <string>
+#include <cstdint>
 #include <unordered_set>
 
 namespace vega
@@ -63,6 +64,11 @@ namespace vega
 
 		float GetCurrentMovementSpeed() const { return mStepSeconds > 0.f ? mStepDistance / mStepSeconds : 0.f; }
 		float GetCurrentMovementDistance() const { return mStepDistance; }
+		// Discontinuous relocation never enters the integrated movement sample.
+		void TeleportTo(const sf::Vector2f& destination);
+		const sf::Vector2f& GetTotalTeleportOffset() const { return mTotalTeleportOffset; }
+		std::uint64_t GetTeleportRevision() const { return mTeleportRevision; }
+		bool WasMovementInterrupted() const { return mMovementInterrupted; }
 		const sf::Vector2f& GetCurrentMovementStartLocation() const { return mStepStartLocation; }
 		void SetLegacySpeed(const sf::Vector2f& speed) { mBaseLegacySpeed = speed; }
 		const sf::Vector2f& GetLegacySpeed() const { return mBaseLegacySpeed; }
@@ -126,6 +132,10 @@ namespace vega
 
 		ShipMovementMode mMovementMode;
 		float mStepSeconds = 0.f;
+		sf::Vector2f mTotalTeleportOffset{};
+		std::uint64_t mTeleportRevision = 0;
+		bool mMovementInterrupted = false;
+		bool mExternalMovementPending = false;
 		float mStepDistance = 0.f;
 		sf::Vector2f mStepStartLocation{};
 		sf::Vector2f mBaseLegacySpeed;

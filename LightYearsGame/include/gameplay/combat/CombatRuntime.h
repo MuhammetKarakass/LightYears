@@ -6,6 +6,8 @@
 #include "framework/Delegate.h"
 #include "gameplay/combat/ContactDamageGuardRegistry.h"
 #include "gameplay/combat/CombatRuntimeModifiers.h"
+#include "gameplay/damage/StatusStacks.h"
+#include "gameplay/combat/LethalHitInterceptors.h"
 #include "gameplay/module/ModuleResolver.h"
 
 #include <cstddef>
@@ -106,7 +108,7 @@ namespace vega
 		void SetEpicOffenseEffects(const EpicOffenseEffects& effects) { mEpicOffenseEffects = effects; }
 		const EpicOffenseEffects& GetEpicOffenseEffects() const { return mEpicOffenseEffects; }
 		EpicOffenseState& GetEpicOffenseState() { return mEpicOffenseState; }
-		float ResolveEpicOffenseOutgoingMultiplier(Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType);
+		float ResolveEpicOffenseOutgoingMultiplier(Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType, float mainEffectMultiplier = 1.f);
 		// Set by the module applier while a generated rule reads the target's statuses at resolution.
 		void SetTargetStatusSnapshotRequested(bool requested) { mTargetStatusSnapshotRequested = requested; }
 		bool WantsTargetStatusSnapshot() const { return mTargetStatusSnapshotRequested; }
@@ -135,6 +137,10 @@ namespace vega
 			return mAbilitySystemComponent;
 		}
 
+		// Lethal hits this combatant deals (ship targets) pass through these before they kill.
+		LethalHitInterceptorList& GetLethalHitInterceptors() { return mLethalHitInterceptors; }
+		const LethalHitInterceptorList& GetLethalHitInterceptors() const { return mLethalHitInterceptors; }
+
 		ContactDamageGuardRegistry& GetContactDamageGuardRegistry()
 		{
 			return mContactDamageGuardRegistry;
@@ -152,6 +158,8 @@ namespace vega
 		Delegate<const DamageContext&> onDamageResolved;
 		// Broadcast on the SOURCE combatant's runtime when it dealt applied damage.
 		Delegate<const DamageContext&> onDamageDealt;
+		// Broadcast on the SOURCE combatant's runtime when one of its hits added new damage-status stacks to a target.
+		Delegate<const StatusStacksAddedEvent&> onStatusStacksAdded;
 
 	private:
 		static void ReplaceRegisteredDamageRules(
@@ -203,6 +211,7 @@ namespace vega
 		LightYearsAbilitySystemComponent mAbilitySystemComponent;
 		std::unique_ptr<GameplayEffectPresentationBinding> mEffectPresentation;
 		ContactDamageGuardRegistry mContactDamageGuardRegistry;
+		LethalHitInterceptorList mLethalHitInterceptors;
 		List<QueuedEffectEvent> mPendingEffectEvents;
 		DamageDispatchFrame* mCurrentDamageDispatchFrame = nullptr;
 		std::uint64_t mEffectEventGeneration = 1;

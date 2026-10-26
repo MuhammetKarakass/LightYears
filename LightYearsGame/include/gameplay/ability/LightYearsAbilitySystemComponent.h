@@ -12,6 +12,7 @@
 #include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
 
 #include <cstddef>
+#include <array>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -19,6 +20,8 @@
 namespace vega
 {
 	class Actor;
+	class LegendarySecondHardpointRuntime;
+	class LegendaryMeltdownBarrelRuntime;
 
 	class LightYearsAbilitySystemComponent
 		: public sas::AbilitySystemComponent
@@ -38,6 +41,19 @@ namespace vega
 		bool IsApplyingModuleAttributes() const { return mModuleAttributeChangeDepth != 0; }
 
 		explicit LightYearsAbilitySystemComponent(Actor& owner);
+		// The secondary bank is retained when Twin Rack is removed. Slot identity
+		// remains Q/E/F/R; each instance has its own handle, level and recharge.
+		bool AssignSecondAbility(sas::AbilitySlot slot, const GameAbilityDefinition& definition, std::string* failureReason = nullptr);
+		GameAbility* GetSecondAbility(sas::AbilitySlot slot);
+		const GameAbility* GetSecondAbility(sas::AbilitySlot slot) const;
+		void ConfigureTwinRack(bool enabled, float cooldownMultiplier = 1.f);
+		bool IsTwinRackEnabled() const { return mTwinRackEnabled; }
+		float GetTwinRackCooldownMultiplier(sas::AbilitySlot slot) const { return sas::IsLoadoutAbilitySlot(slot) ? mTwinRackCooldownMultiplier : 1.f; }
+		void SetLoadoutKeyInput(sas::AbilitySlot slot, bool held, bool control);
+		List<sas::AbilityRuntimeSnapshot> BuildAbilitySnapshots() const;
+		using sas::AbilitySystemComponent::SetAbilityLevel;
+		bool SetAbilityLevel(sas::AbilityHandle handle, int level) { return SetAbilityLevel(handle, level, nullptr, nullptr); }
+		bool SetAbilityLevel(sas::AbilityHandle handle, int level, sas::AbilityLevelCommitSink commitSink, void* commitContext);
 
 		GameAbility* GetAbility(sas::AbilitySlot slot);
 		const GameAbility* GetAbility(sas::AbilitySlot slot) const;
@@ -77,12 +93,21 @@ namespace vega
 		// The gate is owned by the same ship that owns this component and clears itself on
 		// destruction (see ShipModuleApplier), so the pointer never dangles. Null means
 		// every module system is enabled.
-		void SetModuleSystemGate(const ModuleSystemGate* gate) { mModuleSystemGate = gate; }
+		void SetModuleSystemGate(ModuleSystemGate* gate) { mModuleSystemGate = gate; }
 		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const;
-		float GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition) const;
+		float GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle = {}) const;
+		float GetAbilityMainEffectGroupMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle = {}) const;
+		float GetPrimedArsenalBonus(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const;
+		void CommitPrimedArsenalUse(sas::AbilityHandle handle) { if (mModuleSystemGate) mModuleSystemGate->CommitPrimedArsenalUse(handle); }
+		void RefreshModulePoolConversion() { if (mModuleSystemGate) mModuleSystemGate->RefreshPoolConversion(); }
 		bool IsModuleAbilityAvailable(const std::string& abilityId) const;
 		void CancelAbilitiesUnavailableByModules();
 		Actor& GetOwner() { return mOwner; }
+		// Non-owning module hooks; ShipModuleApplier owns and detaches these runtimes.
+		void SetSecondHardpointRuntime(LegendarySecondHardpointRuntime* runtime) { mSecondHardpoint = runtime; }
+		LegendarySecondHardpointRuntime* GetSecondHardpointRuntime() const { return mSecondHardpoint; }
+		void SetMeltdownBarrelRuntime(LegendaryMeltdownBarrelRuntime* runtime) { mMeltdownBarrel = runtime; }
+		LegendaryMeltdownBarrelRuntime* GetMeltdownBarrelRuntime() const { return mMeltdownBarrel; }
 
 		// Shared action-lock producers call this entry point. A primary-weapon
 		// lock must interrupt an already active automatic weapon immediately;
@@ -172,8 +197,17 @@ namespace vega
 		) const;
 
 		Actor& mOwner;
+		LegendarySecondHardpointRuntime* mSecondHardpoint = nullptr;
+		LegendaryMeltdownBarrelRuntime* mMeltdownBarrel = nullptr;
+		std::array<unique_ptr<GameAbility>, 4> mSecondAbilities;
+		std::array<bool, 4> mLoadoutKeyHeld{};
+		std::array<bool, 4> mLoadoutKeySecond{};
+		// Game-owned instances use descending handles; generic grants use ascending handles.
+		unsigned int mNextSecondAbilityHandle = ~0u;
+		bool mTwinRackEnabled = false;
+		float mTwinRackCooldownMultiplier = 1.f;
 		std::size_t mModuleAttributeChangeDepth = 0;
-		const ModuleSystemGate* mModuleSystemGate = nullptr;
+		ModuleSystemGate* mModuleSystemGate = nullptr;
 		using ComponentRuntime =
 			sas::AbilitySystemRuntime<GameAbilityDefinition, GameAbility>;
 		ComponentRuntime& mComponentRuntime;

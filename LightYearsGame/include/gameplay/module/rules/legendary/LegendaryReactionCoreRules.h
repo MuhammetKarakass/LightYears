@@ -24,6 +24,7 @@ namespace vega
 		ModuleLevelTable<float> shrapnelAttackPowerCoefficientByLevel;
 		ModuleLevelTable<float> shrapnelEnergyPowerCoefficientByLevel;
 		int shrapnelMaxHitsPerTarget = 0;
+		float shrapnelRadius = 0.f;
 		float targetCooldownSeconds = 0.f;
 	};
 
@@ -46,6 +47,7 @@ namespace vega
 		float shrapnelAttackPowerCoefficient = 0.f;
 		float shrapnelEnergyPowerCoefficient = 0.f;
 		int shrapnelMaxHitsPerTarget = 0;
+		float shrapnelRadius = 0.f;
 		float targetCooldownSeconds = 0.f;
 	};
 }

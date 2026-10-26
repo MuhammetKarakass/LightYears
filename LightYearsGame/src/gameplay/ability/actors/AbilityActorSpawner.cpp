@@ -197,6 +197,11 @@ namespace vega
 			actor->SetAbilityCollisionRadius(collisionRadius);
 			actor->ConfigureCollisionFromOwner();
 			actor->ConfigureFromAttributes(values);
+			auto payload = actor->GetDamagePayload();
+			payload.mainEffectMultiplier = context.definition->mainEffectGroupMultiplier;
+			// Wake's existing main-effect channels are movement/control. Only Primed powers its separate damage formula.
+			if (actorDefinition->actorType == AbilityActorType::InertialWake) payload.mainEffectMultiplier = 1.f + context.definition->primedMainEffectBonus;
+			actor->SetDamagePayload(payload);
 			// ConfigureFromAttributes rebuilds the base damage payload, so the
 			// per-projectile decay is applied after the common actor setup.
 			actor->SetDamage(damage * std::max(0.f, damageMultiplier));

@@ -255,9 +255,9 @@ namespace vega
 		return false;
 	}
 
-	float CombatRuntime::ResolveEpicOffenseOutgoingMultiplier(Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType)
+	float CombatRuntime::ResolveEpicOffenseOutgoingMultiplier(Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType, float mainEffectMultiplier)
 	{
-		return ComputeEpicOffenseOutgoingMultiplier(mEpicOffenseState, mEpicOffenseEffects, mOwner, target, sourceAbilityTags, damageTags, deliveryType);
+		return ComputeEpicOffenseOutgoingMultiplier(mEpicOffenseState, mEpicOffenseEffects, mOwner, target, sourceAbilityTags, damageTags, deliveryType, mainEffectMultiplier);
 	}
 
 	void CombatRuntime::SetModuleStatusRules(const ModuleStatusRules& rules)
@@ -639,6 +639,8 @@ namespace vega
 			return;
 		}
 
+		auto* const statusSource = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr;
+		const List<DamageStatusStackState> statusesBefore = statusSource ? CaptureDamageStatusStacks(mAbilitySystemComponent) : List<DamageStatusStackState>{};
 		const List<GameplayTag> appliedStatuses =
 			DamageTypeSystem::ApplyStatusEffects(
 				mAbilitySystemComponent,
@@ -647,6 +649,22 @@ namespace vega
 		if (!isFrameCurrent())
 		{
 			return;
+		}
+		if (statusSource && !appliedStatuses.empty())
+		{
+			StatusStacksAddedEvent statusEvent;
+			statusEvent.addedStatuses = ResolveAddedDamageStatuses(appliedStatuses, statusesBefore, CaptureDamageStatusStacks(mAbilitySystemComponent));
+			if (!statusEvent.addedStatuses.empty())
+			{
+				statusEvent.target = &mOwner;
+				statusEvent.before = statusesBefore;
+				statusEvent.context = &context;
+				statusSource->GetCombatRuntime().onStatusStacksAdded.Broadcast(statusEvent);
+				if (!isFrameCurrent())
+				{
+					return;
+				}
+			}
 		}
 		// HealthComponent::HealthEmpty can synchronously destroy the ship and
 		// clear its effects. Capture Cryo state now, after this hit's Cryo status

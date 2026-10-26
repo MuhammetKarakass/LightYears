@@ -122,6 +122,11 @@ namespace vega
 		bool IsInPortalTransit() const override { return mPortalTransit; }
 		void BeginPortalTransit() override;
 		void CompletePortalTransit(const sf::Vector2f& exitLocation) override;
+		// Takes the ship out of play without destroying it (possession): hidden, no collision or physics, and no incoming or
+		// outgoing damage. ResumeBody puts it back at location with the collision and physics it had.
+		void SuspendBody();
+		void ResumeBody(const sf::Vector2f& location);
+		bool IsBodySuspended() const { return mBodySuspended; }
 
 		void SetControlTargetClass(ControlTargetClass targetClass)
 		{
@@ -134,9 +139,8 @@ namespace vega
 		List<GameplayTag> mAttachedLightTags;
 
 	protected:
-		// Called when the damage left after shields would take health to zero or below. Returning true means the override set health
-		// itself; the lethal remainder is then dropped.
-		virtual bool TryPreventLethalDamage(float) { return false; }
+		// A hit would bring health to zero. The base asks the damage source's lethal-hit interceptors.
+		virtual LethalDamageResolution ResolveLethalDamage(const DamageContext& context);
 		virtual float GetMovementSpeedCapMultiplier() const { return 1.f; }
 		virtual float GetMovementTurnCapabilityMultiplier() const { return 1.f; }
 		virtual bool IsAfterburnerRechargeBlocked() const { return false; }
@@ -164,6 +168,10 @@ namespace vega
 
 		bool mInvulnerability;
 		bool mPortalTransit = false;
+		bool mBodySuspended = false;
+		bool mSuspendedPhysicsWasEnabled = false;
+		vega::CollisionLayer mSuspendedCollisionLayer = vega::CollisionLayer::None;
+		vega::CollisionLayer mSuspendedCollisionMask = vega::CollisionLayer::None;
 		bool mPortalPhysicsWasEnabled = false;
 		vega::CollisionLayer mPortalCollisionLayer = vega::CollisionLayer::None;
 		vega::CollisionLayer mPortalCollisionMask = vega::CollisionLayer::None;

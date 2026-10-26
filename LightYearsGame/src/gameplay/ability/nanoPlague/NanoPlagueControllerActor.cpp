@@ -378,12 +378,14 @@ namespace vega
 			->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
 				OwnerAttributeIds::EnergyPower
 			));
+		DamagePayload payload;
+		payload.mainEffectMultiplier = settings.mainEffectMultiplier;
 		ApplyCombatDamage(
 			target,
 			std::max(0.f, settings.baseTickDamage + energyPower * settings.energyPowerTickScale),
 			owner.get(),
 			{ DamageTypeSchema::Electric },
-			{},
+			payload,
 			settings.sourceAbilityId,
 			settings.sourceAbilityTags,
 			DamageDeliveryType::Periodic,

@@ -7,6 +7,7 @@
 namespace vega
 {
 	class PlayerSpaceShip;
+	std::string BuildPrimaryWeaponReadout(PlayerSpaceShip& ship);
 
 	class AbilityBarPresenter
 	{

@@ -108,6 +108,10 @@ namespace vega
 		SetIfChanged(mViewModel->shieldReserveCap, 0.f, mViewModel->revision);
 		SetIfChanged(mViewModel->energy, 0.f, mViewModel->revision);
 		SetIfChanged(mViewModel->energyMax, 1.f, mViewModel->revision);
+		SetIfChanged(mViewModel->blinkDrive, false, mViewModel->revision);
+		SetIfChanged(mViewModel->blinkCharges, 0, mViewModel->revision);
+		SetIfChanged(mViewModel->blinkMaximumCharges, 0, mViewModel->revision);
+		SetIfChanged(mViewModel->blinkRechargeRemaining, 0.f, mViewModel->revision);
 	}
 
 	void VitalsPresenter::Tick()
@@ -173,6 +177,11 @@ namespace vega
 
 		const ShieldComponent& shield = ship->GetShieldComponent();
 		const EnergyComponent& energy = ship->GetEnergyComponent();
+		const auto& blink = ship->GetModuleApplier().GetLegendaryBlinkDriveRuntime();
+		SetIfChanged(vm.blinkDrive, blink.IsInstalled(), vm.revision);
+		SetIfChanged(vm.blinkCharges, blink.GetCharges(), vm.revision);
+		SetIfChanged(vm.blinkMaximumCharges, blink.GetMaximumCharges(), vm.revision);
+		SetIfChanged(vm.blinkRechargeRemaining, blink.GetRechargeRemaining(), vm.revision);
 		SetIfChanged(vm.hasShip, true, vm.revision);
 		SetIfChanged(vm.healthReadoutVisible, ship->GetModuleApplier().IsReadoutEnabled(GameplayTags::Module::System::HealthReadout), vm.revision);
 		SetIfChanged(vm.health, currentHealth, vm.revision);

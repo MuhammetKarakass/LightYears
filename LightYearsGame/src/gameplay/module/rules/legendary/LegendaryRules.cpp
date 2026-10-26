@@ -57,6 +57,7 @@ namespace vega
 				resolved.shrapnelAttackPowerCoefficient = authored.shrapnelAttackPowerCoefficientByLevel.ValueAtLevel(0.f, effectiveLevel);
 				resolved.shrapnelEnergyPowerCoefficient = authored.shrapnelEnergyPowerCoefficientByLevel.ValueAtLevel(0.f, effectiveLevel);
 				resolved.shrapnelMaxHitsPerTarget = authored.shrapnelMaxHitsPerTarget;
+				resolved.shrapnelRadius = authored.shrapnelRadius;
 				resolved.targetCooldownSeconds = authored.targetCooldownSeconds;
 				effects.reactionCores.push_back(resolved);
 			}

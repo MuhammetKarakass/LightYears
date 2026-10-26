@@ -5,6 +5,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/module/rules/legendary/LegendaryPrimedArsenalRuntime.h"
 
 #include <algorithm>
 
@@ -93,7 +94,7 @@ namespace vega::AbilityActionAttributeResolver
 				context.abilitySystem->GetAttributes()
 			);
 			if (!weaponDefinition && std::find(context.definition->mainEffectAttributes.begin(), context.definition->mainEffectAttributes.end(), attribute.id) != context.definition->mainEffectAttributes.end())
-				value *= context.definition->mainEffectMultiplier;
+				value *= context.definition->mainEffectMultiplier - (LegendaryPrimedArsenalRuntime::IsMainOutput(attribute.id) ? 0.f : context.definition->primedMainEffectBonus);
 			// Echo power applies only to declared output channels. Applying it to
 			// every resolved number made fixed delivery data slower/shorter and
 			// shrank Relay Prism even though Prism size is not level-scaled.

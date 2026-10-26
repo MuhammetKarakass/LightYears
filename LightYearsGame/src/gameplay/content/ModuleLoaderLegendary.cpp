@@ -71,7 +71,7 @@ namespace vega::content::module_loader_detail
 		if (kind == "ReactionCore")
 		{
 			if (family != GameplayTags::Ability::Offense) throw std::runtime_error(context + " Legendary kind does not match module family");
-			ValidateFields(object, context, { "kind", "steamSeconds", "steamSecondsGrowth", "steamDeviationDegrees", "magnetSeconds", "magnetSpeed", "magnetSpeedGrowth", "magnetRadius", "plasmaDamage", "plasmaDamageGrowth", "plasmaEnergyPowerCoefficient", "plasmaEnergyPowerCoefficientGrowth", "plasmaRadius", "fractureSeconds", "fractureSecondsGrowth", "bossArmorReductionFraction", "stunSeconds", "stunSecondsGrowth", "shrapnelCount", "shrapnelDamage", "shrapnelDamageGrowth", "shrapnelAttackPowerCoefficient", "shrapnelAttackPowerCoefficientGrowth", "shrapnelEnergyPowerCoefficient", "shrapnelEnergyPowerCoefficientGrowth", "shrapnelMaxHitsPerTarget", "targetCooldownSeconds" });
+			ValidateFields(object, context, { "kind", "steamSeconds", "steamSecondsGrowth", "steamDeviationDegrees", "magnetSeconds", "magnetSpeed", "magnetSpeedGrowth", "magnetRadius", "plasmaDamage", "plasmaDamageGrowth", "plasmaEnergyPowerCoefficient", "plasmaEnergyPowerCoefficientGrowth", "plasmaRadius", "fractureSeconds", "fractureSecondsGrowth", "bossArmorReductionFraction", "stunSeconds", "stunSecondsGrowth", "shrapnelCount", "shrapnelDamage", "shrapnelDamageGrowth", "shrapnelAttackPowerCoefficient", "shrapnelAttackPowerCoefficientGrowth", "shrapnelEnergyPowerCoefficient", "shrapnelEnergyPowerCoefficientGrowth", "shrapnelMaxHitsPerTarget", "shrapnelRadius", "targetCooldownSeconds" });
 			ModuleLegendaryReactionCoreRule rule;
 			rule.steamSecondsByLevel = LevelNumber(object, "steamSeconds", context, levelCount);
 			rule.steamDeviationDegrees = FixedNumber(object, "steamDeviationDegrees", context);
@@ -89,6 +89,7 @@ namespace vega::content::module_loader_detail
 			rule.shrapnelAttackPowerCoefficientByLevel = LevelNumber(object, "shrapnelAttackPowerCoefficient", context, levelCount);
 			rule.shrapnelEnergyPowerCoefficientByLevel = LevelNumber(object, "shrapnelEnergyPowerCoefficient", context, levelCount);
 			rule.shrapnelMaxHitsPerTarget = ParsePositiveInt(object.at("shrapnelMaxHitsPerTarget"), context + ".shrapnelMaxHitsPerTarget");
+			rule.shrapnelRadius = FixedNumber(object, "shrapnelRadius", context);
 			rule.targetCooldownSeconds = FixedNumber(object, "targetCooldownSeconds", context);
 			return rule;
 		}
@@ -173,6 +174,8 @@ namespace vega::content::module_loader_detail
 			rule.brakeSpeedLossFraction = FixedNumber(object, "brakeSpeedLossFraction", context);
 			rule.tickElectricStacks = ParsePositiveInt(object.at("tickElectricStacks"), context + ".tickElectricStacks");
 			rule.burstElectricStacks = ParsePositiveInt(object.at("burstElectricStacks"), context + ".burstElectricStacks");
+			if (rule.diminishingSpeedFactor >= 1.f) throw std::runtime_error(context + ".diminishingSpeedFactor must be less than one");
+			if (rule.brakeSpeedLossFraction > 1.f) throw std::runtime_error(context + ".brakeSpeedLossFraction must not exceed one");
 			return rule;
 		}
 		if (kind == "TwinRack")

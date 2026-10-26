@@ -139,7 +139,15 @@ namespace vega
 			return false;
 		}
 
-		mDefinition.mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectMultiplier(mDefinition);
+		// A Primed replay retains its original power. Other invocations keep the existing module-resolution behavior.
+		if (mActivationOrigin == sas::AbilityActivationOrigin::NormalInput || mDefinition.primedMainEffectBonus == 0.f)
+		{
+			mDefinition.mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectMultiplier(mDefinition, GetHandle());
+			mDamageHitGroup->mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectGroupMultiplier(mDefinition, GetHandle());
+			mDefinition.mainEffectGroupMultiplier = mDamageHitGroup->mainEffectMultiplier;
+			mDefinition.primedMainEffectBonus = mAbilitySystem.GetPrimedArsenalBonus(mDefinition, GetHandle());
+		}
+		else mDamageHitGroup->mainEffectMultiplier = mDefinition.mainEffectGroupMultiplier;
 		mAbilityModuleCooldownMultiplierSnapshot = mAbilitySystem.GetAbilityModuleCooldownMultiplier(mDefinition);
 
 		GameAbilityBehaviorContext behaviorContext{
@@ -160,6 +168,7 @@ namespace vega
 
 	void GameAbility::OnActivationCommitted()
 	{
+		if (mActivationOrigin == sas::AbilityActivationOrigin::NormalInput) mAbilitySystem.CommitPrimedArsenalUse(GetHandle());
 		mAbilitySystem.HandleAbilityLifecycleEvent(BuildLifecycleEvent(
 			GameplayTags::Event::Ability::Activated, sas::AbilityEndReason::Completed));
 	}
@@ -387,7 +396,14 @@ namespace vega
 		const float unreducedCooldown = leveledCooldown * hasteMultiplier;
 		// A module reduction never takes the cooldown below its absolute floor, and never raises it above the unreduced value.
 		const float floorSeconds = moduleMultiplier < 1.f ? std::min(unreducedCooldown, mAbilitySystem.GetScopedAbilityCooldownMinimum(mDefinition)) : 0.f;
-		return std::max(floorSeconds, std::max(0.f, unreducedCooldown * moduleMultiplier));
+		return std::max(floorSeconds, std::max(0.f, unreducedCooldown * moduleMultiplier)) * mAbilitySystem.GetTwinRackCooldownMultiplier(mDefinition.slot);
+	}
+
+	void GameAbility::ScaleRemainingCooldown(float multiplier)
+	{
+		// Unlimited-mode StartCooldown changes only the timer, preserving every
+		// charge and the serial recharge queue when a live module is toggled.
+		if (IsOnCooldown()) mRuntimeState.StartCooldown(GetCooldownRemaining() * multiplier, 0);
 	}
 
 	void GameAbility::RefundActivationCooldown(float fraction)
@@ -607,6 +623,12 @@ namespace vega
 	GameAbilityDefinition GameAbility::BuildDefinitionForLevel(int level) const
 	{
 		GameAbilityDefinition definition = mBaseDefinition;
+		if (IsActive() && mDefinition.primedMainEffectBonus > 0.f)
+		{
+			definition.mainEffectMultiplier = mDefinition.mainEffectMultiplier;
+			definition.mainEffectGroupMultiplier = mDefinition.mainEffectGroupMultiplier;
+			definition.primedMainEffectBonus = mDefinition.primedMainEffectBonus;
+		}
 
 		const int stepsToApply = std::max(
 			0,

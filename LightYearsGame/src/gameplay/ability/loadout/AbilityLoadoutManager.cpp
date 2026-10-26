@@ -30,8 +30,17 @@ namespace vega
 		{
 			const auto* id = FindAbility(slot);
 			if (id && *id == abilityId) return slot;
+			const auto* second = FindSecondAbility(slot);
+			if (second && *second == abilityId) return slot;
 		}
 		return sas::AbilitySlot::None;
+	}
+
+	const std::string* AbilityLoadoutView::FindSecondAbility(sas::AbilitySlot slot) const
+	{
+		if (mSystem.IsClearPending()) return nullptr;
+		const auto* ability = mSystem.GetSecondAbility(slot);
+		return ability ? &ability->GetDefinition().abilityId : nullptr;
 	}
 
 	void AbilityLoadoutManager::SynchronizeInventory()
@@ -40,8 +49,9 @@ namespace vega
 		for (const auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2,
 			sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
 		{
-			if (const GameAbility* ability = mAbilitySystem.GetAbility(slot))
+			for (const GameAbility* ability : { mAbilitySystem.GetAbility(slot), mAbilitySystem.GetSecondAbility(slot) })
 			{
+				if (!ability) continue;
 				const auto& id = ability->GetDefinition().abilityId;
 				if (!mInventory.Contains(id)) mInventory.Add(id);
 			}
@@ -57,6 +67,30 @@ namespace vega
 	bool AbilityLoadoutManager::IsEquippableSlot(sas::AbilitySlot slot)
 	{
 		return sas::IsLoadoutAbilitySlot(slot);
+	}
+
+	bool AbilityLoadoutManager::AssignSecondAbility(const std::string& abilityId, sas::AbilitySlot slot, std::string* failureReason)
+	{
+		if (failureReason) failureReason->clear();
+		if (mMutationInProgress) return false;
+		LoadoutMutationScope mutation{ mMutationInProgress };
+		const auto* definition = AbilityData::FindShippedAbilityDefinition(abilityId);
+		if (!definition)
+		{
+			if (failureReason) *failureReason = "Ability is not present in the shipped content catalog.";
+			return false;
+		}
+		try
+		{
+			if (!mAbilitySystem.AssignSecondAbility(slot, *definition, failureReason)) return false;
+		}
+		catch (...)
+		{
+			SynchronizeInventory();
+			throw;
+		}
+		SynchronizeInventory();
+		return true;
 	}
 
 	bool AbilityLoadoutManager::AcquireAbility(

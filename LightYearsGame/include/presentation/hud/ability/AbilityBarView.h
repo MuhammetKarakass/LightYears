@@ -29,11 +29,13 @@ namespace vega
 
 		shared_ptr<const AbilityBarViewModel> mViewModel;
 		UIRevisionWatcher mWatcher;
-		std::array<weak_ptr<Panel>, 4> mColumns;
-		std::array<weak_ptr<ImageWidget>, 4> mIcons;
-		std::array<SlotWidgets, 4> mSlots;
+		weak_ptr<TextWidget> mWeaponReadout;
+		std::array<weak_ptr<Panel>, 4> mGroups;
+		std::array<weak_ptr<Panel>, 8> mColumns;
+		std::array<weak_ptr<ImageWidget>, 8> mIcons;
+		std::array<SlotWidgets, 8> mSlots;
 		std::uint32_t mIconGeneration{ 0 };
-		std::array<std::string, 4> mIconPaths;
+		std::array<std::string, 8> mIconPaths;
 		unsigned int mRefreshCount{ 0 };
 	};
 }

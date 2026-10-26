@@ -533,6 +533,7 @@ namespace vega
 				values,
 				segment.cryoStacks
 			);
+			payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 			ApplyCombatDamage(
 				*target,
 				finalInitialDamage,
@@ -777,16 +778,18 @@ namespace vega
 		);
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags();
-		const DamagePayload sourcePayload = BuildCryoPayload(
+		DamagePayload sourcePayload = BuildCryoPayload(
 			damageTags,
 			values,
 			0
 		);
-		const DamagePayload transferPayload = BuildCryoPayload(
+		DamagePayload transferPayload = BuildCryoPayload(
 			damageTags,
 			values,
 			cryoStacks
 		);
+		sourcePayload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		transferPayload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 		SpaceShip* owner = dynamic_cast<SpaceShip*>(&context.owner);
 		if (!owner)
 		{

@@ -7,6 +7,8 @@
 #include "framework/World.h"
 #include "gameConfigs/combat/CombatTick.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/module/rules/legendary/LegendaryMeltdownBarrelRuntime.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/movement/MovementCollisionService.h"
 #include "gameplay/weapon/visuals/ContinuousBeamVisualActor.h"
@@ -100,6 +102,7 @@ namespace vega
 		void DeliverPendingBeamDamage(const PrimaryWeaponExecutionContext& context, ContinuousBeamWeaponRuntimeState& beamState, const DamagePayload& payload, bool newHitGroup = true)
 		{
 			auto deliveryPayload = payload;
+			deliveryPayload.primaryWeaponId = sas::ContentId{ context.definition.weaponId };
 			if (newHitGroup || !beamState.deliveryHitGroup)
 				beamState.deliveryHitGroup = std::make_shared<DamageHitGroup>(DamageHitGroup::Kind::PrimaryShot);
 			deliveryPayload.hitGroup = beamState.deliveryHitGroup;
@@ -202,6 +205,8 @@ namespace vega
 					: 0.f;
 				const BeamHeatDamage heatDamage = ResolveBeamHeatDamage(context, heatRatio);
 				const float damage = baseDamagePerSecond * heatDamage.multiplier * deltaTime;
+				if (const auto* combatant = dynamic_cast<const Combatant*>(&context.owner))
+					if (auto* meltdown = combatant->GetAbilitySystemComponent().GetMeltdownBarrelRuntime()) meltdown->RecordBeam(context, heatDamage.multiplier, deltaTime);
 				const DamagePayload payload =
 					DamageTypeSystem::BuildPayload(heatDamage.damageTags, context.attributes);
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);

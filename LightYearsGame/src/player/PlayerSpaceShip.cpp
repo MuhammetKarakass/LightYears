@@ -5,6 +5,8 @@
 #include "gameplay/ability/loadout/DefaultAbilityLoadout.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/content/ModuleContentCatalog.h"
+#include "gameplay/input/AbilityInputSchema.h"
+#include "enemy/EnemyActor.h"
 #include <framework/LightComponent.h>
 #include <framework/SpriteComponent.h>
 #include <framework/MathUtility.h>
@@ -143,9 +145,30 @@ namespace vega
 		}
 	}
 
-	bool PlayerSpaceShip::TryPreventLethalDamage(float)
+	LethalDamageResolution PlayerSpaceShip::ResolveLethalDamage(const DamageContext& context)
 	{
-		return mModuleApplier.TryReviveOwner(*this);
+		return mModuleApplier.TryPreventOwnerDeath(*this, context) ? LethalDamageResolution::Prevented : LethalDamageResolution::None;
+	}
+
+	bool PlayerSpaceShip::BeginPossession(EnemyActor& host)
+	{
+		if (IsPossessing() || host.GetIsPendingDestroy()) return false;
+		for (const AbilityInputBinding& binding : AbilityInputSchema::GetBindings()) GetAbilitySystemComponent().SetLoadoutKeyInput(binding.slot, false, false);
+		SuspendBody();
+		SetActorLocation(host.GetActorLocation());
+		// Control passes at once: the host's own behavior never acts again, even before this ship's next input tick.
+		EnemyBehaviorIntent idle;
+		idle.aimTargetLocation = host.GetActorLocation() + host.GetActorForwardDirection();
+		host.SetExternalIntent(idle);
+		mPlayerMovement.SetPossessedHost(std::static_pointer_cast<EnemyActor>(host.GetWeakActor().lock()));
+		return true;
+	}
+
+	void PlayerSpaceShip::EndPossession(const sf::Vector2f& location)
+	{
+		if (const auto host = mPlayerMovement.GetPossessedHost()) host->ClearExternalControl();
+		mPlayerMovement.ClearPossessedHost();
+		ResumeBody(location);
 	}
 
 	void PlayerSpaceShip::OnCombatDamageObserved(const DamageContext& context)
@@ -156,6 +179,21 @@ namespace vega
 
 	void PlayerSpaceShip::Shoot()
 	{
+	}
+
+	bool PlayerSpaceShip::AssignSecondPrimaryWeapon(const std::string& weaponId)
+	{
+		auto* runtime = GetAbilitySystemComponent().GetSecondHardpointRuntime();
+		return runtime && runtime->AssignSecondWeapon(weaponId);
+	}
+
+	bool PlayerSpaceShip::HandleWeaponInput(const sf::Event& event)
+	{
+		if (GetIsPendingDestroy() || IsInPortalTransit()) return false;
+		const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>();
+		if (!wheel || wheel->wheel != sf::Mouse::Wheel::Vertical || wheel->delta == 0.f) return false;
+		auto* runtime = GetAbilitySystemComponent().GetSecondHardpointRuntime();
+		return runtime && runtime->SwitchWeapon();
 	}
 
 	void PlayerSpaceShip::StopInvulnerability()

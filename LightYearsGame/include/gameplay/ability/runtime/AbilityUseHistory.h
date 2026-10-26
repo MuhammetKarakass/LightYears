@@ -35,6 +35,9 @@ namespace vega
 		sas::AbilitySlot slot = sas::AbilitySlot::None;
 		int level = 1;
 		int maxLevel = 1;
+		float mainEffectMultiplier = 1.f;
+		float mainEffectGroupMultiplier = 1.f;
+		float primedMainEffectBonus = 0.f;
 		List<GameplayTag> abilityTags;
 		List<std::string> unlockedUpgradeIds;
 		List<AbilityScalingChannel> scalingChannels;

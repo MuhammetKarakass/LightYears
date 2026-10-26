@@ -244,6 +244,9 @@ namespace vega
 				context.definition.abilityTags
 			);
 			drone->SetLifeTime(resolvedDuration);
+			auto payload = drone->GetDamagePayload();
+			payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+			drone->SetDamagePayload(payload);
 			drone->SetAbilityLevel(context.instance.GetLevel());
 			mDrones.push_back(droneWeak);
 		}

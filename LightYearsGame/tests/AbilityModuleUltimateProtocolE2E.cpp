@@ -162,8 +162,8 @@ namespace
 		const float step = .20f + .02f * static_cast<float>(effectiveLevel - 1);
 		CastMovement(f);
 		const auto powered = Fire(f, rocket);
-		f.Equal("Cascade and Ultimate multiply in the captured main effect", (1.f + step) * 1.6f, rocket.GetDefinition().mainEffectMultiplier);
-		f.Equal("Cascade and Ultimate multiply actual Rocket damage", damage * (1.f + step) * 1.6f, powered->GetDamage());
+		f.Equal("Cascade and Ultimate add in the captured main effect", 1.6f + step, rocket.GetDefinition().mainEffectMultiplier);
+		f.Equal("Cascade and Ultimate add actual Rocket damage", damage * (1.6f + step), powered->GetDamage());
 		f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::AbilityHaste, 100.f);
 		ScopedAbilityCooldownRule reduction; reduction.requiredSlot = sas::AbilitySlot::Ability4; reduction.multiplier = .75f;
 		const auto handle = f.ship->GetAbilitySystemComponent().AddScopedAbilityCooldownRule(reduction);

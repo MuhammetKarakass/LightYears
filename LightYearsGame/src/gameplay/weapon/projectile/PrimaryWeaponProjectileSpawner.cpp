@@ -2,6 +2,7 @@
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/weapon/ShotDeviation.h"
 #include "gameplay/module/rules/EpicPrimaryRules.h"
 
 #include "framework/Actor.h"
@@ -79,7 +80,8 @@ namespace vega::PrimaryWeaponProjectileSpawner
 				const sf::Vector2f location = context.owner.GetActorLocation() +
 					context.owner.TransformLocalToWorld(muzzle.offset) + lateralOffset;
 				spawnedProjectile->SetActorLocation(location);
-				spawnedProjectile->SetActorRotation(volleyRotation + muzzle.rotationOffset + localRotationOffset);
+				// A shot-deviation debuff (e.g. Steam) turns each newly fired projectile by its own random angle.
+				spawnedProjectile->SetActorRotation(volleyRotation + muzzle.rotationOffset + localRotationOffset + SampleShotDeviationDegrees(context.owner));
 				const float projectileSpeed = sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Delivery::Speed,

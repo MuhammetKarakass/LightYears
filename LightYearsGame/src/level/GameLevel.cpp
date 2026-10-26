@@ -7,6 +7,8 @@
 #include "level/MainMenuLevel.h"
 #include "level/LevelOne.h"
 #include "player/PlayerManager.h"
+#include "player/Player.h"
+#include "player/PlayerSpaceShip.h"
 #include "enemy/EnemyActor.h"
 #include "presentation/hud/GameplayWarningHUDController.h"
 #include "presentation/hud/ability/AbilityBarHUDController.h"
@@ -70,6 +72,8 @@ namespace vega
 		{
 			for (const shared_ptr<HUDController>& controller : mHUDControllers)
 				if (controller && controller->HandleEvent(event)) return true;
+			if (Player* player = PlayerManager::GetPlayerManager().GetPlayer())
+				if (auto ship = player->GetCurrentSpaceShip().lock(); ship && ship->GetWorld() == this && ship->HandleWeaponInput(event)) return true;
 		}
 		
 		return World::DispatchEvent(event);

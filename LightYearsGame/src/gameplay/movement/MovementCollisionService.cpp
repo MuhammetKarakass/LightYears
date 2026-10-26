@@ -28,6 +28,51 @@ namespace vega::movement
 		}
 	}
 
+	sf::Vector2f ResolveTeleportDestination(const Actor& actor, const sf::Vector2f& destination)
+	{
+		const auto* world = actor.GetWorld();
+		if (!world) return destination;
+		const auto start = actor.GetActorLocation();
+		const auto offset = destination - start;
+		const float radius = ResolveMovingRadius(actor);
+		const auto candidates = world->GetActorsInBounds(targeting::swept::SegmentBounds(start, destination, radius));
+		float fraction = 1.f;
+		// Each pass backs out of a destination-overlapping solid. Recheck the new
+		// endpoint so overlapping/adjacent solids cannot leave the hull embedded.
+		for (;;)
+		{
+			const auto end = start + offset * fraction;
+			float safeFraction = fraction;
+			for (const auto& weak : candidates)
+			{
+				const auto obstacle = weak.lock();
+				if (!obstacle || obstacle.get() == &actor || obstacle->GetIsPendingDestroy() || !obstacle->IsPhysicsEnabled() || obstacle->GetPhysicsBodyType() != PhysicsBodyType::Static) continue;
+				const float rotation = obstacle->GetActorRotation() * .01745329251994329577f;
+				const float cosine = std::cos(rotation), sine = std::sin(rotation);
+				for (std::size_t index = 0; index < obstacle->GetPhysicsCollisionBoxCount(); ++index)
+				{
+					const auto box = obstacle->GetPhysicsCollisionBox(index);
+					if (box.halfExtents.x <= 0.f || box.halfExtents.y <= 0.f) continue;
+					const auto center = obstacle->GetActorLocation() + sf::Vector2f{ cosine * box.localCenter.x - sine * box.localCenter.y, sine * box.localCenter.x + cosine * box.localCenter.y };
+					const float angle = rotation + box.localRotationDegrees * .01745329251994329577f;
+					float entry = 0.f;
+					sf::Vector2f normal;
+					if (!targeting::swept::SegmentIntersectsExpandedOrientedBox(end, end, center, box.halfExtents, angle, radius, entry, normal)) continue;
+					if (targeting::swept::SegmentIntersectsExpandedOrientedBox(start, destination, center, box.halfExtents, angle, radius, entry, normal)) safeFraction = std::min(safeFraction, std::max(0.f, entry - .0005f));
+				}
+				if (obstacle->GetPhysicsCollisionBoxCount() == 0 && obstacle->GetPhysicsCollisionRadius() > 0.f)
+				{
+					const float expanded = radius + obstacle->GetPhysicsCollisionRadius();
+					if (GetVectorLength(end - obstacle->GetActorLocation()) > expanded) continue;
+					float entry = 0.f;
+					if (targeting::swept::SegmentIntersectsExpandedBounds(start, destination, { obstacle->GetActorLocation(), {} }, expanded, entry)) safeFraction = std::min(safeFraction, std::max(0.f, entry - .0005f));
+				}
+			}
+			if (safeFraction >= fraction || safeFraction <= 0.f) return start + offset * safeFraction;
+			fraction = safeFraction;
+		}
+	}
+
 	bool FindFirstStaticGeometryHit(
 		const Actor& queryActor,
 		const sf::Vector2f& segmentStart,

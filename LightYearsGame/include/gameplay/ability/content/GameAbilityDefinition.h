@@ -70,6 +70,8 @@ namespace vega
 		List<sas::AttributeId> mainEffectAttributes = { CommonAttributeIds::Damage };
 		// Captured before behavior activation; the committed use advances the chain only after success.
 		float mainEffectMultiplier = 1.f;
+		float mainEffectGroupMultiplier = 1.f;
+		float primedMainEffectBonus = 0.f;
 		// Level progression scaling rules materialized during RebuildDefinitionForLevel.
 		// Kept separate from base scalingRules so execution order is explicit and deterministic.
 		List<sas::AttributeScalingRule> levelScalingRules;

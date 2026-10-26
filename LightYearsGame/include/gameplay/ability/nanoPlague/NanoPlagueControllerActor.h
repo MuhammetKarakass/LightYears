@@ -24,6 +24,7 @@ namespace vega
 			int baseSpreadTargetCount = 1;
 			sas::ContentId sourceAbilityId;
 			List<GameplayTag> sourceAbilityTags;
+			float mainEffectMultiplier = 1.f;
 		};
 
 		NanoPlagueControllerActor(

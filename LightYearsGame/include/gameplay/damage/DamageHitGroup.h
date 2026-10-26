@@ -10,6 +10,7 @@ namespace vega
 		enum class Kind { AbilityUse, PrimaryShot };
 		explicit DamageHitGroup(Kind value = Kind::AbilityUse) : kind{ value } {}
 		Kind kind;
+		float mainEffectMultiplier = 1.f;
 		std::set<std::pair<std::uint64_t, std::uint64_t>> consumedModuleRules;
 	};
 }

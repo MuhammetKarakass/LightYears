@@ -339,6 +339,7 @@ namespace vega
 			LightYearsAbilitySystemComponent::ModuleAttributeChangeScope scope{ mAbilities };
 			SyncModifiers(mAbilities.GetAttributes(), mResolved.ownerModifiers, mOwnerHandles);
 			SyncModifiers(mShipRuntime.GetAttributes(), mResolved.shipModifiers, mShipHandles);
+			mLegendaryHardlightHullRuntime.Replace(mResolved.legendaryRules.hardlightHulls);
 			if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->RefreshMovementAttributesFromRuntime();
 		}
 		SyncPrimaryWeaponModifiers();
@@ -370,7 +371,6 @@ namespace vega
 		mLegendaryPrimedArsenalRuntime.Replace(mResolved.legendaryRules.primedArsenals);
 		mLegendaryReactionCoreRuntime.Replace(mResolved.legendaryRules.reactionCores);
 		mLegendaryNeuralHijackerRuntime.Replace(mResolved.legendaryRules.neuralHijackers);
-		mLegendaryHardlightHullRuntime.Replace(mResolved.legendaryRules.hardlightHulls);
 		mLegendaryBulwarkPulseRuntime.Replace(mResolved.legendaryRules.bulwarkPulses);
 		mLegendaryParasiteHullRuntime.Replace(mResolved.legendaryRules.parasiteHulls);
 		mLegendaryBlinkDriveRuntime.Replace(mResolved.legendaryRules.blinkDrives);
@@ -455,6 +455,13 @@ namespace vega
 		mResolvedShipLevel = rules.shipLevel;
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
+	}
+
+	bool ShipModuleApplier::TryPreventOwnerDeath(SpaceShip& owner, const DamageContext& context)
+	{
+		if (mShuttingDown) return false;
+		if (mLegendaryParasiteHullRuntime.TryPossess(context)) return true;
+		return TryReviveOwner(owner);
 	}
 
 	bool ShipModuleApplier::TryReviveOwner(SpaceShip& owner)

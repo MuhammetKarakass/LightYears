@@ -32,6 +32,8 @@ namespace vega
 	// weapon or ability that produced the hit.
 	struct DamagePayload
 	{
+		// Originating Primary weapon, retained by delayed hits; empty for generated damage and DoT.
+		sas::ContentId primaryWeaponId;
 		float shieldDamageMultiplier = 1.f;
 		float shieldRegenerationDelay = 0.f;
 		float armorPenetration = 0.f;
@@ -46,6 +48,8 @@ namespace vega
 		DamageModuleTriggerPolicy moduleTriggerPolicy = DamageModuleTriggerPolicy::Normal;
 		DamageSourceScalingPolicy sourceScalingPolicy = DamageSourceScalingPolicy::Normal;
 		std::shared_ptr<DamageHitGroup> hitGroup;
+		// Captured main power for delayed deliveries that do not retain an ability instance.
+		float mainEffectMultiplier = 1.f;
 	};
 
 	// Delivery kind is shared metadata for incoming-damage defenses. It keeps

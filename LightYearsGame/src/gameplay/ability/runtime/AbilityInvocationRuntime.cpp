@@ -34,6 +34,9 @@ namespace vega
 		definition.scalingRules = scalingRules;
 		definition.attributeOutputMultiplier = std::max(0.f, outputMultiplier);
 		definition.recordInAbilityHistory = false;
+		definition.mainEffectMultiplier = record.mainEffectMultiplier;
+		definition.primedMainEffectBonus = record.primedMainEffectBonus;
+		definition.mainEffectGroupMultiplier = record.mainEffectGroupMultiplier;
 
 		// The history record is a value snapshot, so the replay must rebuild the
 		// source level's numeric balance exactly like GameAbility does. Dropping

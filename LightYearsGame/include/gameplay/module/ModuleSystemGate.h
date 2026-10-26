@@ -2,6 +2,7 @@
 
 #include "framework/Core.h"
 #include "abilities/AbilityTypes.h"
+#include "abilities/AbilityHandle.h"
 
 namespace vega
 {
@@ -14,6 +15,10 @@ namespace vega
 		virtual ~ModuleSystemGate() = default;
 		virtual float GetAbilityMainEffectMultiplier(const List<GameplayTag>&) const { return 1.f; }
 		virtual float GetAbilitySlotMainEffectMultiplier(sas::AbilitySlot) const { return 1.f; }
+		virtual float GetAbilityGeneralEffectMultiplier(const List<GameplayTag>&) const { return 1.f; }
+		virtual float GetPrimedArsenalMultiplier(sas::AbilityHandle) const { return 1.f; }
+		virtual void CommitPrimedArsenalUse(sas::AbilityHandle) {}
+		virtual void RefreshPoolConversion() {}
 		virtual float GetAbilitySlotCooldownMultiplier(sas::AbilitySlot) const { return 1.f; }
 		virtual bool IsModuleSystemEnabled(const GameplayTag& systemTag) const = 0;
 	};

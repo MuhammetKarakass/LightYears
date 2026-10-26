@@ -83,7 +83,11 @@ namespace vega
 		bool IsSystemEnabled(const GameplayTag& systemTag) const;
 		// ModuleSystemGate: a ship that never had a loadout applied is unmanaged and
 		// keeps every system enabled.
-		float GetAbilityMainEffectMultiplier(const List<GameplayTag>& abilityTags) const override { return mHasApplied ? mEpicUtilityMovementRuntime.GetNextCascadeMultiplier(abilityTags) * mEpicUtilityMovementRuntime.GetUtilityEffectMultiplier(abilityTags) : 1.f; }
+		float GetAbilityMainEffectMultiplier(const List<GameplayTag>& abilityTags) const override { return mHasApplied ? mEpicUtilityMovementRuntime.GetNextCascadeMultiplier(abilityTags) : 1.f; }
+		float GetAbilityGeneralEffectMultiplier(const List<GameplayTag>& abilityTags) const override { return mHasApplied ? mEpicUtilityMovementRuntime.GetUtilityEffectMultiplier(abilityTags) : 1.f; }
+		float GetPrimedArsenalMultiplier(sas::AbilityHandle ability) const override { return mLegendaryPrimedArsenalRuntime.GetMultiplier(ability); }
+		void CommitPrimedArsenalUse(sas::AbilityHandle ability) override { mLegendaryPrimedArsenalRuntime.OnUseCommitted(ability); }
+		void RefreshPoolConversion() override { mLegendaryHardlightHullRuntime.Refresh(); }
 		float GetAbilitySlotMainEffectMultiplier(sas::AbilitySlot slot) const override
 		{
 			float multiplier = 1.f;
@@ -115,7 +119,9 @@ namespace vega
 		const LegendaryBulwarkPulseRuntime& GetLegendaryBulwarkPulseRuntime() const { return mLegendaryBulwarkPulseRuntime; }
 		const LegendaryParasiteHullRuntime& GetLegendaryParasiteHullRuntime() const { return mLegendaryParasiteHullRuntime; }
 		const LegendaryBlinkDriveRuntime& GetLegendaryBlinkDriveRuntime() const { return mLegendaryBlinkDriveRuntime; }
+		LegendaryBlinkDriveRuntime& GetLegendaryBlinkDriveRuntime() { return mLegendaryBlinkDriveRuntime; }
 		const LegendaryIonCometRuntime& GetLegendaryIonCometRuntime() const { return mLegendaryIonCometRuntime; }
+		LegendaryIonCometRuntime& GetLegendaryIonCometRuntime() { return mLegendaryIonCometRuntime; }
 		const LegendaryTwinRackRuntime& GetLegendaryTwinRackRuntime() const { return mLegendaryTwinRackRuntime; }
 		const LegendaryUnderdogCoreRuntime& GetLegendaryUnderdogCoreRuntime() const { return mLegendaryUnderdogCoreRuntime; }
 		bool HasApplied() const { return mHasApplied; }
@@ -129,6 +135,8 @@ namespace vega
 		void SetReviveSpentSink(std::function<void(std::uint32_t)> sink) { mReviveSpentSink = std::move(sink); }
 		// Last Stand: spends one revive charge of an active placement and restores the owner's health. False when none is left.
 		bool TryReviveOwner(SpaceShip& owner);
+		// The owner would die: Parasite Hull escapes first, then Last Stand revives. True when either saved the owner.
+		bool TryPreventOwnerDeath(SpaceShip& owner, const DamageContext& context);
 		void SetRandomSeed(std::uint32_t seed) { mReactiveRuntime.SetRandomSeed(seed); }
 		// Smoldering Remains field from an Ember burst; the reactive runtime owns its lease.
 		void SpawnSmolderingField(const sf::Vector2f& origin, const ModuleThermalBurstRule& rule) { mReactiveRuntime.SpawnSmolderingField(origin, rule); }

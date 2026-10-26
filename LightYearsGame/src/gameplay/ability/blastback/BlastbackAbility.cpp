@@ -344,6 +344,7 @@ namespace vega
 			const float distance = std::sqrt(std::max(0.f, candidate.distanceSquared));
 			const bool innerZone = distance <= innerRange;
 			DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
+			payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 			payload.igniteStacks = innerZone ? innerIgniteStacks : outerIgniteStacks;
 			ApplyCombatDamage(
 				*target,

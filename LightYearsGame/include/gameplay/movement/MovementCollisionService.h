@@ -8,6 +8,8 @@ namespace vega
 
 	namespace movement
 	{
+		// Only the destination is tested. Obstacles crossed en route do not block a teleport.
+		sf::Vector2f ResolveTeleportDestination(const Actor& actor, const sf::Vector2f& destination);
 		struct StaticGeometrySweepHit
 		{
 			float fraction = 1.f;

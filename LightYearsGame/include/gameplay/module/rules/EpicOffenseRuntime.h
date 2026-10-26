@@ -16,7 +16,7 @@ namespace vega
 
 	// Outgoing damage multiplier of one owner hit from Blood Contract (Offense damage scaled by missing health) and Alternating Current
 	// (a direct ability hit after a different damage type on the same enemy). Records the hit for later comparison; call once per hit.
-	float ComputeEpicOffenseOutgoingMultiplier(EpicOffenseState& state, const EpicOffenseEffects& effects, Actor& owner, Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType);
+	float ComputeEpicOffenseOutgoingMultiplier(EpicOffenseState& state, const EpicOffenseEffects& effects, Actor& owner, Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType, float mainEffectMultiplier = 1.f);
 
 	// Ship-owned runtime for the time-based and ship-level part of Epic Offense: the Blood Contract cost, heal windows and Clot Armor.
 	// Counters and marks live in the ship's CombatRuntime; this class only owns the Clot Armor modifier handle.

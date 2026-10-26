@@ -30,6 +30,9 @@ namespace vega
 		bool lifecycleStarted = false;
 		PrimaryWeaponRuntimeState weaponRuntime;
 		PrimaryWeaponRuntimeState* persistentWeaponRuntime = nullptr;
+		// An in-flight reserve action retains its runtime and definition through module removal callbacks.
+		std::shared_ptr<PrimaryWeaponRuntimeState> retainedWeaponRuntime;
+		std::optional<PrimaryWeaponDefinition> retainedWeaponDefinition;
 
 		PrimaryWeaponRuntimeState& GetWeaponRuntime()
 		{

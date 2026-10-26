@@ -163,8 +163,37 @@ namespace vega
 		mPortalTransit = false;
 	}
 
+	void SpaceShip::SuspendBody()
+	{
+		if (mBodySuspended) return;
+		mBodySuspended = true;
+		mSuspendedPhysicsWasEnabled = IsPhysicsEnabled();
+		mSuspendedCollisionLayer = GetCollisionLayer();
+		mSuspendedCollisionMask = GetCollisionMask();
+		SetRenderEnabled(false);
+		SetVelocity({});
+		SetCollisionLayer(vega::CollisionLayer::None);
+		SetCollisionMask(vega::CollisionLayer::None);
+		SetEnablePhysics(false);
+		mCombatRuntime.SetDamageProtection("SpaceShip.SuspendedBody", true, true);
+	}
+
+	void SpaceShip::ResumeBody(const sf::Vector2f& location)
+	{
+		if (!mBodySuspended) return;
+		mBodySuspended = false;
+		mCombatRuntime.RemoveDamageProtection("SpaceShip.SuspendedBody");
+		SetActorLocation(location);
+		SetCollisionLayer(mSuspendedCollisionLayer);
+		SetCollisionMask(mSuspendedCollisionMask);
+		if (mSuspendedPhysicsWasEnabled) SetEnablePhysics(true);
+		SetVelocity({});
+		SetRenderEnabled(true);
+	}
+
 	void SpaceShip::RefreshMovementAttributesFromRuntime()
 	{
+		GetAbilitySystemComponent().RefreshModulePoolConversion();
 		const sas::AttributeSystem& attributes =
 			mCombatRuntime.GetAbilitySystemComponent().GetAttributes();
 		const sas::AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
@@ -433,6 +462,12 @@ namespace vega
 		}
 	}
 
+	LethalDamageResolution SpaceShip::ResolveLethalDamage(const DamageContext& context)
+	{
+		auto* source = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr;
+		return source ? source->GetCombatRuntime().GetLethalHitInterceptors().Resolve(*this, context) : LethalDamageResolution::None;
+	}
+
 	void SpaceShip::ReceiveDamage(DamageContext context)
 	{
 		if ((!context.deferredDamage && (IsInvulnerable() || GetCombatRuntime().BlocksIncomingDamage())) ||
@@ -482,12 +517,15 @@ namespace vega
 			mCombatRuntime.ApplyHullDamageMitigation(context);
 
 			const float healthBeforeDamage = mHealthComponent.GetHealth();
-			if (healthBeforeDamage - context.remainingDamage <= 0.f && TryPreventLethalDamage(context.remainingDamage)) context.remainingDamage = 0.f;
+			const LethalDamageResolution lethal = healthBeforeDamage > 0.f && healthBeforeDamage - context.remainingDamage <= 0.f ? ResolveLethalDamage(context) : LethalDamageResolution::None;
+			if (lethal != LethalDamageResolution::None) context.remainingDamage = 0.f;
+			const float healthAfterLethalResolution = mHealthComponent.GetHealth();
 			mHealthComponent.ChangeHealth(-context.remainingDamage);
-			const float healthDamage = std::max(0.f, healthBeforeDamage - mHealthComponent.GetHealth());
+			// A converted kill may have changed health itself (the target lives on); the hit still dealt what it would have.
+			const float healthDamage = lethal == LethalDamageResolution::ConvertedKill ? healthBeforeDamage : std::max(0.f, healthAfterLethalResolution - mHealthComponent.GetHealth());
 			context.appliedDamage = shieldAbsorbedDamage + healthDamage;
-			context.targetWasKilled = healthBeforeDamage > 0.f &&
-				mHealthComponent.GetHealth() <= 0.f;
+			context.targetWasKilled = lethal == LethalDamageResolution::ConvertedKill || (healthBeforeDamage > 0.f &&
+				mHealthComponent.GetHealth() <= 0.f);
 		}
 
 		mCombatRuntime.NotifyDamageResolved(context);

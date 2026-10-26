@@ -15,6 +15,9 @@ namespace vega
 		float shield{ 0.f }, shieldMax{ 1.f };
 		float shieldReserve{ 0.f }, shieldReserveCap{ 0.f };
 		float energy{ 0.f }, energyMax{ 1.f };
+		bool blinkDrive{ false };
+		int blinkCharges{ 0 }, blinkMaximumCharges{ 0 };
+		float blinkRechargeRemaining{ 0.f };
 		bool hasPlayer{ false };
 		unsigned int life{ 0 }, score{ 0 };
 		UIRevision revision;

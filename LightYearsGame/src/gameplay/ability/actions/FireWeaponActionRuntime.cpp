@@ -8,6 +8,8 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/time/IntervalDebt.h"
+#include "gameplay/module/rules/legendary/LegendarySecondHardpointRuntime.h"
+#include "gameConfigs/ability/AbilityCatalog.h"
 #include "framework/Actor.h"
 #include "framework/Application.h"
 #include "framework/World.h"
@@ -20,6 +22,11 @@ namespace vega
 {
 	namespace
 	{
+		LegendarySecondHardpointRuntime* Hardpoint(const AbilityExecutionContext& context)
+		{
+			return context.abilitySystem && context.definition && context.definition->slot == sas::AbilitySlot::PrimaryFire
+				? context.abilitySystem->GetSecondHardpointRuntime() : nullptr;
+		}
 		bool IsPrimaryWeaponFireAvailable(const AbilityExecutionContext& context)
 		{
 			return !context.definition ||
@@ -40,16 +47,18 @@ namespace vega
 			return context.abilitySystem->GetActivePrimaryWeaponOverride();
 		}
 
-		const FireWeaponAction& ResolveFireAction(
-			const AbilityExecutionContext& context,
-			const FireWeaponAction& authoredAction,
-			FireWeaponAction& overrideStorage
-		)
+		const FireWeaponAction& ResolveFireAction(const AbilityExecutionContext& context, const FireWeaponAction& authoredAction, FireWeaponAction& overrideStorage)
 		{
 			const PrimaryWeaponOverrideState::ActiveOverride* overrideEntry =
 				FindPrimaryOverride(context);
 			if (!overrideEntry)
 			{
+				if (const auto* hardpoint = Hardpoint(context); hardpoint && hardpoint->IsSecondWeaponActive() && hardpoint->GetSecondWeapon())
+				{
+					overrideStorage = authoredAction;
+					overrideStorage.weaponDefinition = *hardpoint->GetSecondWeapon();
+					return overrideStorage;
+				}
 				return authoredAction;
 			}
 
@@ -60,11 +69,9 @@ namespace vega
 			return overrideStorage;
 		}
 
-		List<GameplayTag> ResolveDamageTags(
-			AbilityExecutionContext& context,
-			const FireWeaponAction& fireAction
-		)
+		List<GameplayTag> ResolveDamageTags(AbilityExecutionContext& context, const FireWeaponAction& fireAction)
 		{
+			if (const auto* hardpoint = Hardpoint(context); hardpoint && hardpoint->IsSecondWeaponActive()) return fireAction.weaponDefinition.damageTags;
 			if (const PrimaryWeaponOverrideState::ActiveOverride* overrideEntry =
 				FindPrimaryOverride(context);
 				overrideEntry &&
@@ -77,12 +84,18 @@ namespace vega
 			return AbilityActionAttributeResolver::ResolveDamageTags(context);
 		}
 
-		const sas::GameplayAttributeList& ResolveAttributes(
-			AbilityExecutionContext& context,
-			const FireWeaponAction& fireAction,
-			FireWeaponRuntimeState& state
-		)
+		const sas::GameplayAttributeList& ResolveAttributes(AbilityExecutionContext& context, const FireWeaponAction& fireAction, FireWeaponRuntimeState& state)
 		{
+			if (auto* hardpoint = Hardpoint(context); hardpoint && hardpoint->IsSecondWeaponActive() && !FindPrimaryOverride(context))
+			{
+				// The reserve has its own progression; it must not inherit the hull weapon's level rewards.
+				auto definition = AbilityData::MakePrimaryFireAbilityDefinition(fireAction.weaponDefinition);
+				auto resolve = context;
+				resolve.definition = &definition;
+				state.resolvedAttributes = AbilityActionAttributeResolver::ResolveAttributes(resolve, &fireAction.weaponDefinition, fireAction.weaponDefinition.attributes);
+				hardpoint->GetSecondWeaponState().attributes = state.resolvedAttributes;
+				return state.resolvedAttributes;
+			}
 			const uint64_t attributeRevision = context.abilitySystem
 				? context.abilitySystem->GetAttributes().GetRevision()
 				: 0;
@@ -97,11 +110,7 @@ namespace vega
 				state.resolvedPrimaryModifierRevision != primaryModifierRevision)
 			{
 				state.resolvedAttributes = context.definition
-					? AbilityActionAttributeResolver::ResolveAttributes(
-						context,
-						&fireAction.weaponDefinition,
-						state.runtimeAttributes
-					)
+					? AbilityActionAttributeResolver::ResolveAttributes(context, &fireAction.weaponDefinition, state.runtimeAttributes)
 					: sas::BuildBaseGameplayAttributes(state.runtimeAttributes);
 				state.resolvedAttributeRevision = attributeRevision;
 				state.resolvedConfigurationRevision = configurationRevision;
@@ -156,13 +165,7 @@ namespace vega
 			};
 		}
 
-		bool EnsureLifecycle(
-			Actor& owner,
-			AbilityExecutionContext& context,
-			const FireWeaponAction& fireAction,
-			FireWeaponRuntimeState& state,
-			const sas::GameplayAttributeList& attributes
-		)
+		bool EnsureLifecycle(Actor& owner, AbilityExecutionContext& context, const FireWeaponAction& fireAction, FireWeaponRuntimeState& state, const sas::GameplayAttributeList& attributes)
 		{
 			if (!context.ShouldContinue()) return false;
 			if (!state.initialized)
@@ -181,6 +184,12 @@ namespace vega
 				// The form owns a separate runtime. Its firing state therefore cannot
 				// overwrite heat, cooldown, or burst state of the equipped primary.
 				state.persistentWeaponRuntime = &overrideEntry->runtime;
+			}
+			else if (auto* hardpoint = Hardpoint(context); hardpoint && hardpoint->IsSecondWeaponActive())
+			{
+				state.retainedWeaponRuntime = hardpoint->RetainSecondWeaponRuntime();
+				state.retainedWeaponDefinition = fireAction.weaponDefinition;
+				state.persistentWeaponRuntime = state.retainedWeaponRuntime.get();
 			}
 			else if (context.instance)
 			{
@@ -294,11 +303,9 @@ namespace vega
 		}
 	}
 
-	void FireWeaponActionRuntime::Execute(
-		ActiveAbilityAction& action,
-		AbilityExecutionContext& context
-	)
+	void FireWeaponActionRuntime::Execute(ActiveAbilityAction& action, AbilityExecutionContext& context)
 	{
+		if (const auto* hardpoint = Hardpoint(context); hardpoint && hardpoint->IsSwitching()) return;
 		if (!action.spec || !context.abilitySystem ||
 			!std::holds_alternative<FireWeaponAction>(action.spec->action))
 		{
@@ -334,12 +341,9 @@ namespace vega
 		}
 	}
 
-	void FireWeaponActionRuntime::Tick(
-		ActiveAbilityAction& action,
-		AbilityExecutionContext& context,
-		float deltaTime
-	)
+	void FireWeaponActionRuntime::Tick(ActiveAbilityAction& action, AbilityExecutionContext& context, float deltaTime)
 	{
+		if (const auto* hardpoint = Hardpoint(context); hardpoint && hardpoint->IsSwitching()) return;
 		if (!action.spec || !context.abilitySystem ||
 			action.spec->phase != sas::AbilityActionPhase::WhileActive ||
 			!std::holds_alternative<FireWeaponAction>(action.spec->action))
@@ -402,10 +406,7 @@ namespace vega
 		}
 	}
 
-	void FireWeaponActionRuntime::End(
-		ActiveAbilityAction& action,
-		AbilityExecutionContext& context
-	)
+	void FireWeaponActionRuntime::End(ActiveAbilityAction& action, AbilityExecutionContext& context)
 	{
 		if (!action.spec || !context.abilitySystem ||
 			!std::holds_alternative<FireWeaponAction>(action.spec->action) ||
@@ -421,7 +422,8 @@ namespace vega
 		Actor& owner = context.abilitySystem->GetOwner();
 		const FireWeaponAction& authoredAction = std::get<FireWeaponAction>(action.spec->action);
 		FireWeaponAction overrideAction;
-		const FireWeaponAction& fireAction = ResolveFireAction(context, authoredAction, overrideAction);
+		if (state.retainedWeaponDefinition) overrideAction.weaponDefinition = *state.retainedWeaponDefinition;
+		const FireWeaponAction& fireAction = state.retainedWeaponDefinition ? overrideAction : ResolveFireAction(context, authoredAction, overrideAction);
 		PrimaryWeaponExecutionSystem::EndFire(
 			MakeExecutionContext(owner, context, fireAction, ResolveAttributes(context, fireAction, state)),
 			state.GetWeaponRuntime()
@@ -447,5 +449,7 @@ namespace vega
 		// later erase or push_back would dangle this pointer between frames.
 		// Nothing reads it before the next lifecycle starts, so drop it now.
 		state.persistentWeaponRuntime = nullptr;
+		state.retainedWeaponRuntime.reset();
+		state.retainedWeaponDefinition.reset();
 	}
 }

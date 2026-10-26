@@ -1,10 +1,12 @@
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/module/rules/legendary/LegendarySecondHardpointRuntime.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/IDamageable.h"
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
 #include "gameplay/HealthComponent.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/ability/actors/AbilityWorldActor.h"
 
 #include <algorithm>
 #include <cmath>
@@ -200,11 +202,16 @@ namespace vega
 			? sourceCombatant->GetCombatRuntime().GetPrimaryShotDamageMultiplier()
 			: 1.f;
 		// Epic Offense (Blood Contract, Alternating Current): owner hits only; suppressed and generated damage never qualify.
+		float mainEffectMultiplier = payload.hitGroup ? payload.hitGroup->mainEffectMultiplier : payload.mainEffectMultiplier;
+		if (const auto* actor = dynamic_cast<const AbilityWorldActor*>(deliveryActor)) mainEffectMultiplier = actor->GetDamagePayload().mainEffectMultiplier;
 		auto* epicSource = source ? dynamic_cast<Combatant*>(source) : nullptr;
 		const float epicOffenseMultiplier = epicSource && !payload.skipModuleDamageRules && payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed
-			? epicSource->GetCombatRuntime().ResolveEpicOffenseOutgoingMultiplier(target, sourceAbilityTags, damageTags, deliveryType)
+			? epicSource->GetCombatRuntime().ResolveEpicOffenseOutgoingMultiplier(target, sourceAbilityTags, damageTags, deliveryType, mainEffectMultiplier)
 			: 1.f;
-		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier * primaryShotMultiplier * epicOffenseMultiplier;
+		float hardpointMultiplier = 1.f;
+		if (epicSource && !payload.primaryWeaponId.ToString().empty() && deliveryType != DamageDeliveryType::Periodic && !payload.skipModuleDamageRules && payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Normal)
+			if (auto* hardpoint = epicSource->GetAbilitySystemComponent().GetSecondHardpointRuntime()) hardpointMultiplier = hardpoint->ResolveDirectHit(target, payload.primaryWeaponId);
+		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier * primaryShotMultiplier * epicOffenseMultiplier * hardpointMultiplier;
 		bool wasCritical = false;
 		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
 		{

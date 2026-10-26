@@ -1,5 +1,7 @@
 #include "presentation/ability/AbilityPresentationContent.h"
+#include "presentation/ability/ionComet/IonCometPresentationProfile.h"
 #include "presentation/ability/moduleGenerated/ModuleGeneratedPresentationProfile.h"
+#include "presentation/ability/statusReaction/StatusReactionPresentationProfile.h"
 
 #include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h"
 #include "presentation/ability/infernoSpray/InfernoSprayPresentationProfile.h"
@@ -53,6 +55,7 @@ namespace vega
 	bool RegisterGameAbilityPresentationContent()
 	{
 		static const bool registered =
+			RegisterIonCometPresentationProfiles() &&
 			RegisterGravityAnomalyPresentationProfiles() &&
 			RegisterRocketPresentationProfiles() &&
 			RegisterOverdriveCorePresentationProfiles() &&
@@ -99,7 +102,8 @@ namespace vega
 			RegisterEmberSwarmPresentationProfiles() &&
 			RegisterLanceDrivePresentationProfiles() &&
 			RegisterReclaimerProtocolPresentationProfiles() &&
-			RegisterModuleGeneratedPresentationProfiles();
+			RegisterModuleGeneratedPresentationProfiles() &&
+			RegisterStatusReactionPresentationProfiles();
 		return registered;
 	}
 }

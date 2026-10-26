@@ -3,6 +3,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/HealthComponent.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/ability/runtime/MainEffectMultiplier.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -68,7 +69,7 @@ namespace vega
 			if (count >= 2) effects.monochromeMultipliers.push_back({ type, effects.monochromePairMultiplier + static_cast<float>(count - 2) * effects.monochromeAdditionalAbilityBonus });
 	}
 
-	float ComputeEpicOffenseOutgoingMultiplier(EpicOffenseState& state, const EpicOffenseEffects& effects, Actor& owner, Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType)
+	float ComputeEpicOffenseOutgoingMultiplier(EpicOffenseState& state, const EpicOffenseEffects& effects, Actor& owner, Actor& target, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, DamageDeliveryType deliveryType, float mainEffectMultiplier)
 	{
 		if (!effects.bloodContract && !effects.alternatingCurrent && effects.monochromeMultipliers.empty()) return 1.f;
 		const bool offense = HasTagMatch(sourceAbilityTags, GameplayTags::Ability::Offense);
@@ -79,6 +80,8 @@ namespace vega
 		// A multi-tag hit takes the strongest matching type once; it never compounds one hit's types.
 		for (const auto& [type, value] : effects.monochromeMultipliers)
 			if (HasTagMatch(damageTags, type)) multiplier = std::max(multiplier, value);
+		// Main power is already in the raw output. Apply only the additive group's remaining share.
+		multiplier = ResolveMainEffectMultiplier({ mainEffectMultiplier, multiplier }) / mainEffectMultiplier;
 
 		// Blood Contract: Offense damage (not periodic ticks) scales with missing health, and the hit marks the target for the heal window.
 		if (effects.bloodContract && offense && deliveryType != DamageDeliveryType::Periodic)

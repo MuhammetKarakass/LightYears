@@ -144,7 +144,7 @@ namespace vega
 		}
 		if (mEnemyRuntime.IsReady())
 		{
-			const EnemyBehaviorIntent intent = mBehaviorRuntime.Tick(*this, deltaTime);
+			const EnemyBehaviorIntent intent = mExternallyControlled ? mExternalIntent : mBehaviorRuntime.Tick(*this, deltaTime);
 			ApplyBehaviorIntent(intent, deltaTime);
 		}
 		if (GetIsPendingDestroy())
@@ -170,7 +170,7 @@ namespace vega
 		if (GetIsPendingDestroy()) return;
 		const EnemyBehaviorProfile* profile = mBehaviorRuntime.GetProfile();
 		if (!profile) return;
-		if (target && !target->GetIsPendingDestroy())
+		if (intent.directControl || (target && !target->GetIsPendingDestroy()))
 		{
 			RotateTowardWorldLocation(intent.aimTargetLocation, std::max(0.f, deltaTime) * profile->aimTurnSpeed);
 			const sf::Vector2f right = GetActorRightDirection();
@@ -230,14 +230,35 @@ namespace vega
 		}
 	}
 
+	bool EnemyActor::GrantKillRewards()
+	{
+		if (mKillRewardsGranted) return false;
+		mKillRewardsGranted = true;
+		SpawnReward();
+		onScoreAwarded.Broadcast(mScoreAmt);
+		onShipXPAwarded.Broadcast(mShipXPReward);
+		return true;
+	}
+
+	void EnemyActor::SetExternalIntent(const EnemyBehaviorIntent& intent)
+	{
+		mExternallyControlled = true;
+		mExternalIntent = intent;
+		mExternalIntent.directControl = true;
+	}
+
+	void EnemyActor::ClearExternalControl()
+	{
+		mExternallyControlled = false;
+		mExternalIntent = {};
+	}
+
 	void EnemyActor::Blew()
 	{
 		VEGA_PROFILE_SCOPE("Enemy.Blew");
 		const bool wasReady = mEnemyRuntime.IsReady();
 		mEnemyRuntime.Clear();
 		if (!wasReady) return;
-		SpawnReward();
-		onScoreAwarded.Broadcast(mScoreAmt);
-		onShipXPAwarded.Broadcast(mShipXPReward);
+		GrantKillRewards();
 	}
 }

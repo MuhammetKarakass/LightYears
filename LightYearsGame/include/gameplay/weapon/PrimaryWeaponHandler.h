@@ -26,13 +26,17 @@ namespace vega
 		// Successful firing events since the last completed reload, independent of muzzle/pellet count.
 		int shotsFired = 0;
 		double reloadRemaining = 0.0;
+		// Partial reload progress belongs to reserve storage; it never blocks firing remaining rounds.
+		double reserveReloadRemaining = 0.0;
 	};
 
 	class PrimaryWeaponHandler;
 	class PrimaryWeaponFeatureHandler;
+	struct MeltdownWeaponCycle;
 
 	struct PrimaryWeaponRuntimeState
 	{
+		std::shared_ptr<MeltdownWeaponCycle> meltdownCycle;
 		const PrimaryWeaponHandler* handler = nullptr;
 		List<const PrimaryWeaponFeatureHandler*> features;
 		unique_ptr<PrimaryWeaponTypeRuntimeState> typeState;

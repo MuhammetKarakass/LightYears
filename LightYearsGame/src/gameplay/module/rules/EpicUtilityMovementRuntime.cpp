@@ -301,8 +301,10 @@ namespace vega
 			return;
 		}
 		const sf::Vector2f location = mShip->GetActorLocation();
-		const sf::Vector2f velocity = mHasLastLocation ? (location - mLastLocation) / deltaSeconds : sf::Vector2f{ 0.f, 0.f };
+		const auto teleportOffset = mShip->GetMovementComponent().GetTotalTeleportOffset();
+		const sf::Vector2f velocity = mHasLastLocation ? (location - mLastLocation - (teleportOffset - mLastTeleportOffset)) / deltaSeconds : sf::Vector2f{ 0.f, 0.f };
 		mLastLocation = location;
+		mLastTeleportOffset = teleportOffset;
 		mHasLastLocation = true;
 
 		const ResolvedModuleAssaultVectorRule& first = mRules.assaultVectors.front();

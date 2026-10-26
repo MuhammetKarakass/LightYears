@@ -8,6 +8,7 @@
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "attributes/AttributeMath.h"
+#include "gameplay/ability/runtime/MainEffectMultiplier.h"
 
 #include <algorithm>
 #include <exception>
@@ -20,14 +21,94 @@ namespace vega
 		int count = 0;
 		for (const auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
 		{
-			const auto* ability = GetAbility(slot);
-			if (!ability) continue;
-			for (const auto& tag : ability->GetDefinition().abilityTags)
+			for (const auto* ability : { GetAbility(slot), mTwinRackEnabled ? GetSecondAbility(slot) : nullptr })
 			{
-				if (tag.MatchesTag(category)) { ++count; break; }
+				if (!ability) continue;
+				for (const auto& tag : ability->GetDefinition().abilityTags)
+				{
+					if (tag.MatchesTag(category)) { ++count; break; }
+				}
 			}
 		}
 		return count;
+	}
+
+	GameAbility* LightYearsAbilitySystemComponent::GetSecondAbility(sas::AbilitySlot slot)
+	{
+		return sas::IsLoadoutAbilitySlot(slot) ? mSecondAbilities[static_cast<int>(slot) - static_cast<int>(sas::AbilitySlot::Ability1)].get() : nullptr;
+	}
+
+	const GameAbility* LightYearsAbilitySystemComponent::GetSecondAbility(sas::AbilitySlot slot) const
+	{
+		return sas::IsLoadoutAbilitySlot(slot) ? mSecondAbilities[static_cast<int>(slot) - static_cast<int>(sas::AbilitySlot::Ability1)].get() : nullptr;
+	}
+
+	List<sas::AbilityRuntimeSnapshot> LightYearsAbilitySystemComponent::BuildAbilitySnapshots() const
+	{
+		auto snapshots = sas::AbilitySystemComponent::BuildAbilitySnapshots();
+		for (const auto& ability : mSecondAbilities) if (ability) snapshots.push_back(ability->BuildSnapshot());
+		return snapshots;
+	}
+
+	bool LightYearsAbilitySystemComponent::SetAbilityLevel(sas::AbilityHandle handle, int level, sas::AbilityLevelCommitSink commitSink, void* commitContext)
+	{
+		return RunOperation([&]() -> bool
+		{
+			if (IsClearPending()) return false;
+			for (auto& ability : mSecondAbilities)
+				if (ability && ability->GetHandle() == handle) return ability->SetLevel(level, commitSink, commitContext);
+			return sas::AbilitySystemComponent::SetAbilityLevel(handle, level, commitSink, commitContext);
+		});
+	}
+
+	void LightYearsAbilitySystemComponent::ConfigureTwinRack(bool enabled, float cooldownMultiplier)
+	{
+		RunOperation([&]()
+		{
+			const float nextMultiplier = enabled ? cooldownMultiplier : 1.f;
+			const bool changed = mTwinRackEnabled != enabled || mTwinRackCooldownMultiplier != nextMultiplier;
+			const float ratio = nextMultiplier / mTwinRackCooldownMultiplier;
+			mTwinRackEnabled = enabled;
+			mTwinRackCooldownMultiplier = nextMultiplier;
+			for (const auto& snapshot : BuildAbilitySnapshots())
+			{
+				if (sas::IsLoadoutAbilitySlot(snapshot.slot))
+					if (auto* ability = GetAbility(snapshot.handle)) ability->ScaleRemainingCooldown(ratio);
+			}
+			if (!enabled)
+			{
+				for (auto& ability : mSecondAbilities)
+				{
+					if (!ability) continue;
+					ability->SetInputHeld(false);
+					ability->Cancel(sas::AbilityEndReason::Interrupted);
+				}
+			}
+			if (changed)
+			{
+				for (const auto& snapshot : BuildAbilitySnapshots())
+				{
+					if (!sas::IsLoadoutAbilitySlot(snapshot.slot)) continue;
+					NotifyAbilityChanged(snapshot.handle);
+					break;
+				}
+			}
+		});
+	}
+
+	void LightYearsAbilitySystemComponent::SetLoadoutKeyInput(sas::AbilitySlot slot, bool held, bool control)
+	{
+		if (!sas::IsLoadoutAbilitySlot(slot)) { SetAbilitySlotInput(slot, held); return; }
+		RunOperation([&]()
+		{
+			const auto index = static_cast<int>(slot) - static_cast<int>(sas::AbilitySlot::Ability1);
+			// Choose a bank on the key edge. Changing Ctrl during a channel never
+			// starts its pair or transfers a held input to it.
+			if (held && !mLoadoutKeyHeld[index]) mLoadoutKeySecond[index] = control && mTwinRackEnabled;
+			mLoadoutKeyHeld[index] = held;
+			SetAbilitySlotInput(slot, held && !mLoadoutKeySecond[index]);
+			if (auto* second = GetSecondAbility(slot)) second->SetInputHeld(held && mLoadoutKeySecond[index] && mTwinRackEnabled);
+		});
 	}
 
 	namespace
@@ -75,6 +156,38 @@ namespace vega
 				sas::AbilityEndReason::Completed
 			);
 		}
+	}
+
+	bool LightYearsAbilitySystemComponent::AssignSecondAbility(sas::AbilitySlot slot, const GameAbilityDefinition& definition, std::string* failureReason)
+	{
+		if (failureReason) failureReason->clear();
+		auto fail = [&](const char* message) { if (failureReason) *failureReason = message; return false; };
+		if (IsClearPending() || HasAbilityCallbackInProgress()) return fail("Ability mutation is unavailable during a callback or clear.");
+		if (!sas::IsLoadoutAbilitySlot(slot) || !sas::IsLoadoutAbilitySlot(definition.slot)) return fail("Second abilities require a Q/E/F/R slot and a loadout ability.");
+		if (const auto* existing = GetAbilityById(definition.abilityId))
+		{
+			if (existing == GetSecondAbility(slot)) return true;
+			return fail("An ability ID can occupy only one position across both sets.");
+		}
+		auto& target = mSecondAbilities[static_cast<int>(slot) - static_cast<int>(sas::AbilitySlot::Ability1)];
+		if (target && (target->IsActive() || target->HasPendingCleanup())) return fail("The second ability must finish before replacement.");
+		GameAbilityDefinition bound = definition;
+		bound.slot = slot;
+		if (!GameAbilityDefinitionValidator::Validate(bound, ValidateEffectForRuntime, failureReason)) return false;
+		return RunOperation([&]() -> bool
+		{
+			auto behavior = GameAbilityBehaviorRegistry::Create(bound.behaviorType);
+			if (!behavior) return fail("Ability behavior could not be created.");
+			sas::AbilityHandle handle;
+			do { handle = sas::AbilityHandle{ mNextSecondAbilityHandle-- }; } while (GetAbility(handle));
+			auto replacement = std::make_unique<GameAbility>(*this, handle, bound, std::move(behavior));
+			replacement->RefreshScopedConfiguration();
+			const auto previous = target ? target->GetHandle() : sas::AbilityHandle{};
+			target = std::move(replacement);
+			if (previous.IsValid()) onAbilityRemoved.Broadcast(previous);
+			if (!IsClearPending()) onAbilityGranted.Broadcast(handle);
+			return !IsClearPending();
+		});
 	}
 
 	LightYearsAbilitySystemComponent::LightYearsAbilitySystemComponent(Actor& owner)
@@ -190,13 +303,31 @@ namespace vega
 		return !mModuleSystemGate || mModuleSystemGate->IsModuleSystemEnabled(systemTag);
 	}
 
-	float LightYearsAbilitySystemComponent::GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition) const
+	float LightYearsAbilitySystemComponent::GetAbilityMainEffectGroupMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const
 	{
-		return mModuleSystemGate && sas::IsLoadoutAbilitySlot(definition.slot) ? mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags) * mModuleSystemGate->GetAbilitySlotMainEffectMultiplier(definition.slot) : 1.f;
+		if (!mModuleSystemGate || !sas::IsLoadoutAbilitySlot(definition.slot)) return 1.f;
+		return ResolveMainEffectMultiplier({ mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags), mModuleSystemGate->GetAbilitySlotMainEffectMultiplier(definition.slot), mModuleSystemGate->GetPrimedArsenalMultiplier(handle) });
+	}
+
+	float LightYearsAbilitySystemComponent::GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const
+	{
+		const float general = mModuleSystemGate && sas::IsLoadoutAbilitySlot(definition.slot) ? mModuleSystemGate->GetAbilityGeneralEffectMultiplier(definition.abilityTags) : 1.f;
+		return GetAbilityMainEffectGroupMultiplier(definition, handle) * general;
+	}
+
+	float LightYearsAbilitySystemComponent::GetPrimedArsenalBonus(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const
+	{
+		if (!mModuleSystemGate || !sas::IsLoadoutAbilitySlot(definition.slot)) return 0.f;
+		return (mModuleSystemGate->GetPrimedArsenalMultiplier(handle) - 1.f) * mModuleSystemGate->GetAbilityGeneralEffectMultiplier(definition.abilityTags);
 	}
 
 	bool LightYearsAbilitySystemComponent::IsModuleAbilityAvailable(const std::string& abilityId) const
 	{
+		for (const auto& second : mSecondAbilities)
+		{
+			if (second && second->GetDefinition().abilityId == abilityId)
+				return mTwinRackEnabled && IsModuleSystemEnabled(ModuleSystemForAbilitySlot(second->GetRuntimeSlot()));
+		}
 		for (const auto& system : { GameplayTags::Module::System::AbilitySlot1, GameplayTags::Module::System::AbilitySlot2, GameplayTags::Module::System::AbilitySlot3, GameplayTags::Module::System::AbilitySlot4 })
 		{
 			const GameAbility* ability = GetAbility(AbilitySlotForModuleSystem(system));
@@ -225,28 +356,32 @@ namespace vega
 			{
 				ability->Cancel(sas::AbilityEndReason::Interrupted);
 			}
+			GameAbility* second = GetSecondAbility(slot);
+			if (second && second->IsActive() && !IsModuleAbilityAvailable(second->GetDefinition().abilityId)) second->Cancel(sas::AbilityEndReason::Interrupted);
 		}
 	}
 
 	GameAbility* LightYearsAbilitySystemComponent::GetAbility(sas::AbilityHandle handle)
 	{
+		for (auto& ability : mSecondAbilities) if (ability && ability->GetHandle() == handle) return ability.get();
 		return FindAbility<GameAbility>(handle);
 	}
 
 	const GameAbility* LightYearsAbilitySystemComponent::GetAbility(sas::AbilityHandle handle) const
 	{
+		for (const auto& ability : mSecondAbilities) if (ability && ability->GetHandle() == handle) return ability.get();
 		return FindAbility<GameAbility>(handle);
 	}
 
 	GameAbility* LightYearsAbilitySystemComponent::GetAbilityById(const std::string& abilityId)
 	{
+		for (auto& ability : mSecondAbilities) if (ability && ability->GetDefinition().abilityId == abilityId) return ability.get();
 		return FindAbilityById<GameAbility>(abilityId);
 	}
 
-	const GameAbility* LightYearsAbilitySystemComponent::GetAbilityById(
-		const std::string& abilityId
-	) const
+	const GameAbility* LightYearsAbilitySystemComponent::GetAbilityById(const std::string& abilityId) const
 	{
+		for (const auto& ability : mSecondAbilities) if (ability && ability->GetDefinition().abilityId == abilityId) return ability.get();
 		return FindAbilityById<GameAbility>(abilityId);
 	}
 
@@ -299,23 +434,35 @@ namespace vega
 			CancelActiveAbilitiesForStun();
 			sas::AbilitySystemComponent::Tick(deltaTime);
 			if (IsClearPending()) return;
+			for (auto& ability : mSecondAbilities)
+			{
+				if (ability) ability->Tick(deltaTime);
+				if (IsClearPending()) return;
+			}
 			mAbilityInvocationRuntime.Tick(deltaTime);
 			CancelActiveAbilitiesForStun();
 		});
 	}
 
-	void LightYearsAbilitySystemComponent::ClearAdditionalState(
-		bool preserveRuntimeDependencies
-	)
+	void LightYearsAbilitySystemComponent::ClearAdditionalState(bool preserveRuntimeDependencies)
 	{
 		std::exception_ptr error;
 		// Retained invocations are reported through GetPendingAdditionalCleanup(); only callback exceptions propagate.
 		try { static_cast<void>(mAbilityInvocationRuntime.Clear()); }
 		catch (...) { error = std::current_exception(); }
+		for (auto& ability : mSecondAbilities)
+		{
+			if (!ability) continue;
+			try { ability->Cancel(sas::AbilityEndReason::OwnerDestroyed); }
+			catch (...) { if (!error) error = std::current_exception(); }
+			if (!ability->IsActive() && !ability->HasPendingCleanup()) ability.reset();
+		}
+		mLoadoutKeyHeld.fill(false);
+		mLoadoutKeySecond.fill(false);
 		mAbilityUseHistory.Clear();
 		mLifecycleDispatcher.Clear();
 		if (!preserveRuntimeDependencies &&
-			mAbilityInvocationRuntime.GetActiveInvocationCount() == 0)
+			!GetPendingAdditionalCleanup().value_or(false))
 		{
 			ReleaseAdditionalRuntimeDependencies();
 		}
@@ -324,7 +471,7 @@ namespace vega
 
 	std::optional<bool> LightYearsAbilitySystemComponent::GetPendingAdditionalCleanup() const
 	{
-		return mAbilityInvocationRuntime.GetActiveInvocationCount() != 0;
+		return mAbilityInvocationRuntime.GetActiveInvocationCount() != 0 || std::any_of(mSecondAbilities.begin(), mSecondAbilities.end(), [](const auto& ability) { return bool(ability); });
 	}
 
 	void LightYearsAbilitySystemComponent::ReleaseAdditionalRuntimeDependencies()
@@ -750,9 +897,7 @@ namespace vega
 		if (error) std::rethrow_exception(error);
 	}
 
-	void LightYearsAbilitySystemComponent::ProcessGameGameplayEvent(
-		const sas::AbilityEvent& event
-	)
+	void LightYearsAbilitySystemComponent::ProcessGameGameplayEvent(const sas::AbilityEvent& event)
 	{
 		return RunOperation([&]()
 		{
@@ -784,6 +929,11 @@ namespace vega
 					);
 				}
 			);
+			for (auto& second : mSecondAbilities)
+			{
+				if (IsClearPending()) break;
+				if (mTwinRackEnabled && second) second->HandleGameplayEvent(event);
+			}
 		});
 	}
 
@@ -798,9 +948,7 @@ namespace vega
 		});
 	}
 
-	void LightYearsAbilitySystemComponent::ProcessAbilityLifecycleEvent(
-		const sas::AbilityLifecycleEvent& event
-	)
+	void LightYearsAbilitySystemComponent::ProcessAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event)
 	{
 		// History is populated before observers run so an observer can consume the
 		// newly recorded action immediately. Echo/system invocations are excluded
@@ -836,6 +984,11 @@ namespace vega
 				);
 			}
 		);
+		for (auto& second : mSecondAbilities)
+		{
+			if (IsClearPending()) break;
+			if (mTwinRackEnabled && second) second->HandleAbilityLifecycleEvent(event);
+		}
 	}
 
 	void LightYearsAbilitySystemComponent::RecordAbilityActivation(
@@ -870,6 +1023,9 @@ namespace vega
 		record.slot = definition.slot;
 		record.level = ability->GetLevel();
 		record.maxLevel = ability->GetMaxLevel();
+		record.mainEffectMultiplier = definition.mainEffectMultiplier;
+		record.primedMainEffectBonus = definition.primedMainEffectBonus;
+		record.mainEffectGroupMultiplier = ability->GetDamageHitGroup() ? ability->GetDamageHitGroup()->mainEffectMultiplier : 1.f;
 		record.abilityTags = definition.abilityTags;
 		record.unlockedUpgradeIds = definition.unlockedUpgradeIds;
 		record.activationOrigin = event.activationOrigin;

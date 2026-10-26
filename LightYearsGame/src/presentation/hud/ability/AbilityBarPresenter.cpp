@@ -7,6 +7,7 @@
 #include "player/Player.h"
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
+#include "gameplay/attributes/AttributeIds.h"
 
 #include <algorithm>
 #include <cmath>
@@ -68,6 +69,39 @@ namespace vega
 	{
 	}
 
+	std::string BuildPrimaryWeaponReadout(PlayerSpaceShip& ship)
+	{
+		auto& abilities = ship.GetAbilitySystemComponent();
+		const auto* hardpoint = abilities.GetSecondHardpointRuntime();
+		const auto* meltdown = abilities.GetMeltdownBarrelRuntime();
+		if (!hardpoint && !meltdown) return {};
+		auto* primary = abilities.GetAbility(sas::AbilitySlot::PrimaryFire);
+		if (!primary) return {};
+		const PrimaryWeaponDefinition* weapon = nullptr;
+		const PrimaryWeaponRuntimeState* state = &primary->GetPrimaryWeaponRuntime();
+		for (const auto& action : primary->GetDefinition().actions)
+			if (const auto* fire = std::get_if<FireWeaponAction>(&action.action)) { weapon = &fire->weaponDefinition; break; }
+		if (hardpoint && hardpoint->IsSecondWeaponActive())
+		{
+			weapon = hardpoint->GetSecondWeapon();
+			state = &abilities.GetSecondHardpointRuntime()->GetSecondWeaponState().runtime;
+		}
+		if (const auto* form = abilities.GetActivePrimaryWeaponOverride()) { weapon = &form->weaponDefinition; state = &form->runtime; }
+		if (!weapon) return {};
+		std::string text = ShortAbilityName(weapon->weaponId);
+		if (hardpoint && hardpoint->GetSecondWeapon()) text += hardpoint->IsSecondWeaponActive() ? "  [2/2]" : "  [1/2]";
+		if (meltdown && meltdown->Supports(*weapon))
+		{
+			const float heat = weapon->magazine ? (state->meltdownCycle && state->meltdownCycle->active ? state->meltdownCycle->heat : 0.f) : state->GetFeatureValue(PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue);
+			text += "\nHeat " + FormatStatValue(heat);
+		}
+		else if (weapon->magazine) text += "\nAmmo " + std::to_string(state->isInitialized ? state->magazineState.roundsRemaining : weapon->magazine->capacity) + "/" + std::to_string(weapon->magazine->capacity);
+		if (hardpoint && hardpoint->IsSwitching()) text += "\nSwitch " + FormatStatValue(hardpoint->GetSwitchRemaining()) + "s";
+		if (state->meltdownCycle && state->meltdownCycle->active && state->meltdownCycle->focusRemaining > 0.f) text += "\nNova " + FormatStatValue(state->meltdownCycle->focusRemaining) + "s";
+		if (hardpoint && hardpoint->GetSecondWeapon()) text += "\nMouse wheel: switch";
+		return text;
+	}
+
 	void AbilityBarPresenter::BindShip(const shared_ptr<PlayerSpaceShip>& ship)
 	{
 		mShipSubs.Clear();
@@ -86,6 +120,7 @@ namespace vega
 
 	void AbilityBarPresenter::ClearShip()
 	{
+		SetIfChanged(mViewModel->weaponReadout, std::string{}, mViewModel->revision);
 		mShipSubs.Clear();
 		mBoundShip.reset();
 		mBoundShipId = 0;
@@ -116,8 +151,8 @@ namespace vega
 		{
 			AbilitySlotViewData projected = mViewModel->slots[index];
 			const sas::AbilitySlot slot = static_cast<sas::AbilitySlot>(
-				static_cast<int>(sas::AbilitySlot::Ability1) + static_cast<int>(index));
-			GameAbility* ability = abilitySystem.GetAbility(slot);
+				static_cast<int>(sas::AbilitySlot::Ability1) + static_cast<int>(index % 4));
+			GameAbility* ability = index < 4 ? abilitySystem.GetAbility(slot) : abilitySystem.GetSecondAbility(slot);
 			projected.statsText = ability && projected.visible ? BuildStatsText(abilitySystem, *ability) : std::string{};
 			SetIfChanged(mViewModel->slots[index], projected, mViewModel->revision);
 		}
@@ -139,17 +174,18 @@ namespace vega
 		for (std::size_t index = 0; index < mViewModel->slots.size(); ++index)
 		{
 			const sas::AbilitySlot slot = static_cast<sas::AbilitySlot>(
-				static_cast<int>(sas::AbilitySlot::Ability1) + static_cast<int>(index));
-			GameAbility* ability = abilitySystem.GetAbility(slot);
+				static_cast<int>(sas::AbilitySlot::Ability1) + static_cast<int>(index % 4));
+			GameAbility* ability = index < 4 ? abilitySystem.GetAbility(slot) : abilitySystem.GetSecondAbility(slot);
 			AbilitySlotViewData projected{};
 			projected.statsText = mViewModel->slots[index].statsText;
-			if (ability && !ability->GetDefinition().iconPath.empty())
+			if (ability && (index < 4 || abilitySystem.IsTwinRackEnabled()) && !ability->GetDefinition().iconPath.empty())
 			{
 				const GameAbilityDefinition& definition = ability->GetDefinition();
 				projected.visible = true;
 				projected.iconPath = definition.iconPath;
-				projected.inputLabel = AbilityInputSchema::GetLabel(slot);
+				projected.inputLabel = (index < 4 ? "" : "Ctrl+") + std::string{ AbilityInputSchema::GetLabel(slot) };
 				projected.accentColor = definition.accentColor;
+				if (abilitySystem.IsTwinRackEnabled() && ability->IsOnCooldown()) projected.cooldownTenths = static_cast<int>(std::lround(ability->GetCooldownRemaining() * 10.f));
 				if (ability->IsActive()) projected.state = AbilitySlotState::Active;
 				else if (ability->IsOnCooldown())
 				{
@@ -160,5 +196,6 @@ namespace vega
 			SetIfChanged(mViewModel->slots[index], projected, mViewModel->revision);
 		}
 		RefreshStats();
+		SetIfChanged(mViewModel->weaponReadout, BuildPrimaryWeaponReadout(*ship), mViewModel->revision);
 	}
 }
