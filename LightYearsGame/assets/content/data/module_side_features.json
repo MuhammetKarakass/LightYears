@@ -2543,6 +2543,36 @@
           }
         ]
       }
+    },
+    {
+      "id": "Module.SideFeature.Shared.FourCorners",
+      "displayName": "Four Corners",
+      "levelCount": 3,
+      "description": "While your Q/E/F/R abilities belong to four different families, their main effects are +10% stronger.",
+      "rules": {
+        "distinctFamilyMainEffectBonus": 0.1
+      },
+      "requiredRarity": "Uncommon"
+    },
+    {
+      "id": "Module.SideFeature.Shared.FourCorners.Rare",
+      "displayName": "Four Corners",
+      "levelCount": 3,
+      "description": "While your Q/E/F/R abilities belong to four different families, their main effects are +16% stronger.",
+      "rules": {
+        "distinctFamilyMainEffectBonus": 0.16
+      },
+      "requiredRarity": "Rare"
+    },
+    {
+      "id": "Module.SideFeature.Shared.FourCorners.Epic",
+      "displayName": "Four Corners",
+      "levelCount": 3,
+      "description": "While your Q/E/F/R abilities belong to four different families, their main effects are +24% stronger.",
+      "rules": {
+        "distinctFamilyMainEffectBonus": 0.24
+      },
+      "requiredRarity": "Epic"
     }
   ]
 }

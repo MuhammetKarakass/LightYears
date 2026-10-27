@@ -17,6 +17,8 @@ namespace vega
 		virtual float GetAbilitySlotMainEffectMultiplier(sas::AbilitySlot) const { return 1.f; }
 		virtual float GetAbilityGeneralEffectMultiplier(const List<GameplayTag>&) const { return 1.f; }
 		virtual float GetPrimedArsenalMultiplier(sas::AbilityHandle) const { return 1.f; }
+		// Loadout-composition power of the ability's Q/E/F/R set (Four Corners).
+		virtual float GetAbilitySetMainEffectMultiplier(sas::AbilityHandle) const { return 1.f; }
 		virtual void CommitPrimedArsenalUse(sas::AbilityHandle) {}
 		virtual void RefreshPoolConversion() {}
 		virtual float GetAbilitySlotCooldownMultiplier(sas::AbilitySlot) const { return 1.f; }

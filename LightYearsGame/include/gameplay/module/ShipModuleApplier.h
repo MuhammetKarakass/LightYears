@@ -86,6 +86,7 @@ namespace vega
 		float GetAbilityMainEffectMultiplier(const List<GameplayTag>& abilityTags) const override { return mHasApplied ? mEpicUtilityMovementRuntime.GetNextCascadeMultiplier(abilityTags) : 1.f; }
 		float GetAbilityGeneralEffectMultiplier(const List<GameplayTag>& abilityTags) const override { return mHasApplied ? mEpicUtilityMovementRuntime.GetUtilityEffectMultiplier(abilityTags) : 1.f; }
 		float GetPrimedArsenalMultiplier(sas::AbilityHandle ability) const override { return mLegendaryPrimedArsenalRuntime.GetMultiplier(ability); }
+		float GetAbilitySetMainEffectMultiplier(sas::AbilityHandle ability) const override;
 		void CommitPrimedArsenalUse(sas::AbilityHandle ability) override { mLegendaryPrimedArsenalRuntime.OnUseCommitted(ability); }
 		void RefreshPoolConversion() override { mLegendaryHardlightHullRuntime.Refresh(); }
 		float GetAbilitySlotMainEffectMultiplier(sas::AbilitySlot slot) const override

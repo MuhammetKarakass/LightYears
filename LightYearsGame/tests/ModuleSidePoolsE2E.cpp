@@ -291,6 +291,37 @@ namespace
 		f.Equal("the retained counter awards five percent at the next fifteen-use threshold", 1.2f, respawn.ship->GetModuleApplier().GetAbilityGeneralEffectMultiplier(utility));
 		Fixture fresh{ report, application }; f.Equal("a new run state starts without overflow", 1.f, fresh.ship->GetModuleApplier().GetAbilityGeneralEffectMultiplier(utility));
 	}
+	void FourCornersChecks(Report& report, Application& application)
+	{
+		const auto put = [](Fixture& f, const char* id, sas::AbilitySlot slot) -> GameAbility&
+		{
+			auto& asc = f.ship->GetAbilitySystemComponent();
+			if (const auto* old = asc.GetAbility(slot)) f.report.Check(asc.RemoveAbility(old->GetHandle()), "replace fixture ability through ASC");
+			if (const auto* previous = asc.GetAbilityById(id)) f.report.Check(asc.RemoveAbility(previous->GetHandle()), "move an existing ability without duplicating it");
+			auto definition = *content::AbilityContentCatalog::FindById(id); definition.slot = slot;
+			f.report.Check(asc.GrantAbility(definition).IsValid(), "grant Four Corners test ability"); return *asc.GetAbility(slot);
+		};
+		const auto power = [](Fixture& f, const GameAbility& ability) { return f.ship->GetAbilitySystemComponent().GetAbilityMainEffectMultiplier(ability.GetDefinition(), ability.GetHandle()); };
+		for (const auto rarity : { ModuleRarity::Uncommon, ModuleRarity::Rare, ModuleRarity::Epic })
+		{
+			Fixture f{ report, application }; const auto host = Host(f, rarity);
+			const std::string suffix = rarity == ModuleRarity::Uncommon ? "" : rarity == ModuleRarity::Rare ? ".Rare" : ".Epic"; const float bonus = rarity == ModuleRarity::Uncommon ? .10f : rarity == ModuleRarity::Rare ? .16f : .24f;
+			host->sideFeatures.push_back(Shared("FourCorners" + suffix));
+			auto& q = put(f, "Ability.Offense.Rocket.Basic", sas::AbilitySlot::Ability1); put(f, "Ability.Defense.DirectionalBarrier.Basic", sas::AbilitySlot::Ability2);
+			put(f, "Ability.Movement.Dash.Basic", sas::AbilitySlot::Ability3); auto& r = put(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability4);
+			f.Equal("four families without Four Corners keep main effects", 1.f, power(f, q));
+			const auto instance = f.Install(host->moduleId.ToString().c_str(), 1, 3, Shared("FourCorners" + suffix).c_str());
+			f.Equal("Four Corners raises an Offense main effect", 1.f + bonus, power(f, q));
+			f.Equal("Four Corners raises a Utility main effect", 1.f + bonus, power(f, r));
+			Use(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability4); f.Equal("a real activation captures the Four Corners bonus", 1.f + bonus, r.GetDefinition().mainEffectMultiplier);
+			auto& duplicate = put(f, "Ability.Offense.ChainLightning.Basic", sas::AbilitySlot::Ability4);
+			f.Equal("a repeated family closes Four Corners", 1.f, power(f, q)); f.Equal("the repeated-family ability gets no bonus", 1.f, power(f, duplicate));
+			f.report.Check(f.ship->GetAbilitySystemComponent().RemoveAbility(duplicate.GetHandle()), "empty the R slot");
+			f.Equal("an empty slot closes Four Corners", 1.f, power(f, q));
+			put(f, "Ability.Utility.CryoBola.Basic", sas::AbilitySlot::Ability4); f.Equal("refilling the fourth family reopens Four Corners", 1.f + bonus, power(f, q));
+			f.Remove(instance); f.Equal("removing the module removes the bonus", 1.f, power(f, q));
+		}
+	}
 	void ShipLevelChecks(Report& report, Application& application)
 	{
 		// Ship level one keeps the authored values; a later level change reaches the live applier without a fresh install.
@@ -327,7 +358,7 @@ int main(int argc, char** argv)
 		vega::EngineContext::Current().Assets().SetAssetRootDirectory((std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/");
 		if (!GameContentBootstrap::Register()) throw std::runtime_error{ "side-pool content registration failed" };
 		std::string title = "Module side pools E2E"; Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None }; application.GetRenderWindow().setVisible(false);
-		PoolChecks(report); ScaleChecks(report, application); OtherScaleChecks(report, application); ZoneChecks(report, application); RecoveryChecks(report, application); DeferredChecks(report, application); PatchChecks(report, application); MomentumChecks(report, application); OverflowChecks(report, application); ShipLevelChecks(report, application); report.artifact["passed"] = true;
+		PoolChecks(report); ScaleChecks(report, application); OtherScaleChecks(report, application); ZoneChecks(report, application); RecoveryChecks(report, application); DeferredChecks(report, application); PatchChecks(report, application); MomentumChecks(report, application); OverflowChecks(report, application); FourCornersChecks(report, application); ShipLevelChecks(report, application); report.artifact["passed"] = true;
 	}
 	catch (const std::exception& exception) { report.artifact["error"] = exception.what(); std::cerr << exception.what() << '\n'; }
 	report.artifact["test"] = "ModuleSidePoolsE2E"; WriteArtifact(argv[1], report.artifact); return report.artifact.value("passed", false) ? 0 : 1;

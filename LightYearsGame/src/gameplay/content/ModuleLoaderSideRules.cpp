@@ -63,5 +63,11 @@ namespace vega::content::module_loader_detail
 			if (!object.at("primarySplitFire").is_boolean() || !object.at("primarySplitFire").get<bool>()) throw std::runtime_error(context + " primarySplitFire must be true");
 			rules.primarySplitFire = true;
 		}
+		if (object.contains("distinctFamilyMainEffectBonus"))
+		{
+			requireSide();
+			rules.distinctFamilyMainEffectBonus = ParseFiniteFloat(object.at("distinctFamilyMainEffectBonus"), context);
+			if (rules.distinctFamilyMainEffectBonus <= 0.f || rules.distinctFamilyMainEffectBonus > 1.f) throw std::runtime_error(context + " invalid distinct family main effect bonus");
+		}
 	}
 }

@@ -621,6 +621,8 @@ namespace vega
 		std::optional<ModuleMomentumExtension> momentumExtension;
 		float primaryShareOfAbilityBonus = 0.f;
 		bool primarySplitFire = false;
+		// Four Corners, side features only: added main-effect power while the ability's Q/E/F/R set spans four different families.
+		float distinctFamilyMainEffectBonus = 0.f;
 	};
 	inline bool operator==(const ModuleRulePackage::ShieldReflection& left, const ModuleRulePackage::ShieldReflection& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
 

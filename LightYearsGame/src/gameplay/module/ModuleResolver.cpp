@@ -603,6 +603,7 @@ namespace vega
 								}
 							}
 							if (feature->rules.primarySplitFire) effects.primaryMount.splitFire = true;
+							effects.distinctFamilyMainEffectBonus += feature->rules.distinctFamilyMainEffectBonus;
 						}
 				}
 

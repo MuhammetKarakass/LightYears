@@ -205,6 +205,12 @@ namespace vega
 		if (mMovementAbilityCount != mAbilities.CountLoadoutAbilitiesWithTag(GameplayTags::Ability::Movement) || updated.monochromeMultipliers != mResolved.epicOffense.monochromeMultipliers) Rebuild();
 	}
 
+	float ShipModuleApplier::GetAbilitySetMainEffectMultiplier(sas::AbilityHandle ability) const
+	{
+		if (!mHasApplied || mResolved.distinctFamilyMainEffectBonus <= 0.f || !mAbilities.HasDistinctLoadoutFamilies(ability)) return 1.f;
+		return 1.f + mResolved.distinctFamilyMainEffectBonus;
+	}
+
 	bool ShipModuleApplier::IsSystemEnabled(const GameplayTag& systemTag) const
 	{
 		return std::find(mEnabledSystems.begin(), mEnabledSystems.end(), systemTag) != mEnabledSystems.end();

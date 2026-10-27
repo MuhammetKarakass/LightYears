@@ -33,6 +33,27 @@ namespace vega
 		return count;
 	}
 
+	bool LightYearsAbilitySystemComponent::HasDistinctLoadoutFamilies(sas::AbilityHandle ability) const
+	{
+		constexpr sas::AbilitySlot slots[]{ sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 };
+		bool second = false;
+		for (const auto slot : slots)
+			if (const auto* candidate = GetSecondAbility(slot); candidate && candidate->GetHandle() == ability) second = true;
+		List<GameplayTag> families;
+		for (const auto slot : slots)
+		{
+			const GameAbility* member = second ? GetSecondAbility(slot) : GetAbility(slot);
+			if (!member) return false;
+			GameplayTag family;
+			for (const auto& candidate : { GameplayTags::Ability::Offense, GameplayTags::Ability::Defense, GameplayTags::Ability::Movement, GameplayTags::Ability::Utility })
+				for (const auto& tag : member->GetDefinition().abilityTags)
+					if (tag.MatchesTag(candidate)) family = candidate;
+			if (!family.IsValid() || std::find(families.begin(), families.end(), family) != families.end()) return false;
+			families.push_back(family);
+		}
+		return true;
+	}
+
 	GameAbility* LightYearsAbilitySystemComponent::GetSecondAbility(sas::AbilitySlot slot)
 	{
 		return sas::IsLoadoutAbilitySlot(slot) ? mSecondAbilities[static_cast<int>(slot) - static_cast<int>(sas::AbilitySlot::Ability1)].get() : nullptr;
@@ -306,7 +327,7 @@ namespace vega
 	float LightYearsAbilitySystemComponent::GetAbilityMainEffectGroupMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const
 	{
 		if (!mModuleSystemGate || !sas::IsLoadoutAbilitySlot(definition.slot)) return 1.f;
-		return ResolveMainEffectMultiplier({ mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags), mModuleSystemGate->GetAbilitySlotMainEffectMultiplier(definition.slot), mModuleSystemGate->GetPrimedArsenalMultiplier(handle) });
+		return ResolveMainEffectMultiplier({ mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags), mModuleSystemGate->GetAbilitySlotMainEffectMultiplier(definition.slot), mModuleSystemGate->GetPrimedArsenalMultiplier(handle), mModuleSystemGate->GetAbilitySetMainEffectMultiplier(handle) });
 	}
 
 	float LightYearsAbilitySystemComponent::GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const

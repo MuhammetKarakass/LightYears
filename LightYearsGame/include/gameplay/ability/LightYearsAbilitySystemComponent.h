@@ -62,6 +62,8 @@ namespace vega
 		GameAbility* GetAbilityById(const std::string& abilityId);
 		const GameAbility* GetAbilityById(const std::string& abilityId) const;
 		int CountLoadoutAbilitiesWithTag(const GameplayTag& category) const;
+		// True when the Q/E/F/R set holding the ability (the second set under Twin Rack) is full and its four abilities belong to four different families.
+		bool HasDistinctLoadoutFamilies(sas::AbilityHandle ability) const;
 		std::size_t AddScopedAbilityRule(ScopedAbilityRule rule);
 		bool RemoveScopedAbilityRule(std::size_t ruleHandle);
 		void ClearScopedAbilityRules();
