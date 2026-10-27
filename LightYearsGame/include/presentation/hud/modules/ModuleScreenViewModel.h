@@ -23,6 +23,8 @@ namespace vega
 		ModuleSideFeatureViewState sideFeatureState{ ModuleSideFeatureViewState::None };
 		std::string sideFeatureName, sideFeatureDescription;
 		bool isSystem{ false };
+		bool mirror{ false };
+		int rotationQuarterTurns = 0;
 		int cellCount{ 0 };
 		int variantIndex{ 0 };
 		// Covered grid cells; filled for installed modules only.
@@ -38,7 +40,7 @@ namespace vega
 
 		bool operator==(const ModuleEntryView& o) const
 		{
-			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && rarity == o.rarity && description == o.description && isSystem == o.isSystem &&
+			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && rarity == o.rarity && description == o.description && isSystem == o.isSystem && mirror == o.mirror && rotationQuarterTurns == o.rotationQuarterTurns &&
 				level == o.level && levelCount == o.levelCount && sizeLadder == o.sizeLadder && sideFeatureRequiredCells == o.sideFeatureRequiredCells && sideFeatureState == o.sideFeatureState && sideFeatureName == o.sideFeatureName && sideFeatureDescription == o.sideFeatureDescription &&
 				cellCount == o.cellCount && variantIndex == o.variantIndex && cells == o.cells && zoneLevelBonus == o.zoneLevelBonus &&
 				rebooting == o.rebooting && rebootRemaining == o.rebootRemaining && rebootFraction == o.rebootFraction && held == o.held &&

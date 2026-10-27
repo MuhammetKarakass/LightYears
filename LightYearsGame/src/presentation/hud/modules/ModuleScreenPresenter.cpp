@@ -127,7 +127,9 @@ namespace vega
 			out.instanceId = placement.instanceId;
 			out.name = definition->displayName;
 			out.level = placement.level;
-			out.levelCount = definition->abilityModule ? 0 : definition->levelCount;
+			out.levelCount = (definition->abilityModule || definition->unique) ? 0 : definition->levelCount;
+			out.mirror = definition->unique && definition->unique->kind == UniqueModuleKind::Mirror;
+			out.rotationQuarterTurns = placement.rotationQuarterTurns;
 			out.description = description;
 			for (const auto& variant : definition->sizeVariants) out.sizeLadder.push_back(static_cast<int>(variant.shape.cells.size()));
 			std::sort(out.sizeLadder.begin(), out.sizeLadder.end());
@@ -147,6 +149,7 @@ namespace vega
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
 			out.family = FamilyLabel(installed ? ModuleResolver::GetPlacementFamily(rules, *definition, placement) : definition->family);
 			out.rarity = RarityLabel(definition->rarity);
+			if (definition->unique) out.family = "Unique";
 			out.isSystem = definition->systemCategory.IsValid();
 			const sas::AbilitySlot abilitySlot = AbilitySlotForModuleSystem(ModuleSystemForPlacement(rules, *definition, placement));
 			if (definition->abilityModule)
@@ -386,17 +389,20 @@ namespace vega
 			{
 				const ModuleDefinition* definition = rules->lookup(placement.moduleId);
 				if (!definition || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= definition->sizeVariants.size()) return;
-				// An installed module works at its zone level; the side feature stays at the placement level.
+				// Side values share Amplifier levels, while zone levels remain main-only.
 				const bool abilitySlotModule = definition->abilityModule || AbilitySlotForModuleSystem(definition->systemCategory) != sas::AbilitySlot::None;
 				const int zoneLevelBonus = isInstalled && !abilitySlotModule ? ModuleResolver::GetZoneLevelBonus(*rules, *definition, placement) : 0;
-				const int mainLevel = placement.level + zoneLevelBonus;
-				const DescriptionKey key{ placement.moduleId.ToString(), placement.variantIndex, mainLevel, placement.level, placement.sideFeatureId.ToString() };
+				const auto* effects = isInstalled && livingShip ? &livingShip->GetModuleApplier().GetResolvedEffects() : nullptr;
+				const int extraLevel = effects && !abilitySlotModule ? std::max(0, ModuleResolver::FindLevelBonus(*effects, placement.instanceId) - ModuleResolver::FindZoneLevelBonus(*effects, placement.instanceId)) : 0;
+				const int mainLevel = placement.level + zoneLevelBonus + extraLevel;
+				const int sideLevel = placement.level + extraLevel;
+				const DescriptionKey key{ placement.moduleId.ToString(), placement.variantIndex, mainLevel, sideLevel, placement.sideFeatureId.ToString() };
 				auto cached = mDescriptions.find(key);
 				if (cached == mDescriptions.end())
 				{
 					++mDescriptionFormatCount;
 					const auto* feature = placement.sideFeatureId.IsValid() && rules->sideFeatureLookup ? rules->sideFeatureLookup(placement.sideFeatureId) : nullptr;
-					cached = mDescriptions.emplace(key, std::make_pair(FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)], mainLevel), feature ? FormatModuleSideFeatureDescription(*feature, placement.level) : std::string{})).first;
+					cached = mDescriptions.emplace(key, std::make_pair(FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)], mainLevel), feature ? FormatModuleSideFeatureDescription(*feature, sideLevel) : std::string{})).first;
 				}
 				if (BuildEntry(*rules, placement, isInstalled, livingShip, mHeldId, cached->second.first, cached->second.second, zoneLevelBonus, entry)) entries.push_back(entry);
 			};

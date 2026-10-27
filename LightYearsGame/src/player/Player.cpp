@@ -545,6 +545,11 @@ namespace vega
 				{
 					for (std::size_t variant = 0; variant < definition.sizeVariants.size(); ++variant)
 					{
+						if (definition.unique)
+						{
+							mModuleLoadout.AddToInventory(*rules, definition, static_cast<int>(variant), definition.rarity, 1);
+							continue;
+						}
 						if (definition.abilityModule)
 						{
 							for (int slot = 0; slot < 4; ++slot) mModuleLoadout.AddToInventory(*rules, definition, static_cast<int>(variant), definition.rarity, 1);

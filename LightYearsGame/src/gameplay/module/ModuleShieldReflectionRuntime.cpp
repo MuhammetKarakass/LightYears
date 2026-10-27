@@ -30,7 +30,7 @@ namespace vega
 			State next{ rule };
 			for (const auto& previous : mRules)
 				if (previous.resolved.instanceId == rule.instanceId && previous.resolved.ruleIndex == rule.ruleIndex &&
-					previous.resolved.rule == rule.rule) next.remaining = previous.remaining;
+					previous.resolved.rule == rule.rule) { next.remaining = previous.remaining; next.power = previous.power; }
 			desired.push_back(next);
 		}
 		mRules = std::move(desired);
@@ -44,9 +44,27 @@ namespace vega
 	{
 		if (event.eventTag != GameplayTags::Event::Ability::Activated || !mShip) return;
 		const auto* ability = mCombat.GetAbilitySystemComponent().GetAbilityById(event.sourceAbilityId.ToString());
-		if (!ability || !sas::IsLoadoutAbilitySlot(ability->GetDefinition().slot) ||
-			!ModuleTriggerEventTagsMatch({ GameplayTags::Ability::Defense }, event.sourceAbilityTags)) return;
-		for (auto& rule : mRules) rule.remaining = rule.resolved.rule.durationSeconds;
+		if (!ability || !sas::IsLoadoutAbilitySlot(ability->GetDefinition().slot)) return;
+		auto& triggers = mCombat.GetAbilitySystemComponent().GetModuleTriggerService();
+		ModuleTriggerService::EventScope scope{ triggers };
+		for (auto& rule : mRules)
+		{
+			if (!triggers.MatchesAbilityEventTags(rule.resolved.instanceId, { GameplayTags::Ability::Defense }, event.sourceAbilityTags)) continue;
+			rule.remaining = rule.resolved.rule.durationSeconds; rule.power = 1.f;
+			triggers.Notify({ rule.resolved.instanceId, ModuleRuleKind::ShieldReflection, rule.resolved.ruleIndex });
+		}
+	}
+	bool ModuleShieldReflectionRuntime::Force(std::uint32_t instanceId, float powerMultiplier)
+	{
+		bool fired = false;
+		for (auto& rule : mRules)
+		{
+			if (rule.resolved.instanceId != instanceId) continue;
+			rule.remaining = rule.resolved.rule.durationSeconds; rule.power = powerMultiplier;
+			mCombat.GetAbilitySystemComponent().GetModuleTriggerService().Notify({ instanceId, ModuleRuleKind::ShieldReflection, rule.resolved.ruleIndex }, false);
+			fired = true;
+		}
+		return fired;
 	}
 	void ModuleShieldReflectionRuntime::OnDamage(const DamageContext& context)
 	{
@@ -78,7 +96,7 @@ namespace vega
 			payload.electricStacks = state.resolved.rule.electricStacks;
 			payload.skipModuleDamageRules = true;
 			payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
-			ApplyCombatDamage(*nearest, context.incomingShieldDamage * state.resolved.rule.fraction, mShip, { state.resolved.rule.damageType }, payload);
+			ApplyCombatDamage(*nearest, context.incomingShieldDamage * state.resolved.rule.fraction * state.power, mShip, { state.resolved.rule.damageType }, payload);
 		}
 	}
 }

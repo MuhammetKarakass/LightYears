@@ -138,6 +138,7 @@ namespace vega
 	{
 		if (mBusy || mShuttingDown) return;
 		const auto lifetime = mShip ? mShip->GetWeakActor().lock() : shared_ptr<Actor>{};
+		ModuleTriggerService::EventScope moduleEvent{ mAbilities.GetModuleTriggerService() };
 		mBusy = true;
 		try
 		{
@@ -150,28 +151,40 @@ namespace vega
 		catch (...) { mBusy = false; throw; }
 		mBusy = false;
 	}
+	bool ModuleGeneratedRuntime::Force(std::uint32_t instanceId, float powerMultiplier)
+	{
+		if (mBusy || mShuttingDown) return false;
+		const auto serial = mFiredSerial;
+		Event event; event.forcedInstanceId = instanceId; event.power = powerMultiplier;
+		mEvents.push_back(std::move(event)); Flush();
+		return serial != mFiredSerial;
+	}
 	void ModuleGeneratedRuntime::Execute(const Event& event)
 	{
 		if (!mShip || !mShip->GetWorld() || mShip->GetIsPendingDestroy() || mShip->GetHealthComponent().GetHealth() <= 0.f) return;
-		if (event.tag == GameplayTags::Event::Ability::Activated)
+		if (event.tag == GameplayTags::Event::Ability::Activated || event.forcedInstanceId)
 		{
-			if (Has(event.abilityTags, GameplayTags::Ability::Utility))
+			auto& triggers = mAbilities.GetModuleTriggerService();
+			const auto accepts = [&](std::uint32_t id, const GameplayTag& family) { return event.forcedInstanceId ? id == event.forcedInstanceId : triggers.MatchesAbilityEventTags(id, { family }, event.abilityTags); };
+			const auto report = [&](std::uint32_t id) { ++mFiredSerial; triggers.Notify({ id, ModuleRuleKind::Generated, 0 }, event.forcedInstanceId == 0); };
+			const auto* profile = PresentationProfileRegistry<ModuleAnnularBurstPresentationProfile>::Find(ModuleGeneratedPresentationIds::AnnularBurst.ToString());
+			if (profile) for (auto& state : mAnnularBursts)
 			{
-				const auto* profile = PresentationProfileRegistry<ModuleAnnularBurstPresentationProfile>::Find(ModuleGeneratedPresentationIds::AnnularBurst.ToString());
-				if (profile) for (auto& state : mAnnularBursts)
+				if (!accepts(state.instanceId, GameplayTags::Ability::Utility)) continue;
+				const auto lease = state.lease; const auto rule = state.rule; Prune(lease);
+				const float damage = (rule.baseDamage + std::max(0.f, mAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)) * rule.energyPowerCoefficient) * event.power;
+				const auto actor = mShip->GetWorld()->SpawnActor<ModuleAnnularBurstActor>(mShip->GetWeakActor(), *profile, lease, rule.innerRadius, rule.outerRadius).lock();
+				if (actor) { actor->SetActorLocation(mShip->GetActorLocation()); lease->actors.push_back(actor); actor->Detonate(damage); report(state.instanceId); }
+				if (mPending || !lease->active || mShip->GetIsPendingDestroy()) return;
+			}
+			for (auto& state : mMines)
+				if (accepts(state.instanceId, GameplayTags::Ability::Movement)) { state.window = state.rule.windowSeconds; state.carriedDistance = 0.f; state.power = event.power; report(state.instanceId); }
+			for (const auto& state : mLances)
+				if (accepts(state.instanceId, GameplayTags::Ability::Movement))
 				{
-					const auto lease = state.lease; const auto rule = state.rule; Prune(lease);
-					const float damage = rule.baseDamage + std::max(0.f, mAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)) * rule.energyPowerCoefficient;
-					const auto actor = mShip->GetWorld()->SpawnActor<ModuleAnnularBurstActor>(mShip->GetWeakActor(), *profile, lease, rule.innerRadius, rule.outerRadius).lock();
-					if (actor) { actor->SetActorLocation(mShip->GetActorLocation()); lease->actors.push_back(actor); actor->Detonate(damage); }
-					if (mPending || !lease->active || mShip->GetIsPendingDestroy()) return;
+					auto rule = state.rule; rule.speedDamageCoefficient *= event.power;
+					mLanceWindows.push_back({ state.lease, rule, rule.sampleSeconds, 0.f }); report(state.instanceId);
 				}
-			}
-			if (Has(event.abilityTags, GameplayTags::Ability::Movement))
-			{
-				for (auto& state : mMines) { state.window = state.rule.windowSeconds; state.carriedDistance = 0.f; }
-				for (const auto& state : mLances) mLanceWindows.push_back({ state.lease, state.rule, state.rule.sampleSeconds, 0.f });
-			}
 		}
 		else if (event.tag == GameplayTags::Event::Source::DamageDealt)
 		{
@@ -189,6 +202,7 @@ namespace vega
 		for (auto& state : mRicochets)
 		{
 			if (state.rule.damageFraction <= 0.f || !event.hitGroup->consumedModuleRules.insert({ mShip->GetUniqueID(), state.lease->key }).second) continue;
+			mAbilities.GetModuleTriggerService().Notify({ state.instanceId, ModuleRuleKind::Generated, 0 });
 			List<std::uint64_t> visited;
 			if (originalTarget) visited.push_back(originalTarget->GetUniqueID());
 			if (event.primaryProjectile)
@@ -253,6 +267,7 @@ namespace vega
 		{
 			if (state.rule.damageFraction <= 0.f || !state.rule.damageType.IsValid() || !event.hitGroup->consumedModuleRules.insert({ mShip->GetUniqueID(), state.lease->key }).second) continue;
 			Prune(state.lease);
+			mAbilities.GetModuleTriggerService().Notify({ state.instanceId, ModuleRuleKind::Generated, 1 });
 			const auto targets = Nearest(*mShip->GetWorld(), *mShip, mShip->GetActorLocation(), state.rule.targetRange);
 			for (std::size_t index = 0; !targets.empty() && index < static_cast<std::size_t>(state.rule.projectileCount) && state.lease->actors.size() < static_cast<std::size_t>(state.rule.maxActive); ++index)
 			{
@@ -271,7 +286,7 @@ namespace vega
 			const auto* profile = PresentationProfileRegistry<ModuleExplosionPresentationProfile>::Find(profileId.ToString());
 			if (!profile) return;
 			const auto actor = mShip->GetWorld()->SpawnActor<ModuleDelayedExplosionActor>(mShip->GetWeakActor(), *profile, state.lease, damage, radius, delay, tags).lock();
-			if (actor) { actor->SetActorLocation(event.origin); state.lease->actors.push_back(actor); }
+			if (actor) { actor->SetActorLocation(event.origin); state.lease->actors.push_back(actor); mAbilities.GetModuleTriggerService().Notify({ state.instanceId, ModuleRuleKind::Generated, 2 }); }
 		};
 		if (event.tag == GameplayTags::Event::Source::DamageDealt && event.hitGroup && event.hitGroup->kind == DamageHitGroup::Kind::AbilityUse && Has(event.abilityTags, GameplayTags::Ability::Offense))
 			for (auto& state : mAftershocks)
@@ -299,7 +314,7 @@ namespace vega
 			const std::size_t limit = static_cast<std::size_t>(state.rule.maxActive + state.rule.additionalLimit);
 			while (next <= distance && state.lease->actors.size() < limit)
 			{
-				const float damage = state.rule.damage + state.rule.attackPowerCoefficient * std::max(0.f, mAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower));
+				const float damage = (state.rule.damage + state.rule.attackPowerCoefficient * std::max(0.f, mAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower))) * state.power;
 				const auto actor = mShip->GetWorld()->SpawnActor<ModuleMineActor>(mShip->GetWeakActor(), *profile, state.lease, damage, state.rule.radius, state.rule.fuseSeconds, state.rule.cryoStacks, state.rule.damageType).lock();
 				if (!actor) break;
 				actor->SetActorLocation(origin + (end - origin) * (next / movement.GetCurrentMovementDistance()));
@@ -348,6 +363,7 @@ namespace vega
 		if (mShuttingDown || mBusy || !mShip || deltaSeconds <= 0.f) return;
 		const auto lifetime = mShip->GetWeakActor().lock();
 		if (!lifetime || mShip->GetIsPendingDestroy() || mShip->GetHealthComponent().GetHealth() <= 0.f) { Replace({}); return; }
+		ModuleTriggerService::EventScope moduleEvent{ mAbilities.GetModuleTriggerService() };
 		mBusy = true;
 		try { DropMines(deltaSeconds); TickLances(deltaSeconds); } catch (...) { mBusy = false; throw; }
 		mBusy = false;

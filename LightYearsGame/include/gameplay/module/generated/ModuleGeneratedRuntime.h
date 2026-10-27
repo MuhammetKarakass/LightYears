@@ -21,17 +21,20 @@ namespace vega
 		ModuleGeneratedRuntime& operator=(const ModuleGeneratedRuntime&) = delete;
 		void Replace(const ResolvedModuleGeneratedRules& rules);
 		void Tick(float deltaSeconds);
+		bool Force(std::uint32_t instanceId, float powerMultiplier);
 		std::size_t GetActiveActorCount() const;
 		std::size_t GetRuleCount() const;
 		// Run-counter damage multiplier (Odometer-style stacks) that kill explosions apply; their base is not a hit.
 		void SetRunCounterDamageMultiplier(float multiplier) { mRunCounterDamageMultiplier = multiplier; }
 	private:
 		template<typename Rule> struct State { std::uint32_t instanceId = 0; Rule rule; std::shared_ptr<ModuleGeneratedLease> lease; };
-		struct MineState : State<ModuleTrailMineRule> { float window = 0.f; float carriedDistance = 0.f; };
+		struct MineState : State<ModuleTrailMineRule> { float window = 0.f; float carriedDistance = 0.f; float power = 1.f; };
 		struct LanceWindow { std::shared_ptr<ModuleGeneratedLease> lease; ModuleSpeedLanceRule rule; float remaining = 0.f; float peakSpeed = 0.f; };
 		struct LanceEcho { std::shared_ptr<ModuleGeneratedLease> lease; ModuleSpeedLanceRule rule; float remaining = 0.f; float damage = 0.f; sf::Vector2f direction{}; };
 		struct Event
 		{
+			std::uint32_t forcedInstanceId = 0;
+			float power = 1.f;
 			GameplayTag tag;
 			sas::ContentId abilityId;
 			List<GameplayTag> abilityTags;
@@ -72,6 +75,7 @@ namespace vega
 		List<Event> mEvents;
 		std::optional<ResolvedModuleGeneratedRules> mPending;
 		std::uint64_t mNextKey = 1;
+		std::uint64_t mFiredSerial = 0;
 		bool mBusy = false;
 		bool mShuttingDown = false;
 		float mRunCounterDamageMultiplier = 1.f;

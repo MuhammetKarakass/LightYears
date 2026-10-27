@@ -8,7 +8,7 @@ namespace vega
 {
 	namespace
 	{
-		std::string FormatRules(std::string text, const ModuleRulePackage& rules, int level, const AbilityModuleRules* abilityModule = nullptr)
+		std::string FormatRules(std::string text, const ModuleRulePackage& rules, int level, const AbilityModuleRules* abilityModule = nullptr, const UniqueModuleRule* unique = nullptr)
 		{
 			const ModuleDescriptionValueVisitor replace = [&text](const std::string& key, float value)
 			{
@@ -19,9 +19,10 @@ namespace vega
 			};
 			VisitModuleDescriptionValues(rules, level, replace);
 			if (abilityModule) VisitAbilityModuleDescriptionValues(*abilityModule, replace);
+			if (unique) VisitUniqueModuleDescriptionValues(*unique, replace);
 			return text;
 		}
 	}
-	std::string FormatModuleDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant, int level) { return FormatRules(definition.description, variant, level, definition.abilityModule ? &*definition.abilityModule : nullptr); }
+	std::string FormatModuleDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant, int level) { return FormatRules(definition.description, variant, level, definition.abilityModule ? &*definition.abilityModule : nullptr, definition.unique ? &*definition.unique : nullptr); }
 	std::string FormatModuleSideFeatureDescription(const ModuleSideFeatureDefinition& feature, int level) { return FormatRules(feature.description, feature.rules, level); }
 }

@@ -28,6 +28,7 @@ namespace vega::content
 	struct ParsedModuleId
 	{
 		bool abilityModule = false;
+		bool unique = false;
 		// Ability category tag name that mirrors the ID's family segment.
 		std::string family;
 	};
@@ -215,6 +216,11 @@ namespace vega::content
 			if (id.rfind("Module.AbilityModule.", 0) == 0 && !SegmentAt(id, 2).empty() && SegmentAt(id, 3).empty())
 			{
 				parsed.abilityModule = true;
+				return true;
+			}
+			if (id.rfind("Module.Unique.", 0) == 0 && !SegmentAt(id, 2).empty() && SegmentAt(id, 3).empty())
+			{
+				parsed.unique = true;
 				return true;
 			}
 			const char* formatError =

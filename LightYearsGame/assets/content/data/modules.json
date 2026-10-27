@@ -5794,6 +5794,128 @@
       "description": "The ability in its slot becomes an ultimate: main effect x{abilityModule.mainEffectMultiplier}, cooldown x{abilityModule.cooldownMultiplier}.",
       "abilityModule": { "mainEffectMultiplier": 1.6, "cooldownMultiplier": 2.0 },
       "sizeVariants": [{ "shape": [[0, 0]] }]
+    },
+    {
+      "id": "Module.Unique.Amplifier",
+      "displayName": "Amplifier",
+      "description": "Touching modules and standard ability shells gain +{unique.levelBonus} effective level, separately from zone levels. Level-less modules are unaffected.",
+      "unique": {
+        "levelBonus": 1
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Unique.Relay",
+      "displayName": "Relay",
+      "description": "When a touching module triggers naturally, force every other touching triggered module at full power. Internal cooldowns still apply.",
+      "unique": {},
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Unique.Echo",
+      "displayName": "Echo",
+      "description": "When a touching module triggers naturally, force it once after {unique.echoDelaySeconds} seconds at {unique.echoPowerPercent}% power. Internal cooldowns still apply.",
+      "unique": {
+        "echoDelaySeconds": 1,
+        "echoPowerFraction": 0.5
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Unique.Mirror",
+      "displayName": "Mirror",
+      "description": "The module in front also responds to mirrored ability families: Offense / Defense and Movement / Utility. Rotation 0 faces up.",
+      "unique": {},
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Unique.Pulsar",
+      "displayName": "Pulsar",
+      "description": "Every {unique.pulsarIntervalSeconds} seconds in combat, force all touching triggered modules at full power. Internal cooldowns still apply.",
+      "unique": {
+        "pulsarIntervalSeconds": 12
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Unique.Spark",
+      "displayName": "Spark",
+      "description": "Successfully using a touching ability shell forces all touching triggered modules at full power. Never activates an ability.",
+      "unique": {},
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Unique.ProfitShare",
+      "displayName": "Profit Share",
+      "description": "Natural triggers of touching modules grant {unique.goldPerTrigger} run Gold, at most once per module per {unique.cooldownSeconds} seconds. Forced triggers grant nothing.",
+      "unique": {
+        "goldPerTrigger": 1,
+        "cooldownSeconds": 1
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
     }
   ]
 }

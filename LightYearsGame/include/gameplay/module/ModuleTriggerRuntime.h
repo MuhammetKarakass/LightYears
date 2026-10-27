@@ -28,6 +28,7 @@ namespace vega
 		void SetRules(const List<ResolvedModuleTriggerBuff>& rules, std::uint64_t& generation);
 		void ClearRules(std::uint64_t generation);
 		void Tick(float deltaSeconds);
+		bool Force(std::uint32_t instanceId, float powerMultiplier);
 
 		std::size_t GetActiveBuffCount() const { return mActiveBuffs.size(); }
 		std::size_t GetActiveModifierHandleCount() const;
@@ -56,6 +57,7 @@ namespace vega
 			std::size_t ruleIndex = 0;
 			ModuleTriggerBuff rule;
 			float remainingSeconds = 0.f;
+			float powerMultiplier = 1.f;
 			std::string movementSourceId;
 			bool ownsMovementModifier = false;
 			List<OwnedAttributeModifier> modifiers;
@@ -65,6 +67,7 @@ namespace vega
 		void OnShieldDamaged(float absorbed, float remainingShield, float maxShield);
 		void OnShieldChanged(float delta, float remainingShield, float maxShield);
 		void ProcessEvent(const EventSnapshot& event);
+		bool Fire(const ResolvedModuleTriggerBuff& resolved, float powerMultiplier, bool natural);
 		void ProcessDeferredUpdates();
 		void ReconcileRules(const List<ResolvedModuleTriggerBuff>& rules);
 		void RemoveActiveBuff(std::size_t index);

@@ -120,6 +120,7 @@ namespace vega
 	{
 		struct ZoneBonus { std::uint32_t instanceId; int levelBonus; };
 		List<ZoneBonus> zoneBonuses;
+		List<ZoneBonus> levelBonuses;
 		// True when a resolved modifier carries a ship-level term, so a ship level change must re-resolve.
 		bool usesShipLevel = false;
 		struct AbilityModule { sas::AbilitySlot slot; AbilityModuleRules rules; };
@@ -180,6 +181,7 @@ namespace vega
 		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement);
 
 		// Level bonus recorded for one placement in effects.zoneBonuses; 0 when the placement has no entry.
+		int FindLevelBonus(const ResolvedModuleEffects& effects, std::uint32_t instanceId);
 		int FindZoneLevelBonus(const ResolvedModuleEffects& effects, std::uint32_t instanceId);
 
 		// Usable schematic cells (zone set, not locked) that no placement covers. Derived from the schematic.

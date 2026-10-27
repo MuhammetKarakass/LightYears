@@ -834,17 +834,14 @@ namespace vega
 		return bonus;
 	}
 
-	bool LightYearsAbilitySystemComponent::MatchesScopedAbilityRule(
-		const ScopedAbilityRule& rule,
-		const GameAbilityDefinition& definition
-	) const
+	bool LightYearsAbilitySystemComponent::MatchesScopedAbilityRule(const ScopedAbilityRule& rule, const GameAbilityDefinition& definition) const
 	{
 		GameplayTagContainer abilityTags;
 		for (const GameplayTag& tag : definition.abilityTags)
 		{
 			abilityTags.AddTag(tag);
 		}
-		return abilityTags.HasAll(rule.requiredAbilityTags) &&
+		return (rule.requiredSlot == sas::AbilitySlot::None || rule.requiredSlot == definition.slot) && abilityTags.HasAll(rule.requiredAbilityTags) &&
 			!abilityTags.HasAny(rule.blockedAbilityTags);
 	}
 
@@ -958,12 +955,11 @@ namespace vega
 		});
 	}
 
-	void LightYearsAbilitySystemComponent::HandleAbilityLifecycleEvent(
-		const sas::AbilityLifecycleEvent& event
-	)
+	void LightYearsAbilitySystemComponent::HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event)
 	{
 		return RunOperation([&]()
 		{
+			ModuleTriggerService::EventScope moduleEvent{ mModuleTriggerService };
 			onGameplayEvent.Broadcast(event);
 			ProcessAbilityLifecycleEvent(event);
 		});

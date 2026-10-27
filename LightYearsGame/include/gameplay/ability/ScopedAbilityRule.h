@@ -12,6 +12,7 @@ namespace vega
 		List<GameplayTag> blockedAbilityTags;
 		List<sas::AttributeModifier> attributeModifiers;
 		int levelBonus = 0;
+		sas::AbilitySlot requiredSlot = sas::AbilitySlot::None;
 	};
 
 	struct ScopedAbilityCooldownRule

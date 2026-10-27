@@ -27,6 +27,7 @@ namespace vega
 		ModuleOwnerBurstRuntime& operator=(const ModuleOwnerBurstRuntime&) = delete;
 		void Replace(const List<ResolvedModuleOwnerBurstRule>& rules);
 		void Tick(float deltaSeconds);
+		bool Force(std::uint32_t instanceId, float powerMultiplier);
 		std::size_t GetRuleCount() const;
 		// Waves still waiting for their delay: echoes and the detonation that follows a pull.
 		std::size_t GetPendingEchoCount() const;
@@ -38,6 +39,7 @@ namespace vega
 		struct State
 		{
 			std::uint32_t instanceId = 0;
+			std::size_t ruleIndex = 0;
 			ModuleOwnerBurstRule rule;
 			std::shared_ptr<ModuleGeneratedLease> lease;
 			float cooldownRemaining = 0.f;

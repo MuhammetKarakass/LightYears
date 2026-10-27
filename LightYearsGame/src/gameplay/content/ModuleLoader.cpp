@@ -50,6 +50,29 @@ namespace vega::content
 				definition.abilityModule = values;
 			}
 			else if (object.contains("abilityModule")) throw std::runtime_error(context + " abilityModule requires an ability module ID");
+			if (parsedId.unique)
+			{
+				for (const char* forbidden : { "rarity", "levelCount", "family", "systemCategory", "sideFeatures", "sharedPools", "sizeLadder", "legendary", "abilityModule" })
+					if (object.contains(forbidden)) throw std::runtime_error(context + " Unique cannot declare " + forbidden);
+				definition.rarity = ModuleRarity::None;
+				definition.levelCount = 1;
+				const Json& rule = object.at("unique");
+				if (!rule.is_object()) throw std::runtime_error(context + " unique must be an object");
+				UniqueModuleRule values;
+				const std::string name = id.substr(std::string{ "Module.Unique." }.size());
+				std::set<std::string> allowed;
+				if (name == "Amplifier") { values.kind = UniqueModuleKind::Amplifier; allowed = { "levelBonus" }; values.levelBonus = ParsePositiveInt(rule.at("levelBonus"), context); }
+				else if (name == "Relay") values.kind = UniqueModuleKind::Relay;
+				else if (name == "Echo") { values.kind = UniqueModuleKind::Echo; allowed = { "echoDelaySeconds", "echoPowerFraction" }; values.echoDelaySeconds = ParseFiniteFloat(rule.at("echoDelaySeconds"), context); values.echoPowerFraction = ParseFiniteFloat(rule.at("echoPowerFraction"), context); if (values.echoDelaySeconds <= 0.f || values.echoPowerFraction <= 0.f || values.echoPowerFraction > 1.f) throw std::runtime_error(context + " invalid echo values"); }
+				else if (name == "Mirror") values.kind = UniqueModuleKind::Mirror;
+				else if (name == "Pulsar") { values.kind = UniqueModuleKind::Pulsar; allowed = { "pulsarIntervalSeconds" }; values.pulsarIntervalSeconds = ParseFiniteFloat(rule.at("pulsarIntervalSeconds"), context); if (values.pulsarIntervalSeconds <= 0.f) throw std::runtime_error(context + " invalid interval"); }
+				else if (name == "Spark") values.kind = UniqueModuleKind::Spark;
+				else if (name == "ProfitShare") { values.kind = UniqueModuleKind::ProfitShare; allowed = { "goldPerTrigger", "cooldownSeconds" }; values.goldPerTrigger = ParsePositiveInt(rule.at("goldPerTrigger"), context); values.cooldownSeconds = ParseFiniteFloat(rule.at("cooldownSeconds"), context); if (values.cooldownSeconds <= 0.f) throw std::runtime_error(context + " invalid cooldown"); }
+				else throw std::runtime_error(context + " unknown Unique kind");
+				for (const auto& field : rule.items()) if (!allowed.count(field.key())) throw std::runtime_error(context + " unknown Unique field " + field.key());
+				definition.unique = values;
+			}
+			else if (object.contains("unique")) throw std::runtime_error(context + " unique requires a Unique ID");
 			definition.displayName = object.value("displayName", id);
 			if (object.contains("rarity"))
 			{
@@ -63,7 +86,7 @@ namespace vega::content
 				if (!object.at("description").is_string()) throw std::runtime_error(context + " description must be a string");
 				definition.description = object.at("description").get<std::string>();
 			}
-			if (!parsedId.abilityModule) definition.family = ParseTag(object.at("family"), GameplayTagKind::AbilityCategory, context + " family");
+			if (!parsedId.abilityModule && !parsedId.unique) definition.family = ParseTag(object.at("family"), GameplayTagKind::AbilityCategory, context + " family");
 			if (definition.family.name != parsedId.family)
 			{
 				throw std::runtime_error(context + " family does not match its ID family segment");
@@ -135,7 +158,7 @@ namespace vega::content
 				}
 			}
 			const Json& variants = object.at("sizeVariants");
-			if (parsedId.abilityModule)
+			if (parsedId.abilityModule || parsedId.unique)
 			{
 				if (!variants.is_array() || variants.size() != 1) throw std::runtime_error(context + " ability modules require exactly one size variant");
 				for (const auto& field : variants.front().items())
@@ -175,7 +198,7 @@ namespace vega::content
 			if ((!definition.sideFeatures.empty() || !definition.sharedPools.empty()) &&
 				definition.sizeLadderCellCounts.size() != definition.sizeVariants.size())
 				throw std::runtime_error(context + " side-feature modules require an explicit sizeLadder");
-			if (parsedId.abilityModule && definition.sizeVariants.front().shape.cells.size() != 1) throw std::runtime_error(context + " ability modules must occupy exactly 1 cell");
+			if ((parsedId.abilityModule || parsedId.unique) && definition.sizeVariants.front().shape.cells.size() != 1) throw std::runtime_error(context + " ability modules must occupy exactly 1 cell");
 			if (definition.rarity == ModuleRarity::Legendary)
 			{
 				if (definition.sizeVariants.size() != 1) throw std::runtime_error(context + " Legendary modules require exactly one size variant");

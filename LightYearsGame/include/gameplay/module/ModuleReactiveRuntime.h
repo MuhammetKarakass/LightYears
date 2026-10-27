@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <map>
 
 namespace vega
 {
@@ -30,6 +31,7 @@ namespace vega
 		void SetAbilityUseObserver(std::function<void(const std::string&, const List<GameplayTag>&)> observer) { mAbilityUseObserver = std::move(observer); }
 		void SetKillObserver(std::function<void(sas::AbilitySlot, ControlTargetClass)> observer) { mKillObserver = std::move(observer); }
 		void Tick(float deltaSeconds);
+		bool Force(std::uint32_t instanceId, float powerMultiplier);
 		void ReplaceCooldownRecovery(const List<ModuleCooldownRecoveryRule>& rules);
 		// Spare Capacitor trickle rules (side feature). Replace keeps the running interval of an unchanged rule; a removed rule drops its state.
 		void ReplaceCharge(const List<ResolvedModuleChargeRule>& rules);
@@ -57,7 +59,7 @@ namespace vega
 			float fadeElapsed = 0.f;
 			float previousDesired = 0.f;
 		};
-		struct Event { ModuleTriggerKind trigger; sas::ContentId abilityId; };
+		struct Event { ModuleTriggerKind trigger; sas::ContentId abilityId; std::uint32_t forcedInstanceId = 0; float power = 1.f; };
 		struct DesiredRules { List<ResolvedModuleEventAction> actions; List<ResolvedModuleOwnerAttributeRule> attributes; List<ResolvedModuleEffects::MovementFade> fades; };
 		void OnEvent(const sas::AbilityEvent& event);
 		bool ConsumePrimaryHitGroup(const std::shared_ptr<DamageHitGroup>& hitGroup, ModuleTriggerKind trigger);
@@ -121,6 +123,8 @@ namespace vega
 		List<std::weak_ptr<DamageHitGroup>> mPrimaryHitGroups;
 		std::optional<DesiredRules> mPending;
 		std::mt19937 mRandom{ std::random_device{}() };
+		std::uint64_t mFiredSerial = 0;
+		std::map<std::uint32_t, sas::ContentId> mLastAbility;
 		bool mBusy = false;
 		bool mDirty = false;
 		bool mShuttingDown = false;

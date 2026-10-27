@@ -11,6 +11,7 @@
 #include "gameplay/combat/CombatRuntimeModifiers.h"
 #include "gameplay/damage/DamageHitGroup.h"
 #include "gameplay/module/ModuleAbilitySlots.h"
+#include "gameplay/module/generated/ModuleGeneratedDamage.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "player/PlayerSpaceShip.h"
@@ -98,6 +99,7 @@ namespace vega
 
 	void ModuleEpicUtilityMovementRuntime::Tick(float deltaSeconds)
 	{
+		ModuleTriggerService::EventScope moduleTick{ mAbilities.GetModuleTriggerService() };
 		if (mShuttingDown) return;
 		TickCascades(deltaSeconds);
 		TickPhase(deltaSeconds);
@@ -228,10 +230,20 @@ namespace vega
 		mPhaseAfterburning = afterburning;
 	}
 
-	void ModuleEpicUtilityMovementRuntime::StartPhase()
+	bool ModuleEpicUtilityMovementRuntime::Force(std::uint32_t instanceId, float powerMultiplier)
+	{
+		if (mShuttingDown || mRules.phaseSlips.empty() || mRules.phaseSlips.front().instanceId != instanceId || IsPhaseActive() || mPhaseCooldown > 0.f) return false;
+		StartPhase(powerMultiplier);
+		return true;
+	}
+
+	void ModuleEpicUtilityMovementRuntime::StartPhase(float powerMultiplier)
 	{
 		const ResolvedModulePhaseSlipRule& rule = mRules.phaseSlips.front();
+		mPhasePower = powerMultiplier;
+		mPhaseForced = mAbilities.GetModuleTriggerService().IsForcing();
 		mPhaseRemaining = rule.phaseSeconds;
+		mAbilities.GetModuleTriggerService().Notify({ rule.instanceId, ModuleRuleKind::Epic, 0 });
 		mPhaseCooldown = rule.cooldownSeconds;
 		mPhaseArmed = false;
 		mPhaseProjectiles.clear();
@@ -271,7 +283,7 @@ namespace vega
 		if (!primaryShot) return;
 		const ResolvedModulePhaseSlipRule& rule = mRules.phaseSlips.front();
 		mPhaseArmed = false;
-		mPendingExplosions.push_back({ sf::Vector2f{ context->targetLocationAtResolution.x, context->targetLocationAtResolution.y }, context->originalDamage * rule.primaryDamageMultiplier * (1.f + .25f * static_cast<float>(mPhaseProjectiles.size())), rule.explosionRadius + 15.f * static_cast<float>(mPhaseProjectiles.size()) });
+		mPendingExplosions.push_back({ sf::Vector2f{ context->targetLocationAtResolution.x, context->targetLocationAtResolution.y }, context->originalDamage * rule.primaryDamageMultiplier * mPhasePower * (1.f + .25f * static_cast<float>(mPhaseProjectiles.size())), rule.explosionRadius + 15.f * static_cast<float>(mPhaseProjectiles.size()), mPhaseForced });
 	}
 
 	void ModuleEpicUtilityMovementRuntime::ProcessExplosions()
@@ -286,7 +298,7 @@ namespace vega
 			const auto targets = targeting::FindOpposingCombatants(*world, *mShip, explosion.origin, explosion.radius, false);
 			for (const auto& target : targets)
 			{
-				if (target && !target->GetIsPendingDestroy()) ApplyCombatDamage(*target, explosion.damage, mShip, {});
+				if (target && !target->GetIsPendingDestroy()) ApplyCombatDamage(*target, explosion.damage, mShip, {}, explosion.suppressModuleTriggers ? MakeModuleGeneratedDamagePayload() : DamagePayload{});
 			}
 		}
 	}

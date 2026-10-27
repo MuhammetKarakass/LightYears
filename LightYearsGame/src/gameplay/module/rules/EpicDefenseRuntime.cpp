@@ -84,7 +84,7 @@ namespace vega
 			const ModuleDefinition* module = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
 			if (!module || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module->sizeVariants.size()) continue;
 			const ModuleSizeVariant& variant = module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)];
-			const int level = placement.level + ModuleResolver::FindZoneLevelBonus(effects, placement.instanceId);
+			const int level = placement.level + ModuleResolver::FindLevelBonus(effects, placement.instanceId);
 			for (const ModuleHealthThresholdRule& rule : variant.healthThresholdRules) mEntries.push_back(MakeEmergencyEntry(rule, level));
 
 			// Side features follow the resolver: only the largest variant takes one, and only when it is usable at the placement level.

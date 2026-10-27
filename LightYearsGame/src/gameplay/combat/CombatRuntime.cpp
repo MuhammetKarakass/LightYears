@@ -350,10 +350,29 @@ namespace vega
 			for (ActiveModuleDamageRule& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (MatchesModuleTrigger(rule.activeWhileTrigger, rule.activeWhileEventTags, rule.activeDurationSeconds, event))
-					active.remainingSeconds = rule.activeDurationSeconds;
+				const auto tags = event.trigger == ModuleTriggerKind::AbilityActivated ? mAbilitySystemComponent.GetModuleTriggerService().AbilityEventTags(active.resolved.instanceId, event.sourceAbilityTags) : event.sourceAbilityTags;
+				if (MatchesModuleTrigger(rule.activeWhileTrigger, rule.activeWhileEventTags, rule.activeDurationSeconds, { event.trigger, event.magnitude, tags, event.payloadTags, event.moduleGenerated, event.suppressModuleTriggers }))
+				{
+					active.remainingSeconds = rule.activeDurationSeconds; active.powerMultiplier = 1.f;
+					mAbilitySystemComponent.GetModuleTriggerService().Notify({ active.resolved.instanceId, ModuleRuleKind::DamageWindow, active.resolved.ruleIndex });
+				}
 			}
 		}
+	}
+
+	bool CombatRuntime::ForceModuleDamageWindows(std::uint32_t instanceId, float powerMultiplier)
+	{
+		bool fired = false;
+		for (auto& registration : mModuleDamageRuleState->registrations)
+			for (auto& active : registration.rules)
+			{
+				const auto& resolved = active.resolved;
+				if (resolved.instanceId != instanceId || resolved.rule.activeWhileTrigger == ModuleTriggerKind::None || resolved.rule.activeDurationSeconds <= 0.f) continue;
+				active.remainingSeconds = resolved.rule.activeDurationSeconds; active.powerMultiplier = powerMultiplier;
+				mAbilitySystemComponent.GetModuleTriggerService().Notify({ instanceId, ModuleRuleKind::DamageWindow, resolved.ruleIndex }, false);
+				fired = true;
+			}
+		return fired;
 	}
 
 	float CombatRuntime::ResolveFullMagazineShotMultiplier(int magazineShotsFired) const
@@ -370,7 +389,7 @@ namespace vega
 				if (rule.incoming || GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Fire ||
 					!MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext) ||
 					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
-				multiplier *= rule.damageMultiplier;
+				multiplier *= (active.powerMultiplier == 1.f ? rule.damageMultiplier : 1.f + (rule.damageMultiplier - 1.f) * active.powerMultiplier);
 			}
 		}
 		return multiplier;
@@ -446,13 +465,13 @@ namespace vega
 					}
 				if (!MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext)) continue;
 				// Ratio rules: the authored multiplier is the base and ratioSlope adds per unit of ratio above the threshold.
-				float ruleMultiplier = rule.damageMultiplier;
+				float ruleMultiplier = (active.powerMultiplier == 1.f ? rule.damageMultiplier : 1.f + (rule.damageMultiplier - 1.f) * active.powerMultiplier);
 				if (rule.condition == ModuleDamageCondition::TargetMaxHealthRatioAtLeast)
 					ruleMultiplier += rule.ratioSlope * (conditionContext.targetMaxHealthRatio - rule.conditionValue);
 				plan.damageMultiplier *= ruleMultiplier;
-				if (ownerHealth) plan.additionalDamage += ownerHealth->GetMaxHealth() * rule.maxHealthDamageFraction;
+				if (ownerHealth) plan.additionalDamage += ownerHealth->GetMaxHealth() * rule.maxHealthDamageFraction * active.powerMultiplier;
 				if (rule.bonusDamageFraction > 0.f && rule.bonusDamageType.IsValid())
-					plan.bonuses.push_back({ rule.bonusDamageFraction, rule.bonusDamageType });
+					plan.bonuses.push_back({ rule.bonusDamageFraction * active.powerMultiplier, rule.bonusDamageType });
 			}
 		}
 		// Scoped runtime modifiers (Trophy Core and Trophy Wall) match the source ability's loadout slot and family.
@@ -491,7 +510,7 @@ namespace vega
 						active.resolved.ruleIndex == resolved.ruleIndex &&
 						active.resolved.rule == resolved.rule;
 				});
-			if (previous != registration->rules.end()) next.remainingSeconds = previous->remainingSeconds;
+			if (previous != registration->rules.end()) { next.remainingSeconds = previous->remainingSeconds; next.powerMultiplier = previous->powerMultiplier; }
 			nextRules.push_back(std::move(next));
 		}
 		registration->rules = std::move(nextRules);
@@ -535,6 +554,7 @@ namespace vega
 
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)
 	{
+		ModuleTriggerService::EventScope moduleDamage{ mAbilitySystemComponent.GetModuleTriggerService() };
 		DamageDispatchFrame frame;
 		frame.context = &context;
 		frame.generation = mEffectEventGeneration;
@@ -575,7 +595,7 @@ namespace vega
 				if (context.payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed && rule.incoming &&
 					(rule.activeWhileTrigger == ModuleTriggerKind::None || active.remainingSeconds > 0.f) &&
 					MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext))
-					context.remainingDamage *= rule.damageMultiplier;
+					context.remainingDamage *= (active.powerMultiplier == 1.f ? rule.damageMultiplier : 1.f + (rule.damageMultiplier - 1.f) * active.powerMultiplier);
 			}
 		frame.capturesEffectEvents = true;
 		mAbilitySystemComponent.ProcessGameplayEffectEvent(

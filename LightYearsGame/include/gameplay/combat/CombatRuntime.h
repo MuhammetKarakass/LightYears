@@ -28,6 +28,7 @@ namespace vega
 		{
 			ResolvedModuleDamageRule resolved;
 			float remainingSeconds = 0.f;
+			float powerMultiplier = 1.f;
 		};
 		struct ModuleDamageRuleRegistrationEntry
 		{
@@ -99,6 +100,7 @@ namespace vega
 		bool RemovePrimaryShotModifier(const std::string& sourceId);
 		float GetPrimaryShotDamageMultiplier() const noexcept;
 		OutgoingDamageRuleRegistration RegisterOutgoingDamageRules();
+		bool ForceModuleDamageWindows(std::uint32_t instanceId, float powerMultiplier);
 		void ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event);
 		void SetModuleStatusRules(const ModuleStatusRules& rules);
 		bool TryActivateElectricSpread(const ModuleElectricSpreadRule& rule, std::uint64_t targetId);

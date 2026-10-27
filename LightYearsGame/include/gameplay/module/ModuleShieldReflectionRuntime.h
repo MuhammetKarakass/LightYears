@@ -16,8 +16,9 @@ namespace vega
 		ModuleShieldReflectionRuntime& operator=(const ModuleShieldReflectionRuntime&) = delete;
 		void Replace(const List<ResolvedModuleEffects::ShieldReflection>& rules);
 		void Tick(float deltaSeconds);
+		bool Force(std::uint32_t instanceId, float powerMultiplier);
 	private:
-		struct State { ResolvedModuleEffects::ShieldReflection resolved; float remaining = 0.f; };
+		struct State { ResolvedModuleEffects::ShieldReflection resolved; float remaining = 0.f; float power = 1.f; };
 		void OnEvent(const sas::AbilityEvent& event);
 		void OnDamage(const DamageContext& context);
 		CombatRuntime& mCombat;

@@ -52,7 +52,7 @@ namespace vega
 		if (!canonical || variantIndex < 0 || static_cast<std::size_t>(variantIndex) >= canonical->sizeVariants.size() ||
 			level < 1 || level > canonical->levelCount ||
 			!HasModuleRulePackageLevelCoverage(canonical->sizeVariants[static_cast<std::size_t>(variantIndex)], level)) return 0;
-		if (canonical->abilityModule && (!rolledSideStats.empty() || sideFeatureId.IsValid())) return 0;
+		if ((canonical->abilityModule || canonical->unique) && (!rolledSideStats.empty() || sideFeatureId.IsValid())) return 0;
 		if (sideFeatureId.IsValid())
 		{
 			const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(sideFeatureId) : nullptr;
@@ -63,7 +63,7 @@ namespace vega
 		item.instanceId = mNextInstanceId++;
 		item.moduleId = canonical->moduleId;
 		item.variantIndex = variantIndex;
-		item.rarity = canonical->abilityModule ? ModuleRarity::None : rarity;
+		item.rarity = (canonical->abilityModule || canonical->unique) ? ModuleRarity::None : rarity;
 		item.rolledSideStats = std::move(rolledSideStats);
 		item.level = level;
 		item.sideFeatureId = std::move(sideFeatureId);
@@ -117,7 +117,7 @@ namespace vega
 		if (!module || item->variantIndex < 0 || static_cast<std::size_t>(item->variantIndex) >= module->sizeVariants.size() ||
 		item->level < 1 || item->level > module->levelCount ||
 		!HasModuleRulePackageLevelCoverage(module->sizeVariants[static_cast<std::size_t>(item->variantIndex)], item->level)) return false;
-		if (module->abilityModule && sideFeatureId.IsValid()) return false;
+		if ((module->abilityModule || module->unique) && sideFeatureId.IsValid()) return false;
 		if (sideFeatureId.IsValid())
 		{
 			const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(sideFeatureId) : nullptr;

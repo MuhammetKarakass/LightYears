@@ -56,6 +56,8 @@ namespace vega
 		// Grid cells the placement covers (rotated shape + origin, or its fragment cells when fragmented). Empty when the
 		// variant is invalid.
 		List<sf::Vector2i> GetCoveredCells(const ModuleDefinition& module, const ModulePlacement& placement);
+		List<std::uint32_t> GetAdjacentPlacements(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& placement);
+		sf::Vector2i FacingOffset(int rotationQuarterTurns);
 		bool SharesCellEdge(const ModuleDefinition& leftModule, const ModulePlacement& left, const ModuleDefinition& rightModule, const ModulePlacement& right);
 		List<GameplayTag> GetAdjacentAbilitySlotSystems(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& placement, std::size_t maximumCount = 2);
 

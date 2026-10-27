@@ -22,6 +22,7 @@ namespace vega
 		LegendaryBulwarkPulseRuntime& operator=(const LegendaryBulwarkPulseRuntime&) = delete;
 		void Replace(const List<ResolvedModuleLegendaryBulwarkPulseRule>& rules);
 		void Tick(float deltaSeconds);
+		bool Force(std::uint32_t instanceId, float powerMultiplier);
 		void Clear();
 		const List<ResolvedModuleLegendaryBulwarkPulseRule>& GetRules() const { return mRules; }
 

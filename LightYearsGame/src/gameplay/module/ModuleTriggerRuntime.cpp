@@ -14,6 +14,18 @@ namespace vega
 {
 	namespace
 	{
+		ResolvedModuleTriggerBuff WithPower(const ResolvedModuleTriggerBuff& original, float powerMultiplier)
+		{
+			ResolvedModuleTriggerBuff resolved = original;
+			for (auto& entry : resolved.rule.modifiers)
+			{
+				auto& modifier = entry.modifier;
+				modifier.magnitude = modifier.operation == sas::AttributeModifierOperation::Multiply ? 1.f + (modifier.magnitude - 1.f) * powerMultiplier : modifier.magnitude * powerMultiplier;
+			}
+			resolved.rule.movementSpeedMultiplier = 1.f + (resolved.rule.movementSpeedMultiplier - 1.f) * powerMultiplier;
+			return resolved;
+		}
+
 		class DispatchDepthScope final
 		{
 		public:
@@ -151,35 +163,54 @@ namespace vega
 		List<ResolvedModuleTriggerBuff> matchingRules;
 		for (const ResolvedModuleTriggerBuff& resolved : mRules)
 		{
-			if (MatchesTrigger(resolved.rule, event)) matchingRules.push_back(resolved);
+			EventSnapshot candidate = event;
+			if (event.trigger == ModuleTriggerKind::AbilityActivated) candidate.sourceAbilityTags = mAbilities.GetModuleTriggerService().AbilityEventTags(resolved.instanceId, event.sourceAbilityTags);
+			if (MatchesTrigger(resolved.rule, candidate)) matchingRules.push_back(resolved);
 		}
 
 		for (const ResolvedModuleTriggerBuff& resolved : matchingRules)
 		{
 			if (mPendingRules) break;
-			const auto active = std::find_if(
-				mActiveBuffs.begin(),
-				mActiveBuffs.end(),
-				[&resolved](const ActiveBuff& buff) { return SameKey(buff, resolved); }
-			);
-			if (active != mActiveBuffs.end())
-			{
-				active->remainingSeconds = resolved.rule.extendSeconds > 0.f ? std::min(resolved.rule.maximumDurationSeconds, active->remainingSeconds + resolved.rule.extendSeconds) : resolved.rule.durationSeconds;
-				continue;
-			}
-			ActiveBuff buff = CreateActiveBuff(resolved);
-			try { mActiveBuffs.push_back(std::move(buff)); }
-			catch (...)
-			{
-				RemoveBuffEffects(buff);
-				throw;
-			}
+			Fire(resolved, 1.f, true);
 		}
+	}
+
+	bool ModuleTriggerRuntime::Fire(const ResolvedModuleTriggerBuff& original, float powerMultiplier, bool natural)
+	{
+		ResolvedModuleTriggerBuff resolved = WithPower(original, powerMultiplier);
+		const auto active = std::find_if(mActiveBuffs.begin(), mActiveBuffs.end(), [&resolved](const ActiveBuff& buff) { return SameKey(buff, resolved); });
+		if (active != mActiveBuffs.end() && active->rule == original.rule && active->powerMultiplier == powerMultiplier)
+			active->remainingSeconds = resolved.rule.extendSeconds > 0.f ? std::min(resolved.rule.maximumDurationSeconds, active->remainingSeconds + resolved.rule.extendSeconds) : resolved.rule.durationSeconds;
+		else
+		{
+			if (active != mActiveBuffs.end()) RemoveActiveBuff(static_cast<std::size_t>(active - mActiveBuffs.begin()));
+			ActiveBuff buff = CreateActiveBuff(resolved);
+			buff.rule = original.rule; buff.powerMultiplier = powerMultiplier;
+			try { mActiveBuffs.push_back(std::move(buff)); }
+			catch (...) { RemoveBuffEffects(buff); throw; }
+		}
+		mAbilities.GetModuleTriggerService().Notify({ resolved.instanceId, ModuleRuleKind::TriggerBuff, resolved.ruleIndex }, natural);
+		return true;
+	}
+
+	bool ModuleTriggerRuntime::Force(std::uint32_t instanceId, float powerMultiplier)
+	{
+		if (mShuttingDown || mDispatchDepth != 0) return false;
+		ModuleTriggerService::EventScope event{ mAbilities.GetModuleTriggerService() };
+		const auto snapshot = mRules;
+		bool fired = false;
+		{
+			DispatchDepthScope dispatchScope{ mDispatchDepth };
+			for (const auto& rule : snapshot) if (rule.instanceId == instanceId && rule.rule.durationSeconds > 0.f) fired = Fire(rule, powerMultiplier, false) || fired;
+		}
+		ProcessDeferredUpdates();
+		return fired;
 	}
 
 	void ModuleTriggerRuntime::ProcessDeferredUpdates()
 	{
 		if (mShuttingDown || mDispatchDepth != 0) return;
+		ModuleTriggerService::EventScope moduleEvent{ mAbilities.GetModuleTriggerService() };
 		while (mPendingRules || !mPendingEvents.empty())
 		{
 			if (mPendingRules)
@@ -216,9 +247,11 @@ namespace vega
 			else if (!(active.rule == desired->rule))
 			{
 				const float remaining = active.remainingSeconds;
+				const float power = active.powerMultiplier;
 				RemoveActiveBuff(index - 1);
 				if (!desired->preserveActiveDurationOnChange) continue;
-				ActiveBuff updated = CreateActiveBuff(*desired);
+				ActiveBuff updated = CreateActiveBuff(WithPower(*desired, power));
+				updated.rule = desired->rule; updated.powerMultiplier = power;
 				updated.remainingSeconds = remaining;
 				mActiveBuffs.insert(mActiveBuffs.begin() + static_cast<std::ptrdiff_t>(index - 1), std::move(updated));
 			}

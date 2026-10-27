@@ -8,6 +8,7 @@
 #include "gameplay/ability/runtime/AbilityInvocationRuntime.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
 #include "gameplay/module/ModuleSystemGate.h"
+#include "gameplay/module/ModuleTriggerService.h"
 #include "gameplay/weapon/PrimaryWeaponMountProfile.h"
 #include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
 
@@ -27,6 +28,13 @@ namespace vega
 		: public sas::AbilitySystemComponent
 	{
 	public:
+		ModuleTriggerService& GetModuleTriggerService() { return mModuleTriggerService; }
+		const ModuleTriggerService& GetModuleTriggerService() const { return mModuleTriggerService; }
+		template<typename Event> bool HandleGameplayEvent(const Event& event)
+		{
+			ModuleTriggerService::EventScope scope{ mModuleTriggerService };
+			return sas::AbilitySystemComponent::HandleGameplayEvent(event);
+		}
 		static constexpr size_t MaxPassiveAbilities = 2;
 		class ModuleAttributeChangeScope final
 		{
@@ -176,6 +184,7 @@ namespace vega
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
+		ModuleTriggerService mModuleTriggerService;
 		void DescribeDebugAbility(sas::AbilityDebugEntry& entry) const override;
 		void HandleAbilityActivated(sas::AbilityHandle handle);
 		friend class GameAbility;
@@ -193,10 +202,7 @@ namespace vega
 		void RecordAbilityActivation(const sas::AbilityLifecycleEvent& event);
 		void CancelActiveAbilitiesForStun();
 		void RefreshScopedAbilityRules();
-		bool MatchesScopedAbilityRule(
-			const ScopedAbilityRule& rule,
-			const GameAbilityDefinition& definition
-		) const;
+		bool MatchesScopedAbilityRule(const ScopedAbilityRule& rule, const GameAbilityDefinition& definition) const;
 
 		Actor& mOwner;
 		LegendarySecondHardpointRuntime* mSecondHardpoint = nullptr;

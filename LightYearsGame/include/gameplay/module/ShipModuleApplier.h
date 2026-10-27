@@ -16,6 +16,7 @@
 #include "gameplay/module/rules/ShieldBatteryRuptureRuntime.h"
 #include "gameplay/module/rules/EpicUtilityMovementRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
+#include "gameplay/module/UniqueModuleRuntime.h"
 #include "gameplay/module/rules/EpicOffenseRuntime.h"
 #include "gameplay/module/rules/legendary/LegendarySecondHardpointRuntime.h"
 #include "gameplay/module/rules/legendary/LegendaryMeltdownBarrelRuntime.h"
@@ -128,7 +129,7 @@ namespace vega
 		bool HasApplied() const { return mHasApplied; }
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
 		std::size_t GetOwnedHandleCount() const;
-		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mReactiveRuntime.SetGoldWallet(std::move(wallet)); }
+		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mReactiveRuntime.SetGoldWallet(wallet); mUniqueRuntime.SetGoldWallet(std::move(wallet)); }
 		// Receives the kill credit (stacks, damage ratio) the applier grants to a placement; the caller writes it to the loadout.
 		void SetRunCounterCreditSink(std::function<void(std::uint32_t, double)> sink) { mRunCounterCreditSink = std::move(sink); }
 		void SetKillCreditSink(std::function<void(std::uint32_t, double, double)> sink) { mKillCreditSink = std::move(sink); }
@@ -166,6 +167,7 @@ namespace vega
 			int bonus = 0;
 		};
 
+		bool ForceModule(std::uint32_t instanceId, float powerMultiplier);
 		void Rebuild();
 		void OnLoadoutAbilityChanged(sas::AbilityHandle handle);
 		void OnLoadoutAbilitiesCleared();
@@ -184,6 +186,8 @@ namespace vega
 		ModuleTriggerBuffRuleApplier mTriggerBuffRuleApplier;
 		ModuleDamageRuleApplier mDamageRuleApplier;
 		ModuleCooldownRuleApplier mCooldownRuleApplier;
+		ModuleTriggerRuntime& mTriggerRuntime;
+		UniqueModuleRuntime mUniqueRuntime;
 		ModuleReactiveRuntime mReactiveRuntime;
 		ModuleShieldReflectionRuntime mShieldReflectionRuntime;
 		ModuleGeneratedRuntime mGeneratedRuntime;
@@ -235,5 +239,6 @@ namespace vega
 		std::uint64_t mAppliedRevision = 0;
 		bool mHasApplied = false;
 		bool mShuttingDown = false;
+		ModuleTriggerService::Connection mTriggerConnection;
 	};
 }

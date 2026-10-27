@@ -344,6 +344,7 @@ namespace vega
 			if (m.hovered) AddPlate(mStaticOver, m.cells, Alpha(rim, 46.f), Alpha(rim, 22.f));
 			AddRim(mStaticOver, m.cells, 7.f, Alpha(base, fl(34.f * pulse * af + (m.hovered ? 20.f : 0.f))));
 			AddRim(mStaticOver, m.cells, m.hovered ? 2.4f : 1.8f, Alpha(rim, fl(rimAlpha)));
+			if (m.mirror) FacingArrow(mStaticOver, { (m.cells.front().x + .5f) * Pitch, (m.cells.front().y + .5f) * Pitch }, m.rotationQuarterTurns, 15.f, Alpha(WhiteCyan, rimAlpha));
 			// Faint inner highlight along each exposed top edge.
 			for (const sf::Vector2i& c : m.cells)
 				if (!Has(m.cells, c.x, c.y - 1))
@@ -446,6 +447,7 @@ namespace vega
 				if (c.x >= 0 && c.y >= 0 && c.x < mData.width && c.y < mData.height) cells.push_back(c);
 			const sf::Color col = mData.previewLegal ? sf::Color{ 90, 255, 200, 255 } : sf::Color{ 255, 90, 90, 255 };
 			const float beat = 0.65f + 0.35f * std::sin(t * 6.f);
+			if (mData.previewMirror && !cells.empty()) FacingArrow(over, { (cells.front().x + .5f) * Pitch, (cells.front().y + .5f) * Pitch }, mData.previewRotation, 15.f, WhiteCyan);
 			AddPlate(over, cells, Alpha(col, 70.f * beat), Alpha(col, 36.f * beat));
 			AddRim(over, cells, 8.f, Alpha(col, fl(46.f * beat)));
 			AddRim(over, cells, 2.f, Alpha(col, fl(235.f * (0.7f + 0.3f * beat))));

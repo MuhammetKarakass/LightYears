@@ -85,11 +85,12 @@ namespace vega
 		{
 			State state;
 			state.instanceId = resolved.instanceId;
+			state.ruleIndex = resolved.ruleIndex;
 			state.rule = resolved.rule;
 			state.accumulatedArmor = resolved.accumulatedArmor;
 			const auto previous = std::find_if(mStates.begin(), mStates.end(), [&state](const State& value)
 			{
-				return value.instanceId == state.instanceId && value.rule == state.rule;
+				return value.instanceId == state.instanceId && value.ruleIndex == state.ruleIndex && value.rule == state.rule;
 			});
 			if (previous != mStates.end())
 			{
@@ -127,7 +128,7 @@ namespace vega
 			const auto* ability = mAbilities.GetAbilityById(event.sourceAbilityId.ToString());
 			if (!ability || !sas::IsLoadoutAbilitySlot(ability->GetDefinition().slot) || !IsShipAlive(mShip)) return;
 			for (auto& state : mStates)
-				if (state.rule.trigger == ModuleTriggerKind::AbilityActivated && state.cooldownRemaining <= 0.f && ModuleTriggerEventTagsMatch(state.rule.requiredEventTags, ability->GetDefinition().abilityTags))
+				if (state.rule.trigger == ModuleTriggerKind::AbilityActivated && state.cooldownRemaining <= 0.f && mAbilities.GetModuleTriggerService().MatchesAbilityEventTags(state.instanceId, state.rule.requiredEventTags, ability->GetDefinition().abilityTags))
 				{ state.cooldownRemaining = state.rule.cooldownSeconds; state.detonating = true; }
 			Flush(); return;
 		}
@@ -165,6 +166,7 @@ namespace vega
 	void ModuleOwnerBurstRuntime::Flush()
 	{
 		if (mBusy || mShuttingDown) return;
+		ModuleTriggerService::EventScope moduleEvent{ mAbilities.GetModuleTriggerService() };
 		mBusy = true;
 		try
 		{
@@ -183,11 +185,34 @@ namespace vega
 				const ModuleOwnerBurstRule rule = ready->rule;
 				const std::shared_ptr<ModuleGeneratedLease> lease = ready->lease;
 				const float armor = ready->accumulatedArmor;
+				mAbilities.GetModuleTriggerService().Notify({ ready->instanceId, ModuleRuleKind::OwnerBurst, ready->ruleIndex });
 				Detonate(rule, lease, armor);
 			}
 		}
 		catch (...) { mBusy = false; throw; }
 		mBusy = false;
+	}
+
+	bool ModuleOwnerBurstRuntime::Force(std::uint32_t instanceId, float powerMultiplier)
+	{
+		if (mBusy || mShuttingDown || !IsShipAlive(mShip)) return false;
+		List<State> due;
+		for (auto& state : mStates)
+		{
+			if (state.instanceId != instanceId || state.cooldownRemaining > 0.f) continue;
+			state.cooldownRemaining = state.rule.cooldownSeconds;
+			due.push_back(state);
+		}
+		for (const auto& state : due)
+		{
+			ModuleOwnerBurstRule rule = state.rule;
+			rule.damage *= powerMultiplier; rule.damageFractionOfMaxHealth *= powerMultiplier;
+			rule.energyPowerCoefficient *= powerMultiplier; rule.accumulatedArmorCoefficient *= powerMultiplier;
+			rule.pushImpulse *= powerMultiplier; rule.pullImpulse *= powerMultiplier;
+			Detonate(rule, state.lease, state.accumulatedArmor);
+			mAbilities.GetModuleTriggerService().Notify({ state.instanceId, ModuleRuleKind::OwnerBurst, state.ruleIndex }, false);
+		}
+		return !due.empty();
 	}
 
 	void ModuleOwnerBurstRuntime::BurstShield()
@@ -197,6 +222,7 @@ namespace vega
 		{
 			if (mStates[index].rule.trigger != ModuleTriggerKind::ShieldBroken || mStates[index].cooldownRemaining > 0.f) continue;
 			mStates[index].cooldownRemaining = mStates[index].rule.cooldownSeconds;
+			mAbilities.GetModuleTriggerService().Notify({ mStates[index].instanceId, ModuleRuleKind::OwnerBurst, mStates[index].ruleIndex });
 			const ModuleOwnerBurstRule rule = mStates[index].rule;
 			const std::shared_ptr<ModuleGeneratedLease> lease = mStates[index].lease;
 			Detonate(rule, lease);
@@ -280,6 +306,7 @@ namespace vega
 	{
 		if (mShuttingDown || mBusy || deltaSeconds <= 0.f) return;
 		for (State& state : mStates) state.cooldownRemaining = std::max(0.f, state.cooldownRemaining - deltaSeconds);
+		ModuleTriggerService::EventScope moduleEvent{ mAbilities.GetModuleTriggerService() };
 		mBusy = true;
 		try
 		{

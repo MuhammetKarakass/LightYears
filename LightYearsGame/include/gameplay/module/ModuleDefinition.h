@@ -740,6 +740,18 @@ namespace vega
 		float cooldownMultiplier = 1.f;
 	};
 
+	enum class UniqueModuleKind { Amplifier, Relay, Echo, Mirror, Pulsar, Spark, ProfitShare };
+	struct UniqueModuleRule
+	{
+		UniqueModuleKind kind = UniqueModuleKind::Amplifier;
+		int levelBonus = 0;
+		float echoDelaySeconds = 0.f;
+		float echoPowerFraction = 0.f;
+		float pulsarIntervalSeconds = 0.f;
+		unsigned int goldPerTrigger = 0;
+		float cooldownSeconds = 0.f;
+	};
+
 	struct ModuleDefinition
 	{
 		sas::ContentId moduleId;
@@ -751,6 +763,7 @@ namespace vega
 		GameplayTag systemCategory;
 		// Replaces any one standard ability-slot shell. No family, rarity, progression or zone scaling.
 		std::optional<AbilityModuleRules> abilityModule;
+		std::optional<UniqueModuleRule> unique;
 		std::optional<ModuleLegendaryRule> legendary;
 		List<ModuleSizeVariant> sizeVariants;
 		ModuleRarity rarity = ModuleRarity::Common;

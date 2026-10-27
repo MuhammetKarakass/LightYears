@@ -491,7 +491,7 @@ namespace vega
 
 		int GetZoneLevelBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
 		{
-			if (module.abilityModule) return 0;
+			if (module.abilityModule || module.unique) return 0;
 			const auto zoneLevelBonus = [&rules, &module, &placement](const GameplayTag& zone) -> int
 			{
 				const ModuleZoneEntry* entry = zone.IsValid() ? rules.zoneTable.FindZone(zone) : nullptr;
@@ -512,6 +512,12 @@ namespace vega
 				if (IsSideFeatureUsableAtLevel(module, feature, placement.level)) bonus = std::max(bonus, feature->rules.minimumZoneLevelBonus);
 			}
 			return std::clamp(bonus, 0, kMaxZoneLevelBonus);
+		}
+
+		int FindLevelBonus(const ResolvedModuleEffects& effects, std::uint32_t instanceId)
+		{
+			for (const auto& bonus : effects.levelBonuses) if (bonus.instanceId == instanceId) return bonus.levelBonus;
+			return 0;
 		}
 
 		int FindZoneLevelBonus(const ResolvedModuleEffects& effects, std::uint32_t instanceId)
@@ -566,10 +572,25 @@ namespace vega
 				const ModuleZoneEntry* placementZoneEntry = placementZone.IsValid() ? rules.zoneTable.FindZone(placementZone) : nullptr;
 				const int zoneLevel = GetZoneLevelBonus(rules, *module, placement);
 				effects.zoneBonuses.push_back({ placement.instanceId, zoneLevel });
+				int extraLevel = 0;
+				if (!module->unique && !module->abilityModule)
+					for (const auto& neighbour : activePlacements)
+					{
+						const auto* source = rules.lookup(neighbour.moduleId);
+						if (source && source->unique && source->unique->kind == UniqueModuleKind::Amplifier && ModulePlacementRules::SharesCellEdge(*module, placement, *source, neighbour))
+							extraLevel = std::max(extraLevel, source->unique->levelBonus);
+					}
+				effects.levelBonuses.push_back({ placement.instanceId, zoneLevel + extraLevel });
+				const auto amplifiedSlot = AbilitySlotForModuleSystem(ModuleSystemForPlacement(rules, *module, placement));
+				if (extraLevel > 0 && amplifiedSlot != sas::AbilitySlot::None)
+				{
+					ScopedAbilityRule bonus; bonus.requiredSlot = amplifiedSlot; bonus.levelBonus = extraLevel;
+					effects.abilityRules.push_back(bonus);
+				}
 
 				const StatusRuleCounts mainBegin = CountStatusRules(effects);
-					ResolvePackage(effects, variant, *module, placement, placement.level + zoneLevel, placement.level, placementZone, placementZoneEntry, rules.shipLevel, false);
-				if (module->legendary) ResolveLegendaryRules(effects.legendaryRules, *module->legendary, placement.instanceId, placement.level + zoneLevel);
+					ResolvePackage(effects, variant, *module, placement, placement.level + zoneLevel + extraLevel, placement.level + extraLevel, placementZone, placementZoneEntry, rules.shipLevel, false);
+				if (module->legendary) ResolveLegendaryRules(effects.legendaryRules, *module->legendary, placement.instanceId, placement.level + zoneLevel + extraLevel);
 					const StatusRuleCounts mainEnd = CountStatusRules(effects);
 				// Rolled side stats are never scaled and apply to the owner.
 				for (const sas::AttributeModifier& sideStat : placement.rolledSideStats)
@@ -582,7 +603,7 @@ namespace vega
 					const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup(placement.sideFeatureId);
 					if (IsSideFeatureUsableAtLevel(*module, feature, placement.level))
 						{
-							ResolvePackage(effects, feature->rules, *module, placement, placement.level, placement.level, placementZone, placementZoneEntry, rules.shipLevel, true);
+							ResolvePackage(effects, feature->rules, *module, placement, placement.level + extraLevel, placement.level + extraLevel, placementZone, placementZoneEntry, rules.shipLevel, true);
 							MergeSideStatusModifiers(effects, feature->rules, mainBegin, mainEnd);
 							for (auto recovery : feature->rules.cooldownRecoveryRules)
 							{
@@ -597,7 +618,7 @@ namespace vega
 									if (main.requiredEmptyAbilitySlots <= 0) continue;
 									ModuleDamageRule primary = main;
 									primary.condition = ModuleDamageCondition::PrimaryShotOnly;
-									primary.damageMultiplier = 1.f + (main.damageMultiplierByLevel.ValueAtLevel(main.damageMultiplier, placement.level + zoneLevel) - 1.f) * feature->rules.primaryShareOfAbilityBonus;
+									primary.damageMultiplier = 1.f + (main.damageMultiplierByLevel.ValueAtLevel(main.damageMultiplier, placement.level + zoneLevel + extraLevel) - 1.f) * feature->rules.primaryShareOfAbilityBonus;
 									primary.damageMultiplierByLevel = {};
 									effects.damageRules.push_back({ placement.instanceId, NamespacedRuleIndex(0, true), primary, {} });
 								}

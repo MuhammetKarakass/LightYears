@@ -37,6 +37,7 @@ namespace vega
 
 		void Replace(const ResolvedModuleEpicRules& rules);
 		void Tick(float deltaSeconds);
+		bool Force(std::uint32_t instanceId, float powerMultiplier);
 		// Called for each loadout ability the owner activates. Cascade chains advance here; Utility uses count toward Field Mastery.
 		void OnAbilityUse(const std::string& abilityId, const List<GameplayTag>& tags);
 		// Receives every Field Mastery level gain (ability id, new level) so the owning Player keeps it for the run.
@@ -75,13 +76,14 @@ namespace vega
 			sf::Vector2f origin{};
 			float damage = 0.f;
 			float radius = 0.f;
+			bool suppressModuleTriggers = false;
 		};
 
 		void OnEvent(const sas::AbilityEvent& event);
 		void TickCascades(float deltaSeconds);
 		void AdvanceCascade(CascadeState& state, const GameplayTag& family);
 		void TickPhase(float deltaSeconds);
-		void StartPhase();
+		void StartPhase(float powerMultiplier = 1.f);
 		void EndPhase();
 		void ClearPhase();
 		void TickAssaultVector(float deltaSeconds);
@@ -109,6 +111,8 @@ namespace vega
 		std::unordered_set<unsigned int> mPhaseProjectiles;
 
 		bool mPhaseAfterburning = false;
+		float mPhasePower = 1.f;
+		bool mPhaseForced = false;
 		float mPhaseRemaining = 0.f;
 		float mPhaseCooldown = 0.f;
 		bool mPhaseArmed = false;

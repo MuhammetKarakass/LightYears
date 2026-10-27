@@ -231,10 +231,10 @@ Ana modül sayımına dahil değildir (karar 2026-10-24). Combo Sequencer Legend
 
 ## Unique modüller · 7
 
-2026-10-03'te "bağlantı modülleri" adıyla seçilmiş, 2026-10-13 temizliğinde katalogdan düşmüş kategori; kullanıcı 2026-10-27'de güncelleyip geri getirdi ve adını **Unique** koydu. Ana modül sayımına dahil değildir. Tasarım kesin; runtime/JSON yok.
+2026-10-03'te "bağlantı modülleri" adıyla seçilmiş, 2026-10-13 temizliğinde katalogdan düşmüş kategori; kullanıcı 2026-10-27'de güncelleyip geri getirdi ve adını **Unique** koydu. Ana modül sayımına dahil değildir. JSON, sınıf doğrulaması, yerleşim/presentation ve Unique runtime eklendi (2026-10-27). Desteklenen tetik türleri ve açık sınırlar: [uygulama raporu](UNIQUE_MODULES_IMPLEMENTATION.md).
 
 **Kategori kuralları (kullanıcı onayı, 2026-10-27):**
-- Nadirlik dışı, **1 hücre**; seviye, yan özellik ve bölge bonusu yok. Edinim mağaza/ödül sistemiyle gelir.
+- Nadirlik dışı, **1 hücre**; seviye, yan özellik, bölge bonusu ve aile yok. Aile/bölge sayımlarına ve nadirlik loot havuzlarına girmez. Edinim mağaza/ödül sistemiyle gelir.
 - Her Unique'in tek görevi vardır ve yalnız kenar temasıyla (yatay/dikey, çapraz yok) dokunduğu modülleri etkiler.
 - Unique'ler birbirini etkilemez; aynı türden iki Unique aynı modüle dokunursa etkileri üst üste binmez.
 - Q/E/F/R kabuklarını da etkiler, fakat hiçbir Unique yeteneği otomatik kullanmaz.

@@ -64,6 +64,16 @@ namespace vega::holo
 
 	inline void Line(sf::VertexArray& va, const Vec& p0, const Vec& p1, float thickness, const sf::Color& color) { LineGrad(va, p0, p1, thickness, color, color); }
 
+	inline void FacingArrow(sf::VertexArray& va, const Vec& center, int quarterTurns, float radius, const sf::Color& color)
+	{
+		const Vec directions[4] = { { 0.f, -1.f }, { 1.f, 0.f }, { 0.f, 1.f }, { -1.f, 0.f } };
+		const Vec d = directions[(quarterTurns % 4 + 4) % 4], side{ -d.y, d.x };
+		const Vec tip = center + d * radius;
+		Line(va, center - d * radius, tip, 2.5f, color);
+		Line(va, tip, center + side * (radius * .6f), 2.5f, color);
+		Line(va, tip, center - side * (radius * .6f), 2.5f, color);
+	}
+
 	inline void Diamond(sf::VertexArray& va, const Vec& center, float radius, const sf::Color& color)
 	{
 		Quad(va, { center.x, center.y - radius }, { center.x + radius, center.y }, { center.x, center.y + radius }, { center.x - radius, center.y }, color, color, color, color);

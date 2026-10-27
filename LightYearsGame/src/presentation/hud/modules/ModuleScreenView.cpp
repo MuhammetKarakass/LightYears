@@ -96,6 +96,7 @@ namespace vega
 			if (family == "Movement") return ZoneColor(ModuleZoneKind::Engine);
 			if (family == "Utility") return ZoneColor(ModuleZoneKind::Sensor);
 			if (family == "Ability") return ZoneColor(ModuleZoneKind::AbilityBay);
+			if (family == "Unique") return sf::Color{ 235, 135, 255, 255 };
 			return ZoneColor(ModuleZoneKind::Hull);
 		}
 
@@ -388,6 +389,8 @@ namespace vega
 				HologramModule module;
 				module.cells.assign(entry.cells.begin(), entry.cells.end());
 				module.color = FamilyColor(entry.family);
+				module.mirror = entry.mirror;
+				module.rotationQuarterTurns = entry.rotationQuarterTurns;
 				module.held = entry.held;
 				module.rebooting = entry.rebooting;
 				module.rebootFraction = entry.rebootFraction;
@@ -397,6 +400,8 @@ namespace vega
 			}
 			data.previewActive = vm.preview.active;
 			data.previewLegal = vm.preview.legal;
+			data.previewMirror = heldEntry && heldEntry->mirror;
+			data.previewRotation = vm.heldRotation;
 			data.previewCells.assign(vm.preview.cells.begin(), vm.preview.cells.end());
 			hologram->SetData(data);
 		}
@@ -445,7 +450,8 @@ namespace vega
 				detail += "  /  sizes ";
 				for (std::size_t i = 0; i < shown->sizeLadder.size(); ++i) { if (i > 0) detail += " / "; const int size = shown->sizeLadder[i]; detail += size == cells ? "[" + std::to_string(size) + "]" : std::to_string(size); }
 			}
-			if (heldEntry) detail += "  /  " + std::to_string(vm.heldRotation * 90) + " deg";
+			if (heldEntry || shown->mirror) detail += "  /  " + std::to_string((heldEntry ? vm.heldRotation : shown->rotationQuarterTurns) * 90) + " deg";
+			if (shown->mirror) holo::FacingArrow(add, CardPosition + sf::Vector2f{ CardSize.x - 24.f, 32.f }, heldEntry ? vm.heldRotation : shown->rotationQuarterTurns, 11.f, cardAccent);
 			Label(*root, in + sf::Vector2f{ 0.f, 20.f }, Wrapped(Upper(shown->name), 16, ModuleCardText::DetailWidth, 1, kHudFont), 16, cardAccent, kHudFont);
 			const bool hasBonus = heldEntry && vm.preview.active && vm.preview.legal && vm.preview.zoneLevelBonus > 0;
 			Label(*root, in + sf::Vector2f{ 0.f, 42.f }, Wrapped(detail, 12, ModuleCardText::DetailWidth - (hasBonus ? 60.f : 0.f), 1), 12, InkMuted);
@@ -499,7 +505,7 @@ namespace vega
 			const sf::Vector2f first = cellPosition(anchor.x, anchor.y) + sf::Vector2f{ 3.f, 3.f };
 			const sf::Color text = WithAlpha(holo::Lerp(family, sf::Color{ 255, 255, 255, 255 }, entry.isSystem ? 0.f : 0.6f), alpha);
 			const float labelScale = pitch / CellPitch;
-			GlowLabel(*root, first + sf::Vector2f{ 9.f, 11.f } * labelScale, entry.abbreviation, static_cast<unsigned int>(std::clamp(15.f * labelScale * 1.35f, 10.f, 15.f)), entry.isSystem ? WithAlpha(SystemGold, alpha) : text, WithAlpha(family, alpha), kHudFont);
+			GlowLabel(*root, first + sf::Vector2f{ 9.f, 11.f } * labelScale, entry.mirror ? "" : entry.abbreviation, static_cast<unsigned int>(std::clamp(15.f * labelScale * 1.35f, 10.f, 15.f)), entry.isSystem ? WithAlpha(SystemGold, alpha) : text, WithAlpha(family, alpha), kHudFont);
 			if (entry.rebooting) Label(*root, first + sf::Vector2f{ 9.f, 31.f }, FormatSeconds(entry.rebootRemaining), 12, Accent, kHudFont);
 		}
 
@@ -535,6 +541,7 @@ namespace vega
 			const sf::Vector2f mark = position + sf::Vector2f{ 9.f, rowHeight * 0.5f };
 			holo::Diamond(add, mark, 11.f, WithAlpha(family, 34));
 			holo::Diamond(add, mark, 5.f, family);
+			if (item.mirror) holo::FacingArrow(add, position + sf::Vector2f{ InventoryWidth - 24.f, 38.f }, item.held ? vm.heldRotation : item.rotationQuarterTurns, 9.f, family);
 			const bool hasDescription = !item.description.empty();
 			Label(*root, position + sf::Vector2f{ 26.f, hasDescription ? 7.f : 16.f }, Wrapped(Upper(item.name), 14, ModuleCardText::InventoryTextWidth, 1, kHudFont), 14, item.isSystem ? SystemGold : Ink, kHudFont);
 			if (hasDescription) Label(*root, position + sf::Vector2f{ 26.f, 28.f }, Wrapped(item.description, 13, ModuleCardText::InventoryTextWidth, 1), 13, InkMuted);

@@ -60,14 +60,16 @@ namespace vega
 	void LegendaryBulwarkPulseRuntime::OnAbilityActivated(const sas::AbilityLifecycleEvent& event)
 	{
 		if (mBusy || !mShip || mShip->GetIsPendingDestroy() || !mShip->GetWorld()) return;
-		if (!sas::IsLoadoutAbilitySlot(event.slot) || !ModuleTriggerEventTagsMatch({ GameplayTags::Ability::Defense }, event.abilityTags)) return;
+		if (!sas::IsLoadoutAbilitySlot(event.slot)) return;
+		ModuleTriggerService::EventScope moduleEvent{ mAbilities.GetModuleTriggerService() };
 
 		List<std::pair<ResolvedModuleLegendaryBulwarkPulseRule, shared_ptr<ModuleGeneratedLease>>> waves;
 		for (State& state : mStates)
 		{
-			if (state.cooldownRemaining > 0.f) continue;
+			if (state.cooldownRemaining > 0.f || !mAbilities.GetModuleTriggerService().MatchesAbilityEventTags(state.rule.instanceId, { GameplayTags::Ability::Defense }, event.abilityTags)) continue;
 			state.cooldownRemaining = state.rule.cooldownSeconds;
 			waves.emplace_back(state.rule, state.lease);
+			mAbilities.GetModuleTriggerService().Notify({ state.rule.instanceId, ModuleRuleKind::Legendary, 0 });
 		}
 
 		mBusy = true;
@@ -81,6 +83,24 @@ namespace vega
 			throw;
 		}
 		mBusy = false;
+	}
+
+	bool LegendaryBulwarkPulseRuntime::Force(std::uint32_t instanceId, float powerMultiplier)
+	{
+		if (mBusy || !mShip || mShip->GetIsPendingDestroy() || !mShip->GetWorld()) return false;
+		List<State> due;
+		for (auto& state : mStates)
+		{
+			if (state.rule.instanceId != instanceId || state.cooldownRemaining > 0.f) continue;
+			state.cooldownRemaining = state.rule.cooldownSeconds; due.push_back(state);
+		}
+		for (const auto& state : due)
+		{
+			auto rule = state.rule; rule.baseDamage *= powerMultiplier; rule.healthCoefficient *= powerMultiplier;
+			Detonate(rule, state.lease);
+			mAbilities.GetModuleTriggerService().Notify({ instanceId, ModuleRuleKind::Legendary, 0 }, false);
+		}
+		return !due.empty();
 	}
 
 	void LegendaryBulwarkPulseRuntime::Detonate(const ResolvedModuleLegendaryBulwarkPulseRule& rule, const shared_ptr<ModuleGeneratedLease>& lease)

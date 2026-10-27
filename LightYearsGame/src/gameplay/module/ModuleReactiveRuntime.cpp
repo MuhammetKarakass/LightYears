@@ -467,6 +467,7 @@ namespace vega
 	void ModuleReactiveRuntime::Flush(float deltaSeconds)
 	{
 		if (mBusy || mShuttingDown) return;
+		ModuleTriggerService::EventScope moduleEvent{ mAbilities.GetModuleTriggerService() };
 		mBusy = true;
 		try
 		{
@@ -518,6 +519,7 @@ namespace vega
 			if (previous.resolved.rule.kind == ModuleEventActionKind::GrantTemporaryShield && std::none_of(actions.begin(), actions.end(), [&previous](const ActionState& next) { return previous.resolved.instanceId == next.resolved.instanceId && previous.resolved.ruleIndex == next.resolved.ruleIndex && previous.resolved.rule == next.resolved.rule; }))
 				mShip->GetShieldComponent().RemoveModuleTemporaryShield(TemporaryShieldSource(previous.resolved.instanceId, previous.resolved.ruleIndex));
 		mActions = std::move(actions);
+		for (auto it = mLastAbility.begin(); it != mLastAbility.end();) { if (std::none_of(mActions.begin(), mActions.end(), [id = it->first](const auto& state) { return state.resolved.instanceId == id; })) it = mLastAbility.erase(it); else ++it; }
 		List<AttributeState> attributes;
 		for (const auto& resolved : desired.attributes)
 		{
@@ -606,26 +608,38 @@ namespace vega
 			if (mPending) return;
 		}
 	}
+	bool ModuleReactiveRuntime::Force(std::uint32_t instanceId, float powerMultiplier)
+	{
+		if (mBusy || mShuttingDown) return false;
+		const auto serial = mFiredSerial;
+		mEvents.push_back({ ModuleTriggerKind::None, mLastAbility[instanceId], instanceId, powerMultiplier });
+		Flush();
+		return mFiredSerial != serial;
+	}
 	void ModuleReactiveRuntime::Execute(const Event& event)
 	{
 		if (!mShip || mShip->GetHealthComponent().GetHealth() <= 0.f) return;
 		for (auto& state : mActions)
 		{
-			const auto& rule = state.resolved.rule;
-			if (rule.trigger != event.trigger || state.cooldownRemaining > 0.f) continue;
-			if (!rule.requiredEventTags.empty())
+			const bool forced = event.forcedInstanceId != 0;
+			if (forced && state.resolved.instanceId != event.forcedInstanceId) continue;
+			if ((!forced && state.resolved.rule.trigger != event.trigger) || state.cooldownRemaining > 0.f) continue;
+			if (state.resolved.rule.kind == ModuleEventActionKind::ShieldOverflowToHealth) continue;
+			auto rule = state.resolved.rule;
+			rule.amount *= event.power;
+			if (!forced && !rule.requiredEventTags.empty())
 			{
 				const auto* ability = mAbilities.GetAbilityById(event.abilityId.ToString());
-				if (!ability || !std::all_of(rule.requiredEventTags.begin(), rule.requiredEventTags.end(), [ability](const GameplayTag& required)
-				{
-					const auto& tags = ability->GetDefinition().abilityTags;
-					return std::any_of(tags.begin(), tags.end(), [&required](const GameplayTag& tag) { return tag.MatchesTag(required); });
-				})) continue;
+				if (!ability || !(event.trigger == ModuleTriggerKind::AbilityActivated ? mAbilities.GetModuleTriggerService().MatchesAbilityEventTags(state.resolved.instanceId, rule.requiredEventTags, ability->GetDefinition().abilityTags) : ModuleTriggerEventTagsMatch(rule.requiredEventTags, ability->GetDefinition().abilityTags))) continue;
 			}
 			const auto& health = mShip->GetHealthComponent();
-			if (health.GetMaxHealth() <= 0.f || health.GetHealth() > health.GetMaxHealth() * rule.healthAtMost) continue;
-			if (++state.count < rule.everyCount) continue;
-			state.count = 0;
+			if (!forced)
+			{
+				if (health.GetMaxHealth() <= 0.f || health.GetHealth() > health.GetMaxHealth() * rule.healthAtMost) continue;
+				if (++state.count < rule.everyCount) continue;
+				state.count = 0;
+			}
+			if (rule.kind == ModuleEventActionKind::RefundUsedCooldown && event.abilityId.ToString().empty()) continue;
 			if (rule.kind == ModuleEventActionKind::ApplyNearbyCryo)
 			{
 				if (!mShip->GetWorld()) continue;
@@ -662,7 +676,7 @@ namespace vega
 			else if (rule.kind == ModuleEventActionKind::RefundUsedCooldown)
 			{
 				const float chance = std::clamp(mAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::Luck) * rule.chancePerLuck, 0.f, 1.f);
-				if (chance <= 0.f || (chance < 1.f && std::generate_canonical<float, 24>(mRandom) >= chance)) continue;
+				if (!forced && (chance <= 0.f || (chance < 1.f && std::generate_canonical<float, 24>(mRandom) >= chance))) continue;
 				if (auto* ability = mAbilities.GetAbilityById(event.abilityId.ToString())) ability->RefundActivationCooldown(rule.amount);
 			}
 			else if (rule.kind == ModuleEventActionKind::GrantTemporaryShield)
@@ -728,6 +742,10 @@ namespace vega
 				}
 				if (longest && !mPending) longest->ReduceCooldownRemaining(longest->GetCooldownRemaining() * rule.amount);
 			}
+			state.cooldownRemaining = rule.cooldownSeconds;
+			if (!forced) mLastAbility[state.resolved.instanceId] = event.abilityId;
+			++mFiredSerial;
+			mAbilities.GetModuleTriggerService().Notify({ state.resolved.instanceId, ModuleRuleKind::EventAction, state.resolved.ruleIndex }, !forced);
 			if (mPending) return;
 		}
 	}

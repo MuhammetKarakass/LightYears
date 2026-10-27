@@ -5,6 +5,7 @@
 #include "gameplay/module/ModuleTriggerRuntime.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "spaceShip/SpaceShip.h"
+#include "player/PlayerSpaceShip.h"
 
 #include <algorithm>
 #include <utility>
@@ -78,6 +79,8 @@ namespace vega
 		, mTriggerBuffRuleApplier{ triggerRuntime }
 		, mDamageRuleApplier{ combatRuntime }
 		, mCooldownRuleApplier{ abilities }
+		, mTriggerRuntime{ triggerRuntime }
+		, mUniqueRuntime{ abilities }
 		, mReactiveRuntime{ abilities }
 		, mShieldReflectionRuntime{ combatRuntime }
 		, mGeneratedRuntime{ abilities }
@@ -105,6 +108,7 @@ namespace vega
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
 		mAbilities.SetModuleSystemGate(this);
+		mTriggerConnection = mAbilities.GetModuleTriggerService().RegisterDispatcher([this](std::uint32_t id, float power) { return ForceModule(id, power); });
 		mAbilityGrantedHandle = mAbilities.onAbilityGranted.BindAction(this, &ShipModuleApplier::OnLoadoutAbilityChanged);
 		mAbilityRemovedHandle = mAbilities.onAbilityRemoved.BindAction(this, &ShipModuleApplier::OnLoadoutAbilityChanged);
 		mAbilityChangedHandle = mAbilities.onAbilityChanged.BindAction(this, &ShipModuleApplier::OnLoadoutAbilityChanged);
@@ -119,6 +123,7 @@ namespace vega
 		// only because SpaceShip binds its listeners through weak_ptr and ShipRuntime outlives
 		// this member; a raw `this` listener on a later PlayerSpaceShip member would dangle.
 		mShuttingDown = true;
+		mTriggerConnection.Reset();
 		mAbilities.onAbilityGranted.UnbindAction(mAbilityGrantedHandle);
 		mAbilities.onAbilityRemoved.UnbindAction(mAbilityRemovedHandle);
 		mAbilities.onAbilityChanged.UnbindAction(mAbilityChangedHandle);
@@ -295,6 +300,11 @@ namespace vega
 		if (!mShuttingDown) mLegendaryIonCometRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mLegendaryTwinRackRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mLegendaryUnderdogCoreRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown && mHasApplied)
+		{
+			const auto* ship = dynamic_cast<const PlayerSpaceShip*>(&mAbilities.GetOwner());
+			mUniqueRuntime.Tick(deltaSeconds, ship && ship->GetWorld() && !ship->GetIsPendingDestroy() && !ship->IsInPortalTransit() && !ship->IsPossessing() && ship->GetHealthComponent().GetHealth() > 0.f, ship && ship->IsInCombat());
+		}
 		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
@@ -308,6 +318,24 @@ namespace vega
 			});
 		mReboots.erase(finished, mReboots.end());
 		if (anyFinished) Rebuild();
+	}
+
+	bool ShipModuleApplier::ForceModule(std::uint32_t instanceId, float powerMultiplier)
+	{
+		if (mShuttingDown || !mHasApplied || IsRebooting(instanceId)) return false;
+		const auto placement = std::find_if(mPlacements.begin(), mPlacements.end(), [instanceId](const auto& entry) { return entry.instanceId == instanceId; });
+		const auto* definition = placement != mPlacements.end() && mLookup ? mLookup(placement->moduleId) : nullptr;
+		const auto* ship = dynamic_cast<const SpaceShip*>(&mAbilities.GetOwner());
+		if (!definition || definition->unique || !ship || ship->GetIsPendingDestroy() || ship->GetHealthComponent().GetHealth() <= 0.f) return false;
+		bool fired = mTriggerRuntime.Force(instanceId, powerMultiplier);
+		fired = mReactiveRuntime.Force(instanceId, powerMultiplier) || fired;
+		fired = mOwnerBurstRuntime.Force(instanceId, powerMultiplier) || fired;
+		fired = mCombatRuntime.ForceModuleDamageWindows(instanceId, powerMultiplier) || fired;
+		fired = mShieldReflectionRuntime.Force(instanceId, powerMultiplier) || fired;
+		fired = mGeneratedRuntime.Force(instanceId, powerMultiplier) || fired;
+		fired = mLegendaryBulwarkPulseRuntime.Force(instanceId, powerMultiplier) || fired;
+		fired = mEpicUtilityMovementRuntime.Force(instanceId, powerMultiplier) || fired;
+		return fired;
 	}
 
 	void ShipModuleApplier::OnShipLevelChanged()
@@ -331,6 +359,7 @@ namespace vega
 		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); }, mShipRuntime.GetShipLevel() };
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
 		mResolvedShipLevel = rules.shipLevel;
+		mUniqueRuntime.Replace(rules, active);
 		ResolveMonochromeCoreLoadout(mResolved.epicOffense, mAbilities);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
 		mCombatRuntime.SetModuleStatusRules(mResolved.statusRules);
@@ -418,7 +447,7 @@ namespace vega
 		{
 			if (IsRebooting(placement.instanceId)) continue;
 			const auto* module = mLookup(placement.moduleId); if (!module) continue;
-			const int level = placement.level + ModuleResolver::FindZoneLevelBonus(mResolved, placement.instanceId);
+			const int level = placement.level + ModuleResolver::FindLevelBonus(mResolved, placement.instanceId);
 			for (const auto& rule : module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].runCounterRules)
 			{
 				if (rule.source != ModuleRunCounterSource::AbilityUses || !ModuleTriggerEventTagsMatch({ rule.requiredFamily }, tags)) continue;
@@ -466,6 +495,7 @@ namespace vega
 		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup, [this](const GameplayTag& family) { return mAbilities.CountLoadoutAbilitiesWithTag(family); }, mShipRuntime.GetShipLevel() };
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
 		mResolvedShipLevel = rules.shipLevel;
+		mUniqueRuntime.Replace(rules, active);
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
 	}
@@ -488,7 +518,7 @@ namespace vega
 			const List<ModuleReviveRule>& reviveRules = module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].reviveRules;
 			if (reviveRules.empty()) continue;
 			const ModuleReviveRule& rule = reviveRules.front();
-			const int level = placement.level + ModuleResolver::FindZoneLevelBonus(mResolved, placement.instanceId);
+			const int level = placement.level + ModuleResolver::FindLevelBonus(mResolved, placement.instanceId);
 			if (placement.reviveChargesSpent >= ResolveEpicLevelValue(rule.chargesByLevel, 0, level)) continue;
 			HealthComponent& health = owner.GetHealthComponent();
 			++placement.reviveChargesSpent;

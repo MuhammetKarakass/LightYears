@@ -36,7 +36,7 @@ namespace vega
 			if (placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module->sizeVariants.size()) continue;
 			if (placement.level < 1 || placement.level > module->levelCount) continue;
 			const ModuleSizeVariant& variant = module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)];
-			const int level = placement.level + ModuleResolver::FindZoneLevelBonus(effects, placement.instanceId);
+			const int level = placement.level + ModuleResolver::FindLevelBonus(effects, placement.instanceId);
 
 			for (std::size_t index = 0; index < variant.familyStatRules.size(); ++index)
 			{

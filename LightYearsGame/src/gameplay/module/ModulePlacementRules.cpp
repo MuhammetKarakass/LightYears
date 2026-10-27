@@ -50,6 +50,25 @@ namespace vega
 			return cells;
 		}
 
+		sf::Vector2i FacingOffset(int rotationQuarterTurns)
+		{
+			const sf::Vector2i directions[4] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 } };
+			return directions[(rotationQuarterTurns % 4 + 4) % 4];
+		}
+
+		List<std::uint32_t> GetAdjacentPlacements(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& placement)
+		{
+			List<std::uint32_t> result;
+			const auto* owner = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
+			if (!owner) return result;
+			for (const auto& other : installed)
+			{
+				const auto* module = rules.lookup(other.moduleId);
+				if (other.instanceId != placement.instanceId && module && SharesCellEdge(*owner, placement, *module, other)) result.push_back(other.instanceId);
+			}
+			return result;
+		}
+
 		bool SharesCellEdge(const ModuleDefinition& leftModule, const ModulePlacement& left, const ModuleDefinition& rightModule, const ModulePlacement& right)
 		{
 			for (const auto& a : GetCoveredCells(leftModule, left))
@@ -82,7 +101,7 @@ namespace vega
 			const ModuleDefinition* module = rules.lookup ? rules.lookup(candidate.moduleId) : nullptr;
 			if (!module) return ModulePlacementFailure::UnknownModule;
 			if (!FindVariant(*module, candidate.variantIndex)) return ModulePlacementFailure::InvalidVariant;
-			if (module->abilityModule && (candidate.sideFeatureId.IsValid() || !candidate.rolledSideStats.empty())) return ModulePlacementFailure::InvalidSideFeature;
+			if ((module->abilityModule || module->unique) && (candidate.sideFeatureId.IsValid() || !candidate.rolledSideStats.empty())) return ModulePlacementFailure::InvalidSideFeature;
 			if (candidate.level < 1 || candidate.level > module->levelCount ||
 				!HasModuleRulePackageLevelCoverage(module->sizeVariants[static_cast<std::size_t>(candidate.variantIndex)], candidate.level))
 				return ModulePlacementFailure::InvalidLevel;

@@ -14,6 +14,8 @@ namespace vega
 		bool rebooting{ false };
 		bool hovered{ false };
 		bool system{ false };
+		bool mirror = false;
+		int rotationQuarterTurns = 0;
 		float rebootFraction{ 0.f };
 	};
 
@@ -32,6 +34,8 @@ namespace vega
 		std::vector<HologramModule> modules;
 		bool previewActive{ false };
 		bool previewLegal{ false };
+		bool previewMirror = false;
+		int previewRotation = 0;
 		std::vector<sf::Vector2i> previewCells;
 	};
 
