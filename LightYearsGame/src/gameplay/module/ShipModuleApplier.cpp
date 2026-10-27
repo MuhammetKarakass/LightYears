@@ -1,4 +1,5 @@
 #include "gameplay/module/ShipModuleApplier.h"
+#include "gameplay/module/rules/OwnerDeathPreventionPriorities.h"
 
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/module/ModuleAbilitySlots.h"
@@ -123,6 +124,8 @@ namespace vega
 		// only because SpaceShip binds its listeners through weak_ptr and ShipRuntime outlives
 		// this member; a raw `this` listener on a later PlayerSpaceShip member would dangle.
 		mShuttingDown = true;
+		mRevivePrevention.Reset();
+		mLegendaryParasiteHullRuntime.Clear();
 		mTriggerConnection.Reset();
 		mAbilities.onAbilityGranted.UnbindAction(mAbilityGrantedHandle);
 		mAbilities.onAbilityRemoved.UnbindAction(mAbilityRemovedHandle);
@@ -150,7 +153,6 @@ namespace vega
 		mLegendaryNeuralHijackerRuntime.Clear();
 		mLegendaryHardlightHullRuntime.Clear();
 		mLegendaryBulwarkPulseRuntime.Clear();
-		mLegendaryParasiteHullRuntime.Clear();
 		mLegendaryBlinkDriveRuntime.Clear();
 		mLegendaryIonCometRuntime.Clear();
 		mLegendaryTwinRackRuntime.Clear();
@@ -384,7 +386,7 @@ namespace vega
 		mTriggerBuffRuleApplier.Replace(mResolved.triggerBuffs);
 		mReactiveRuntime.Replace(mResolved.eventActions, mResolved.ownerAttributeRules, mResolved.movementFadeRules);
 		mReactiveRuntime.ReplaceCooldownRecovery(mResolved.cooldownRecoveryRules);
-		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->GetDeferredDamageRuntime().SetRule(mResolved.deferredDamage);
+		if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->GetDeferredDamageRuntime().SetSpec(mResolved.deferredDamage);
 	mReactiveRuntime.ReplaceSustainedSpeed(mResolved.sustainedSpeedRules);
 		mShieldReflectionRuntime.Replace(mResolved.shieldReflections);
 		SyncChargeBonuses(mResolved.chargeRules);
@@ -415,6 +417,14 @@ namespace vega
 		mLegendaryNeuralHijackerRuntime.Replace(mResolved.legendaryRules.neuralHijackers);
 		mLegendaryBulwarkPulseRuntime.Replace(mResolved.legendaryRules.bulwarkPulses);
 		mLegendaryParasiteHullRuntime.Replace(mResolved.legendaryRules.parasiteHulls);
+		mRevivePrevention.Reset();
+		const bool hasRevive = std::any_of(active.begin(), active.end(), [this](const ModulePlacement& placement)
+		{
+			const auto* module = mLookup ? mLookup(placement.moduleId) : nullptr;
+			return module && placement.variantIndex >= 0 && static_cast<std::size_t>(placement.variantIndex) < module->sizeVariants.size() && !module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].reviveRules.empty();
+		});
+		if (hasRevive)
+			mRevivePrevention = mCombatRuntime.GetOwnerDeathPreventions().Register([this](SpaceShip& owner, const DamageContext&) { return TryReviveOwner(owner) ? LethalDamageResolution::Prevented : LethalDamageResolution::None; }, module_death_prevention_priority::LastStand);
 		mLegendaryBlinkDriveRuntime.Replace(mResolved.legendaryRules.blinkDrives);
 		mLegendaryIonCometRuntime.Replace(mResolved.legendaryRules.ionComets);
 		mLegendaryTwinRackRuntime.Replace(mResolved.legendaryRules.twinRacks);
@@ -498,13 +508,6 @@ namespace vega
 		mUniqueRuntime.Replace(rules, active);
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mRunCounterRuntime.ReplaceKillSources(mResolved.killSources);
-	}
-
-	bool ShipModuleApplier::TryPreventOwnerDeath(SpaceShip& owner, const DamageContext& context)
-	{
-		if (mShuttingDown) return false;
-		if (mLegendaryParasiteHullRuntime.TryPossess(context)) return true;
-		return TryReviveOwner(owner);
 	}
 
 	bool ShipModuleApplier::TryReviveOwner(SpaceShip& owner)

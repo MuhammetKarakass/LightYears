@@ -6,6 +6,7 @@
 #include "gameplay/module/rules/ModuleSideRules.h"
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageContext.h"
+#include "gameplay/damage/DeferredDamageSpec.h"
 #include "gameplay/module/ModuleLevelTable.h"
 #include "gameplay/module/ModuleRulePredicates.h"
 #include "gameplay/module/rules/EpicStatRules.h"
@@ -617,7 +618,7 @@ namespace vega
 		bool fragmentation = false;
 		int minimumZoneLevelBonus = 0;
 		List<ModuleCooldownRecoveryRule> cooldownRecoveryRules;
-		std::optional<ModuleDeferredDamageRule> deferredDamage;
+		std::optional<DeferredDamageSpec> deferredDamage;
 		std::optional<ModuleMomentumExtension> momentumExtension;
 		float primaryShareOfAbilityBonus = 0.f;
 		bool primarySplitFire = false;

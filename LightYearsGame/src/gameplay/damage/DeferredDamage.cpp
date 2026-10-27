@@ -1,17 +1,17 @@
-#include "gameplay/module/rules/ModuleDeferredDamageRuntime.h"
+#include "gameplay/damage/DeferredDamage.h"
 #include "spaceShip/SpaceShip.h"
 
 #include <algorithm>
 
 namespace vega
 {
-	void ModuleDeferredDamageRuntime::Defer(DamageContext& context)
+	void DeferredDamage::Defer(DamageContext& context)
 	{
-		if (context.deferredDamage || mRule.fraction <= 0.f || mRule.seconds <= 0.f || context.remainingDamage <= 0.f) return;
-		const float amount = context.remainingDamage * mRule.fraction;
+		if (context.deferredDamage || mSpec.fraction <= 0.f || mSpec.seconds <= 0.f || context.remainingDamage <= 0.f) return;
+		const float amount = context.remainingDamage * mSpec.fraction;
 		Debt debt;
-		debt.rate = amount / mRule.seconds;
-		debt.seconds = mRule.seconds;
+		debt.rate = amount / mSpec.seconds;
+		debt.seconds = mSpec.seconds;
 		debt.payload = context.payload;
 		debt.payload.hitGroup.reset();
 		debt.payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
@@ -22,10 +22,10 @@ namespace vega
 		context.remainingDamage -= amount;
 	}
 
-	void ModuleDeferredDamageRuntime::Tick(float seconds)
+	void DeferredDamage::Tick(float seconds)
 	{
 		if (seconds <= 0.f || mDebts.empty()) return;
-		// Take the due work out of the container before callbacks can change the module loadout.
+		// Take the due work out of the container before damage callbacks can change the spec.
 		List<Debt> due;
 		due.swap(mDebts);
 		for (auto& debt : due)
@@ -47,7 +47,7 @@ namespace vega
 		}
 	}
 
-	float ModuleDeferredDamageRuntime::GetPendingDamage() const
+	float DeferredDamage::GetPendingDamage() const
 	{
 		float amount = 0.f;
 		for (const auto& debt : mDebts) amount += debt.rate * debt.seconds;

@@ -134,7 +134,7 @@ namespace vega
 		List<ResolvedModuleDamageRule> damageRules;
 		List<ResolvedModuleCooldownRule> cooldownRules;
 		List<ModuleCooldownRecoveryRule> cooldownRecoveryRules;
-		ModuleDeferredDamageRule deferredDamage;
+		DeferredDamageSpec deferredDamage;
 		// Sum of every placed Four Corners side feature; read per ability set at activation.
 		float distinctFamilyMainEffectBonus = 0.f;
 		List<GameplayTag> enabledSystems;

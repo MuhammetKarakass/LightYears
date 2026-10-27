@@ -2,16 +2,16 @@
 
 #include "framework/Core.h"
 #include "gameplay/damage/DamageContext.h"
-#include "gameplay/module/rules/ModuleSideRules.h"
+#include "gameplay/damage/DeferredDamageSpec.h"
 
 namespace vega
 {
 	class SpaceShip;
-	class ModuleDeferredDamageRuntime
+	class DeferredDamage
 	{
 	public:
-		explicit ModuleDeferredDamageRuntime(SpaceShip& owner) : mOwner{ owner } {}
-		void SetRule(ModuleDeferredDamageRule rule) { mRule = rule; }
+		explicit DeferredDamage(SpaceShip& owner) : mOwner{ owner } {}
+		void SetSpec(DeferredDamageSpec spec) { mSpec = spec; }
 		void Defer(DamageContext& context);
 		void Tick(float seconds);
 		float GetPendingDamage() const;
@@ -26,7 +26,7 @@ namespace vega
 			std::weak_ptr<Actor> source;
 		};
 		SpaceShip& mOwner;
-		ModuleDeferredDamageRule mRule;
+		DeferredDamageSpec mSpec;
 		List<Debt> mDebts;
 	};
 }

@@ -103,6 +103,8 @@ Kullanıcı Claude'un önerisini kabul etti: planın tamamı şimdi yapılmaz. �
 
 Geri kalan aşamalar bu belgede bekler. Bir mekaniği ikinci bir kullanıcı istediğinde (örneğin bir düşman mayın bırakmak isterse) o parça bu planın kalıplarıyla ortak alana taşınır. Yeni mekanikler zaten ortak alanda yazılır (kullanıcı kuralı, 2026-10-27).
 
+MECH-SLIM implementation and verification are tracked in [MECH_SLIM.md](MECH_SLIM.md). This work covers only the two decisions above; the remaining M4 work and other stages stay deferred.
+
 ## 7. Açık kararlar (tam plan yeniden açılırsa)
 
 1. Uygulayıcı: aşama başına Sol (ayrı worktree) mi, Claude mı?

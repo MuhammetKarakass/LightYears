@@ -161,6 +161,8 @@ if(BUILD_TESTING)
 	endfunction()
 
 	set(VEGA_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+	vega_add_game_test(LightYearsOwnerDeathPreventionTests GAME_WHOLE SOURCES ${VEGA_TESTS_DIR}/OwnerDeathPreventionTests.cpp)
+	vega_add_game_test_case(LightYearsOwnerDeathPreventionTests LightYearsOwnerDeathPreventionTests)
 	vega_add_game_test(LightYearsBackdropCapture PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/BackdropCapture.cpp LIBS ${LIGHT_YEARS_GAME_APP_TARGET_NAME})
 	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
 		CopyRuntimeLibToTarget(${runtime} LightYearsBackdropCapture)

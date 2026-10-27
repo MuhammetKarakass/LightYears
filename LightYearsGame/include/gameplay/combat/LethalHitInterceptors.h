@@ -21,13 +21,15 @@ namespace vega
 
 	using LethalHitInterceptor = std::function<LethalDamageResolution(SpaceShip& target, const DamageContext& context)>;
 
-	// Interceptors a combatant registers for the lethal hits IT deals. The first one that does not return None decides.
+	// Shared by source-side lethal-hit interception and target-side owner death prevention.
+	// Lower priorities run first; equal priorities retain registration order. The first non-None result decides.
 	// Each registration is owned by an RAII token; destroying or resetting the token removes exactly that interceptor.
 	class LethalHitInterceptorList final
 	{
 		struct Entry
 		{
 			std::uint64_t id = 0;
+			int priority = 0;
 			LethalHitInterceptor interceptor;
 		};
 		struct State
@@ -56,7 +58,7 @@ namespace vega
 			std::uint64_t mId = 0;
 		};
 
-		[[nodiscard]] Registration Register(LethalHitInterceptor interceptor);
+		[[nodiscard]] Registration Register(LethalHitInterceptor interceptor, int priority = 0);
 		LethalDamageResolution Resolve(SpaceShip& target, const DamageContext& context) const;
 
 	private:

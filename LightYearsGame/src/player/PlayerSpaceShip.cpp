@@ -145,11 +145,6 @@ namespace vega
 		}
 	}
 
-	LethalDamageResolution PlayerSpaceShip::ResolveLethalDamage(const DamageContext& context)
-	{
-		return mModuleApplier.TryPreventOwnerDeath(*this, context) ? LethalDamageResolution::Prevented : LethalDamageResolution::None;
-	}
-
 	bool PlayerSpaceShip::BeginPossession(EnemyActor& host)
 	{
 		if (IsPossessing() || host.GetIsPendingDestroy()) return false;

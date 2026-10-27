@@ -137,8 +137,6 @@ namespace vega
 		void SetReviveSpentSink(std::function<void(std::uint32_t)> sink) { mReviveSpentSink = std::move(sink); }
 		// Last Stand: spends one revive charge of an active placement and restores the owner's health. False when none is left.
 		bool TryReviveOwner(SpaceShip& owner);
-		// The owner would die: Parasite Hull escapes first, then Last Stand revives. True when either saved the owner.
-		bool TryPreventOwnerDeath(SpaceShip& owner, const DamageContext& context);
 		void SetRandomSeed(std::uint32_t seed) { mReactiveRuntime.SetRandomSeed(seed); }
 		// Smoldering Remains field from an Ember burst; the reactive runtime owns its lease.
 		void SpawnSmolderingField(const sf::Vector2f& origin, const ModuleThermalBurstRule& rule) { mReactiveRuntime.SpawnSmolderingField(origin, rule); }
@@ -240,5 +238,6 @@ namespace vega
 		bool mHasApplied = false;
 		bool mShuttingDown = false;
 		ModuleTriggerService::Connection mTriggerConnection;
+		LethalHitInterceptorList::Registration mRevivePrevention;
 	};
 }

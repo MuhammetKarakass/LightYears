@@ -30,11 +30,12 @@ namespace vega
 		mId = 0;
 	}
 
-	LethalHitInterceptorList::Registration LethalHitInterceptorList::Register(LethalHitInterceptor interceptor)
+	LethalHitInterceptorList::Registration LethalHitInterceptorList::Register(LethalHitInterceptor interceptor, int priority)
 	{
 		if (!interceptor) return {};
 		const std::uint64_t id = mState->nextId++;
-		mState->entries.push_back({ id, std::move(interceptor) });
+		const auto position = std::upper_bound(mState->entries.begin(), mState->entries.end(), priority, [](int value, const Entry& entry) { return value < entry.priority; });
+		mState->entries.insert(position, { id, priority, std::move(interceptor) });
 		return Registration{ mState, id };
 	}
 
@@ -44,6 +45,8 @@ namespace vega
 		const List<Entry> entries = mState->entries;
 		for (const Entry& entry : entries)
 		{
+			// A previous callback may have destroyed a receiver and reset its token.
+			if (std::none_of(mState->entries.begin(), mState->entries.end(), [&entry](const Entry& active) { return active.id == entry.id; })) continue;
 			const LethalDamageResolution resolution = entry.interceptor(target, context);
 			if (resolution != LethalDamageResolution::None) return resolution;
 		}

@@ -38,7 +38,7 @@ namespace vega::content::module_loader_detail
 			requireSide();
 			const Json& entry = object.at("deferredDamage");
 			fields(entry, { "fraction", "seconds" });
-			ModuleDeferredDamageRule rule{ ParseFiniteFloat(entry.at("fraction"), context), ParseFiniteFloat(entry.at("seconds"), context) };
+			DeferredDamageSpec rule{ ParseFiniteFloat(entry.at("fraction"), context), ParseFiniteFloat(entry.at("seconds"), context) };
 			if (rule.fraction <= 0.f || rule.fraction >= 1.f || rule.seconds <= 0.f) throw std::runtime_error(context + " invalid deferred damage");
 			rules.deferredDamage = rule;
 		}

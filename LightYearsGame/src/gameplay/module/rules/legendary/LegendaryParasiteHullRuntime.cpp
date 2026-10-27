@@ -3,6 +3,7 @@
 #include "framework/World.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/combat/CombatantTakeover.h"
+#include "gameplay/module/rules/OwnerDeathPreventionPriorities.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "player/PlayerSpaceShip.h"
 
@@ -34,10 +35,13 @@ namespace vega
 		}
 		// A rebuild with the module still installed keeps the cooldown and a running possession.
 		mRules = rules;
+		if (!mDeathPrevention.IsValid())
+			mDeathPrevention = mCombatRuntime.GetOwnerDeathPreventions().Register([this](SpaceShip&, const DamageContext& context) { return TryPossess(context) ? LethalDamageResolution::Prevented : LethalDamageResolution::None; }, module_death_prevention_priority::ParasiteHull);
 	}
 
 	void LegendaryParasiteHullRuntime::Clear()
 	{
+		mDeathPrevention.Reset();
 		mRules.clear();
 		mHost.reset();
 		mPossessing = false;

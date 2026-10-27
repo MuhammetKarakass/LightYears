@@ -142,6 +142,9 @@ namespace vega
 		// Lethal hits this combatant deals (ship targets) pass through these before they kill.
 		LethalHitInterceptorList& GetLethalHitInterceptors() { return mLethalHitInterceptors; }
 		const LethalHitInterceptorList& GetLethalHitInterceptors() const { return mLethalHitInterceptors; }
+		// Target-side prevention is resolved before the damage source's interceptors.
+		LethalHitInterceptorList& GetOwnerDeathPreventions() { return mOwnerDeathPreventions; }
+		const LethalHitInterceptorList& GetOwnerDeathPreventions() const { return mOwnerDeathPreventions; }
 
 		ContactDamageGuardRegistry& GetContactDamageGuardRegistry()
 		{
@@ -214,6 +217,7 @@ namespace vega
 		std::unique_ptr<GameplayEffectPresentationBinding> mEffectPresentation;
 		ContactDamageGuardRegistry mContactDamageGuardRegistry;
 		LethalHitInterceptorList mLethalHitInterceptors;
+		LethalHitInterceptorList mOwnerDeathPreventions;
 		List<QueuedEffectEvent> mPendingEffectEvents;
 		DamageDispatchFrame* mCurrentDamageDispatchFrame = nullptr;
 		std::uint64_t mEffectEventGeneration = 1;

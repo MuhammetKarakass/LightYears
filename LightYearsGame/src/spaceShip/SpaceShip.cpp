@@ -464,6 +464,8 @@ namespace vega
 
 	LethalDamageResolution SpaceShip::ResolveLethalDamage(const DamageContext& context)
 	{
+		const LethalDamageResolution prevention = mCombatRuntime.GetOwnerDeathPreventions().Resolve(*this, context);
+		if (prevention != LethalDamageResolution::None) return prevention;
 		auto* source = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr;
 		return source ? source->GetCombatRuntime().GetLethalHitInterceptors().Resolve(*this, context) : LethalDamageResolution::None;
 	}

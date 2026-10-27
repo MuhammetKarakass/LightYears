@@ -4,7 +4,7 @@
 #include <framework/Delegate.h>	
 #include "VFX/Explosion.h"
 #include "gameplay/HealthComponent.h"
-#include "gameplay/module/rules/ModuleDeferredDamageRuntime.h"
+#include "gameplay/damage/DeferredDamage.h"
 #include "gameplay/ShieldComponent.h"
 #include "gameplay/EnergyComponent.h"
 #include "gameplay/combat/CombatRuntime.h"
@@ -40,7 +40,7 @@ namespace vega
 
 
 		HealthComponent& GetHealthComponent() { return mHealthComponent; }
-		ModuleDeferredDamageRuntime& GetDeferredDamageRuntime() { return mDeferredDamage; }
+		DeferredDamage& GetDeferredDamageRuntime() { return mDeferredDamage; }
 		const HealthComponent& GetHealthComponent() const { return mHealthComponent; }
 		ShieldComponent& GetShieldComponent() { return mShieldComponent; }
 		const ShieldComponent& GetShieldComponent() const { return mShieldComponent; }
@@ -139,7 +139,7 @@ namespace vega
 		List<GameplayTag> mAttachedLightTags;
 
 	protected:
-		// A hit would bring health to zero. The base asks the damage source's lethal-hit interceptors.
+		// A hit would bring health to zero. Ask owner prevention first, then the source's lethal-hit interceptors.
 		virtual LethalDamageResolution ResolveLethalDamage(const DamageContext& context);
 		virtual float GetMovementSpeedCapMultiplier() const { return 1.f; }
 		virtual float GetMovementTurnCapabilityMultiplier() const { return 1.f; }
@@ -150,7 +150,7 @@ namespace vega
 		// Default subobjects: created by AddComponent in the constructor and owned by
 		// the Actor; these references are fast typed access to them. Declaration
 		// order is the construction order and must stay ahead of their dependents.
-		ModuleDeferredDamageRuntime mDeferredDamage{ *this };
+		DeferredDamage mDeferredDamage{ *this };
 		HealthComponent& mHealthComponent;
 		ShieldComponent& mShieldComponent;
 		EnergyComponent& mEnergyComponent;

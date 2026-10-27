@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gameplay/module/rules/legendary/LegendaryParasiteHullRules.h"
+#include "gameplay/combat/LethalHitInterceptors.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -50,5 +51,6 @@ namespace vega
 		float mCooldownRemaining = 0.f;
 		float mElapsed = 0.f;
 		bool mPossessing = false;
+		LethalHitInterceptorList::Registration mDeathPrevention;
 	};
 }

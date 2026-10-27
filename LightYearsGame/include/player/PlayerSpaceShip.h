@@ -61,7 +61,6 @@ namespace vega
 		virtual float GetMovementSpeedCapMultiplier() const override;
 		virtual float GetMovementTurnCapabilityMultiplier() const override;
 		virtual bool IsAfterburnerRechargeBlocked() const override;
-		virtual LethalDamageResolution ResolveLethalDamage(const DamageContext& context) override;
 
 	private:
 		std::string mShip;
