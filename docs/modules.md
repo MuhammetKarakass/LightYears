@@ -9,7 +9,7 @@
 - [Epic modüller](#epic-modüller--17)
 - [Legendary modüller](#legendary-modüller--12)
 - [Nadirlik dışı özel eşya](#nadirlik-dışı-özel-eşya--1)
-- [Unique modüller](#unique-modüller--7)
+- [Unique modüller](#unique-modüller--12)
 - [Yan özellikler](#yan-özellikler)
 - [Sistem modülleri](#sistem-modülleri)
 - [Açık/ertelenen tasarımlar, nadirliğe göre](#açık-ve-ertelenen-tasarımlar--nadirliğe-göre)
@@ -222,14 +222,17 @@ Tamamı **uygulandı** (2026-10-27; game-main `e811bef4`): her modülün runtime
 
 ## Nadirlik dışı özel eşya · 1
 
-Ana modül sayımına dahil değildir (karar 2026-10-24). Combo Sequencer Legendary'ye taşınmıştı; kullanıcı 2026-10-26'da kaldırdı. Ultimate Protocol 2026-10-25'te nadirliksiz yetenek modülü oldu.
+Ana modül sayımına dahil değildir (karar 2026-10-24). Yetenek modülleri 2026-10-27'de [Unique](#unique-modüller--12) altına taşındı. Combo Sequencer kullanıcı tarafından 2026-10-26'da kaldırıldı.
 
 | Eşya | Sınıf · boyut | Seçilmiş yön | Tamamlanacak kararlar |
 |---|---|---|---|
-| Ultimate Protocol | Yetenek modülü · 1 hücre · nadirlik/yan/seviye yok | Bir yetenek tuşunun (Q/W/E/R, hangisi olursa) standart slot modülünün yerine takılır; o tuştaki yetenek ultimate olur: ana etki ×1,6, bekleme ×2, sabit değerler, bölgeden etkilenmez. Birden fazla tuşa takılabilir; sınırlama yok (oyuncu serbest). Cascade çarpanıyla çarpılır; tavanlı etkiler kendi tavanında kalır (Barrier 180°). Ana etkisi olmayan yetenekte (Void Gate) yalnız bekleme uzar. | Edinim mağaza/rota sistemiyle gelir. **Uygulandı (2026-10-26)**: slot bağı takıldığı standart slot hücresinden seçilir, taşımada korunur; geliştirici envanteri 4 kopya verir. |
 | Courier Hold | Nadirliksiz özel eşya · boyut açık | Mağazada satılan mühürlü kargo gemide yer kaplar; sonraki bölüme ulaştırınca güçlü ödül verir. Geliştirilemez. | Mağaza ve rota ödül sistemiyle tasarlanır: ödül, hücre sayısı, ölüm/kargo kaybı. |
 
-## Unique modüller · 7
+## Unique modüller · 12
+
+Nadirliği olmayan iki sınıf tek kategoride toplanır (kullanıcı, 2026-10-27): **bağlantı Unique'leri** komşu modülleri etkiler, **yetenek modülleri** bir Q/E/F/R tuşunun standart slot modülünün yerine takılıp o tuştaki yeteneği değiştirir. İkisi de ana modül sayımına dahil değildir; sınıf kuralları ayrıdır.
+
+### Bağlantı Unique'leri · 7
 
 2026-10-03'te "bağlantı modülleri" adıyla seçilmiş, 2026-10-13 temizliğinde katalogdan düşmüş kategori; kullanıcı 2026-10-27'de güncelleyip geri getirdi ve adını **Unique** koydu. Ana modül sayımına dahil değildir. JSON, sınıf doğrulaması, yerleşim/presentation ve Unique runtime eklendi (2026-10-27). Desteklenen tetik türleri ve açık sınırlar: [uygulama raporu](UNIQUE_MODULES_IMPLEMENTATION.md).
 
@@ -252,6 +255,20 @@ Ana modül sayımına dahil değildir (karar 2026-10-24). Combo Sequencer Legend
 | Profit Share | Kâr Payı | Dokunduğu modüllerin her gerçek tetiklenişi 1 koşu Gold'u verir; aynı modülden en çok saniyede bir. | Unique kaynaklı tetikler (Relay, Echo, Pulsar, Spark) Gold vermez. |
 
 **Seçilmeyenler (2026-10-27):** Resonator (Rezonatör; aynı aile komşu +%5, Confluence ve Amplifier ile çakışır), Equalizer, Duration Sync, Metronome, Accumulator, Splitter, Warm-Up, Overload, Combo Ring, Lucky Charm, Harvest, Projector. Kullanıcı ilkesi: Unique mümkün olduğunca her modülle çalışmalı; tetikli modüller çoğunluk olduğu için tetik temelli Unique'ler kabul. Eski elenenler (2026-10-03): Fuse (Sigorta), Prism (Prizma), Zone Bridge (Bölge Köprüsü).
+
+### Yetenek modülleri · 5
+
+**Sınıf kuralları (karar 2026-10-25):** nadirlik, aile, yan özellik ve seviye yok; 1 hücre; bölgeden etkilenmez. Bir tuşun standart slot modülünün yerine takılır ve yalnız o tuştaki yeteneği değiştirir; slot bağı örnekte saklanır, aynı tuşa tek yetenek modülü. Ana etki ve bekleme çarpanları kullanım anında yakalanır; ana etki çarpanları diğer kaynaklarla toplanır (`ResolveMainEffectMultiplier`). Tur kapandı: beş modülle devam (kullanıcı, 2026-10-27).
+
+| Modül | Seçilmiş yön | Durum / ayrıntı |
+|---|---|---|
+| Ultimate Protocol | Bir yetenek tuşunun (Q/W/E/R, hangisi olursa) standart slot modülünün yerine takılır; o tuştaki yetenek ultimate olur: ana etki ×1,6, bekleme ×2, sabit değerler, bölgeden etkilenmez. Birden fazla tuşa takılabilir; sınırlama yok (oyuncu serbest). Cascade çarpanıyla çarpılır; tavanlı etkiler kendi tavanında kalır (Barrier 180°). Ana etkisi olmayan yetenekte (Void Gate) yalnız bekleme uzar. | Edinim mağaza/rota sistemiyle gelir. **Uygulandı (2026-10-26)**: slot bağı takıldığı standart slot hücresinden seçilir, taşımada korunur; geliştirici envanteri 4 kopya verir. |
+| Timing Protocol | Tuşa basınca altta 1,2 sn'lik bar açılır; yetenek ikinci basışta çıkar. Büyük pencere (0,40 sn): ana etki ×1,15, bekleme ×0,95. Küçük pencere (0,15 sn, büyüğün ortasında): ana etki ×1,4, bekleme ×0,85; bonuslar toplanmaz. Kaçırma veya bar sonu: ana etki ×0,85, bekleme ×1,4; bar biterse yetenek kendiliğinden çıkar. | Kesin (kullanıcı, 2026-10-26/27). Seviye yerine çarpan seçildi. |
+| Autocast Protocol | Bağlı yetenek beklemesi bitince kendiliğinden kullanılır; ana etki ×0,75. Nişan: mevcut otomatik hedeflemeyle en yakın düşman. Offense/Utility menzilde düşman varken, Defense hasar alınca veya yakında düşman varken ateşler. Movement yalnız hareket tuşu basılıyken, o yöne. Basılı/şarjlı yetenekler tam şarjda bırakılır. | Kesin (kullanıcı, 2026-10-27). |
+| Element Core | Bağlı yeteneğin bütün doğrudan hasarı ve uyguladığı statü modülün elementine döner. Element (Thermal/Cryo/Electric/Kinetic/Energy) modül edinilirken rastgele gelir ve örnekte saklanır; Photonic hasarsız olduğu için havuzda yok. Energy statü taşımaz. Hasar vermeyen yetenekte etkisiz. | Kesin (kullanıcı, 2026-10-27). Dönüşüm mekaniği `damage/` altında ortak. |
+| Fortune Protocol | Her kullanımda ana etki rastgele ×0,5–×1,7 (eşit dağılım); bekleme normal. Luck başına %5 ihtimalle iki zar atılır, büyüğü alınır. Sonuç yeteneğin üzerinde kısa bir sayıyla gösterilir. | Kesin (kullanıcı, 2026-10-27). |
+
+**Seçilmeyenler (2026-10-27):** Rapid Protocol, Life Cast, Execution Protocol, Overdrive Protocol, Reserve Protocol (Primed Arsenal kopyası), Mimic Protocol, Escalation Protocol, Hunger Protocol, Shield Fuel.
 
 ## Yan özellikler
 
@@ -431,7 +448,6 @@ Epic turu şimdilik kapalı (kullanıcı, 2026-10-27): 17 seçilmiş Epic ile de
 |---|---|---|
 | Splinter Frame | Gemi üç küçük gövdeye bölünür; üçü aynı girdiyi izler ve Primary ateşler, her biri canın üçte birini taşır; biri ölünce kalan gövdelerle devam edilir. | Kullanıcı "ilginç olabilir" dedi, sonra "bu dursun şimdilik eklemeyelim ama kaydet" (2026-10-26): beklemede, eklenmeyecek; kayıt korunur. Offense Legendary ajan önerisi. Uygulama taslağı (çekirdek gemi + iki hafif gövde, Primary çıkış çoğaltma, yetenekler ilk aşamada yalnız çekirdekten) [kaynaklı notta](../outputs/splinter-frame-design-2026-10-26.md). Gövde başı hasar çarpanı, kayıp gövdenin dönüşü, kalkan bölünmesi, boyut ve uyumsuzluklar açık; ana sayıma eklenmedi. |
 | Heat Sink | Kalkanın emdiği hasardan ısı birikir; sonraki Defense kullanımında Thermal boşalma. | Mekanik kabul edildi. Mevcut modüle ana/yan olarak bağlanacak; taşıyıcı, nadirlik, katsayılar, menzil, Ignite, tüketim ve sök-tak kuralları açık. Bağımsız modül onayı yok. |
-| Zamanlamalı yetenek kullanımı (adı açık) | Yetenek tuşuyla altta zamanlama barı; büyük sweet spot o kullanımı +1, küçük sweet spot +3 etkin seviyede çalıştırır. Bekleme de yükseltilmiş seviyeden hesaplanır (kullanıcı, 2026-10-26). | Kullanıcının tasarım yönü: kaçırmada normal seviye, ×1,50 bekleme cezası; Combo Sequencer’dan ayrı. Pencerelerin iç içe oluşu/bonusların toplanmaması ajan önerisi. Kullanıcı Ultimate Protocol gibi yetenek modülü olmasını önerdi (2026-10-26): standart slot modülü yerine, yalnız bağlı yeteneği değiştirir; sınıf sözleşmesi 1 hücre, nadirlik/yan/modül seviyesi/bölge etkisi yok. Yön değerlendirmede; ad, çıktı anı ve bar süresi/pencereleri açık, ana sayıma eklenmedi. +3 her yetenekte aynı oranda güç vermez; analiz [kaynaklı notta](../beyin/knowledge/concepts/timed-ability-cast-module.md). |
 | Blackglass Circuit | Q/E/F/R sonrası başarılı Primary atışı ek Energy verir; son kullanılan yeteneğin charge yenilenmesini kısmen geri alır. | Utility önerisi; seçilmedi. Nadirlik, iade oranı, atış/beam tek tüketim sınırı açık. |
 
 Diğer onaysız ilk taslaklar ve değiştirilmiş fikirler [kaynak denetiminde](MODULE_DESIGN_DECISIONS.md#seçilmemiş-eski-öneriler) korunur; burada bulunmaması kabul veya ret anlamına gelmez. Önceki öneri turlarındaki Primary/Utility/summon kapsam sınırları o turlara aittir; kullanıcının daha sonra sunduğu yeni fikirleri yasaklamaz.

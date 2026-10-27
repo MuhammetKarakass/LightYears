@@ -1,6 +1,6 @@
 # Unique modüller — uygulama sınırı ve doğrulama
 
-2026-10-27, `D:/LightYears-unique`, `unique-modules`. Tasarım sahibi [modules.md / Unique](modules.md#unique-modüller--7); bu belge uygulama kararlarını ve destek sınırını kaydeder. Vega kaynaklarına veya Git durumuna müdahale edilmedi.
+2026-10-27, `D:/LightYears-unique`, `unique-modules`. Tasarım sahibi [modules.md / Unique](modules.md#unique-modüller--12); bu belge uygulama kararlarını ve destek sınırını kaydeder. Vega kaynaklarına veya Git durumuna müdahale edilmedi.
 
 ## Sahipler
 
