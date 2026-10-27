@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/closedCircuit/ClosedCircuitAbility.h"
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -66,15 +67,17 @@ namespace vega
 		return valid;
 	}
 
+	float ClosedCircuitAbility::ResolveAutocastRange(const GameAbilityBehaviorContext& context, float) const { return Setting(context.definition, AbilityData::ClosedCircuit::Setting::MaximumDeliveryRange, 0.f); }
+
 	bool ClosedCircuitAbility::Activate(GameAbilityBehaviorContext& context)
 	{
 		World* world = context.owner.GetWorld();
 		if (!world) return false;
 		const sf::Vector2f ownerLocation = context.owner.GetActorLocation();
-		const sf::Vector2f mouseLocation = world->GetMouseWorldPosition();
+		const sf::Vector2f mouseLocation = ResolveAbilityAimPoint(context.owner);
 		sf::Vector2f direction = mouseLocation - ownerLocation;
 		const float cursorDistance = GetVectorLength(direction);
-		if (cursorDistance <= 0.001f) direction = context.owner.GetActorForwardDirection();
+		if (cursorDistance <= 0.001f) direction = ResolveAbilityAimDirection(context.owner);
 		else NormalizeVector(direction);
 
 		const float range = std::max(1.f, Setting(context.definition, AbilityData::ClosedCircuit::Setting::MaximumDeliveryRange, 450.f));
@@ -118,7 +121,7 @@ namespace vega
 						executionContext,
 						context.owner,
 						context.owner.GetActorLocation(),
-						context.owner.GetActorForwardDirection()
+						ResolveAbilityAimDirection(context.owner)
 					).lock()
 				))
 			{

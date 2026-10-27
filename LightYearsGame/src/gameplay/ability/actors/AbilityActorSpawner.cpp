@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
 #include "framework/MathUtility.h"
 
@@ -8,6 +9,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "framework/Actor.h"
+#include "gameplay/combat/Combatant.h"
 #include "framework/World.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 
@@ -72,7 +74,7 @@ namespace vega
 			case sas::AbilitySpawnPolicy::MouseWorld:
 				if (const World* world = owner.GetWorld())
 				{
-					return world->GetMouseWorldPosition();
+					return ResolveAbilityAimPoint(owner);
 				}
 				break;
 			case sas::AbilitySpawnPolicy::OwnerForward:
@@ -97,7 +99,7 @@ namespace vega
 				if (const World* world = owner.GetWorld();
 					world && world->GetApplication())
 				{
-					return world->GetMouseWorldPosition();
+					return ResolveAbilityAimPoint(owner);
 				}
 			}
 
@@ -209,11 +211,10 @@ namespace vega
 		}
 	}
 
-	sf::Vector2f AbilityActorSpawner::ResolveDirection(
-		const Actor& owner,
-		sas::AbilityDirectionPolicy directionPolicy
-	)
+	sf::Vector2f AbilityActorSpawner::ResolveDirection(const Actor& owner, sas::AbilityDirectionPolicy directionPolicy)
 	{
+		if (const auto* combatant = dynamic_cast<const Combatant*>(&owner))
+			if (const auto& aim = combatant->GetAbilitySystemComponent().GetExecutionAim()) return aim->direction;
 		switch (directionPolicy)
 		{
 		case sas::AbilityDirectionPolicy::OwnerVelocity:
@@ -231,7 +232,7 @@ namespace vega
 				world && world->GetApplication())
 			{
 				sf::Vector2f mouseDirection =
-					world->GetMouseWorldPosition() - owner.GetActorLocation();
+					ResolveAbilityAimPoint(owner) - owner.GetActorLocation();
 				if (GetVectorLength(mouseDirection) > 0.f)
 				{
 					NormalizeVector(mouseDirection);

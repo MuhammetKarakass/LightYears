@@ -34,7 +34,7 @@ set(VEGA_GAMEPLAY_CORE_FILES
 	TemporalRateModifierLedger AbilityActionValidator GameAbilityDefinitionValidator
 	GameplayEffectDefinitionValidator GameContentBootstrap ShipSchematicValidator ModuleLoadout
 	LegendaryRules ModuleLoaderLegendary
-	ModulePlacementRules ModuleResolver ModuleLoader ModuleLoaderPrimitives ModuleLoaderRules ModuleLoaderSideRules ModuleLoaderVariant ModuleContentCatalog ModuleSideFeatureLoader ModuleSideFeatureCatalog ModuleRoller GameAbilitySettingContracts
+	ModulePlacementRules ModuleResolver ModuleLoader ModuleLoaderAbility ModuleLoaderPrimitives ModuleLoaderRules ModuleLoaderSideRules ModuleLoaderVariant ModuleContentCatalog ModuleSideFeatureLoader ModuleSideFeatureCatalog ModuleRoller GameAbilitySettingContracts
 	LightYearsEffectBehaviorRuntime
 )
 string(JOIN "|" VEGA_GAMEPLAY_CORE_REGEX_BODY ${VEGA_GAMEPLAY_CORE_FILES})
@@ -390,6 +390,8 @@ if(BUILD_TESTING)
 	vega_add_game_test_case(LightYearsUniqueModulesE2E LightYearsUniqueModulesE2E ARGS "${VEGA_E2E}/unique-modules.json" TIMEOUT 120)
 	vega_add_game_test(LightYearsAbilityModuleUltimateProtocolE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/AbilityModuleUltimateProtocolE2E.cpp)
 	vega_add_game_test_case(LightYearsAbilityModuleUltimateProtocolE2E LightYearsAbilityModuleUltimateProtocolE2ETests ARGS "${VEGA_E2E}/ability-module-ultimate-protocol.json" TIMEOUT 120)
+	vega_add_game_test(LightYearsAbilityModulesE2E GAME_WHOLE PROJECT_DIR SOURCES ${VEGA_TESTS_DIR}/AbilityModulesE2E.cpp)
+	vega_add_game_test_case(LightYearsAbilityModulesE2E LightYearsAbilityModulesE2E ARGS "${CMAKE_SOURCE_DIR}/outputs/ability-modules-e2e.json" TIMEOUT 180)
 	vega_add_game_test_case(LightYearsEpicUtilityMovementModulesE2E LightYearsEpicUtilityMovementModulesE2ETests ARGS "${VEGA_E2E}/epic-utility-movement-modules-2026-10-24.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModulePlanTransitionE2E LightYearsModulePlanTransitionE2ETests ARGS "${VEGA_E2E}/module-plan-transition-2026-10-13.json" TIMEOUT 120)
 	vega_add_game_test_case(LightYearsModuleSidePoolsE2E LightYearsModuleSidePoolsE2ETests ARGS "${VEGA_E2E}/module-side-pools-task-c.json" TIMEOUT 120)

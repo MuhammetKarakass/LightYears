@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/temporalConvergence/TemporalConvergenceAbility.h"
 #include "framework/MathUtility.h"
 
@@ -157,7 +158,7 @@ namespace vega
 			1600.f
 		));
 		const sf::Vector2f origin = context.owner.GetActorLocation();
-		sf::Vector2f target = world->GetMouseWorldPosition();
+		sf::Vector2f target = ResolveAbilityAimPoint(context.owner);
 		sf::Vector2f offset = target - origin;
 		const float distance = GetVectorLength(offset);
 		if (distance > castRange)
@@ -169,7 +170,7 @@ namespace vega
 		sf::Vector2f direction = offset;
 		if (GetVectorLength(direction) <= Epsilon)
 		{
-			direction = context.owner.GetActorForwardDirection();
+			direction = ResolveAbilityAimDirection(context.owner);
 		}
 		if (GetVectorLength(direction) <= Epsilon)
 		{

@@ -78,6 +78,7 @@ namespace vega
 		void AddShipRelativeThrust(const sf::Vector2f& localThrustInput, float deltaTime);
 		void AddWorldAcceleration(const sf::Vector2f& worldAcceleration, float deltaTime);
 		void SetAbilityWorldMovementInput(const sf::Vector2f& input) { mAbilityWorldMovementInput = input; }
+		const sf::Vector2f& GetAbilityWorldMovementInput() const { return mAbilityWorldMovementInput; }
 		sf::Vector2f ResolveMovementBurstDirection() const;
 		bool StartMovementBurst(const movement::MovementBurstRequest& request);
 		void EndMovementBurst();

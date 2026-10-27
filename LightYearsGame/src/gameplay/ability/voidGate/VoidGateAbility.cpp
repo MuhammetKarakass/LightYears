@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/voidGate/VoidGateAbility.h"
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -156,7 +157,7 @@ namespace vega
 
 		const shared_ptr<VoidGatePortalActor> portal = SpawnPortal(
 			context,
-			context.owner.GetWorld()->GetMouseWorldPosition()
+			ResolveAbilityAimPoint(context.owner)
 		).lock();
 		if (!portal)
 		{
@@ -192,7 +193,7 @@ namespace vega
 		{
 			const shared_ptr<VoidGatePortalActor> first = mPortalA.lock();
 			const sf::Vector2f location = context.owner.GetWorld()
-				? context.owner.GetWorld()->GetMouseWorldPosition()
+				? ResolveAbilityAimPoint(context.owner)
 				: context.owner.GetActorLocation();
 			const shared_ptr<VoidGatePortalActor> second = SpawnPortal(
 				context,
@@ -307,10 +308,7 @@ namespace vega
 		EmitEvent(context, AbilityData::VoidGate::Event::Ended);
 	}
 
-	weak_ptr<VoidGatePortalActor> VoidGateAbility::SpawnPortal(
-		GameAbilityBehaviorContext& context,
-		const sf::Vector2f& location
-	) const
+	weak_ptr<VoidGatePortalActor> VoidGateAbility::SpawnPortal(GameAbilityBehaviorContext& context, const sf::Vector2f& location) const
 	{
 		AbilityExecutionContext executionContext{
 			&context.abilitySystem,
@@ -323,7 +321,7 @@ namespace vega
 			executionContext,
 			context.owner,
 			location,
-			context.owner.GetActorForwardDirection()
+			ResolveAbilityAimDirection(context.owner)
 		);
 		return std::dynamic_pointer_cast<VoidGatePortalActor>(spawned.lock());
 	}

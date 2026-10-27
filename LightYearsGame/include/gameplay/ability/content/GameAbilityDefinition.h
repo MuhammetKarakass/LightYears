@@ -33,6 +33,8 @@ namespace vega
 		std::string iconPath;
 		sf::Color accentColor = sf::Color::White;
 		List<AbilityActionSpec> actions;
+		// References materialized from the ability's authored actor records; the catalog owns those records.
+		List<sas::ContentId> actorDefinitionIds;
 		List<AbilityTriggerSpec> triggers;
 		// Ability-scoped numeric values are materialized from the ability JSON
 		// "attributes" array. This list may contain shared Common.* values such
@@ -72,6 +74,9 @@ namespace vega
 		float mainEffectMultiplier = 1.f;
 		float mainEffectGroupMultiplier = 1.f;
 		float primedMainEffectBonus = 0.f;
+		// Explicit activation policies retain their captured outputs during reconfiguration and recorded invocation.
+		bool activationModifiersCaptured = false;
+		GameplayTag damageTypeOverride;
 		// Level progression scaling rules materialized during RebuildDefinitionForLevel.
 		// Kept separate from base scalingRules so execution order is explicit and deterministic.
 		List<sas::AttributeScalingRule> levelScalingRules;

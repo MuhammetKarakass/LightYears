@@ -7,6 +7,7 @@
 #include "framework/Actor.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/damage/DamageContext.h"
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/projectile/ProjectileRelayParticipant.h"
 #include "gameplay/projectile/ProjectileReflectionParticipant.h"
 #include "gameplay/portal/PortalTransferParticipant.h"
@@ -50,6 +51,7 @@ namespace vega
 			return mDamageAttributes;
 		}
 		const DamagePayload& GetDamagePayload() const { return mDamagePayload; }
+		sf::Vector2f ResolveOwnerAimDirection() const;
 		void SetDamagePayload(const DamagePayload& payload) { mDamagePayload = payload; }
 		void SetAbilityUpgradeIds(const List<std::string>& upgradeIds) { mAbilityUpgradeIds = upgradeIds; }
 		const List<std::string>& GetAbilityUpgradeIds() const { return mAbilityUpgradeIds; }
@@ -162,6 +164,7 @@ namespace vega
 		List<GameplayTag> mDamageTags;
 		sas::GameplayAttributeList mDamageAttributes;
 		DamagePayload mDamagePayload;
+		std::optional<AbilityAimOverride> mAimOverride;
 		List<std::string> mAbilityUpgradeIds;
 		sas::ContentId mSourceAbilityId;
 		List<GameplayTag> mSourceAbilityTags;

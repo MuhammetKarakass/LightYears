@@ -10,6 +10,7 @@
 #include <string>
 
 #include <cstdint>
+#include <random>
 
 namespace vega
 {
@@ -42,6 +43,8 @@ namespace vega
 		sas::AbilitySlot abilitySlot = sas::AbilitySlot::None;
 		// Second Hardpoint: the Primary weapon chosen when the module entered the inventory; empty until chosen.
 		std::string secondaryWeaponId;
+		// Element Core acquisition roll; immutable during installation, movement, copying and respawn.
+		GameplayTag element;
 	};
 
 	// Installed placements plus the not-installed inventory. Every installing
@@ -69,6 +72,8 @@ namespace vega
 		bool SetSideFeature(const ModuleRulesContext& rules, std::uint32_t instanceId, const sas::ContentId& sideFeatureId);
 		// Stores the weapon an owned item carries (Second Hardpoint). False for unknown ids.
 		bool SetSecondaryWeapon(std::uint32_t instanceId, const std::string& weaponId);
+		bool SetInventoryElement(const ModuleRulesContext& rules, std::uint32_t instanceId, const GameplayTag& element);
+		void SetRandomSeed(std::uint32_t seed) { mRandom.seed(seed); }
 		ModulePlacementFailure Install(const ModuleRulesContext& rules, std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		ModulePlacementFailure Move(
 			const ModuleRulesContext& rules,
@@ -111,5 +116,6 @@ namespace vega
 		List<ModulePlacement> mInventory;
 		std::uint64_t mRevision = 0;
 		std::uint32_t mNextInstanceId = 1;
+		std::mt19937 mRandom{ std::random_device{}() };
 	};
 }

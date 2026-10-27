@@ -169,6 +169,7 @@ namespace vega
 	void PlayerSpaceShip::OnCombatDamageObserved(const DamageContext& context)
 	{
 		if (context.appliedDamage <= 0.f) return;
+		if (context.target == this) GetAbilitySystemComponent().GetActivationPolicy().ObserveDamage();
 		mCombatWindowRemaining = content::ModuleContentCatalog::GetZoneTable().combatWindowSeconds;
 	}
 

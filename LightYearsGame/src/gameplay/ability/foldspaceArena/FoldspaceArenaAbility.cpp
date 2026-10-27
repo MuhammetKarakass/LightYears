@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/foldspaceArena/FoldspaceArenaAbility.h"
 #include "framework/MathUtility.h"
 
@@ -158,10 +159,7 @@ namespace vega
 		return true;
 	}
 
-	float FoldspaceArenaAbility::ResolveActiveDuration(
-		const GameAbilityBehaviorContext& context,
-		float defaultDuration
-	) const
+	float FoldspaceArenaAbility::ResolveActiveDuration(const GameAbilityBehaviorContext& context, float defaultDuration) const
 	{
 		GameAbilityBehaviorContext mutableContext{
 			const_cast<LightYearsAbilitySystemComponent&>(context.abilitySystem),
@@ -190,7 +188,7 @@ namespace vega
 			const float castRange = std::max(1.f, sas::FindAttributeValue(
 				values, CommonAttributeIds::Range, 300.f
 			));
-			const sf::Vector2f offset = world->GetMouseWorldPosition() -
+			const sf::Vector2f offset = ResolveAbilityAimPoint(context.owner) -
 				context.owner.GetActorLocation();
 			const float distance = std::min(GetVectorLength(offset), castRange);
 			const AbilityActorDefinition* actor = AbilityData::FindAbilityActorDefinition(
@@ -221,7 +219,7 @@ namespace vega
 			values, CommonAttributeIds::Range, 300.f
 		));
 		const sf::Vector2f origin = context.owner.GetActorLocation();
-		sf::Vector2f target = world->GetMouseWorldPosition();
+		sf::Vector2f target = ResolveAbilityAimPoint(context.owner);
 		sf::Vector2f offset = target - origin;
 		const float distance = GetVectorLength(offset);
 		if (distance > castRange)
@@ -232,7 +230,7 @@ namespace vega
 		sf::Vector2f direction = offset;
 		if (GetVectorLength(direction) <= Epsilon)
 		{
-			direction = context.owner.GetActorForwardDirection();
+			direction = ResolveAbilityAimDirection(context.owner);
 		}
 		if (GetVectorLength(direction) <= Epsilon)
 		{

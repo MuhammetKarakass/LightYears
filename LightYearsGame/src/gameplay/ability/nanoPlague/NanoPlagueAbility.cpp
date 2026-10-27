@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueAbility.h"
 
@@ -103,7 +104,7 @@ namespace vega
 
 		targeting::TargetingQuery query;
 		query.source = &context.owner;
-		query.origin = world->GetMouseWorldPosition();
+		query.origin = ResolveAbilityAimPoint(context.owner);
 		query.range = targetRange;
 		query.requiredTargetLayers = context.owner.GetCollisionLayer() == GameCollision::Player
 			? GameCollision::Enemy : GameCollision::Player;
@@ -146,6 +147,7 @@ namespace vega
 		settings.sourceAbilityId = sas::ContentId{ context.definition.abilityId };
 		settings.sourceAbilityTags = context.definition.abilityTags;
 		settings.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		settings.hitGroup = context.instance.GetDamageHitGroup();
 
 		const shared_ptr<NanoPlagueControllerActor> controller =
 			NanoPlagueControllerActor::FindOrCreate(*world, context.owner, *profile);

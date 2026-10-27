@@ -258,7 +258,7 @@ Nadirliği olmayan iki sınıf tek kategoride toplanır (kullanıcı, 2026-10-27
 
 ### Yetenek modülleri · 5
 
-**Sınıf kuralları (karar 2026-10-25):** nadirlik, aile, yan özellik ve seviye yok; 1 hücre; bölgeden etkilenmez. Bir tuşun standart slot modülünün yerine takılır ve yalnız o tuştaki yeteneği değiştirir; slot bağı örnekte saklanır, aynı tuşa tek yetenek modülü. Ana etki ve bekleme çarpanları kullanım anında yakalanır; ana etki çarpanları diğer kaynaklarla toplanır (`ResolveMainEffectMultiplier`). Tur kapandı: beş modülle devam (kullanıcı, 2026-10-27).
+**Sınıf kuralları (karar 2026-10-25):** nadirlik, aile, yan özellik ve seviye yok; 1 hücre; bölgeden etkilenmez. Bir tuşun standart slot modülünün yerine takılır ve yalnız o tuştaki yeteneği değiştirir; slot bağı örnekte saklanır, aynı tuşa tek yetenek modülü. Ana etki ve bekleme çarpanları kullanım anında yakalanır; ana etki çarpanları diğer kaynaklarla toplanır (`ResolveMainEffectMultiplier`). Tur kapandı: beş modülle devam (kullanıcı, 2026-10-27). Dördünün runtime/content/HUD uygulaması tamamlandı; kararlar ve odaklı kanıt: [ABILITY_MODULES_IMPLEMENTATION.md](ABILITY_MODULES_IMPLEMENTATION.md). Envanter ekranında yetenek modülleri ile yedi bağlantı Unique tek **Unique** kategorisindedir; alt türleri **Ability module** ve **Connector Unique** olarak ayrılır.
 
 | Modül | Seçilmiş yön | Durum / ayrıntı |
 |---|---|---|

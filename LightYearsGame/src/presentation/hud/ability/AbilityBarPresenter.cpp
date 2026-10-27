@@ -177,6 +177,7 @@ namespace vega
 				static_cast<int>(sas::AbilitySlot::Ability1) + static_cast<int>(index % 4));
 			GameAbility* ability = index < 4 ? abilitySystem.GetAbility(slot) : abilitySystem.GetSecondAbility(slot);
 			AbilitySlotViewData projected{};
+			projected.timing = abilitySystem.GetActivationPolicy().GetView(slot, index >= 4);
 			projected.statsText = mViewModel->slots[index].statsText;
 			if (ability && (index < 4 || abilitySystem.IsTwinRackEnabled()) && !ability->GetDefinition().iconPath.empty())
 			{

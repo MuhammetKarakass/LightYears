@@ -16,15 +16,7 @@
 
 namespace vega
 {
-	ScorchDriveTrailCoordinatorActor::ScorchDriveTrailCoordinatorActor(
-		World* world,
-		Actor* owner,
-		float fireDamage,
-		int igniteStacksPerHit,
-		const sas::ContentId& sourceAbilityId,
-		const List<GameplayTag>& sourceAbilityTags,
-		const List<GameplayTag>& damageTags
-	)
+	ScorchDriveTrailCoordinatorActor::ScorchDriveTrailCoordinatorActor(World* world, Actor* owner, float fireDamage, int igniteStacksPerHit, const sas::ContentId& sourceAbilityId, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, std::shared_ptr<DamageHitGroup> hitGroup)
 		: Actor(world)
 		, mOwner(owner ? owner->GetWeakActor() : weak_ptr<Actor>{})
 		, mFireDamage(std::max(0.f, fireDamage))
@@ -32,6 +24,7 @@ namespace vega
 		, mSourceAbilityId(sourceAbilityId)
 		, mSourceAbilityTags(sourceAbilityTags)
 		, mDamageTags(damageTags)
+		, mHitGroup(std::move(hitGroup))
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
 		SetCollisionLayer(vega::CollisionLayer::None);
@@ -184,6 +177,8 @@ namespace vega
 
 		DamagePayload payload = DamageTypeSystem::BuildPayload(mDamageTags);
 		payload.igniteStacks = mIgniteStacksPerHit;
+		payload.hitGroup = mHitGroup;
+		if (mHitGroup) payload.mainEffectMultiplier = mHitGroup->mainEffectMultiplier;
 
 		for (const shared_ptr<Actor>& target : targets)
 		{

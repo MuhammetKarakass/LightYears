@@ -308,6 +308,17 @@ namespace vega
 	{
 		visitor("abilityModule.mainEffectMultiplier", rules.mainEffectMultiplier);
 		visitor("abilityModule.cooldownMultiplier", rules.cooldownMultiplier);
+		if (rules.timing)
+		{
+			const auto& spec = *rules.timing;
+			visitor("abilityModule.timing.durationSeconds", spec.durationSeconds); visitor("abilityModule.timing.windowCenterFraction", spec.windowCenterFraction);
+			visitor("abilityModule.timing.bigWindowSeconds", spec.bigWindowSeconds); visitor("abilityModule.timing.smallWindowSeconds", spec.smallWindowSeconds); visitor("abilityModule.timing.feedbackSeconds", spec.feedbackSeconds);
+			visitor("abilityModule.timing.small.mainEffectMultiplier", spec.small.mainEffectMultiplier); visitor("abilityModule.timing.small.cooldownMultiplier", spec.small.cooldownMultiplier);
+			visitor("abilityModule.timing.big.mainEffectMultiplier", spec.big.mainEffectMultiplier); visitor("abilityModule.timing.big.cooldownMultiplier", spec.big.cooldownMultiplier);
+			visitor("abilityModule.timing.miss.mainEffectMultiplier", spec.miss.mainEffectMultiplier); visitor("abilityModule.timing.miss.cooldownMultiplier", spec.miss.cooldownMultiplier);
+		}
+		if (rules.autocast) { visitor("abilityModule.autocast.recentDamageSeconds", rules.autocast->recentDamageSeconds); visitor("abilityModule.autocast.defaultRange", rules.autocast->defaultRange); }
+		if (rules.fortune) { visitor("abilityModule.fortune.minimum", rules.fortune->minimum); visitor("abilityModule.fortune.maximum", rules.fortune->maximum); visitor("abilityModule.fortune.doubleRollChancePerLuck", rules.fortune->doubleRollChancePerLuck); visitor("abilityModule.fortune.feedbackSeconds", rules.fortune->feedbackSeconds); }
 	}
 	void ValidateModuleDescriptionTemplate(const std::string& text, const ModuleRulePackage& rules, const std::string& context, const AbilityModuleRules* abilityModule, const UniqueModuleRule* unique)
 	{

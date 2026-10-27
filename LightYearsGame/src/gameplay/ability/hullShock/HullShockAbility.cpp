@@ -415,6 +415,7 @@ namespace vega
 			context.instance.GetResolvedDamageTags();
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
 		payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		payload.hitGroup = context.instance.GetDamageHitGroup();
 		// Hull Shock deliberately selects 1/2/3/4 stacks from charge instead of
 		// inheriting the one-stack default used by ordinary Electric weapon hits.
 		payload.electricStacks = electricStacks;

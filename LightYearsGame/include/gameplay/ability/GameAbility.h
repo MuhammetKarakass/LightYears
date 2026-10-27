@@ -8,6 +8,7 @@
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/weapon/runtime/PrimaryWeaponAbilityState.h"
@@ -36,6 +37,7 @@ namespace vega
 		: public sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>
 	{
 	public:
+		virtual float ResolveAutocastRange(const GameAbilityBehaviorContext&, float dataRange) const { return dataRange; }
 		virtual float ResolveActiveDuration(
 			const GameAbilityBehaviorContext& context,
 			float defaultDuration
@@ -89,6 +91,12 @@ namespace vega
 	class GameAbility: public sas::GameplayAbilityInstance<GameAbilityDefinition,GameAbilityExecution>
 	{
 	public:
+		bool CanActivateNow() const;
+		float ResolveAutocastRange(float dataRange) const;
+		bool TryActivateWithInput(bool held);
+		void SetNextActivationModifiers(AbilityActivationModifiers modifiers) { mNextActivationModifiers = modifiers; }
+		void SetActivationAim(std::optional<AbilityAimOverride> aim) { mActivationAim = std::move(aim); }
+		const std::optional<AbilityAimOverride>& GetActivationAim() const { return mActivationAim; }
 		std::string DebugActivationBlockReason() const;
 		GameAbility(
 			LightYearsAbilitySystemComponent& abilitySystem,
@@ -140,6 +148,8 @@ namespace vega
 	private:
 		friend class LightYearsAbilitySystemComponent;
 		friend class GameAbilityActionExecutor;
+		std::optional<AbilityActivationModifiers> mNextActivationModifiers;
+		std::optional<AbilityAimOverride> mActivationAim;
 		std::shared_ptr<DamageHitGroup> mDamageHitGroup;
 
 		bool CanActivateContent() const override;

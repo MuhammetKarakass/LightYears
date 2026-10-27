@@ -16,6 +16,7 @@ namespace vega
 	{
 		std::uint32_t instanceId{ 0 };
 		std::string name, abbreviation, family, rarity;
+		std::string category, subKind;
 		std::string description;
 		int level{ 1 }, levelCount{ 1 };
 		List<int> sizeLadder;
@@ -40,7 +41,7 @@ namespace vega
 
 		bool operator==(const ModuleEntryView& o) const
 		{
-			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && rarity == o.rarity && description == o.description && isSystem == o.isSystem && mirror == o.mirror && rotationQuarterTurns == o.rotationQuarterTurns &&
+			return instanceId == o.instanceId && name == o.name && category == o.category && subKind == o.subKind && abbreviation == o.abbreviation && family == o.family && rarity == o.rarity && description == o.description && isSystem == o.isSystem && mirror == o.mirror && rotationQuarterTurns == o.rotationQuarterTurns &&
 				level == o.level && levelCount == o.levelCount && sizeLadder == o.sizeLadder && sideFeatureRequiredCells == o.sideFeatureRequiredCells && sideFeatureState == o.sideFeatureState && sideFeatureName == o.sideFeatureName && sideFeatureDescription == o.sideFeatureDescription &&
 				cellCount == o.cellCount && variantIndex == o.variantIndex && cells == o.cells && zoneLevelBonus == o.zoneLevelBonus &&
 				rebooting == o.rebooting && rebootRemaining == o.rebootRemaining && rebootFraction == o.rebootFraction && held == o.held &&

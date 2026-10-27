@@ -1,3 +1,4 @@
+#include "gameplay/damage/DamageTypeOverride.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/module/rules/legendary/LegendarySecondHardpointRuntime.h"
 #include "gameplay/combat/CombatRuntime.h"
@@ -145,11 +146,23 @@ namespace vega
 		);
 	}
 
-	void ApplyCombatDamage(Actor& target, float damage, Actor* source, const List<GameplayTag>& damageTags, const DamagePayload& payload, const sas::ContentId& sourceAbilityId, const List<GameplayTag>& sourceAbilityTags, DamageDeliveryType deliveryType, Actor* deliveryActor)
+	void ApplyCombatDamage(Actor& target, float damage, Actor* source, const List<GameplayTag>& originalDamageTags, const DamagePayload& originalPayload, const sas::ContentId& sourceAbilityId, const List<GameplayTag>& sourceAbilityTags, DamageDeliveryType deliveryType, Actor* deliveryActor)
 	{
 		if (damage <= 0.f)
 		{
 			return;
+		}
+
+		DamagePayload payload = originalPayload;
+		List<GameplayTag> damageTags = originalDamageTags;
+		if (payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Normal && !payload.skipModuleDamageRules && !sourceAbilityId.ToString().empty())
+		{
+			if (!payload.hitGroup)
+			{
+				if (const auto* actor = dynamic_cast<const AbilityWorldActor*>(deliveryActor)) payload.hitGroup = actor->GetDamagePayload().hitGroup;
+				if (!payload.hitGroup) if (const auto* combatant = dynamic_cast<const Combatant*>(source)) if (const auto* ability = combatant->GetAbilitySystemComponent().GetAbilityById(sourceAbilityId.ToString())) payload.hitGroup = ability->GetDamageHitGroup();
+			}
+			if (payload.hitGroup) ApplyDamageTypeOverride(damageTags, payload, payload.hitGroup->damageTypeOverride);
 		}
 
 		// Temporary damage-suppression is owned by the ability that registered it.

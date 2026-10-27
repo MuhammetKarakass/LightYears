@@ -14,6 +14,7 @@
 #include "gameplay/module/rules/EpicOffenseRules.h"
 #include "gameplay/module/rules/EpicUtilityMovementRules.h"
 #include "gameplay/module/rules/legendary/LegendaryRules.h"
+#include "gameplay/ability/AbilityActivationPolicy.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -735,10 +736,18 @@ namespace vega
 		List<sas::ContentId> allowedFeatureIds;
 	};
 
+	struct TimingProtocolRules : AbilityTimingSpec {};
+	struct AutocastProtocolRules : AbilityAutocastSpec {};
+	struct ElementCoreRules { List<GameplayTag> elements; };
+	struct FortuneProtocolRules : AbilityRandomPowerSpec {};
 	struct AbilityModuleRules
 	{
 		float mainEffectMultiplier = 1.f;
 		float cooldownMultiplier = 1.f;
+		std::optional<TimingProtocolRules> timing;
+		std::optional<AutocastProtocolRules> autocast;
+		std::optional<ElementCoreRules> elementCore;
+		std::optional<FortuneProtocolRules> fortune;
 	};
 
 	enum class UniqueModuleKind { Amplifier, Relay, Echo, Mirror, Pulsar, Spark, ProfitShare };

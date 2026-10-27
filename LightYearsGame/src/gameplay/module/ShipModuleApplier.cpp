@@ -362,6 +362,16 @@ namespace vega
 		mResolved = ModuleResolver::Resolve(rules, active, mPlacements);
 		mResolvedShipLevel = rules.shipLevel;
 		mUniqueRuntime.Replace(rules, active);
+		for (const auto slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+		{
+			const auto found = std::find_if(mResolved.abilityModules.begin(), mResolved.abilityModules.end(), [slot](const auto& entry) { return entry.slot == slot; });
+			const auto* entry = found == mResolved.abilityModules.end() ? nullptr : &*found;
+			auto& policy = mAbilities.GetActivationPolicy();
+			policy.ConfigureTiming(slot, entry && entry->rules.timing ? entry->instanceId : 0, entry && entry->rules.timing ? std::optional<AbilityTimingSpec>{ *entry->rules.timing } : std::nullopt);
+			policy.ConfigureAutocast(slot, entry && entry->rules.autocast ? entry->instanceId : 0, entry && entry->rules.autocast ? std::optional<AbilityAutocastSpec>{ *entry->rules.autocast } : std::nullopt);
+			policy.ConfigureRandomPower(slot, entry && entry->rules.fortune ? std::optional<AbilityRandomPowerSpec>{ *entry->rules.fortune } : std::nullopt);
+			policy.ConfigureDamageType(slot, entry ? entry->element : GameplayTag{});
+		}
 		ResolveMonochromeCoreLoadout(mResolved.epicOffense, mAbilities);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
 		mCombatRuntime.SetModuleStatusRules(mResolved.statusRules);

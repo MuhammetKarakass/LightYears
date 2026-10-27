@@ -123,7 +123,7 @@ namespace vega
 		List<ZoneBonus> levelBonuses;
 		// True when a resolved modifier carries a ship-level term, so a ship level change must re-resolve.
 		bool usesShipLevel = false;
-		struct AbilityModule { sas::AbilitySlot slot; AbilityModuleRules rules; };
+		struct AbilityModule { sas::AbilitySlot slot; AbilityModuleRules rules; std::uint32_t instanceId = 0; GameplayTag element; };
 		List<AbilityModule> abilityModules;
 		List<sas::AttributeModifier> ownerModifiers;
 		List<sas::AttributeModifier> shipModifiers;

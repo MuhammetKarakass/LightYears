@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/solarBombardment/SolarBombardmentAbility.h"
 #include "framework/MathUtility.h"
 
@@ -213,11 +214,11 @@ namespace vega
 		}
 
 		const sf::Vector2f ownerLocation = context.owner.GetActorLocation();
-		sf::Vector2f targetLocation = world->GetMouseWorldPosition();
+		sf::Vector2f targetLocation = ResolveAbilityAimPoint(context.owner);
 		sf::Vector2f direction = targetLocation - ownerLocation;
 		if (GetVectorLength(direction) <= 0.001f)
 		{
-			direction = context.owner.GetActorForwardDirection();
+			direction = ResolveAbilityAimDirection(context.owner);
 		}
 		if (GetVectorLength(direction) <= 0.001f)
 		{

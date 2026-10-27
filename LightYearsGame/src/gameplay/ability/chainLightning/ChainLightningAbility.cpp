@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/chainLightning/ChainLightningAbility.h"
 
@@ -547,7 +548,7 @@ namespace vega
 			return false;
 		}
 
-		const sf::Vector2f mouseLocation = world->GetMouseWorldPosition();
+		const sf::Vector2f mouseLocation = ResolveAbilityAimPoint(context.owner);
 		targeting::TargetingQuery initialQuery;
 		initialQuery.source = &context.owner;
 		initialQuery.origin = context.owner.GetActorLocation();
@@ -601,6 +602,7 @@ namespace vega
 			context.instance.GetResolvedDamageTags();
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
 		payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		payload.hitGroup = context.instance.GetDamageHitGroup();
 		payload.electricStacks = std::max(
 			1,
 			static_cast<int>(std::lround(sas::FindAttributeValue(

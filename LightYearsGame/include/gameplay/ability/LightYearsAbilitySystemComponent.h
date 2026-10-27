@@ -28,6 +28,10 @@ namespace vega
 		: public sas::AbilitySystemComponent
 	{
 	public:
+		AbilityActivationPolicy& GetActivationPolicy() { return mActivationPolicy; }
+		const AbilityActivationPolicy& GetActivationPolicy() const { return mActivationPolicy; }
+		const std::optional<AbilityAimOverride>& GetExecutionAim() const { return mExecutionAim; }
+		void SetExecutionAim(std::optional<AbilityAimOverride> aim) { mExecutionAim = std::move(aim); }
 		ModuleTriggerService& GetModuleTriggerService() { return mModuleTriggerService; }
 		const ModuleTriggerService& GetModuleTriggerService() const { return mModuleTriggerService; }
 		template<typename Event> bool HandleGameplayEvent(const Event& event)
@@ -105,8 +109,8 @@ namespace vega
 		// every module system is enabled.
 		void SetModuleSystemGate(ModuleSystemGate* gate) { mModuleSystemGate = gate; }
 		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const;
-		float GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle = {}) const;
-		float GetAbilityMainEffectGroupMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle = {}) const;
+		float GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle = {}, float activationMultiplier = 1.f) const;
+		float GetAbilityMainEffectGroupMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle = {}, float activationMultiplier = 1.f) const;
 		float GetPrimedArsenalBonus(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const;
 		void CommitPrimedArsenalUse(sas::AbilityHandle handle) { if (mModuleSystemGate) mModuleSystemGate->CommitPrimedArsenalUse(handle); }
 		void RefreshModulePoolConversion() { if (mModuleSystemGate) mModuleSystemGate->RefreshPoolConversion(); }
@@ -184,6 +188,8 @@ namespace vega
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
+		AbilityActivationPolicy mActivationPolicy{ *this };
+		std::optional<AbilityAimOverride> mExecutionAim;
 		ModuleTriggerService mModuleTriggerService;
 		void DescribeDebugAbility(sas::AbilityDebugEntry& entry) const override;
 		void HandleAbilityActivated(sas::AbilityHandle handle);

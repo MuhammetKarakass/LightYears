@@ -1,4 +1,5 @@
 #include "presentation/hud/ability/AbilityBarView.h"
+#include "presentation/hud/modules/HoloDraw.h"
 
 #include <cstdio>
 #include <utility>
@@ -77,7 +78,7 @@ namespace vega
 			UILayout stateLayout = UILayout::Anchored(UIAnchor::BottomLeft, { 0.f, -16.f });
 			stateLayout.pivot = { 0.f, 0.f };
 			state.lock()->SetLayout(stateLayout);
-			mSlots[index] = { column, stats, input, icon, state };
+			mSlots[index] = { column, stats, input, icon, state, {} };
 			mColumns[index] = column;
 			mIcons[index] = icon;
 		}
@@ -98,6 +99,26 @@ namespace vega
 			SlotWidgets& widgets = mSlots[index];
 			if (auto column = widgets.column.lock()) column->SetVisibility(data.visible);
 			if (!data.visible) continue;
+			if (data.timing.open && widgets.timing.expired())
+			{
+				if (auto column = widgets.column.lock())
+				{
+					widgets.timing = column->AddChild<HoloCanvas>();
+					if (auto canvas = widgets.timing.lock()) { auto layout = UILayout::Anchored(UIAnchor::BottomLeft, { 0.f, 4.f }); layout.pivot = { 0.f, 0.f }; layout.size = { 150.f, 18.f }; canvas->SetLayout(layout); }
+				}
+			}
+			if (auto canvas = widgets.timing.lock())
+			{
+				canvas->SetVisibility(data.timing.open); canvas->Clear();
+				if (data.timing.open)
+				{
+					auto& vertices = canvas->Normal();
+					holo::Rect(vertices, { 0.f, 0.f }, { 150.f, 14.f }, { 28, 35, 49, 255 }, { 28, 35, 49, 255 });
+					holo::Rect(vertices, { 150.f * data.timing.bigStart, 0.f }, { 150.f * (data.timing.bigEnd - data.timing.bigStart), 14.f }, { 65, 145, 180, 255 }, { 65, 145, 180, 255 });
+					holo::Rect(vertices, { 150.f * data.timing.smallStart, 0.f }, { 150.f * (data.timing.smallEnd - data.timing.smallStart), 14.f }, { 100, 240, 135, 255 }, { 100, 240, 135, 255 });
+					holo::Line(vertices, { data.timing.progress * 150.f, -3.f }, { data.timing.progress * 150.f, 17.f }, 3.f, sf::Color::White);
+				}
+			}
 			if ((generationChanged || mIconPaths[index] != data.iconPath || widgets.icon.expired()) && !data.iconPath.empty())
 			{
 				// Recreate the sprite so its texture rectangle uses the new texture's intrinsic size.
@@ -127,7 +148,12 @@ namespace vega
 			if (auto icon = widgets.icon.lock()) icon->SetAlpha(data.state == AbilitySlotState::Cooldown ? 0.35f : data.state == AbilitySlotState::Ready ? 0.9f : 1.f);
 			if (auto state = widgets.state.lock())
 			{
-				if (data.state == AbilitySlotState::Cooldown)
+				if (!data.timing.feedback.empty())
+				{
+					state->SetString(data.timing.feedback); state->SetFillColor(data.timing.good ? sf::Color{ 100, 255, 150, 255 } : sf::Color{ 255, 125, 100, 255 });
+				}
+				else if (data.timing.open) { state->SetString("PRESS AGAIN"); state->SetFillColor(sf::Color::White); }
+				else if (data.state == AbilitySlotState::Cooldown)
 				{
 					char buffer[16];
 					snprintf(buffer, sizeof(buffer), "%.1fs", static_cast<float>(data.cooldownTenths) / 10.f);

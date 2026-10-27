@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "framework/MathUtility.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreAbility.h"
@@ -397,10 +398,7 @@ namespace vega
 		mLaunchedProjectileCount = 0;
 	}
 
-	void OverdriveCoreAbility::LaunchRocket(
-		GameAbilityBehaviorContext& context,
-		ExecutionContext& executionContext
-	)
+	void OverdriveCoreAbility::LaunchRocket(GameAbilityBehaviorContext& context, ExecutionContext& executionContext)
 	{
 		if (mLaunchedProjectileCount >= mProjectileCount)
 		{
@@ -417,7 +415,7 @@ namespace vega
 					target->GetActorLocation() - context.owner.GetActorLocation();
 				if (GetVectorLength(direction) <= 0.001f)
 				{
-					direction = context.owner.GetActorForwardDirection();
+					direction = ResolveAbilityAimDirection(context.owner);
 				}
 				else
 				{

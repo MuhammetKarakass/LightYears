@@ -2,6 +2,7 @@
 
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/module/ModuleAbilitySlots.h"
+#include "gameplay/content/ModuleContentCatalog.h"
 
 #include <algorithm>
 #include <utility>
@@ -29,17 +30,21 @@ namespace vega
 		return found == mInventory.end() ? nullptr : &*found;
 	}
 
-	std::uint32_t ModuleLoadout::AddToInventory(
-		const sas::ContentId& moduleId,
-		int variantIndex,
-		ModuleRarity rarity,
-		List<sas::AttributeModifier> rolledSideStats)
+	std::uint32_t ModuleLoadout::AddToInventory(const sas::ContentId& moduleId, int variantIndex, ModuleRarity rarity, List<sas::AttributeModifier> rolledSideStats)
 	{
+		const auto* module = content::ModuleContentCatalog::FindById(moduleId);
+		if (module && (module->abilityModule || module->unique) && !rolledSideStats.empty()) return 0;
+		if (module && module->abilityModule && module->abilityModule->elementCore && module->abilityModule->elementCore->elements.empty()) return 0;
 		ModulePlacement item;
 		item.instanceId = mNextInstanceId++;
 		item.moduleId = moduleId;
+		if (module && module->abilityModule && module->abilityModule->elementCore)
+		{
+			const auto& elements = module->abilityModule->elementCore->elements;
+			item.element = elements[std::uniform_int_distribution<std::size_t>{ 0, elements.size() - 1 }(mRandom)];
+		}
 		item.variantIndex = variantIndex;
-		item.rarity = rarity;
+		item.rarity = module && (module->abilityModule || module->unique) ? ModuleRarity::None : rarity;
 		item.rolledSideStats = std::move(rolledSideStats);
 		mInventory.push_back(std::move(item));
 		++mRevision;
@@ -53,6 +58,7 @@ namespace vega
 			level < 1 || level > canonical->levelCount ||
 			!HasModuleRulePackageLevelCoverage(canonical->sizeVariants[static_cast<std::size_t>(variantIndex)], level)) return 0;
 		if ((canonical->abilityModule || canonical->unique) && (!rolledSideStats.empty() || sideFeatureId.IsValid())) return 0;
+		if (canonical->abilityModule && canonical->abilityModule->elementCore && canonical->abilityModule->elementCore->elements.empty()) return 0;
 		if (sideFeatureId.IsValid())
 		{
 			const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(sideFeatureId) : nullptr;
@@ -62,6 +68,11 @@ namespace vega
 		ModulePlacement item;
 		item.instanceId = mNextInstanceId++;
 		item.moduleId = canonical->moduleId;
+		if (canonical->abilityModule && canonical->abilityModule->elementCore)
+		{
+			const auto& elements = canonical->abilityModule->elementCore->elements;
+			item.element = elements[std::uniform_int_distribution<std::size_t>{ 0, elements.size() - 1 }(mRandom)];
+		}
 		item.variantIndex = variantIndex;
 		item.rarity = (canonical->abilityModule || canonical->unique) ? ModuleRarity::None : rarity;
 		item.rolledSideStats = std::move(rolledSideStats);
@@ -77,6 +88,18 @@ namespace vega
 		for (ModulePlacement& placement : mPlacements) if (placement.instanceId == instanceId) return &placement;
 		for (ModulePlacement& placement : mInventory) if (placement.instanceId == instanceId) return &placement;
 		return nullptr;
+	}
+
+	bool ModuleLoadout::SetInventoryElement(const ModuleRulesContext& rules, std::uint32_t instanceId, const GameplayTag& element)
+	{
+		if (!FindInventoryItem(instanceId)) return false;
+		auto* item = FindOwnedItem(instanceId);
+		const auto* definition = rules.lookup ? rules.lookup(item->moduleId) : nullptr;
+		if (!definition || !definition->abilityModule || !definition->abilityModule->elementCore) return false;
+		const auto& elements = definition->abilityModule->elementCore->elements;
+		if (std::find(elements.begin(), elements.end(), element) == elements.end()) return false;
+		if (item->element != element) { item->element = element; ++mRevision; }
+		return true;
 	}
 
 	bool ModuleLoadout::SetSecondaryWeapon(std::uint32_t instanceId, const std::string& weaponId)

@@ -25,6 +25,7 @@ namespace vega
 			sas::ContentId sourceAbilityId;
 			List<GameplayTag> sourceAbilityTags;
 			float mainEffectMultiplier = 1.f;
+			std::shared_ptr<DamageHitGroup> hitGroup;
 		};
 
 		NanoPlagueControllerActor(

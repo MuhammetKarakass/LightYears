@@ -18,12 +18,7 @@ namespace vega
 	{
 	}
 
-	GameAbilityDefinition AbilityInvocationRuntime::BuildInvocationDefinition(
-		const GameAbilityDefinition& sourceDefinition,
-		const AbilityUseRecord& record,
-		const List<sas::AttributeScalingRule>& scalingRules,
-		float outputMultiplier
-	)
+	GameAbilityDefinition AbilityInvocationRuntime::BuildInvocationDefinition(const GameAbilityDefinition& sourceDefinition, const AbilityUseRecord& record, const List<sas::AttributeScalingRule>& scalingRules, float outputMultiplier)
 	{
 		GameAbilityDefinition definition = sourceDefinition;
 		definition.levelProgression.clear();
@@ -36,6 +31,8 @@ namespace vega
 		definition.recordInAbilityHistory = false;
 		definition.mainEffectMultiplier = record.mainEffectMultiplier;
 		definition.primedMainEffectBonus = record.primedMainEffectBonus;
+		definition.activationModifiersCaptured = record.activationModifiersCaptured;
+		definition.damageTypeOverride = record.damageTypeOverride;
 		definition.mainEffectGroupMultiplier = record.mainEffectGroupMultiplier;
 
 		// The history record is a value snapshot, so the replay must rebuild the

@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/mineLayer/MineLayerAbility.h"
 
 #include "attributes/AttributeMath.h"
@@ -219,7 +220,7 @@ namespace vega
 		// Mine placement is based on the ship's facing, not its velocity. A ship
 		// may be drifting sideways while looking elsewhere, but the mine field must
 		// still appear behind the nose direction the player sees.
-		const sf::Vector2f forward = context.owner.GetActorForwardDirection();
+		const sf::Vector2f forward = ResolveAbilityAimDirection(context.owner);
 		const sf::Vector2f right = context.owner.GetActorRightDirection();
 		const sf::Vector2f formationOrigin =
 			context.owner.GetActorLocation() - forward * mineSpacing;

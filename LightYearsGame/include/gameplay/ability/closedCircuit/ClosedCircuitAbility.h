@@ -9,6 +9,7 @@ namespace vega
 	public:
 		bool Validate(const GameAbilityDefinition& definition, std::string* failureReason) const override;
 		bool Activate(GameAbilityBehaviorContext& context) override;
+		float ResolveAutocastRange(const GameAbilityBehaviorContext& context, float dataRange) const override;
 		void End(GameAbilityBehaviorContext& context, sas::AbilityEndReason reason) override;
 	private:
 		void EmitEvent(GameAbilityBehaviorContext& context, const GameplayTag& eventTag) const;

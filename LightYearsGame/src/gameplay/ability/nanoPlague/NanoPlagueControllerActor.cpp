@@ -380,6 +380,7 @@ namespace vega
 			));
 		DamagePayload payload;
 		payload.mainEffectMultiplier = settings.mainEffectMultiplier;
+		payload.hitGroup = settings.hitGroup;
 		ApplyCombatDamage(
 			target,
 			std::max(0.f, settings.baseTickDamage + energyPower * settings.energyPowerTickScale),

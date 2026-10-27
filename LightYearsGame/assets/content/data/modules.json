@@ -5796,6 +5796,120 @@
       "sizeVariants": [{ "shape": [[0, 0]] }]
     },
     {
+      "id": "Module.AbilityModule.TimingProtocol",
+      "displayName": "Timing Protocol",
+      "description": "Press the bound key twice. A {abilityModule.timing.durationSeconds}s timing bar scores PERFECT (main effect x{abilityModule.timing.small.mainEffectMultiplier}, cooldown x{abilityModule.timing.small.cooldownMultiplier}), GOOD (x{abilityModule.timing.big.mainEffectMultiplier}, x{abilityModule.timing.big.cooldownMultiplier}) or MISS (x{abilityModule.timing.miss.mainEffectMultiplier}, x{abilityModule.timing.miss.cooldownMultiplier}). Timeout casts automatically.",
+      "abilityModule": {
+        "mainEffectMultiplier": 1,
+        "cooldownMultiplier": 1,
+        "timing": {
+          "durationSeconds": 1.2,
+          "windowCenterFraction": 0.7,
+          "bigWindowSeconds": 0.4,
+          "smallWindowSeconds": 0.15,
+          "small": {
+            "mainEffectMultiplier": 1.4,
+            "cooldownMultiplier": 0.85
+          },
+          "big": {
+            "mainEffectMultiplier": 1.15,
+            "cooldownMultiplier": 0.95
+          },
+          "miss": {
+            "mainEffectMultiplier": 0.85,
+            "cooldownMultiplier": 1.4
+          },
+          "feedbackSeconds": 0.9
+        }
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.AbilityModule.AutocastProtocol",
+      "displayName": "Autocast Protocol",
+      "description": "Automatically uses this ability when ready and its family condition is met. Aims at the nearest enemy; Movement follows held movement input. Automatic and manual uses have main effect x{abilityModule.mainEffectMultiplier}. Defense also reacts to damage within {abilityModule.autocast.recentDamageSeconds}s. Missing range data uses {abilityModule.autocast.defaultRange} units.",
+      "abilityModule": {
+        "mainEffectMultiplier": 0.75,
+        "cooldownMultiplier": 1,
+        "autocast": {
+          "recentDamageSeconds": 1,
+          "defaultRange": 600
+        }
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.AbilityModule.ElementCore",
+      "displayName": "Element Core",
+      "description": "Acquires a random Thermal, Cryo, Electric, Kinetic or Energy element. Converts the bound ability's direct damage and damage statuses to that element. Energy applies no damage status. Non-damaging abilities are unaffected.",
+      "abilityModule": {
+        "mainEffectMultiplier": 1,
+        "cooldownMultiplier": 1,
+        "elementCore": {
+          "elements": [
+            "Damage.Type.Thermal",
+            "Damage.Type.Cryo",
+            "Damage.Type.Electric",
+            "Damage.Type.Kinetic",
+            "Damage.Type.Energy"
+          ]
+        }
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.AbilityModule.FortuneProtocol",
+      "displayName": "Fortune Protocol",
+      "description": "Each activation rolls main effect uniformly from x{abilityModule.fortune.minimum} to x{abilityModule.fortune.maximum}. Each point of Luck adds {abilityModule.fortune.doubleRollChancePerLuck} probability to roll twice and keep the larger value. Cooldown is unchanged.",
+      "abilityModule": {
+        "mainEffectMultiplier": 1,
+        "cooldownMultiplier": 1,
+        "fortune": {
+          "minimum": 0.5,
+          "maximum": 1.7,
+          "doubleRollChancePerLuck": 0.05,
+          "feedbackSeconds": 1.2
+        }
+      },
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
       "id": "Module.Unique.Amplifier",
       "displayName": "Amplifier",
       "description": "Touching modules and standard ability shells gain +{unique.levelBonus} effective level, separately from zone levels. Level-less modules are unaffected.",

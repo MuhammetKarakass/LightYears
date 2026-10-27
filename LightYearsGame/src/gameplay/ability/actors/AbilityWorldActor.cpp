@@ -94,8 +94,15 @@ namespace vega
 		return owner ? owner.get() : mUnmanagedOriginalProjectileOwner;
 	}
 
+	sf::Vector2f AbilityWorldActor::ResolveOwnerAimDirection() const
+	{
+		if (mAimOverride) return mAimOverride->direction;
+		const auto* owner = GetOwnerActor(); return owner ? owner->GetActorForwardDirection() : GetActorForwardDirection();
+	}
+
 	void AbilityWorldActor::SetSourceAbilityInstance(GameAbility* instance)
 	{
+		mAimOverride = instance ? instance->GetActivationAim() : std::nullopt;
 		mDamagePayload.hitGroup = instance ? instance->GetDamageHitGroup() : nullptr;
 		mDamagePayload.mainEffectMultiplier = instance ? instance->GetDefinition().mainEffectGroupMultiplier : 1.f;
 		mSourceAbilityHandle = instance

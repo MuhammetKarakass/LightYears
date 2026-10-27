@@ -57,7 +57,9 @@ namespace vega
 			const auto* ability = abilities.GetAbility(slot);
 			if (!ability) continue;
 			List<GameplayTag> seen;
-			for (const auto& type : ability->GetDefinition().damageTags)
+			const auto convertedType = abilities.GetActivationPolicy().GetDamageType(slot);
+			const auto types = convertedType.IsValid() && !ability->GetDefinition().damageTags.empty() ? List<GameplayTag>{ convertedType } : ability->GetDefinition().damageTags;
+			for (const auto& type : types)
 			{
 				if (std::find(seen.begin(), seen.end(), type) != seen.end()) continue;
 				seen.push_back(type);

@@ -4,6 +4,7 @@
 #include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/ModuleAbilitySlots.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/input/AbilityInputSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -179,6 +180,14 @@ namespace vega
 				{
 					out.name += " Ability Slot (empty)";
 				}
+			}
+			out.category = definition->abilityModule || definition->unique ? "Unique" : out.family;
+			if (definition->abilityModule) out.subKind = "Ability module";
+			else if (definition->unique) out.subKind = "Connector Unique";
+			if (placement.element.IsValid())
+			{
+				const auto element = placement.element.name.substr(placement.element.name.rfind('.') + 1);
+				out.name += " - " + element; out.description += "\nStored element: " + element + (placement.element == DamageTypeSchema::Energy ? ". Applies no damage status." : ". Converts damage statuses to this element.");
 			}
 			if (definition->systemCategory == GameplayTags::Module::System::LifeSupport)
 				out.name += " (removal kills player)";

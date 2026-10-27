@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/frozenThrong/FrozenThrongAbility.h"
 #include "framework/MathUtility.h"
 
@@ -207,12 +208,7 @@ namespace vega
 		}
 	}
 
-	void FrozenThrongAbility::SpawnHusk(
-		GameAbilityBehaviorContext& context,
-		const sf::Vector2f& origin,
-		const sas::GameplayAttributeList& values,
-		float cryoDamageMultiplier
-	)
+	void FrozenThrongAbility::SpawnHusk(GameAbilityBehaviorContext& context, const sf::Vector2f& origin, const sas::GameplayAttributeList& values, float cryoDamageMultiplier)
 	{
 		World* world = context.owner.GetWorld();
 		if (!world)
@@ -240,7 +236,7 @@ namespace vega
 		const std::optional<sf::Vector2f> targetLocation = target
 			? std::optional<sf::Vector2f>{ target->GetActorLocation() }
 			: std::nullopt;
-		sf::Vector2f direction = context.owner.GetActorForwardDirection();
+		sf::Vector2f direction = ResolveAbilityAimDirection(context.owner);
 		if (targetLocation)
 		{
 			const sf::Vector2f offset = *targetLocation - origin;

@@ -171,7 +171,7 @@ namespace vega
 	{
 		if (Actor* owner = GetOwnerActor())
 		{
-			return owner->GetActorLocation() + owner->GetActorForwardDirection() * 15.f;
+			return owner->GetActorLocation() + ResolveOwnerAimDirection() * 15.f;
 		}
 		return GetActorLocation();
 	}
@@ -180,7 +180,7 @@ namespace vega
 	{
 		if (Actor* owner = GetOwnerActor())
 		{
-			return owner->GetActorForwardDirection();
+			return ResolveOwnerAimDirection();
 		}
 		return GetActorForwardDirection();
 	}

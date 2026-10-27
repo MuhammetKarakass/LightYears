@@ -5,6 +5,7 @@
 #include "widget/Panel.h"
 #include "widget/StackPanel.h"
 #include "widget/TextWidget.h"
+#include "presentation/hud/modules/HoloCanvas.h"
 
 namespace vega
 {
@@ -25,6 +26,7 @@ namespace vega
 			weak_ptr<TextWidget> input;
 			weak_ptr<ImageWidget> icon;
 			weak_ptr<TextWidget> state;
+			weak_ptr<HoloCanvas> timing;
 		};
 
 		shared_ptr<const AbilityBarViewModel> mViewModel;

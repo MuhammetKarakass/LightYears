@@ -444,7 +444,7 @@ namespace vega
 			Label(*root, in, heldEntry ? "HOLDING" : (!shown->cells.empty() ? "INSTALLED" : "CARGO"), 12, AccentDim, kHudFont);
 			if (shown->levelCount > 0) LabelRight(*root, { right, in.y - 2.f }, "LEVEL " + LevelText(*shown) + " / " + std::to_string(shown->levelCount), 13, InkMuted, kBodyFont);
 			const int cells = shown->cellCount > 0 ? shown->cellCount : static_cast<int>(shown->cells.size());
-			std::string detail = (shown->rarity.empty() ? std::string{} : shown->rarity + "  /  ") + shown->family + "  /  " + std::to_string(cells) + " cells";
+			std::string detail = (shown->rarity.empty() ? std::string{} : shown->rarity + "  /  ") + (shown->subKind.empty() ? shown->family : shown->category + "  /  " + shown->subKind) + "  /  " + std::to_string(cells) + " cells";
 			if (shown->sizeLadder.size() > 1)
 			{
 				detail += "  /  sizes ";
@@ -546,7 +546,8 @@ namespace vega
 			Label(*root, position + sf::Vector2f{ 26.f, hasDescription ? 7.f : 16.f }, Wrapped(Upper(item.name), 14, ModuleCardText::InventoryTextWidth, 1, kHudFont), 14, item.isSystem ? SystemGold : Ink, kHudFont);
 			if (hasDescription) Label(*root, position + sf::Vector2f{ 26.f, 28.f }, Wrapped(item.description, 13, ModuleCardText::InventoryTextWidth, 1), 13, InkMuted);
 			const float rowRight = position.x + InventoryWidth;
-			Label(*root, { rowRight - 270.f, position.y + 7.f }, Upper(item.family), 11, family, kHudFont);
+			Label(*root, { rowRight - 270.f, position.y + 7.f }, Upper(item.category.empty() ? item.family : item.category), 11, family, kHudFont);
+			if (!item.subKind.empty()) Label(*root, { rowRight - 270.f, position.y + 28.f }, item.subKind, 11, InkMuted);
 			if (item.levelCount > 0) LabelRight(*root, { position.x + InventoryWidth, position.y + 7.f }, "L" + LevelText(item), 11, InkMuted, kBodyFont);
 			if (item.sideFeatureState != ModuleSideFeatureViewState::None)
 				LabelRight(*root, { position.x + InventoryWidth, position.y + 29.f }, item.sideFeatureState == ModuleSideFeatureViewState::Active ? "+ SIDE" : (item.sideFeatureState == ModuleSideFeatureViewState::Locked ? "LOCKED" : "NO SIDE"), 10, item.sideFeatureState == ModuleSideFeatureViewState::Active ? Sync : InkMuted, kBodyFont);
@@ -591,7 +592,7 @@ namespace vega
 		if (!mViewModel) return options;
 		for (const ModuleEntryView& item : mViewModel->inventory)
 		{
-			const std::string value = column == 0 ? item.rarity : (column == 1 ? item.family : std::to_string(item.cellCount));
+			const std::string value = column == 0 ? item.rarity : (column == 1 ? (item.category.empty() ? item.family : item.category) : std::to_string(item.cellCount));
 			if (!value.empty() && std::find(options.begin(), options.end(), value) == options.end()) options.push_back(value);
 		}
 		if (column == 2) std::sort(options.begin() + 1, options.end(), [](const std::string& a, const std::string& b) { return std::stoi(a) < std::stoi(b); });
@@ -607,9 +608,9 @@ namespace vega
 		{
 			const ModuleEntryView& item = mViewModel->inventory[i];
 			if (!mFilters[0].empty() && item.rarity != mFilters[0]) continue;
-			if (!mFilters[1].empty() && item.family != mFilters[1]) continue;
+			if (!mFilters[1].empty() && (item.category.empty() ? item.family : item.category) != mFilters[1]) continue;
 			if (!mFilters[2].empty() && std::to_string(item.cellCount) != mFilters[2]) continue;
-			const std::string text = item.name + " " + item.abbreviation + " " + item.family + " " + item.rarity + " " + item.description + " " + item.sideFeatureName + " " + item.sideFeatureDescription;
+			const std::string text = item.category + " " + item.subKind + " " + item.name + " " + item.abbreviation + " " + item.family + " " + item.rarity + " " + item.description + " " + item.sideFeatureName + " " + item.sideFeatureDescription;
 			if (!query.empty() && Lower(text).find(query) == std::string::npos) continue;
 			mFilteredInventory.push_back(i);
 		}

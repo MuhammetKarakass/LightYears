@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/astralSurge/AstralSurgeAbility.h"
 #include "framework/MathUtility.h"
 
@@ -25,7 +26,7 @@ namespace vega
 		{
 			if (const World* world = owner.GetWorld(); world && world->GetApplication())
 			{
-				sf::Vector2f direction = world->GetMouseWorldPosition() -
+				sf::Vector2f direction = ResolveAbilityAimPoint(owner) -
 					owner.GetActorLocation();
 				if (GetVectorLength(direction) > 0.001f)
 				{

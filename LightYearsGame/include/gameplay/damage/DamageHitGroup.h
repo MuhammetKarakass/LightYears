@@ -1,4 +1,5 @@
 #pragma once
+#include "framework/GameplayTag.h"
 #include <cstdint>
 #include <set>
 
@@ -11,6 +12,7 @@ namespace vega
 		explicit DamageHitGroup(Kind value = Kind::AbilityUse) : kind{ value } {}
 		Kind kind;
 		float mainEffectMultiplier = 1.f;
+		GameplayTag damageTypeOverride;
 		std::set<std::pair<std::uint64_t, std::uint64_t>> consumedModuleRules;
 	};
 }

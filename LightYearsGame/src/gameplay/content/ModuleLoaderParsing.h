@@ -17,6 +17,7 @@ namespace vega::content
 	namespace module_loader_detail
 	{
 		using Json = JsonDocumentLoader::Json;
+		AbilityModuleRules ParseAbilityModuleRules(const Json& rules, const std::string& id);
 
 		float ParseFiniteFloat(const Json& value, const std::string& context);
 

@@ -101,6 +101,12 @@ namespace vega
 			const ModuleDefinition* module = rules.lookup ? rules.lookup(candidate.moduleId) : nullptr;
 			if (!module) return ModulePlacementFailure::UnknownModule;
 			if (!FindVariant(*module, candidate.variantIndex)) return ModulePlacementFailure::InvalidVariant;
+			if (module->abilityModule && module->abilityModule->elementCore)
+			{
+				const auto& elements = module->abilityModule->elementCore->elements;
+				if (std::find(elements.begin(), elements.end(), candidate.element) == elements.end()) return ModulePlacementFailure::InvalidElement;
+			}
+			else if (candidate.element.IsValid()) return ModulePlacementFailure::InvalidElement;
 			if ((module->abilityModule || module->unique) && (candidate.sideFeatureId.IsValid() || !candidate.rolledSideStats.empty())) return ModulePlacementFailure::InvalidSideFeature;
 			if (candidate.level < 1 || candidate.level > module->levelCount ||
 				!HasModuleRulePackageLevelCoverage(module->sizeVariants[static_cast<std::size_t>(candidate.variantIndex)], candidate.level))
@@ -203,6 +209,7 @@ namespace vega
 			case ModulePlacementFailure::FragmentationNotAllowed: return "cannot be split into fragments";
 			case ModulePlacementFailure::InvalidFragmentCells: return "has an invalid fragment layout";
 			case ModulePlacementFailure::FragmentedPlacement: return "is split into fragments; move its fragments instead";
+			case ModulePlacementFailure::InvalidElement: return "has an invalid stored element";
 			}
 			return "is invalid";
 		}

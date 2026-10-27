@@ -256,6 +256,7 @@ namespace vega
 			context.instance.GetResolvedDamageTags();
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags);
 		payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		payload.hitGroup = context.instance.GetDamageHitGroup();
 
 		const sas::GameplayEffectDefinition* stunDefinition =
 			EffectData::FindGameplayEffectDefinition(AbilityData::NullPulse::Effect::StunId);

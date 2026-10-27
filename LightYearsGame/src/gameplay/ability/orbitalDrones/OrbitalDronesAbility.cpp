@@ -321,11 +321,13 @@ namespace vega
 		);
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags();
-		const DamagePayload damagePayload = DamageTypeSystem::BuildPayload(
+		DamagePayload damagePayload = DamageTypeSystem::BuildPayload(
 			damageTags,
 			abilityValues
 		);
 
+		damagePayload.hitGroup = context.instance.GetDamageHitGroup();
+		damagePayload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 		mDrones.clear();
 		for (std::size_t droneIndex = 0; droneIndex < RequiredDroneCount; ++droneIndex)
 		{

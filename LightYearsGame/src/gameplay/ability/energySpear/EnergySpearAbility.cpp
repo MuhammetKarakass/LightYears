@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/energySpear/EnergySpearAbility.h"
 #include "framework/MathUtility.h"
 
@@ -53,7 +54,7 @@ namespace vega
 		{
 			if (const World* world = owner.GetWorld(); world && world->GetApplication())
 			{
-				sf::Vector2f direction = world->GetMouseWorldPosition() -
+				sf::Vector2f direction = ResolveAbilityAimPoint(owner) -
 					owner.GetActorLocation();
 				if (GetVectorLength(direction) > 0.001f)
 				{
@@ -452,7 +453,9 @@ namespace vega
 		);
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags();
-		const DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
+		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
+		payload.hitGroup = context.instance.GetDamageHitGroup();
+		payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
 
 		World* world = context.owner.GetWorld();
 		const EnergySpearPresentationProfile* profile =

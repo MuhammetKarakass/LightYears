@@ -3,6 +3,7 @@
 #include "framework/Core.h"
 #include "widget/UIViewModel.h"
 #include "abilities/AbilityHandle.h"
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include <SFML/Graphics/Color.hpp>
 #include <array>
 #include <cstdint>
@@ -21,12 +22,13 @@ namespace vega
 		AbilitySlotState state{ AbilitySlotState::Ready };
 		int cooldownTenths{ 0 };
 		std::string statsText;
+		AbilityTimingView timing;
 
 		bool operator==(const AbilitySlotViewData& other) const
 		{
 			return visible == other.visible && iconPath == other.iconPath && inputLabel == other.inputLabel &&
 				accentColor == other.accentColor && state == other.state && cooldownTenths == other.cooldownTenths &&
-				statsText == other.statsText;
+				statsText == other.statsText && timing == other.timing;
 		}
 		bool operator!=(const AbilitySlotViewData& other) const { return !(*this == other); }
 	};

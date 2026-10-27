@@ -166,6 +166,7 @@ namespace vega::content
 				);
 				for (const AbilityActorDefinition& actor : definition.actorDefinitions)
 				{
+					definition.definition.actorDefinitionIds.push_back(actor.actorDefinitionId);
 					if (!actorIds.insert(actor.actorDefinitionId.ToString()).second)
 					{
 						throw std::runtime_error(
@@ -173,6 +174,12 @@ namespace vega::content
 							actor.actorDefinitionId.ToString()
 						);
 					}
+				}
+				if (definition.definition.actorDefinitionIds.empty())
+				{
+					const Json* actorOwner = &ability;
+					while (!actorOwner->contains("actors") && actorOwner->contains("baseId")) actorOwner = sourceAbilities.at(actorOwner->at("baseId").get<std::string>());
+					if (actorOwner->contains("actors")) for (const auto& actor : actorOwner->at("actors")) definition.definition.actorDefinitionIds.emplace_back(actor.at("id").get<std::string>());
 				}
 				result.definitions.push_back(std::move(definition));
 			}

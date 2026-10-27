@@ -157,7 +157,8 @@ namespace vega
 			mIgniteStacksPerHit,
 			sas::ContentId{ context.definition.abilityId },
 			context.definition.abilityTags,
-			context.instance.GetResolvedDamageTags()
+			context.instance.GetResolvedDamageTags(),
+			context.instance.GetDamageHitGroup()
 		);
 		if (mCoordinator.expired())
 		{

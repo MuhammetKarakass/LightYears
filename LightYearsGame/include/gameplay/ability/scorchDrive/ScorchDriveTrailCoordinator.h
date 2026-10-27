@@ -13,16 +13,7 @@ namespace vega
 	class ScorchDriveTrailCoordinatorActor final : public Actor
 	{
 	public:
-		ScorchDriveTrailCoordinatorActor(
-			World* world,
-			Actor* owner,
-			float fireDamage,
-			int igniteStacksPerHit,
-			const sas::ContentId& sourceAbilityId,
-			const List<GameplayTag>& sourceAbilityTags,
-			const List<GameplayTag>& damageTags
-		);
-
+		ScorchDriveTrailCoordinatorActor(World* world, Actor* owner, float fireDamage, int igniteStacksPerHit, const sas::ContentId& sourceAbilityId, const List<GameplayTag>& sourceAbilityTags, const List<GameplayTag>& damageTags, std::shared_ptr<DamageHitGroup> hitGroup = {});
 		void Tick(float deltaTime) override;
 		void SetCastActive(bool active) { mCastActive = active; }
 		void AddSegment(const weak_ptr<ScorchDriveFireSegmentActor>& segment);
@@ -45,5 +36,6 @@ namespace vega
 		sas::ContentId mSourceAbilityId;
 		List<GameplayTag> mSourceAbilityTags;
 		List<GameplayTag> mDamageTags;
+		std::shared_ptr<DamageHitGroup> mHitGroup;
 	};
 }

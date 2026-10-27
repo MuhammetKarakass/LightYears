@@ -39,15 +39,7 @@ namespace vega::content
 					if (object.contains(forbidden)) throw std::runtime_error(context + " ability modules cannot declare " + forbidden);
 				definition.rarity = ModuleRarity::None;
 				definition.levelCount = 1; // Neutral internal placement level; no progression is exposed.
-				const Json& rules = object.at("abilityModule");
-				if (!rules.is_object()) throw std::runtime_error(context + " abilityModule must be an object");
-				for (const auto& field : rules.items())
-					if (field.key() != "mainEffectMultiplier" && field.key() != "cooldownMultiplier") throw std::runtime_error(context + " unknown abilityModule field " + field.key());
-				AbilityModuleRules values;
-				values.mainEffectMultiplier = ParseFiniteFloat(rules.at("mainEffectMultiplier"), context + " mainEffectMultiplier");
-				values.cooldownMultiplier = ParseFiniteFloat(rules.at("cooldownMultiplier"), context + " cooldownMultiplier");
-				if (values.mainEffectMultiplier <= 0.f || values.cooldownMultiplier <= 0.f) throw std::runtime_error(context + " ability multipliers must be positive");
-				definition.abilityModule = values;
+				definition.abilityModule = ParseAbilityModuleRules(object.at("abilityModule"), id);
 			}
 			else if (object.contains("abilityModule")) throw std::runtime_error(context + " abilityModule requires an ability module ID");
 			if (parsedId.unique)

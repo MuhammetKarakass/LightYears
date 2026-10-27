@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/seismicCharge/SeismicChargeAbility.h"
 #include "framework/MathUtility.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
@@ -87,7 +88,7 @@ namespace vega
 		AbilityExecutionContext executionContext{
 			&context.abilitySystem, &context.definition, nullptr, &context.instance
 		};
-		sf::Vector2f forward = context.owner.GetActorForwardDirection();
+		sf::Vector2f forward = ResolveAbilityAimDirection(context.owner);
 		if (GetVectorLength(forward) <= Epsilon)
 		{
 			forward = { 0.f, -1.f };

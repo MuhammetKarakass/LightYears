@@ -128,7 +128,11 @@ namespace vega
 			if (held && !mLoadoutKeyHeld[index]) mLoadoutKeySecond[index] = control && mTwinRackEnabled;
 			mLoadoutKeyHeld[index] = held;
 			SetAbilitySlotInput(slot, held && !mLoadoutKeySecond[index]);
-			if (auto* second = GetSecondAbility(slot)) second->SetInputHeld(held && mLoadoutKeySecond[index] && mTwinRackEnabled);
+			if (auto* second = GetSecondAbility(slot))
+			{
+				const bool secondHeld = held && mLoadoutKeySecond[index] && mTwinRackEnabled;
+				if (!mActivationPolicy.HandleInput(*second, secondHeld)) { if (secondHeld && !second->IsInputHeld()) second->SetActivationAim(std::nullopt); second->SetInputHeld(secondHeld); }
+			}
 		});
 	}
 
@@ -324,16 +328,17 @@ namespace vega
 		return !mModuleSystemGate || mModuleSystemGate->IsModuleSystemEnabled(systemTag);
 	}
 
-	float LightYearsAbilitySystemComponent::GetAbilityMainEffectGroupMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const
+	float LightYearsAbilitySystemComponent::GetAbilityMainEffectGroupMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle, float activationMultiplier) const
 	{
-		if (!mModuleSystemGate || !sas::IsLoadoutAbilitySlot(definition.slot)) return 1.f;
-		return ResolveMainEffectMultiplier({ mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags), mModuleSystemGate->GetAbilitySlotMainEffectMultiplier(definition.slot), mModuleSystemGate->GetPrimedArsenalMultiplier(handle), mModuleSystemGate->GetAbilitySetMainEffectMultiplier(handle) });
+		if (!sas::IsLoadoutAbilitySlot(definition.slot)) return 1.f;
+		if (!mModuleSystemGate) return activationMultiplier;
+		return ResolveMainEffectMultiplier({ mModuleSystemGate->GetAbilityMainEffectMultiplier(definition.abilityTags), mModuleSystemGate->GetAbilitySlotMainEffectMultiplier(definition.slot), mModuleSystemGate->GetPrimedArsenalMultiplier(handle), mModuleSystemGate->GetAbilitySetMainEffectMultiplier(handle), activationMultiplier });
 	}
 
-	float LightYearsAbilitySystemComponent::GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const
+	float LightYearsAbilitySystemComponent::GetAbilityMainEffectMultiplier(const GameAbilityDefinition& definition, sas::AbilityHandle handle, float activationMultiplier) const
 	{
 		const float general = mModuleSystemGate && sas::IsLoadoutAbilitySlot(definition.slot) ? mModuleSystemGate->GetAbilityGeneralEffectMultiplier(definition.abilityTags) : 1.f;
-		return GetAbilityMainEffectGroupMultiplier(definition, handle) * general;
+		return GetAbilityMainEffectGroupMultiplier(definition, handle, activationMultiplier) * general;
 	}
 
 	float LightYearsAbilitySystemComponent::GetPrimedArsenalBonus(const GameAbilityDefinition& definition, sas::AbilityHandle handle) const
@@ -430,13 +435,15 @@ namespace vega
 		});
 	}
 
-	void LightYearsAbilitySystemComponent::SetAbilitySlotInput(
-		sas::AbilitySlot slot,
-		bool inputHeld
-	)
+	void LightYearsAbilitySystemComponent::SetAbilitySlotInput(sas::AbilitySlot slot, bool inputHeld)
 	{
 		return RunOperation([&]()
 		{
+			if (auto* ability = GetAbility(slot))
+			{
+				if (mActivationPolicy.HandleInput(*ability, inputHeld)) return;
+				if (inputHeld && !ability->IsInputHeld()) ability->SetActivationAim(std::nullopt);
+			}
 			sas::AbilitySystemComponent::SetAbilitySlotInput(slot, inputHeld);
 			mAbilityInvocationRuntime.SetControlInput(slot, inputHeld);
 		});
@@ -449,6 +456,7 @@ namespace vega
 		{
 			mTicking = true;
 			struct TickScope { bool& ticking; ~TickScope() { ticking = false; } } scope{ mTicking };
+			mActivationPolicy.AdvanceDamageTime(deltaTime);
 			// Effects are ticked before abilities by the generic runtime. Cancel any
 			// ability that was already stunned on the previous frame, then let the
 			// ability tick guard handle a stun applied during this frame's effect pass.
@@ -460,6 +468,8 @@ namespace vega
 				if (ability) ability->Tick(deltaTime);
 				if (IsClearPending()) return;
 			}
+			mActivationPolicy.Tick(deltaTime);
+			if (IsClearPending()) return;
 			mAbilityInvocationRuntime.Tick(deltaTime);
 			CancelActiveAbilitiesForStun();
 		});
@@ -478,6 +488,8 @@ namespace vega
 			catch (...) { if (!error) error = std::current_exception(); }
 			if (!ability->IsActive() && !ability->HasPendingCleanup()) ability.reset();
 		}
+		mActivationPolicy.Clear();
+		mExecutionAim.reset();
 		mLoadoutKeyHeld.fill(false);
 		mLoadoutKeySecond.fill(false);
 		mAbilityUseHistory.Clear();
@@ -1008,9 +1020,7 @@ namespace vega
 		}
 	}
 
-	void LightYearsAbilitySystemComponent::RecordAbilityActivation(
-		const sas::AbilityLifecycleEvent& event
-	)
+	void LightYearsAbilitySystemComponent::RecordAbilityActivation(const sas::AbilityLifecycleEvent& event)
 	{
 		if (event.eventTag != GameplayTags::Event::Ability::Activated ||
 			event.activationOrigin != sas::AbilityActivationOrigin::NormalInput ||
@@ -1042,6 +1052,8 @@ namespace vega
 		record.maxLevel = ability->GetMaxLevel();
 		record.mainEffectMultiplier = definition.mainEffectMultiplier;
 		record.primedMainEffectBonus = definition.primedMainEffectBonus;
+		record.activationModifiersCaptured = definition.activationModifiersCaptured;
+		record.damageTypeOverride = definition.damageTypeOverride;
 		record.mainEffectGroupMultiplier = ability->GetDamageHitGroup() ? ability->GetDamageHitGroup()->mainEffectMultiplier : 1.f;
 		record.abilityTags = definition.abilityTags;
 		record.unlockedUpgradeIds = definition.unlockedUpgradeIds;

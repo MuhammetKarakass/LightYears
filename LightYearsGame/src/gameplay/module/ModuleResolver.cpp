@@ -633,7 +633,7 @@ namespace vega
 				if (module->abilityModule && system.IsValid())
 				{
 					const auto slot = AbilitySlotForModuleSystem(system);
-					effects.abilityModules.push_back({ slot, *module->abilityModule });
+					effects.abilityModules.push_back({ slot, *module->abilityModule, placement.instanceId, placement.element });
 				}
 			}
 			// Layout-dependent damage rules read the installed layout once: empty-cell scaling and the ability-slot gate.

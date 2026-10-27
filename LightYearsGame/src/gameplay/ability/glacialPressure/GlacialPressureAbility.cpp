@@ -534,6 +534,7 @@ namespace vega
 				segment.cryoStacks
 			);
 			payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		payload.hitGroup = context.instance.GetDamageHitGroup();
 			ApplyCombatDamage(
 				*target,
 				finalInitialDamage,
@@ -718,12 +719,7 @@ namespace vega
 		}
 	}
 
-	void GlacialPressureAbility::ResolveCollision(
-		GameAbilityBehaviorContext& context,
-		PushState& movingState,
-		SpaceShip& movingTarget,
-		SpaceShip& collidedTarget
-	)
+	void GlacialPressureAbility::ResolveCollision(GameAbilityBehaviorContext& context, PushState& movingState, SpaceShip& movingTarget, SpaceShip& collidedTarget)
 	{
 		PushState* collidedState = FindPushState(&collidedTarget);
 		const int cryoStacks = ResolveActiveCryoStacks(movingTarget);
@@ -789,7 +785,9 @@ namespace vega
 			cryoStacks
 		);
 		sourcePayload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		sourcePayload.hitGroup = context.instance.GetDamageHitGroup();
 		transferPayload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		transferPayload.hitGroup = context.instance.GetDamageHitGroup();
 		SpaceShip* owner = dynamic_cast<SpaceShip*>(&context.owner);
 		if (!owner)
 		{

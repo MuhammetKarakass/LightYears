@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/crystalBarricade/CrystalBarricadeAbility.h"
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
@@ -44,11 +45,11 @@ namespace vega
 			return false;
 		}
 
-		const sf::Vector2f location = world->GetMouseWorldPosition();
+		const sf::Vector2f location = ResolveAbilityAimPoint(context.owner);
 		sf::Vector2f ownerToCursor = location - context.owner.GetActorLocation();
 		if (GetVectorLength(ownerToCursor) <= 0.001f)
 		{
-			ownerToCursor = context.owner.GetActorForwardDirection();
+			ownerToCursor = ResolveAbilityAimDirection(context.owner);
 		}
 		else
 		{

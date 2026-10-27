@@ -48,7 +48,8 @@ namespace vega
 		ModuleConflict,
 		FragmentationNotAllowed,
 		InvalidFragmentCells,
-		FragmentedPlacement
+		FragmentedPlacement,
+		InvalidElement
 	};
 
 	namespace ModulePlacementRules

@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/combatSentry/CombatSentryAbility.h"
 #include "framework/MathUtility.h"
 
@@ -75,11 +76,11 @@ namespace vega
 			return false;
 		}
 
-		const sf::Vector2f location = world->GetMouseWorldPosition();
+		const sf::Vector2f location = ResolveAbilityAimPoint(context.owner);
 		sf::Vector2f direction = location - context.owner.GetActorLocation();
 		if (GetVectorLength(direction) <= 0.001f)
 		{
-			direction = context.owner.GetActorForwardDirection();
+			direction = ResolveAbilityAimDirection(context.owner);
 		}
 		else
 		{

@@ -345,6 +345,7 @@ namespace vega
 			const bool innerZone = distance <= innerRange;
 			DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
 			payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		payload.hitGroup = context.instance.GetDamageHitGroup();
 			payload.igniteStacks = innerZone ? innerIgniteStacks : outerIgniteStacks;
 			ApplyCombatDamage(
 				*target,

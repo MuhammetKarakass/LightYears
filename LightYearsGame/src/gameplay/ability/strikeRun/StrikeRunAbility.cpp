@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/strikeRun/StrikeRunAbility.h"
 #include "framework/MathUtility.h"
 
@@ -207,7 +208,7 @@ namespace vega
 		}
 
 		const sf::Vector2f ownerLocation = context.owner.GetActorLocation();
-		const sf::Vector2f cursorLocation = world->GetMouseWorldPosition();
+		const sf::Vector2f cursorLocation = ResolveAbilityAimPoint(context.owner);
 		const sf::Vector2f toCursor = cursorLocation - ownerLocation;
 		const float cursorDistance = GetVectorLength(toCursor);
 		const sf::Vector2f anchorDirection = NormalizeOrDefault(
@@ -274,7 +275,7 @@ namespace vega
 		}
 
 		const sf::Vector2f direction = NormalizeOrDefault(
-			context.owner.GetWorld()->GetMouseWorldPosition() -
+			ResolveAbilityAimPoint(context.owner) -
 				actor->GetActorLocation(),
 			actor->GetDirection()
 		);
@@ -362,9 +363,7 @@ namespace vega
 		context.abilitySystem.HandleGameplayEvent(event);
 	}
 
-	void StrikeRunAbility::UpdatePreviewDirection(
-		GameAbilityBehaviorContext& context
-	) const
+	void StrikeRunAbility::UpdatePreviewDirection(GameAbilityBehaviorContext& context) const
 	{
 		const shared_ptr<StrikeRunBombardmentActor> actor = mBombardmentActor.lock();
 		if (!actor || !context.owner.GetWorld())
@@ -373,7 +372,7 @@ namespace vega
 		}
 		actor->SetPreviewDirection(
 			NormalizeOrDefault(
-				context.owner.GetWorld()->GetMouseWorldPosition() -
+				ResolveAbilityAimPoint(context.owner) -
 					actor->GetActorLocation(),
 				actor->GetDirection()
 			)

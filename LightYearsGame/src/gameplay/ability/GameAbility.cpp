@@ -4,6 +4,7 @@
 #include <type_traits>
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/AbilityHaste.h"
+#include "gameplay/ability/runtime/MainEffectMultiplier.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -93,6 +94,25 @@ namespace vega
 		});
 	}
 
+	float GameAbility::ResolveAutocastRange(float dataRange) const
+	{
+		GameAbilityBehaviorContext context{ mAbilitySystem, const_cast<GameAbility&>(*this), mAbilitySystem.GetOwner(), mDefinition };
+		return mBehavior ? mBehavior->ResolveAutocastRange(context, dataRange) : dataRange;
+	}
+
+	bool GameAbility::CanActivateNow() const
+	{
+		return !IsActive() && !HasPendingCleanup() && mRuntimeState.CanActivate(mDefinition.maxCharges) && CanActivateContent() && mAbilitySystem.EvaluateAbilityActivation(BuildLifecycleEvent(GameplayTags::Event::Ability::Activated, sas::AbilityEndReason::Completed));
+	}
+
+	bool GameAbility::TryActivateWithInput(bool held)
+	{
+		SetInputHeld(held);
+		const bool activated = TryActivate();
+		mRuntimeState.CommitInputFrame();
+		return activated;
+	}
+
 	bool GameAbility::CanActivateContent() const
 	{
 		// Standard locks are checked here so every current and future game ability
@@ -139,16 +159,31 @@ namespace vega
 			return false;
 		}
 
-		// A Primed replay retains its original power. Other invocations keep the existing module-resolution behavior.
-		if (mActivationOrigin == sas::AbilityActivationOrigin::NormalInput || mDefinition.primedMainEffectBonus == 0.f)
+		if (mActivationOrigin == sas::AbilityActivationOrigin::NormalInput)
 		{
-			mDefinition.mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectMultiplier(mDefinition, GetHandle());
-			mDamageHitGroup->mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectGroupMultiplier(mDefinition, GetHandle());
+			mDefinition.activationModifiersCaptured = mAbilitySystem.GetActivationPolicy().HasConfiguration(GetRuntimeSlot()) || mNextActivationModifiers.has_value();
+			mDefinition.damageTypeOverride = mAbilitySystem.GetActivationPolicy().GetDamageType(GetRuntimeSlot());
+		}
+		auto modifiers = mAbilitySystem.GetActivationPolicy().PrepareActivation(*this);
+		if (mNextActivationModifiers)
+		{
+			modifiers.mainEffectMultiplier = ResolveMainEffectMultiplier({ modifiers.mainEffectMultiplier, mNextActivationModifiers->mainEffectMultiplier });
+			modifiers.cooldownMultiplier *= mNextActivationModifiers->cooldownMultiplier;
+			mNextActivationModifiers.reset();
+		}
+		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
+		mDamageHitGroup->damageTypeOverride = mDefinition.damageTypeOverride;
+
+		// Recorded invocations retain explicit activation-policy snapshots and Primed power.
+		if (mActivationOrigin == sas::AbilityActivationOrigin::NormalInput || (mDefinition.primedMainEffectBonus == 0.f && !mDefinition.activationModifiersCaptured))
+		{
+			mDefinition.mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectMultiplier(mDefinition, GetHandle(), modifiers.mainEffectMultiplier);
+			mDamageHitGroup->mainEffectMultiplier = mAbilitySystem.GetAbilityMainEffectGroupMultiplier(mDefinition, GetHandle(), modifiers.mainEffectMultiplier);
 			mDefinition.mainEffectGroupMultiplier = mDamageHitGroup->mainEffectMultiplier;
 			mDefinition.primedMainEffectBonus = mAbilitySystem.GetPrimedArsenalBonus(mDefinition, GetHandle());
 		}
 		else mDamageHitGroup->mainEffectMultiplier = mDefinition.mainEffectGroupMultiplier;
-		mAbilityModuleCooldownMultiplierSnapshot = mAbilitySystem.GetAbilityModuleCooldownMultiplier(mDefinition);
+		mAbilityModuleCooldownMultiplierSnapshot = mAbilitySystem.GetAbilityModuleCooldownMultiplier(mDefinition) * modifiers.cooldownMultiplier;
 
 		GameAbilityBehaviorContext behaviorContext{
 			mAbilitySystem,
@@ -168,6 +203,7 @@ namespace vega
 
 	void GameAbility::OnActivationCommitted()
 	{
+		mAbilitySystem.GetActivationPolicy().CommitActivation(*this);
 		if (mActivationOrigin == sas::AbilityActivationOrigin::NormalInput) mAbilitySystem.CommitPrimedArsenalUse(GetHandle());
 		mAbilitySystem.HandleAbilityLifecycleEvent(BuildLifecycleEvent(
 			GameplayTags::Event::Ability::Activated, sas::AbilityEndReason::Completed));
@@ -181,6 +217,7 @@ namespace vega
 
 	void GameAbility::BeginExecution()
 	{
+		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		AbilityExecutionContext context{
 			&mAbilitySystem,
 			&mDefinition,
@@ -193,6 +230,7 @@ namespace vega
 
 	void GameAbility::TickExecution(float deltaTime)
 	{
+		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		const bool primaryWeaponUnavailable = mDefinition.slot == sas::AbilitySlot::PrimaryFire &&
 			!mAbilitySystem.IsModuleSystemEnabled(GameplayTags::Module::System::PrimaryWeapon);
 		const bool loadoutAbilityUnavailable =
@@ -235,6 +273,7 @@ namespace vega
 
 	void GameAbility::EndExecution(sas::AbilityEndReason reason)
 	{
+		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		AbilityExecutionContext context{
 			&mAbilitySystem,
 			&mDefinition,
@@ -257,6 +296,7 @@ namespace vega
 
 	void GameAbility::EndContent(sas::AbilityEndReason reason)
 	{
+		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		mDeferActiveDurationStart = false;
 		std::exception_ptr error;
 		try { EndBehavior(reason); }
@@ -309,6 +349,7 @@ namespace vega
 
 	bool GameAbility::HandleInputPressed()
 	{
+		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		if (!mBehavior || !IsActive())
 		{
 			return false;
@@ -441,6 +482,7 @@ namespace vega
 
 	float GameAbility::ResolveActiveDuration() const
 	{
+		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		const float leveledDuration = sas::CalculateModifiedAttributeValue(
 			sas::GameplayAttribute{ CommonAttributeIds::Duration, mDefinition.duration, 0.f },
 			mDefinition.attributeModifiers
@@ -623,11 +665,13 @@ namespace vega
 	GameAbilityDefinition GameAbility::BuildDefinitionForLevel(int level) const
 	{
 		GameAbilityDefinition definition = mBaseDefinition;
-		if (IsActive() && mDefinition.primedMainEffectBonus > 0.f)
+		if (IsActive() && (mDefinition.primedMainEffectBonus > 0.f || mDefinition.activationModifiersCaptured))
 		{
 			definition.mainEffectMultiplier = mDefinition.mainEffectMultiplier;
 			definition.mainEffectGroupMultiplier = mDefinition.mainEffectGroupMultiplier;
 			definition.primedMainEffectBonus = mDefinition.primedMainEffectBonus;
+			definition.activationModifiersCaptured = mDefinition.activationModifiersCaptured;
+			definition.damageTypeOverride = mDefinition.damageTypeOverride;
 		}
 
 		const int stepsToApply = std::max(

@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/actions/FireWeaponActionRuntime.h"
 
@@ -133,7 +134,7 @@ namespace vega
 			{
 				return std::nullopt;
 			}
-			return world->GetMouseWorldPosition();
+			return ResolveAbilityAimPoint(owner);
 		}
 
 		// The mount shape applies to the Primary fire only; abilities that fire weapons keep the plain forward shot.

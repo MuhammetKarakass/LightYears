@@ -1,3 +1,4 @@
+#include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/ability/frostMaelstrom/FrostMaelstromAbility.h"
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -183,7 +184,7 @@ namespace vega
 			nullptr,
 			&context.instance
 		};
-		const sf::Vector2f direction = context.owner.GetActorForwardDirection();
+		const sf::Vector2f direction = ResolveAbilityAimDirection(context.owner);
 		const weak_ptr<AbilityWorldActor> spawned =
 			AbilityActorSpawner::SpawnAtLocation(
 				AbilityData::FrostMaelstrom::Actor::Field::BasicDefinitionId,

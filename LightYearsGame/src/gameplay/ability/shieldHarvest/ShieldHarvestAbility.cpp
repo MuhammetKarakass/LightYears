@@ -288,10 +288,7 @@ namespace
 		return true;
 	}
 
-	void ShieldHarvestAbility::Tick(
-		GameAbilityBehaviorContext& context,
-		float deltaTime
-	)
+	void ShieldHarvestAbility::Tick(GameAbilityBehaviorContext& context, float deltaTime)
 	{
 		if (mHarvested)
 		{
@@ -351,6 +348,7 @@ namespace
 		std::size_t harvestedCount = 0;
 		DamagePayload payload;
 		payload.mainEffectMultiplier = context.definition.mainEffectGroupMultiplier;
+		payload.hitGroup = context.instance.GetDamageHitGroup();
 		for (const shared_ptr<Actor>& target : targets)
 		{
 			if (!target || target->GetIsPendingDestroy())

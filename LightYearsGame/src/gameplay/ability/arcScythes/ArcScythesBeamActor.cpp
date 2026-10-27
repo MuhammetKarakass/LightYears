@@ -267,7 +267,7 @@ namespace vega
 			return;
 		}
 
-		sf::Vector2f forward = owner->GetActorForwardDirection();
+		sf::Vector2f forward = ResolveOwnerAimDirection();
 		if (GetVectorLength(forward) <= 0.001f)
 		{
 			forward = { 0.f, -1.f };
@@ -337,7 +337,7 @@ namespace vega
 		{
 			return;
 		}
-		sf::Vector2f forward = owner->GetActorForwardDirection();
+		sf::Vector2f forward = ResolveOwnerAimDirection();
 		if (GetVectorLength(forward) <= 0.001f)
 		{
 			forward = { 0.f, -1.f };

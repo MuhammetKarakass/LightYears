@@ -38,6 +38,8 @@ namespace vega
 		float mainEffectMultiplier = 1.f;
 		float mainEffectGroupMultiplier = 1.f;
 		float primedMainEffectBonus = 0.f;
+		bool activationModifiersCaptured = false;
+		GameplayTag damageTypeOverride;
 		List<GameplayTag> abilityTags;
 		List<std::string> unlockedUpgradeIds;
 		List<AbilityScalingChannel> scalingChannels;

@@ -552,7 +552,19 @@ namespace vega
 						}
 						if (definition.abilityModule)
 						{
-							for (int slot = 0; slot < 4; ++slot) mModuleLoadout.AddToInventory(*rules, definition, static_cast<int>(variant), definition.rarity, 1);
+							if (definition.abilityModule->elementCore)
+							{
+								for (const auto& element : definition.abilityModule->elementCore->elements)
+								{
+									const auto id = mModuleLoadout.AddToInventory(*rules, definition, static_cast<int>(variant), definition.rarity, 1);
+									mModuleLoadout.SetInventoryElement(*rules, id, element);
+								}
+							}
+							else
+							{
+								const int copies = definition.abilityModule->timing || definition.abilityModule->autocast || definition.abilityModule->fortune ? 1 : 4;
+								for (int copy = 0; copy < copies; ++copy) mModuleLoadout.AddToInventory(*rules, definition, static_cast<int>(variant), definition.rarity, 1);
+							}
 							continue;
 						}
 						if (definition.rarity == ModuleRarity::Common)
