@@ -183,6 +183,7 @@ namespace vega
 			{
 				const GameAbilityDefinition& definition = ability->GetDefinition();
 				projected.visible = true;
+				projected.evolvePending = ability->GetPendingEvolve().tierLevel != 0;
 				projected.iconPath = definition.iconPath;
 				projected.inputLabel = (index < 4 ? "" : "Ctrl+") + std::string{ AbilityInputSchema::GetLabel(slot) };
 				projected.accentColor = definition.accentColor;

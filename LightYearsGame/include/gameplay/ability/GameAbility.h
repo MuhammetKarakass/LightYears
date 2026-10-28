@@ -8,6 +8,7 @@
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
+#include "gameplay/ability/content/AbilityEvolveRules.h"
 #include "gameplay/ability/AbilityActivationPolicy.h"
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
@@ -91,6 +92,9 @@ namespace vega
 	class GameAbility: public sas::GameplayAbilityInstance<GameAbilityDefinition,GameAbilityExecution>
 	{
 	public:
+		PendingAbilityEvolve GetPendingEvolve() const { return QueryPendingAbilityEvolve(mBaseDefinition.evolveContent.get(), GetLevel(), mEvolveSelection); }
+		const List<std::string>& GetEvolveSelection() const { return mEvolveSelection; }
+		bool HasEvolve(const std::string& id) const { return std::find(mDefinition.activeEvolveIds.begin(), mDefinition.activeEvolveIds.end(), id) != mDefinition.activeEvolveIds.end(); }
 		bool CanActivateNow() const;
 		float ResolveAutocastRange(float dataRange) const;
 		bool TryActivateWithInput(bool held);
@@ -148,6 +152,9 @@ namespace vega
 	private:
 		friend class LightYearsAbilitySystemComponent;
 		friend class GameAbilityActionExecutor;
+		bool SetEvolveSelection(List<std::string> selection, std::string* failureReason, void (*commitSink)(void*) noexcept = nullptr, void* commitContext = nullptr);
+		List<std::string> mEvolveSelection;
+		const List<std::string>* mPreparingEvolveSelection = nullptr;
 		std::optional<AbilityActivationModifiers> mNextActivationModifiers;
 		std::optional<AbilityAimOverride> mActivationAim;
 		std::shared_ptr<DamageHitGroup> mDamageHitGroup;

@@ -131,7 +131,8 @@ namespace vega
 		if (definition.damageTags.size() != 1 || definition.damageTags.front() != DamageTypeSchema::Kinetic ||
 			definition.scalingRules.size() != 1 ||
 			definition.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
-			definition.scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
+			(definition.scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower &&
+				(definition.activeEvolveIds.empty() || definition.scalingRules.front().sourceAttributeId != OwnerAttributeIds::EnergyPower)) ||
 			definition.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
 			!std::isfinite(definition.scalingRules.front().coefficient) ||
 			definition.scalingRules.front().coefficient <= 0.f)

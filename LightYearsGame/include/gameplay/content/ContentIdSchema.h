@@ -36,6 +36,20 @@ namespace vega::content
 	class ContentIdSchema final
 	{
 	public:
+		static bool ValidateAbilityEvolveId(const std::string& id, std::string* failureReason = nullptr)
+		{
+			return (IsCanonical(id) && id.rfind("Ability.Evolve.", 0) == 0 && !SegmentAt(id, 2).empty() && !SegmentAt(id, 3).empty() && SegmentAt(id, 4).empty()) ||
+				Fail(failureReason, "Evolve ID must use Ability.Evolve.<AbilityFamily>.<Name>.");
+		}
+
+		static bool ParseAbilityEvolveId(const std::string& id, ParsedFamilyRoleId& parsed, std::string* failureReason = nullptr)
+		{
+			if (!ValidateAbilityEvolveId(id, failureReason)) return false;
+			parsed.family = SegmentAt(id, 2);
+			parsed.role = SegmentAt(id, 3);
+			return true;
+		}
+
 		static bool ValidateContentId(
 			const std::string& id,
 			std::string* failureReason = nullptr

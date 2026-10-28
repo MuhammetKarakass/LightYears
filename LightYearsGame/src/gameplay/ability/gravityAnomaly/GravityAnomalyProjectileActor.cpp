@@ -356,7 +356,7 @@ namespace vega
 		mHasSpawnedField = true;
 
 		Actor* owner = GetOwnerActor();
-		const AbilityActorDefinition* definition = AbilityData::FindAbilityActorDefinition(
+		const AbilityActorDefinition* definition = FindCapturedActorDefinition(
 			std::string{ AbilityData::GravityAnomaly::Actor::Field::BasicDefinitionId }
 		);
 		if (!owner || !definition)
@@ -368,6 +368,7 @@ namespace vega
 		);
 		if (const shared_ptr<AbilityWorldActor> field = spawnedField.lock())
 		{
+			field->CaptureAbilityConfiguration(GetCapturedAbilityConfiguration());
 			field->SetActorLocation(mResolvedTargetLocation);
 			field->SetActorRotation(GetActorRotation());
 			field->SetLifeTime(mFieldDuration);
@@ -397,6 +398,7 @@ namespace vega
 			);
 		if (const shared_ptr<GravityAnomalyProjectileActor> spawned = clone.lock())
 		{
+			spawned->CaptureAbilityConfiguration(GetCapturedAbilityConfiguration());
 			spawned->SetRelayLaunchDirection(request.direction);
 			spawned->ConfigureRelayClone(request);
 			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);

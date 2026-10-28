@@ -310,11 +310,7 @@ namespace vega::content::ability_loader_detail
 			return nullptr;
 		}
 
-		AbilityActorDefinition ParseActor(
-			const Json& object,
-			const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
-			const std::map<std::string, sas::GameplayAttributeList>& attributeProfiles
-		)
+		AbilityActorDefinition ParseActor( const Json& object, const List<const AbilityActorDefinition*>& fallbackActorDefinitions, const std::map<std::string, sas::GameplayAttributeList>& attributeProfiles )
 		{
 			const std::string actorDefinitionId = RequiredString(object, "id");
 			std::string actorIdFailure;
@@ -356,6 +352,7 @@ namespace vega::content::ability_loader_detail
 			}
 
 			AbilityActorDefinition definition = *fallback;
+			if (object.contains("presentationProfileId")) definition.presentationProfileId = sas::ContentId{ RequiredString(object, "presentationProfileId") };
 			definition.actorDefinitionId = sas::ContentId{ actorDefinitionId };
 			// The C++ record supplies the actor type/presentation skeleton only.
 			// Runtime numeric values must come from the authoritative JSON record.
@@ -419,12 +416,7 @@ namespace vega::content::ability_loader_detail
 			return definition;
 		}
 
-		AbilityLoader::LoadedDefinition ParseAbilityImpl(
-			const Json& object,
-			const List<const GameAbilityDefinition*>& fallbackDefinitions,
-			const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
-			const std::string& fallbackAbilityId
-		)
+		AbilityLoader::LoadedDefinition ParseAbilityImpl( const Json& object, const List<const GameAbilityDefinition*>& fallbackDefinitions, const List<const AbilityActorDefinition*>& fallbackActorDefinitions, const std::string& fallbackAbilityId, bool replaceActors )
 		{
 			const std::string abilityId = RequiredString(object, "id");
 			AbilityLoader::LoadedDefinition loaded = MaterializeAbilityDefinition(
@@ -432,6 +424,26 @@ namespace vega::content::ability_loader_detail
 				fallbackAbilityId,
 				fallbackDefinitions
 			);
+			if (object.contains("behaviorId"))
+			{
+				const std::string name = RequiredString(object, "behaviorId");
+				const auto type = ParseAbilityBehaviorType(name);
+				if (!type) throw std::runtime_error("Unknown ability behaviorId '" + name + "'");
+				if (*type != loaded.definition.behaviorType)
+				{
+					for (const auto* candidate : fallbackDefinitions)
+					{
+						if (!candidate || candidate->behaviorType != *type) continue;
+						loaded.definition.actions = candidate->actions;
+						loaded.definition.triggers = candidate->triggers;
+						loaded.definition.activationPolicy = candidate->activationPolicy;
+						loaded.definition.lifetimePolicy = candidate->lifetimePolicy;
+						loaded.definition.cooldownStartPolicy = candidate->cooldownStartPolicy;
+						break;
+					}
+					loaded.definition.behaviorType = *type;
+				}
+			}
 			for (const char* requiredField : { "cooldown", "duration", "maxCharges" })
 			{
 				if (!object.contains(requiredField) || !object.at(requiredField).is_number())
@@ -635,6 +647,23 @@ namespace vega::content::ability_loader_detail
 				));
 			}
 
+			// Registered actor lists can replace delivery without changing ability identity.
+			if (replaceActors)
+			{
+				std::map<std::string, sas::ContentId> replacements;
+				for (auto& action : loaded.definition.actions)
+				{
+					auto* spawn = std::get_if<SpawnActorAction>(&action.action);
+					if (!spawn) continue;
+					const std::string oldId = spawn->actorDefinitionId.ToString();
+					if (!replacements.count(oldId))
+					{
+						if (replacements.size() >= loaded.actorDefinitions.size()) throw std::runtime_error("Replacement actors must cover each spawn action actor");
+						replacements.emplace(oldId, loaded.actorDefinitions[replacements.size()].actorDefinitionId);
+					}
+					spawn->actorDefinitionId = replacements.at(oldId);
+				}
+			}
 			return loaded;
 		}
 	}
@@ -644,13 +673,8 @@ namespace vega::content::ability_loader_detail
 		return ReadRequiredString(object, fieldName);
 	}
 
-	AbilityLoader::LoadedDefinition ParseAbility(
-		const Json& object,
-		const List<const GameAbilityDefinition*>& fallbackDefinitions,
-		const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
-		const std::string& fallbackAbilityId
-	)
+	AbilityLoader::LoadedDefinition ParseAbility( const Json& object, const List<const GameAbilityDefinition*>& fallbackDefinitions, const List<const AbilityActorDefinition*>& fallbackActorDefinitions, const std::string& fallbackAbilityId, bool replaceActors )
 	{
-		return ParseAbilityImpl(object, fallbackDefinitions, fallbackActorDefinitions, fallbackAbilityId);
+		return ParseAbilityImpl(object, fallbackDefinitions, fallbackActorDefinitions, fallbackAbilityId, replaceActors);
 	}
 }

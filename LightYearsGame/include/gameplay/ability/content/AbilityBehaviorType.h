@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+#include <string>
 
 namespace vega
 {
@@ -129,5 +131,15 @@ namespace vega
 		case AbilityBehaviorType::ReclaimerProtocol: return "ReclaimerProtocol";
 		}
 		return "Unknown";
+	}
+
+	inline std::optional<AbilityBehaviorType> ParseAbilityBehaviorType(const std::string& name)
+	{
+		for (int value = 0; value <= static_cast<int>(AbilityBehaviorType::ReclaimerProtocol); ++value)
+		{
+			const auto type = static_cast<AbilityBehaviorType>(value);
+			if (name == ToString(type)) return type;
+		}
+		return std::nullopt;
 	}
 }

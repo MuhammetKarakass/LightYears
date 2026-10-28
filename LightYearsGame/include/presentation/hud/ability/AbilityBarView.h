@@ -27,6 +27,7 @@ namespace vega
 			weak_ptr<ImageWidget> icon;
 			weak_ptr<TextWidget> state;
 			weak_ptr<HoloCanvas> timing;
+			weak_ptr<TextWidget> evolve;
 		};
 
 		shared_ptr<const AbilityBarViewModel> mViewModel;

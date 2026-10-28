@@ -13,10 +13,14 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <optional>
+#include <memory>
+#include <map>
 #include <string>
 
 namespace vega
 {
+	struct AbilityEvolveContent;
+	struct AbilityConfigurationContent;
 	struct AbilityEffectSpecDefinition
 	{
 		sas::ContentId effectId;
@@ -29,6 +33,10 @@ namespace vega
 
 	struct GameAbilityDefinition : sas::AbilityDefinition
 	{
+		// Immutable content shared by instances and recorded invocation snapshots.
+		std::shared_ptr<const AbilityEvolveContent> evolveContent;
+		std::shared_ptr<const AbilityConfigurationContent> configurationContent;
+		List<std::string> activeEvolveIds;
 		std::string displayName;
 		std::string iconPath;
 		sf::Color accentColor = sf::Color::White;
@@ -144,6 +152,32 @@ namespace vega
 				}
 			}
 			return false;
+		}
+	};
+
+	struct AbilityConfigurationContent
+	{
+		std::map<std::string, float> numericSettings;
+		List<AbilityActorDefinition> actors;
+	};
+
+	struct AbilityEvolveOption
+	{
+		std::string id;
+		std::string name;
+		std::string description;
+		bool operator==(const AbilityEvolveOption& other) const { return id == other.id && name == other.name && description == other.description; }
+	};
+
+	struct AbilityEvolveContent
+	{
+		List<AbilityEvolveOption> options;
+		// Empty selection, each single pick, and every ordered pair. Never catalog grants.
+		List<GameAbilityDefinition> combinations;
+		const GameAbilityDefinition* FindCombination(const List<std::string>& selection) const
+		{
+			for (const auto& combination : combinations) if (combination.activeEvolveIds == selection) return &combination;
+			return nullptr;
 		}
 	};
 

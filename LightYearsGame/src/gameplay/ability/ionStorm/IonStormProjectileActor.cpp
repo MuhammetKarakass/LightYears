@@ -386,7 +386,7 @@ namespace vega
 		mHasSpawnedField = true;
 
 		const shared_ptr<Actor> owner = mOwnerReference.lock();
-		const AbilityActorDefinition* definition = AbilityData::FindAbilityActorDefinition(
+		const AbilityActorDefinition* definition = FindCapturedActorDefinition(
 			AbilityData::IonStorm::Actor::Field::BasicDefinitionId
 		);
 		if (!owner || owner->GetIsPendingDestroy() || !definition)
@@ -411,6 +411,7 @@ namespace vega
 		}
 
 		field->SetActorLocation(mResolvedTargetLocation);
+		field->CaptureAbilityConfiguration(GetCapturedAbilityConfiguration());
 		field->SetActorRotation(GetActorRotation());
 		field->SetLifeTime(mFieldDuration);
 		field->SetDamageTags(GetDamageTags());

@@ -9,9 +9,11 @@
 #include <deque>
 #include <functional>
 #include <string>
+#include <memory>
 
 namespace vega
 {
+	struct AbilityEvolveContent;
 	struct AbilityScalingChannel
 	{
 		sas::AttributeId targetAttributeId;
@@ -29,6 +31,8 @@ namespace vega
 	// than pointers to a live GameAbility, Actor or behavior instance.
 	struct AbilityUseRecord
 	{
+		std::shared_ptr<const AbilityEvolveContent> evolveContent;
+		List<std::string> evolveSelection;
 		std::uint64_t sequence = 0;
 		sas::AbilityHandle abilityHandle;
 		sas::ContentId abilityId;

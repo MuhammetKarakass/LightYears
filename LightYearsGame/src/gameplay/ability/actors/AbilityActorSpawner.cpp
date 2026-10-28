@@ -7,6 +7,7 @@
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "framework/Actor.h"
 #include "gameplay/combat/Combatant.h"
@@ -115,22 +116,14 @@ namespace vega
 			return std::nullopt;
 		}
 
-		weak_ptr<AbilityWorldActor> SpawnResolved(
-			const sas::ContentId& actorDefinitionId,
-			AbilityExecutionContext& context,
-			Actor& owner,
-			const sf::Vector2f& direction,
-			const sf::Vector2f& spawnLocation,
-			const std::optional<sf::Vector2f>& targetLocation,
-			float damageMultiplier,
-			Actor* targetActor
-		)
+		weak_ptr<AbilityWorldActor> SpawnResolved( const sas::ContentId& actorDefinitionId, AbilityExecutionContext& context, Actor& owner, const sf::Vector2f& direction, const sf::Vector2f& spawnLocation, const std::optional<sf::Vector2f>& targetLocation, float damageMultiplier, Actor* targetActor )
 		{
 			if (!owner.GetWorld() || !context.abilitySystem || !context.definition)
 			{
 				return {};
 			}
 
+			content::ScopedAbilityDefinitionView contentView{ *context.definition };
 			const AbilityActorDefinition* actorDefinition =
 				AbilityData::FindAbilityActorDefinition(actorDefinitionId.ToString());
 			if (!actorDefinition)
@@ -248,12 +241,10 @@ namespace vega
 		return owner.GetActorForwardDirection();
 	}
 
-	weak_ptr<AbilityWorldActor> AbilityActorSpawner::Spawn(
-		const SpawnActorAction& actionData,
-		AbilityExecutionContext& context,
-		Actor& owner
-	)
+	weak_ptr<AbilityWorldActor> AbilityActorSpawner::Spawn( const SpawnActorAction& actionData, AbilityExecutionContext& context, Actor& owner )
 	{
+		std::optional<content::ScopedAbilityDefinitionView> contentView;
+		if (context.definition) contentView.emplace(*context.definition);
 		const sf::Vector2f direction = ResolveDirection(
 			owner,
 			actionData.directionPolicy
@@ -282,16 +273,10 @@ namespace vega
 		);
 	}
 
-	weak_ptr<AbilityWorldActor> AbilityActorSpawner::SpawnToTarget(
-		const sas::ContentId& actorDefinitionId,
-		AbilityExecutionContext& context,
-		Actor& owner,
-		const sf::Vector2f& direction,
-		const std::optional<sf::Vector2f>& targetLocation,
-		float damageMultiplier,
-		Actor* targetActor
-	)
+	weak_ptr<AbilityWorldActor> AbilityActorSpawner::SpawnToTarget( const sas::ContentId& actorDefinitionId, AbilityExecutionContext& context, Actor& owner, const sf::Vector2f& direction, const std::optional<sf::Vector2f>& targetLocation, float damageMultiplier, Actor* targetActor )
 	{
+		std::optional<content::ScopedAbilityDefinitionView> contentView;
+		if (context.definition) contentView.emplace(*context.definition);
 		const AbilityActorDefinition* actorDefinition =
 			AbilityData::FindAbilityActorDefinition(actorDefinitionId.ToString());
 		return SpawnResolved(

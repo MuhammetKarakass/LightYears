@@ -4,6 +4,7 @@
 #include <framework/Delegate.h>
 #include "gameplay/progression/ShipProgression.h"
 #include "gameplay/progression/RunGold.h"
+#include "gameplay/ability/runtime/AbilityRunProgression.h"
 #include "abilities/AbilityPolicies.h"
 #include "abilities/AbilityHandle.h"
 #include "gameplay/module/ModuleLoadout.h"
@@ -34,6 +35,8 @@ namespace vega
 		void AwardScrap(unsigned int amount);
 		bool TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason = nullptr);
 		bool TryPurchaseAbilityLevel(sas::AbilitySlot slot, bool second, std::string* failureReason = nullptr);
+		bool TryChooseAbilityEvolve(const std::string& abilityId, const std::string& evolveId, std::string* failureReason = nullptr);
+		bool TryChooseAbilityEvolve(sas::AbilitySlot slot, const std::string& evolveId, std::string* failureReason = nullptr);
 		void FlushPendingTestAbilityLevels(World* expectedWorld = nullptr);
 
 		// Run-state module loadout; survives respawn. Mutations are validated by ModuleLoadout and
@@ -100,7 +103,7 @@ namespace vega
 		DelegateHandle mRunDistanceHandle;
 		DelegateHandle mShipLevelChangedHandle;
 		ShipProgression mShipProgression;
-		PurchasedAbilityLevels mPurchasedAbilityLevels;
+		std::shared_ptr<AbilityRunProgression> mAbilityRunProgression = std::make_shared<AbilityRunProgression>();
 		std::shared_ptr<FieldMasteryRunState> mFieldMasteryRunState = std::make_shared<FieldMasteryRunState>();
 		PurchasedAbilityLevels mPendingTestAbilityLevels;
 		ModuleLoadout mModuleLoadout;

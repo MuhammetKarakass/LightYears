@@ -15,6 +15,7 @@
 #include "presentation/hud/vitals/VitalsHUDController.h"
 #include "presentation/hud/modules/ModuleScreenHUDController.h"
 #include "presentation/hud/weaponChoice/WeaponChoiceHUDController.h"
+#include "presentation/hud/evolveChoice/EvolveChoiceHUDController.h"
 #include "presentation/hud/notification/NotificationHUDController.h"
 
 namespace vega
@@ -56,6 +57,10 @@ namespace vega
 
 	bool GameLevel::DispatchEvent(const sf::Event& event)
 	{
+		// Running-game overlays may consume Escape before it opens the pause menu.
+		if (!IsPaused())
+			for (const shared_ptr<HUDController>& controller : mHUDControllers)
+				if (controller && controller->HandleEvent(event)) return true;
 		if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>())
 		{
 			if (keyPressed->code == sf::Keyboard::Key::Escape)
@@ -71,8 +76,6 @@ namespace vega
 		// The paused world and overlay menus own all input; controllers only see a running game.
 		if (!IsPaused())
 		{
-			for (const shared_ptr<HUDController>& controller : mHUDControllers)
-				if (controller && controller->HandleEvent(event)) return true;
 			if (Player* player = PlayerManager::GetPlayerManager().GetPlayer())
 				if (auto ship = player->GetCurrentSpaceShip().lock(); ship && ship->GetWorld() == this && ship->HandleWeaponInput(event)) return true;
 		}
@@ -125,7 +128,9 @@ namespace vega
 		AddHUDController(std::make_shared<GameplayWarningHUDController>(mGameHUD));
 		AddHUDController(std::make_shared<AbilityBarHUDController>(mGameHUD));
 		AddHUDController(std::make_shared<VitalsHUDController>(mGameHUD));
-		AddHUDController(std::make_shared<ModuleScreenHUDController>(mGameHUD));
+		auto modules = std::make_shared<ModuleScreenHUDController>(mGameHUD);
+		AddHUDController(std::make_shared<EvolveChoiceHUDController>(mGameHUD, modules->GetPresenter()));
+		AddHUDController(std::move(modules));
 		AddHUDController(std::make_shared<WeaponChoiceHUDController>(mGameHUD));
 		auto notificationController = std::make_shared<NotificationHUDController>(mGameHUD);
 		mNotificationHUD = notificationController;

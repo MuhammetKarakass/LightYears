@@ -13,9 +13,60 @@
 #include <algorithm>
 #include <exception>
 #include <utility>
+#include <stdexcept>
 
 namespace vega
 {
+	bool LightYearsAbilitySystemComponent::ChooseAbilityEvolve(sas::AbilityHandle handle, const std::string& evolveId, std::string* failureReason, void (*commitSink)(void*) noexcept, void* commitContext)
+	{
+		if (failureReason) failureReason->clear();
+		return RunOperation([&]() -> bool
+		{
+			auto fail = [&](const char* reason) { if (failureReason) *failureReason = reason; return false; };
+			if (IsClearPending() || HasAbilityCallbackInProgress()) return fail("Ability choice is unavailable during a callback or clear.");
+			auto* ability = GetAbility(handle);
+			if (!ability) return fail("Ability is not granted.");
+			if (!ability->GetDefinition().evolveContent) return fail("Ability has no evolves.");
+			const auto pending = ability->GetPendingEvolve();
+			if (!pending.tierLevel) return fail("No evolve tier is open.");
+			if (std::none_of(pending.options.begin(), pending.options.end(), [&](const auto& option) { return option.id == evolveId; })) return fail("Evolve is unknown, already picked, or closed.");
+			auto selection = ability->GetEvolveSelection();
+			selection.push_back(evolveId);
+			return ability->SetEvolveSelection(std::move(selection), failureReason, commitSink, commitContext);
+		});
+	}
+
+	bool LightYearsAbilitySystemComponent::RestoreAbilityEvolves(sas::AbilityHandle handle, const List<std::string>& selection, std::string* failureReason)
+	{
+		return RunOperation([&]() -> bool
+		{
+			auto* ability = GetAbility(handle);
+			if (!ability || IsClearPending() || HasAbilityCallbackInProgress()) return false;
+			if (ability->GetEvolveSelection() == selection) return true;
+			return ability->SetEvolveSelection(selection, failureReason);
+		});
+	}
+
+	void LightYearsAbilitySystemComponent::RestoreRunProgressionOnGrant(GameAbility& ability)
+	{
+		if (!ability.mBaseDefinition.evolveContent) return;
+		const auto state = mPlayerRunProgression.lock();
+		if (!state) return;
+		const std::string& id = ability.GetDefinition().abilityId;
+		if (const auto level = state->purchasedLevels.find(id); level != state->purchasedLevels.end()) ability.mRuntimeState.SetLevel(level->second, ability.GetMaxLevel());
+		if (const auto selection = state->evolveSelections.find(id); selection != state->evolveSelections.end())
+		{
+			const auto* content = ability.mBaseDefinition.evolveContent.get();
+			if (!content || !content->FindCombination(selection->second)) throw std::runtime_error("Saved evolve selection no longer exists for '" + id + "'");
+			ability.mEvolveSelection = selection->second;
+		}
+		if (!ability.PrepareDefinitionForLevel(ability.GetLevel())) throw std::runtime_error("Could not restore ability run progression for '" + id + "'");
+		auto behavior = GameAbilityBehaviorRegistry::Create(ability.mPreparedLevelDefinition->behaviorType);
+		if (!behavior) throw std::runtime_error("Could not restore evolved ability behavior for '" + id + "'");
+		ability.CommitPreparedDefinitionForLevel();
+		ability.mBehavior = std::move(behavior);
+	}
+
 	int LightYearsAbilitySystemComponent::CountLoadoutAbilitiesWithTag(const GameplayTag& category) const
 	{
 		int count = 0;
@@ -207,6 +258,7 @@ namespace vega
 			do { handle = sas::AbilityHandle{ mNextSecondAbilityHandle-- }; } while (GetAbility(handle));
 			auto replacement = std::make_unique<GameAbility>(*this, handle, bound, std::move(behavior));
 			replacement->RefreshScopedConfiguration();
+			RestoreRunProgressionOnGrant(*replacement);
 			const auto previous = target ? target->GetHandle() : sas::AbilityHandle{};
 			target = std::move(replacement);
 			if (previous.IsValid()) onAbilityRemoved.Broadcast(previous);
@@ -264,6 +316,7 @@ namespace vega
 				// granted. Materialize their level effect immediately so future
 				// abilities receive the same category-based rule as existing ones.
 				ability->RefreshScopedConfiguration();
+				RestoreRunProgressionOnGrant(*ability);
 				VEGA_GAME_INFO("Ability create returned: %s", definition.abilityId.c_str());
 				return ability;
 			};
@@ -1045,6 +1098,8 @@ namespace vega
 		}
 
 		AbilityUseRecord record;
+		record.evolveContent = definition.evolveContent;
+		record.evolveSelection = definition.activeEvolveIds;
 		record.abilityHandle = event.abilityHandle;
 		record.abilityId = event.abilityId;
 		record.slot = definition.slot;

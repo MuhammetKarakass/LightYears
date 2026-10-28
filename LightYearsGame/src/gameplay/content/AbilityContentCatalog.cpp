@@ -9,6 +9,7 @@ namespace vega::content
 {
 	namespace
 	{
+		thread_local const GameAbilityDefinition* scopedDefinition = nullptr;
 		thread_local const List<AbilityLoader::LoadedDefinition>* validationDefinitions = nullptr;
 		List<GameAbilityDefinition>& GetDefinitionsStorage()
 		{
@@ -55,6 +56,9 @@ namespace vega::content
 			return false;
 		}
 	}
+
+	ScopedAbilityDefinitionView::ScopedAbilityDefinitionView(const GameAbilityDefinition& definition) : mPrevious{ scopedDefinition } { scopedDefinition = definition.configurationContent ? &definition : nullptr; }
+	ScopedAbilityDefinitionView::~ScopedAbilityDefinitionView() { scopedDefinition = mPrevious; }
 
 	ScopedAbilityValidationView::ScopedAbilityValidationView(const List<AbilityLoader::LoadedDefinition>& definitions)
 		: mPrevious{ validationDefinitions }
@@ -114,10 +118,9 @@ namespace vega::content
 		return true;
 	}
 
-	const GameAbilityDefinition* AbilityContentCatalog::FindById(
-		const std::string& abilityId
-	)
+	const GameAbilityDefinition* AbilityContentCatalog::FindById(const std::string& abilityId)
 	{
+		if (scopedDefinition && scopedDefinition->abilityId == abilityId) return scopedDefinition;
 		if (validationDefinitions) for (const auto& loaded : *validationDefinitions)
 			if (loaded.id == abilityId) return &loaded.definition;
 		for (const GameAbilityDefinition* definition : GetDefinitionPointers())
@@ -130,10 +133,10 @@ namespace vega::content
 		return nullptr;
 	}
 
-	const AbilityActorDefinition* AbilityContentCatalog::FindActorById(
-		const std::string& actorDefinitionId
-	)
+	const AbilityActorDefinition* AbilityContentCatalog::FindActorById(const std::string& actorDefinitionId)
 	{
+		if (scopedDefinition && scopedDefinition->configurationContent)
+			for (const auto& actor : scopedDefinition->configurationContent->actors) if (actor.actorDefinitionId.ToString() == actorDefinitionId) return &actor;
 		if (validationDefinitions) for (const auto& loaded : *validationDefinitions)
 			for (const auto& actor : loaded.actorDefinitions) if (actor.actorDefinitionId.ToString() == actorDefinitionId) return &actor;
 		for (const AbilityActorDefinition* definition : GetActorDefinitionPointers())
@@ -151,11 +154,14 @@ namespace vega::content
 		return GetDefinitionPointers();
 	}
 
-	std::optional<float> AbilityContentCatalog::FindNumericSetting(
-		const std::string& abilityId,
-		const std::string& settingName
-	)
+	std::optional<float> AbilityContentCatalog::FindNumericSetting(const std::string& abilityId, const std::string& settingName)
 	{
+		if (scopedDefinition && scopedDefinition->abilityId == abilityId && scopedDefinition->configurationContent)
+		{
+			const auto& settings = scopedDefinition->configurationContent->numericSettings;
+			const auto setting = settings.find(settingName);
+			return setting == settings.end() ? std::nullopt : std::optional<float>{ setting->second };
+		}
 		if (validationDefinitions) for (const auto& loaded : *validationDefinitions) if (loaded.id == abilityId)
 		{
 			const auto setting = loaded.numericSettings.find(settingName);

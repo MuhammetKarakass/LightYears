@@ -11,6 +11,17 @@ Bu doküman, projedeki 55 yeteneğin hedef denge ve davranış sözleşmesini te
 - Damage tag belirtilmemiş fakat hasar üreten ability'ler runtime'da default Photonic kullanabilir.
 - **Global combat tick:** Tüm periyodik ve sürekli hasar tek bir aralıkla, `CombatTick::Interval = 0.25s` ile uygulanır. Aralık hiçbir ability'nin attribute'u değildir; tabloda yazan "her `0.25s`" ifadeleri bu global değeri anlatır. "Tick hasarı" olarak yazılan değerler her tick'te olduğu gibi uygulanır, DPS olarak yazılan değerler (InfernoSpray, Ignite, ContinuousHeatLaser) tick başına `DPS × 0.25` uygulanır. Aynı hedefe tekrar vurma bekleme süreleri (OrbitalDrones, LanceDrive, CrystalBarricade, InertialWake) tick değildir ve kendi değerlerini korur.
 
+## Evolve'lar
+
+Evolve altyapısı mevcuttur; henüz hiçbir shipped ability'nin evolve'u yoktur.
+Ability başına içerik daha sonra tek tek yazılır; mevcut tablo satırları değişmez.
+Her yeni kayıt burada şu formatla belgelenir: **ability | tier seçimi (8 veya 15) |
+evolve ID | değişiklik özeti | formüller**. Aynı seçenek iki tier'da da seçilebildiği
+için tier alanı erişilebilir seçim hakkını anlatır; sıralı iki patch'in birleşimi
+ve güncel level'dan yeniden kurulan progression formülü açıkça belirtilir.
+Data/validation/runtime/UI kontratı için
+[evolve sistemi](PROJECT_DOCUMENTATION.md#ability-baseid-ve-evolve-sistemi-kontratı).
+
 ## Tüm yetenekler
 
 | # | Yetenek / ID | Sınıf | Açıklama | Hasar tipi / Base damage | Formal + runtime scaling | Level progression / Effect |

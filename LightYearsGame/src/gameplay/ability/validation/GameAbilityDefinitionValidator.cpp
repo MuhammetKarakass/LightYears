@@ -4,6 +4,7 @@
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/content/ContentIdSchema.h"
@@ -564,13 +565,9 @@ namespace vega
 		}
 	}
 
-	bool GameAbilityDefinitionValidator::Validate(
-		const GameAbilityDefinition& definition,
-		const AbilityActionValidator::EffectValidationFunction& validateEffect,
-		std::string* failureReason,
-			const AbilityActionValidator::EffectLookup& findEffect
-	)
+	bool GameAbilityDefinitionValidator::Validate( const GameAbilityDefinition& definition, const AbilityActionValidator::EffectValidationFunction& validateEffect, std::string* failureReason, const AbilityActionValidator::EffectLookup& findEffect )
 	{
+		content::ScopedAbilityDefinitionView contentView{ definition };
 		if (!sas::ValidateAbilityDefinition(definition, failureReason))
 		{
 			return false;
@@ -595,7 +592,7 @@ namespace vega
 		// Content-only test/prototype abilities intentionally use the generic
 		// configured behavior. Concrete shipped families must use their own
 		// behavior selector and therefore match the family encoded in their content ID.
-		if (!weaponDefinition &&
+		if (!weaponDefinition && definition.activeEvolveIds.empty() &&
 			definition.behaviorType != AbilityBehaviorType::Configured)
 		{
 			std::size_t categoryCount = 0;
@@ -646,7 +643,7 @@ namespace vega
 		{
 			return false;
 		}
-		if (!weaponDefinition &&
+		if (!weaponDefinition && definition.activeEvolveIds.empty() &&
 			definition.behaviorType != AbilityBehaviorType::Configured)
 		{
 			// Concrete family selectors (including newly shipped families) must

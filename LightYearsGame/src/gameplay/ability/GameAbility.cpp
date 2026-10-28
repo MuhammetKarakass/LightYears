@@ -1,5 +1,6 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/content/AbilityContentCatalog.h"
 
 #include <type_traits>
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -77,6 +78,7 @@ namespace vega
 
 	void GameAbility::HandleGameplayEvent(const sas::AbilityEvent& event)
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		return RunInstanceOperation([&]()
 		{
 			if (!mBehavior || !IsActive())
@@ -96,6 +98,7 @@ namespace vega
 
 	float GameAbility::ResolveAutocastRange(float dataRange) const
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		GameAbilityBehaviorContext context{ mAbilitySystem, const_cast<GameAbility&>(*this), mAbilitySystem.GetOwner(), mDefinition };
 		return mBehavior ? mBehavior->ResolveAutocastRange(context, dataRange) : dataRange;
 	}
@@ -146,6 +149,7 @@ namespace vega
 
 	bool GameAbility::ActivateContent()
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		mDamageHitGroup = std::make_shared<DamageHitGroup>();
 		mDeferActiveDurationStart = false;
 		mPendingActivationCooldownMultiplier = 1.f;
@@ -217,6 +221,7 @@ namespace vega
 
 	void GameAbility::BeginExecution()
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		AbilityExecutionContext context{
 			&mAbilitySystem,
@@ -230,6 +235,7 @@ namespace vega
 
 	void GameAbility::TickExecution(float deltaTime)
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		const bool primaryWeaponUnavailable = mDefinition.slot == sas::AbilitySlot::PrimaryFire &&
 			!mAbilitySystem.IsModuleSystemEnabled(GameplayTags::Module::System::PrimaryWeapon);
@@ -273,6 +279,7 @@ namespace vega
 
 	void GameAbility::EndExecution(sas::AbilityEndReason reason)
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		AbilityExecutionContext context{
 			&mAbilitySystem,
@@ -328,6 +335,7 @@ namespace vega
 
 	void GameAbility::EndBehavior(sas::AbilityEndReason reason)
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		if (!mBehavior || !mBehaviorStarted)
 		{
 			mBehaviorCleanupPending = false;
@@ -349,6 +357,7 @@ namespace vega
 
 	bool GameAbility::HandleInputPressed()
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		if (!mBehavior || !IsActive())
 		{
@@ -457,6 +466,7 @@ namespace vega
 
 	float GameAbility::ResolveCooldownDurationOnEnd(sas::AbilityEndReason reason)
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		const float baseCooldown = ResolveCooldownDurationForStart();
 		const float refundMultiplier = std::exchange(mPendingActivationCooldownMultiplier, 1.f);
 		if (!mBehavior)
@@ -482,6 +492,7 @@ namespace vega
 
 	float GameAbility::ResolveActiveDuration() const
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		AbilityAimScope aimScope{ mAbilitySystem, mActivationAim };
 		const float leveledDuration = sas::CalculateModifiedAttributeValue(
 			sas::GameplayAttribute{ CommonAttributeIds::Duration, mDefinition.duration, 0.f },
@@ -508,6 +519,7 @@ namespace vega
 		const sas::AbilityLifecycleEvent& event
 	)
 	{
+		content::ScopedAbilityDefinitionView contentView{ mDefinition };
 		if (!mBehavior || !IsActive())
 		{
 			return;
@@ -662,9 +674,47 @@ namespace vega
 		++mConfigurationRevision;
 	}
 
+	bool GameAbility::SetEvolveSelection(List<std::string> selection, std::string* failureReason, void (*commitSink)(void*) noexcept, void* commitContext)
+	{
+		return RunInstanceOperation([&]() -> bool
+		{
+			auto fail = [&](const char* reason) { if (failureReason) *failureReason = reason; return false; };
+			if (IsInCallbackScope() || mAbilitySystem.IsClearPending()) return fail("Ability reconfiguration is unavailable during a callback or clear.");
+			if (selection == mEvolveSelection) return fail("This evolve selection is already active.");
+			const auto* content = mBaseDefinition.evolveContent.get();
+			const auto* combination = content ? content->FindCombination(selection) : nullptr;
+			if (!combination) return fail("Unknown evolve combination.");
+			if (!selection.empty() && GetLevel() < AbilityEvolveTierLevels[selection.size() - 1]) return fail("Evolve tier is not open.");
+			EnsurePendingCleanupDrained();
+			// Same channel interruption boundary as a level change. Spawned actors retain their captures.
+			if (IsActive()) Cancel(sas::AbilityEndReason::Interrupted);
+			EnsurePendingCleanupDrained();
+			if (mAbilitySystem.IsClearPending()) return fail("Ability system is clearing.");
+			{
+				struct PreparingScope { GameAbility& ability; ~PreparingScope() { ability.mPreparingEvolveSelection = nullptr; } } scope{ *this };
+				mPreparingEvolveSelection = &selection;
+				if (!PrepareDefinitionForLevel(GetLevel())) return fail("Could not prepare the evolved ability definition.");
+			}
+			auto behavior = GameAbilityBehaviorRegistry::Create(mPreparedLevelDefinition->behaviorType);
+			if (!behavior) return fail("Evolved ability behavior is not registered.");
+			CommitPreparedDefinitionForLevel();
+			mBehavior = std::move(behavior);
+			mEvolveSelection = std::move(selection);
+			if (commitSink) commitSink(commitContext);
+			OnLevelConfigurationChanged();
+			NotifyChanged();
+			return true;
+		});
+	}
+
 	GameAbilityDefinition GameAbility::BuildDefinitionForLevel(int level) const
 	{
-		GameAbilityDefinition definition = mBaseDefinition;
+		const auto& selection = mPreparingEvolveSelection ? *mPreparingEvolveSelection : mEvolveSelection;
+		const auto* combination = mBaseDefinition.evolveContent ? mBaseDefinition.evolveContent->FindCombination(selection) : nullptr;
+		const GameAbilityDefinition& source = combination ? *combination : mBaseDefinition;
+		GameAbilityDefinition definition = source;
+		definition.slot = mBaseDefinition.slot;
+		definition.evolveContent = mBaseDefinition.evolveContent;
 		if (IsActive() && (mDefinition.primedMainEffectBonus > 0.f || mDefinition.activationModifiersCaptured))
 		{
 			definition.mainEffectMultiplier = mDefinition.mainEffectMultiplier;
@@ -681,7 +731,7 @@ namespace vega
 
 		for (int stepIndex = 0; stepIndex < stepsToApply; ++stepIndex)
 		{
-			const AbilityLevelStep* stepPtr = mBaseDefinition.ResolveLevelStep(
+			const AbilityLevelStep* stepPtr = source.ResolveLevelStep(
 				static_cast<std::size_t>(stepIndex)
 			);
 			if (!stepPtr)
@@ -733,7 +783,7 @@ namespace vega
 			definition.attributeModifiers.emplace_back(
 				CommonAttributeIds::Cooldown,
 				-GetGlobalAbilityCooldownTotalReduction(
-					mBaseDefinition.cooldown,
+					source.cooldown,
 					static_cast<std::size_t>(stepsToApply)
 				)
 			);

@@ -16,6 +16,7 @@
 
 namespace vega
 {
+	struct AbilityConfigurationContent;
 	class GameAbility;
 	class AbilityWorldActor
 		: public Actor,
@@ -68,6 +69,9 @@ namespace vega
 		const List<GameplayTag>& GetSourceAbilityTags() const { return mSourceAbilityTags; }
 		void SetSourceAbilityInstance(GameAbility* instance);
 		GameAbility* GetSourceAbilityInstance() const;
+		void CaptureAbilityConfiguration(std::shared_ptr<const AbilityConfigurationContent> content) { mCapturedConfiguration = std::move(content); }
+		const std::shared_ptr<const AbilityConfigurationContent>& GetCapturedAbilityConfiguration() const { return mCapturedConfiguration; }
+		const AbilityActorDefinition* FindCapturedActorDefinition(const std::string& id) const;
 
 		void SetProjectileRelayLineage(const ProjectileRelayLineage& lineage)
 		{
@@ -126,6 +130,7 @@ namespace vega
 		) const override;
 
 	protected:
+		std::shared_ptr<const AbilityConfigurationContent> mCapturedConfiguration;
 		// Must run before a projectile resolves an ordinary target hit. It is kept
 		// in the common actor layer so concrete projectile families share one
 		// receiver lookup rather than knowing Return Protocol directly.

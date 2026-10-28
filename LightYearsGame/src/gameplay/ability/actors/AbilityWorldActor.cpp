@@ -102,12 +102,19 @@ namespace vega
 
 	void AbilityWorldActor::SetSourceAbilityInstance(GameAbility* instance)
 	{
+		if (instance && !mCapturedConfiguration) mCapturedConfiguration = instance->GetDefinition().configurationContent;
 		mAimOverride = instance ? instance->GetActivationAim() : std::nullopt;
 		mDamagePayload.hitGroup = instance ? instance->GetDamageHitGroup() : nullptr;
 		mDamagePayload.mainEffectMultiplier = instance ? instance->GetDefinition().mainEffectGroupMultiplier : 1.f;
 		mSourceAbilityHandle = instance
 			? instance->GetHandle()
 			: sas::AbilityHandle{};
+	}
+
+	const AbilityActorDefinition* AbilityWorldActor::FindCapturedActorDefinition(const std::string& id) const
+	{
+		if (mCapturedConfiguration) for (const auto& actor : mCapturedConfiguration->actors) if (actor.actorDefinitionId.ToString() == id) return &actor;
+		return AbilityData::FindAbilityActorDefinition(id);
 	}
 
 	GameAbility* AbilityWorldActor::GetSourceAbilityInstance() const

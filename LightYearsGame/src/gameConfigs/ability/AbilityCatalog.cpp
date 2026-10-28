@@ -198,10 +198,9 @@ namespace AbilityData
 		return definitions;
 	}
 
-	const vega::GameAbilityDefinition* FindShippedAbilityDefinition(
-		const std::string& abilityId
-	)
+	const vega::GameAbilityDefinition* FindShippedAbilityDefinition( const std::string& abilityId )
 	{
+		if (const auto* scoped = vega::content::AbilityContentCatalog::FindById(abilityId)) return scoped;
 		if (vega::content::AbilityContentCatalog::IsLoaded())
 		{
 			return vega::content::AbilityContentCatalog::FindById(abilityId);
@@ -217,9 +216,9 @@ namespace AbilityData
 		return nullptr;
 	}
 
-	const vega::AbilityActorDefinition* FindAbilityActorDefinition(
-		const std::string& actorDefinitionId)
+	const vega::AbilityActorDefinition* FindAbilityActorDefinition( const std::string& actorDefinitionId)
 	{
+		if (const auto* scoped = vega::content::AbilityContentCatalog::FindActorById(actorDefinitionId)) return scoped;
 		if (vega::content::AbilityContentCatalog::IsLoaded())
 		{
 			return vega::content::AbilityContentCatalog::FindActorById(actorDefinitionId);

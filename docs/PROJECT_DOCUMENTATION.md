@@ -882,19 +882,105 @@ ve §3.0.1'deki typed presentation sözleşmesi değişmez. Böylece ability,
 attachment/evolve, gemi ve düşman sayıları artarken denge verisi dışarı alınır;
 oyun davranışı ile visual type güvenliği C++ tarafında kalır.
 
-#### Ability `baseId` ve evolve/variant kuralı
+#### Ability `baseId` ve evolve sistemi kontratı
 
-Bir ability varyantı `baseId` ile başka bir JSON ability kaydından türeyebilir.
-Object alanları recursive olarak birleştirilir; varyantta yazılan scalar değerler
-ve object içindeki alanlar base değerin üzerine çıkar, array alanları ise
-varyant tarafından tamamen değiştirilir. Böylece yalnız değişen cooldown,
-setting veya progression değerini yazmak yeterlidir. Kalıtım zinciri döngüye
-giremez ve eksik `baseId` reddedilir.
+`baseId` başka bir JSON ability kaydından türetme mekanizmasıdır. Evolve ise aynı
+ability'nin koşu içindeki seçili konfigürasyonudur; ayrı ability grant edilmez.
+Her ikisi aynı `MergeJsonObjects` fonksiyonunu kullanır: object alanları recursive
+birleşir; scalar ve array alanları tamamen değiştirilir. Eksik `baseId` ve döngü
+reddedilir. Value-only baseId varyantı global actor kayıtlarını çoğaltmaz.
 
-Value-only varyant actor listesini tekrar üretmez; base ability'nin C++ behavior
-ve actor/presentation bağlantılarını kullanır. Yapısal olarak yeni actor veya
-presentation gerektiren evolve, aynı ability ailesinde ayrı C++ actor/profile/
-handler ve benzersiz actor ID'leriyle tanımlanmalıdır.
+Ability kaydındaki opsiyonel `evolves` alanı eksik veya `[]` ise seçim yoktur.
+Doluysa tam üç kayıt gerekir. Her kayıtta benzersiz `id`, boş olmayan İngilizce
+`name` / `description` ve object `patch` bulunur. ID şemasının tek sahibi
+`ContentIdSchema::ValidateAbilityEvolveId` olup biçimi
+`Ability.Evolve.<AbilityFamily>.<Name>`'dir; family ability ID'siyle eşleşir.
+Evolve ID'leri yüklenen dokümanda benzersizdir; baseId ile miras alınan liste
+gerekirse varyantta `[]` veya yeni ID'lerle değiştirilir.
+
+Örnek bir ability kaydına eklenecek alan (oyuna eklenen içerik değildir):
+
+```json
+"evolves": [
+  { "id": "Ability.Evolve.Rocket.Quick", "name": "Quick cycle",
+    "description": "Changes the base cooldown.", "patch": { "cooldown": 5.0 } },
+  { "id": "Ability.Evolve.Rocket.Heavy", "name": "Heavy cycle",
+    "description": "Uses a longer base cooldown.", "patch": { "cooldown": 8.0 } },
+  { "id": "Ability.Evolve.Rocket.Reserve", "name": "Reserve cycle",
+    "description": "Uses an alternate base cooldown.", "patch": { "cooldown": 7.0 } }
+]
+```
+
+Patch; cooldown/duration/charges, numeric settings, attributes, scalingRules,
+progression, effectSpecs, damageTags, invocation/main-effect attribute listeleri,
+attributeProfiles, `actors` ve `behaviorId` alanlarını değiştirebilir. Diğer alanlar
+reddedilir; özellikle `id`, `baseId`, class/category/slot ve `evolves` değiştirilemez.
+`behaviorId`, `AbilityBehaviorType` sahibinin İngilizce selector adıdır; kayıtlı
+factory gerekir. Başka behavior seçilirse o C++ family'sinin action/trigger ve
+activation/lifetime/cooldown-start iskeleti kullanılır; ID, kategori, slot ve
+presentation metadata'sı aynı ability'ye aittir. `Configured` mevcut action
+iskeletini korur. `actors` değiştirildiğinde SpawnActor action'larının farklı
+actor referansları ilk görülme sırasıyla yeni actor listesine bağlanır; liste her
+referansı karşılamalıdır. Kendi actor'ını üreten behavior bu bağlantıyı family-local
+C++ kodunda yapar. Actor şeması mevcut JSON şemasıdır; actor `baseId` kayıtlı C++
+iskeletine, opsiyonel `presentationProfileId` kayıtlı typed profile'a çözülür.
+
+`AbilityLoader` önce baseId materialization, sonra base + ilk seçimin patch'i +
+ikinci seçimin patch'i sırasıyla **10 konfigürasyonun tamamını** üretir: base,
+üç tekli ve altı sıralı çift. Array değiştirme sırası önemlidir. Bunlar aynı
+ability'nin immutable `AbilityEvolveContent` kaydındadır; catalog'a yeni ability
+eklenmez. Parser, game semantic validator, behavior validator ve actor/typed
+presentation registration kontrolleri her kombinasyonda yükleme sırasında çalışır.
+Tek tek geçerli iki patch birlikte geçersizse de yükleme reddedilir; hata ability
+ve sıralı evolve ID'lerini gösterir. Actor ID'leri bir kombinasyon içinde benzersiz
+olmalıdır. Aynı actor ID'sinin farklı kombinasyonlardaki değerleri global catalog'u
+değiştirmez; konfigürasyonun kendi immutable actor kayıtları kullanılır.
+
+Eşiklerin kodda tek sahibi `AbilityEvolveTierLevels` (`8`, `15`) sabitidir.
+`QueryPendingAbilityEvolve(content, level, selection)` saf sorgusu gerçek ability
+level'ını kullanır; module kaynaklı etkin seviye bonusu seçim açmaz. Level 8'de ilk
+üçlüden biri, level 15'te kalan ikiliden biri seçilir. İki seçim birlikte aktiftir;
+üçüncü o koşuda kapanır. Seçim zorunlu değildir ve leveling beklemez. Level 15'e
+seçimsiz varılırsa önce level-8, sonra level-15 hakkı doldurulur; hak kaybolmaz.
+
+`GameAbility` sıralı ID listesini tutar; `HasEvolve(id)` family kodunun dar sorgusudur.
+`BuildDefinitionForLevel(L)` seçili kombinasyonun level-1 tabanını alır, aynı
+kombinasyonun progression adımlarını `L - 1 + scopedLevelBonus` kez uygular ve
+kombinasyonun base cooldown'u üzerinden mevcut küresel cooldown kuralını hesaplar.
+**Progression seçim anında sıfırlanmaz:** yeni ladder mevcut level'a kadar yeniden
+hesaplanır; sonraki level'lar bu ladder'dan devam eder. Evolve değişimi level
+değişikliğiyle aynı prepare/commit hattından geçer, configuration revision artar.
+Aktif channel mevcut level değişimindeki gibi Interrupted ile biter; önceden
+spawn edilmiş actor'lar numeric/presentation capture'larını korur. Çok aşamalı
+actor spawn'ları immutable actor konfigürasyonunu taşır. History/Echo kaydı seçim
+anındaki kombinasyonu saklar; sonraki seçim eski kullanımı değiştirmez.
+
+Koşu state'inin sahibi `Player::mAbilityRunProgression`'dır: purchased levels ile
+ability ID başına sıralı evolve listesi aynı run kaydında tutulur. Public giriş
+`Player::TryChooseAbilityEvolve(slot veya abilityId, evolveId, failureReason)`'dır.
+ASC; açık tier ve kalan seçenek kontrolünden sonra runtime ile run state'ini
+notification'lardan önce commit eder. Respawn ve slot removal/re-grant aynı
+state'i uygular; ASC sonraki grant'ler için yalnız weak run-state görünümü tutar.
+Yeni koşuda levels ile evolves birlikte temizlenir. Bu, levels gibi bellekte koşu
+kalıcılığıdır; disk save/profile sistemi eklenmemiştir.
+
+Ability bar'da cooldown/READY metninin altında ayrı `EVOLVE [V]` işareti görünür.
+**V** seçim katmanını açar/kapatır, **1–3** seçer, **Esc** seçmeden kapatır.
+Oyun durmaz. Birden çok bekleyen ability varsa önce Q/E/F/R, sonra varsa ikinci
+bankanın Q/E/F/R sırası izlenir; Twin Rack kapalıyken tutulan grant'ler de seçilebilir.
+Her seferinde tek ability/tier
+gösterilir. Seçimden sonra sıradaki bekleyen tier otomatik gösterilir. Tab modül
+ekranına geçer; modül ekranı veya Second Hardpoint seçimi açıkken evolve katmanı
+açılmaz. Bekleyen hak yoksa katman, işaret veya evolve input capture yoktur.
+
+Davranış/şekil değiştiren gerçek evolve'un behavior/actor'ı
+`gameplay/ability/<family>/`, typed presentation içeriği
+`presentation/ability/<family>/` içinde yaşar. Yapısal fark base profile'a optional
+flag yığarak eklenmez; kendi profile/actor/handler'ı kullanılır. Her actor'da tek
+`presentationProfileId` kalır ve registration
+`RegisterGameAbilityPresentationContent()` içindedir (§3.0.1). **Shipped hiçbir
+ability'nin evolve'u yoktur.** Value/scaling/actor swap örnekleri yalnız
+`tests/AbilityEvolveE2E.cpp` içinde üretilen test JSON'undadır.
 
 #### Sayısal veri sahipliği
 

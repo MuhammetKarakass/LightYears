@@ -2,6 +2,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -220,6 +221,8 @@ namespace vega
 	weak_ptr<AbilityWorldActor> AbilityActorRegistry::Spawn(const AbilityActorSpawnContext& context)
 	{
 		const AbilityActorTypeHandler* handler = FindHandler(context.definition.actorType);
-		return handler ? handler->Spawn(context) : weak_ptr<AbilityWorldActor>{};
+		auto spawned = handler ? handler->Spawn(context) : weak_ptr<AbilityWorldActor>{};
+		if (context.abilityDefinition) if (auto actor = spawned.lock()) actor->CaptureAbilityConfiguration(context.abilityDefinition->configurationContent);
+		return spawned;
 	}
 }

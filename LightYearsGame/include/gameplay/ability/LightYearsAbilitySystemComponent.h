@@ -3,6 +3,7 @@
 #include "AbilitySystemComponent.h"
 #include "abilities/AbilityEvent.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/runtime/AbilityRunProgression.h"
 #include "gameplay/ability/ScopedAbilityRule.h"
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/ability/runtime/AbilityInvocationRuntime.h"
@@ -28,6 +29,9 @@ namespace vega
 		: public sas::AbilitySystemComponent
 	{
 	public:
+		void SetPlayerRunProgression(std::weak_ptr<const AbilityRunProgression> progression) { mPlayerRunProgression = std::move(progression); }
+		bool ChooseAbilityEvolve(sas::AbilityHandle handle, const std::string& evolveId, std::string* failureReason = nullptr, void (*commitSink)(void*) noexcept = nullptr, void* commitContext = nullptr);
+		bool RestoreAbilityEvolves(sas::AbilityHandle handle, const List<std::string>& selection, std::string* failureReason = nullptr);
 		AbilityActivationPolicy& GetActivationPolicy() { return mActivationPolicy; }
 		const AbilityActivationPolicy& GetActivationPolicy() const { return mActivationPolicy; }
 		const std::optional<AbilityAimOverride>& GetExecutionAim() const { return mExecutionAim; }
@@ -188,6 +192,8 @@ namespace vega
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
+		std::weak_ptr<const AbilityRunProgression> mPlayerRunProgression;
+		void RestoreRunProgressionOnGrant(GameAbility& ability);
 		AbilityActivationPolicy mActivationPolicy{ *this };
 		std::optional<AbilityAimOverride> mExecutionAim;
 		ModuleTriggerService mModuleTriggerService;

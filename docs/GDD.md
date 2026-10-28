@@ -98,7 +98,7 @@ flowchart LR
 | Başlangıçta modül varyantlarının verilmesi | Geçici test | Gerçek loot ve nadirlik dağılımı yerine geçmez |
 | Bölüm haritası, rota, Threat, biyomlar | Plan | Tasarım yönü mevcut; tamamlanmış koşu akışı yok |
 | Gold/Stardust ekonomisi, kalıcı profil, Hangar | Plan | Bellekteki progression/Scrap, disk kaydı ve tam ekonomi değildir |
-| Yetenek edinme/değiştirme ve evolve seçimi | Plan | Runtime altyapısı ile oyuncuya sunulan seçim akışı ayrı işler |
+| Yetenek edinme/değiştirme ve evolve seçimi | Karma | Edinme/değiştirme tasarımı sürer; evolve sistemi, koşu kalıcılığı ve V seçim UI'ı mevcut: level 8'de üçlüden, level 15'te kalan ikiliden isteğe bağlı seçim; iki seçim birlikte aktif. Henüz shipped evolve içeriği yoktur; kontrat: PROJECT_DOCUMENTATION §3.0.0 |
 
 **Kaynak sınırı:** Arena tablosu çalışma ağacını esas alır. `ArenaTestLevel.cpp` oturum başında zaten değiştirilmişti; GDD bu dosyayı düzenlemedi. Hedeflerin mevcut silahı Rapid Laser'dır; hareket etmemeleri saldırmadıkları anlamına gelmez. Bu arena tam bir koşunun zorluk veya loot dengesini temsil etmez.
 

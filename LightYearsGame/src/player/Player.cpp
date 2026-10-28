@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <utility>
 #include <variant>
+#include <stdexcept>
 #include <vector>
 
 namespace vega
@@ -200,8 +201,8 @@ namespace vega
 			foundAbility = true;
 
 			int baseLevel = ability->GetLevel();
-			if (const auto purchased = mPurchasedAbilityLevels.find(abilityId);
-				purchased != mPurchasedAbilityLevels.end())
+			if (const auto purchased = mAbilityRunProgression->purchasedLevels.find(abilityId);
+				purchased != mAbilityRunProgression->purchasedLevels.end())
 			{
 				baseLevel = std::max(baseLevel, purchased->second);
 			}
@@ -215,7 +216,7 @@ namespace vega
 				ability->GetMaxLevel(),
 				static_cast<long long>(baseLevel) + levelCount
 			));
-			mPurchasedAbilityLevels[abilityId] = targetLevel;
+			mAbilityRunProgression->purchasedLevels[abilityId] = targetLevel;
 			if (targetLevel > ability->GetLevel())
 			{
 				mPendingTestAbilityLevels[abilityId] = targetLevel;
@@ -275,7 +276,7 @@ namespace vega
 				std::max(pending.second, ability->GetLevel()),
 				ability->GetMaxLevel()
 			);
-			mPurchasedAbilityLevels[pending.first] = targetLevel;
+			mAbilityRunProgression->purchasedLevels[pending.first] = targetLevel;
 			if (ability->GetLevel() < targetLevel)
 			{
 				try
@@ -296,7 +297,7 @@ namespace vega
 			if (updatedAbility && pendingTarget != mPendingTestAbilityLevels.end() &&
 				updatedAbility->GetLevel() >= pendingTarget->second)
 			{
-				mPurchasedAbilityLevels[pending.first] = updatedAbility->GetLevel();
+				mAbilityRunProgression->purchasedLevels[pending.first] = updatedAbility->GetLevel();
 				mPendingTestAbilityLevels.erase(pendingTarget);
 			}
 		}
@@ -469,7 +470,7 @@ namespace vega
 		AbilityPurchaseCommitContext& commit =
 			*static_cast<AbilityPurchaseCommitContext*>(context);
 		commit.purchasedLevel.mapped() = level;
-		const auto insertion = commit.player.mPurchasedAbilityLevels.insert(
+		const auto insertion = commit.player.mAbilityRunProgression->purchasedLevels.insert(
 			std::move(commit.purchasedLevel)
 		);
 		if (!insertion.inserted)
@@ -485,10 +486,53 @@ namespace vega
 		AddScore(scoreAmount);
 	}
 
+	bool Player::TryChooseAbilityEvolve(sas::AbilitySlot slot, const std::string& evolveId, std::string* failureReason)
+	{
+		const auto ship = mCurrentSpaceShip.lock();
+		const auto* ability = ship ? ship->GetAbilitySystemComponent().GetAbility(slot) : nullptr;
+		return TryChooseAbilityEvolve(ability ? ability->GetDefinition().abilityId : std::string{}, evolveId, failureReason);
+	}
+
+	bool Player::TryChooseAbilityEvolve(const std::string& abilityId, const std::string& evolveId, std::string* failureReason)
+	{
+		if (failureReason) failureReason->clear();
+		auto fail = [&](const char* reason) { if (failureReason) *failureReason = reason; return false; };
+		if (mAbilityPurchaseInProgress) return fail("Another ability progression change is in progress.");
+		const auto ship = mCurrentSpaceShip.lock();
+		if (!ship || ship->GetIsPendingDestroy()) return fail("No active ship is available.");
+		auto& abilities = ship->GetAbilitySystemComponent();
+		const auto* ability = abilities.GetAbilityById(abilityId);
+		if (!ability) return fail("Ability is not granted.");
+		const std::string id = ability->GetDefinition().abilityId;
+		auto selection = ability->GetEvolveSelection();
+		selection.push_back(evolveId);
+		decltype(AbilityRunProgression::evolveSelections) stagedSelections;
+		PurchasedAbilityLevels stagedLevels;
+		stagedSelections.emplace(id, std::move(selection));
+		stagedLevels.emplace(id, ability->GetLevel());
+		struct Commit
+		{
+			AbilityRunProgression& state;
+			decltype(AbilityRunProgression::evolveSelections)::node_type selection;
+			PurchasedAbilityLevels::node_type level;
+		} commit{ *mAbilityRunProgression, stagedSelections.extract(id), stagedLevels.extract(id) };
+		mAbilityPurchaseInProgress = true;
+		struct Scope { bool& flag; ~Scope() { flag = false; } } scope{ mAbilityPurchaseInProgress };
+		return abilities.ChooseAbilityEvolve(ability->GetHandle(), evolveId, failureReason, [](void* context) noexcept
+		{
+			auto& commit = *static_cast<Commit*>(context);
+			auto selected = commit.state.evolveSelections.insert(std::move(commit.selection));
+			if (!selected.inserted) selected.position->second = std::move(selected.node.mapped());
+			auto level = commit.state.purchasedLevels.insert(std::move(commit.level));
+			if (!level.inserted) level.position->second = level.node.mapped();
+		}, &commit);
+	}
+
 	void Player::RestorePurchasedAbilityLevels(PlayerSpaceShip& ship)
 	{
 		auto& abilities = ship.GetAbilitySystemComponent();
-		for (auto& purchasedLevel : mPurchasedAbilityLevels)
+		abilities.SetPlayerRunProgression(mAbilityRunProgression);
+		for (auto& purchasedLevel : mAbilityRunProgression->purchasedLevels)
 		{
 			GameAbility* ability = abilities.GetAbilityById(purchasedLevel.first);
 			if (!ability)
@@ -502,6 +546,12 @@ namespace vega
 			);
 			purchasedLevel.second = ability->GetLevel();
 		}
+		for (const auto& [id, selection] : mAbilityRunProgression->evolveSelections)
+			if (auto* ability = abilities.GetAbilityById(id))
+			{
+				std::string reason;
+				if (!abilities.RestoreAbilityEvolves(ability->GetHandle(), selection, &reason)) throw std::runtime_error("Could not restore evolves for '" + id + "': " + reason);
+			}
 	}
 
 	std::optional<ModuleRulesContext> Player::BuildModuleRules() const
@@ -524,7 +574,7 @@ namespace vega
 		ship.GetModuleApplier().SetRunCounterCreditSink([this, lifetime](std::uint32_t instanceId, double units) { if (!lifetime.expired()) mModuleLoadout.AddRunCounterCredit(instanceId, units); });
 		ship.GetModuleApplier().SetKillCreditSink([this, lifetime](std::uint32_t instanceId, double stacks, double damageBonus) { if (!lifetime.expired()) mModuleLoadout.AddKillCredit(instanceId, stacks, damageBonus); });
 		ship.GetModuleApplier().SetReviveSpentSink([this, lifetime](std::uint32_t instanceId) { if (!lifetime.expired()) mModuleLoadout.AddReviveChargeSpent(instanceId); });
-		ship.GetModuleApplier().SetAbilityLevelSink([this, lifetime](const std::string& abilityId, int level) { if (lifetime.expired()) return; const auto found = mPurchasedAbilityLevels.find(abilityId); if (found != mPurchasedAbilityLevels.end()) found->second = level; else mPurchasedAbilityLevels.emplace(abilityId, level); });
+		ship.GetModuleApplier().SetAbilityLevelSink([this, lifetime](const std::string& abilityId, int level) { if (lifetime.expired()) return; const auto found = mAbilityRunProgression->purchasedLevels.find(abilityId); if (found != mAbilityRunProgression->purchasedLevels.end()) found->second = level; else mAbilityRunProgression->purchasedLevels.emplace(abilityId, level); });
 		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
 		if (!rules) return;
 		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))
@@ -735,7 +785,8 @@ namespace vega
 		mModuleLoadout = ModuleLoadout{};
 		mPendingSecondaryWeaponChoices.clear();
 		mTestModulesGranted = false;
-		mPurchasedAbilityLevels.clear();
+		mAbilityRunProgression->purchasedLevels.clear();
+		mAbilityRunProgression->evolveSelections.clear();
 		mFieldMasteryRunState = std::make_shared<FieldMasteryRunState>();
 		mPendingTestAbilityLevels.clear();
 		mPendingTestAbilityLevelUps = 0;

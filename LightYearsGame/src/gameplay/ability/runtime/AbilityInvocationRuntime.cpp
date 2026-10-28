@@ -20,7 +20,9 @@ namespace vega
 
 	GameAbilityDefinition AbilityInvocationRuntime::BuildInvocationDefinition(const GameAbilityDefinition& sourceDefinition, const AbilityUseRecord& record, const List<sas::AttributeScalingRule>& scalingRules, float outputMultiplier)
 	{
-		GameAbilityDefinition definition = sourceDefinition;
+		const auto* combination = record.evolveContent ? record.evolveContent->FindCombination(record.evolveSelection) : nullptr;
+		const auto& capturedSource = combination ? *combination : sourceDefinition;
+		GameAbilityDefinition definition = capturedSource;
 		definition.levelProgression.clear();
 		definition.repeatingLevelProgression.clear();
 		definition.scrapCost = {};
@@ -39,12 +41,12 @@ namespace vega
 		// source level's numeric balance exactly like GameAbility does. Dropping
 		// these modifiers made Echo silently replay level-one actor values even
 		// when the recorded ability had already been upgraded.
-		definition.actions = sourceDefinition.actions;
-		definition.triggers = sourceDefinition.triggers;
+		definition.actions = capturedSource.actions;
+		definition.triggers = capturedSource.triggers;
 		const int sourceSteps = std::max(0, record.level - 1);
 		for (int stepIndex = 0; stepIndex < sourceSteps; ++stepIndex)
 		{
-			const AbilityLevelStep* stepPtr = sourceDefinition.ResolveLevelStep(
+			const AbilityLevelStep* stepPtr = capturedSource.ResolveLevelStep(
 				static_cast<std::size_t>(stepIndex)
 			);
 			if (!stepPtr)
@@ -52,6 +54,7 @@ namespace vega
 				break;
 			}
 			const AbilityLevelStep& step = *stepPtr;
+			if (record.evolveContent) definition.levelScalingRules.insert(definition.levelScalingRules.end(), step.scalingRules.begin(), step.scalingRules.end());
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == CommonAttributeIds::Cooldown)
@@ -107,7 +110,7 @@ namespace vega
 			definition.attributeModifiers.emplace_back(
 				CommonAttributeIds::Cooldown,
 				-GetGlobalAbilityCooldownTotalReduction(
-					sourceDefinition.cooldown,
+					capturedSource.cooldown,
 					static_cast<std::size_t>(sourceSteps)
 				)
 			);

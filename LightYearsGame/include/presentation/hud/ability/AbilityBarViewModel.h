@@ -16,6 +16,7 @@ namespace vega
 	struct AbilitySlotViewData
 	{
 		bool visible{ false };
+		bool evolvePending{ false };
 		std::string iconPath;
 		std::string inputLabel;
 		sf::Color accentColor{ sf::Color::White };
@@ -26,7 +27,7 @@ namespace vega
 
 		bool operator==(const AbilitySlotViewData& other) const
 		{
-			return visible == other.visible && iconPath == other.iconPath && inputLabel == other.inputLabel &&
+			return visible == other.visible && evolvePending == other.evolvePending && iconPath == other.iconPath && inputLabel == other.inputLabel &&
 				accentColor == other.accentColor && state == other.state && cooldownTenths == other.cooldownTenths &&
 				statsText == other.statsText && timing == other.timing;
 		}

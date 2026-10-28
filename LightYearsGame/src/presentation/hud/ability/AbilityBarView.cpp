@@ -99,6 +99,16 @@ namespace vega
 			SlotWidgets& widgets = mSlots[index];
 			if (auto column = widgets.column.lock()) column->SetVisibility(data.visible);
 			if (!data.visible) continue;
+			if (data.evolvePending && widgets.evolve.expired())
+				if (auto column = widgets.column.lock())
+				{
+					widgets.evolve = column->AddChild<TextWidget>("EVOLVE [V]", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf", 12);
+					if (auto badge = widgets.evolve.lock())
+					{
+						badge->SetLayout(UILayout::Anchored(UIAnchor::BottomLeft, { 0.f, 12.f }));
+						badge->SetFillColor({ 255, 215, 90, 255 });
+					}
+				}
 			if (data.timing.open && widgets.timing.expired())
 			{
 				if (auto column = widgets.column.lock())
@@ -136,6 +146,7 @@ namespace vega
 				layout.pivot = { 0.f, 1.f };
 				stats->SetLayout(layout);
 			}
+			if (auto badge = widgets.evolve.lock()) badge->SetVisibility(data.visible && data.evolvePending);
 			if (auto input = widgets.input.lock())
 			{
 				input->SetString(data.inputLabel);

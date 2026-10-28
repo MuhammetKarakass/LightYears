@@ -42,6 +42,9 @@ namespace vega::content
 		AbilityLoader::LoadedDefinition loaded;
 		loaded.id = abilityId;
 		loaded.definition = *fallback;
+		loaded.definition.evolveContent.reset();
+		loaded.definition.configurationContent.reset();
+		loaded.definition.activeEvolveIds.clear();
 		loaded.definition.abilityId = abilityId;
 		loaded.definition.scalingRules.clear();
 		loaded.definition.levelProgression.clear();

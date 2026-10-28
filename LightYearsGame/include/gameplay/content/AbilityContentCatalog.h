@@ -10,6 +10,17 @@
 
 namespace vega::content
 {
+	// Stack-scoped resolution of a captured combination, including deferred invocations.
+	class ScopedAbilityDefinitionView final
+	{
+	public:
+		explicit ScopedAbilityDefinitionView(const GameAbilityDefinition& definition);
+		~ScopedAbilityDefinitionView();
+		ScopedAbilityDefinitionView(const ScopedAbilityDefinitionView&) = delete;
+		ScopedAbilityDefinitionView& operator=(const ScopedAbilityDefinitionView&) = delete;
+	private:
+		const GameAbilityDefinition* mPrevious;
+	};
 	// Existing behavior validators resolve settings through the content catalog.
 	// This thread-local, stack-scoped view lets them inspect unsaved candidates
 	// without replacing the live catalog or changing behavior validation rules.
