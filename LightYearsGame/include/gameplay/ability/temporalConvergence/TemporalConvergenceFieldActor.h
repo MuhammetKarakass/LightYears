@@ -69,8 +69,6 @@ namespace vega
 		float mSlowFraction = 0.40f;
 		float mStunDuration = 2.f;
 		float mGrantedShield = 120.f;
-		float mOvershieldHoldDuration = 4.f;
-		float mOvershieldDecayPerSecond = 100.f;
 		bool mTargetConfigured = false;
 		bool mTriggered = false;
 	};

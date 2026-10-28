@@ -4,9 +4,33 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
+#include "gameplay/ability/content/NumericSettingContract.h"
 
 namespace AbilityData::HullShock
 {
+	struct Evolve
+	{
+		inline static constexpr char DirectedDischarge[] = "Ability.Evolve.HullShock.DirectedDischarge";
+		inline static constexpr char ReactiveCapacitor[] = "Ability.Evolve.HullShock.ReactiveCapacitor";
+		inline static constexpr char AftershockResonance[] = "Ability.Evolve.HullShock.AftershockResonance";
+	};
+	struct Effect
+	{
+		inline static constexpr char ReactiveCapacitor[] = "Effect.Defense.HullShock.ReactiveCapacitor.Basic";
+	};
+	struct Setting
+	{
+		inline static constexpr char ConeAngleDegrees[] = "coneAngleDegrees";
+		inline static constexpr char DirectedDamageMultiplier[] = "directedDamageMultiplier";
+		inline static constexpr char RecordedDamageShieldFraction[] = "recordedDamageShieldFraction";
+		inline static constexpr char MaxHealthShieldCapFraction[] = "maxHealthShieldCapFraction";
+		inline static constexpr char AftershockDelay[] = "aftershockDelay";
+		inline static constexpr char AftershockDamageFraction[] = "aftershockDamageFraction";
+		inline static constexpr char AftershockElectricStacks[] = "aftershockElectricStacks";
+		inline static const vega::content::NumericSettingContract Contract{
+			{ ConeAngleDegrees, DirectedDamageMultiplier, RecordedDamageShieldFraction, MaxHealthShieldCapFraction, AftershockDelay, AftershockDamageFraction, AftershockElectricStacks }, {}
+		};
+	};
 	struct AbilityId
 	{
 		inline static constexpr char Basic[] = "Ability.Offense.HullShock.Basic";

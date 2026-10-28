@@ -862,7 +862,8 @@ namespace vega
 			auto& shield = owner->GetShieldComponent();
 			owner->GetShipRuntime().GetAttributes().SetBaseValue(ShipAttributeIds::MaxShield, 100.f);
 			health.GrantTemporaryOverhealth("audit", 40.f, 0.f, 10.f);
-			shield.GrantTemporaryOvershield("audit", 40.f, 0.f, 10.f);
+			shield.GrantShield("audit", 40.f);
+			shield.TickTemporaryOvershields(5.f);
 			for (float maximum : { 120.f, 150.f })
 			{
 				system.GetAttributes().SetBaseValue(OwnerAttributeIds::MaxHealth, maximum);
@@ -871,7 +872,7 @@ namespace vega
 					std::abs(shield.GetShield() - maximum - 40.f) < 0.001f);
 			}
 			health.TickTemporaryOverhealths(1.f);
-			shield.TickTemporaryOvershields(1.f);
+			shield.TickTemporaryOvershields(.1f);
 			check("decayLedgerPreserved", health.GetHealth() == 180.f && shield.GetShield() == 180.f);
 			result["outcome"]["healthAfterDecay"] = health.GetHealth();
 

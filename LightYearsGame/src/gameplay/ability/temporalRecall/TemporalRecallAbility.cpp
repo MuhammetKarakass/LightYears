@@ -312,7 +312,7 @@ namespace vega
 		ShieldComponent& shield = ship->GetShieldComponent();
 		if (mSnapshot.shield > shield.GetShield())
 		{
-			shield.ChangeShield((mSnapshot.shield - shield.GetShield()) * shieldRatio);
+			shield.GrantShield(context.definition.abilityId, (mSnapshot.shield - shield.GetShield()) * shieldRatio);
 		}
 
 		mPhase = Phase::Completed;

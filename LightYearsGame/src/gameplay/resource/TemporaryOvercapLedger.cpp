@@ -19,6 +19,14 @@ namespace vega
 		});
 	}
 
+	float TemporaryOvercapLedger::RefreshMaximum(const TemporaryOvercapRequest& request)
+	{
+		const float previous = RemoveSource(request.sourceId);
+		const float amount = std::max(previous, request.amount);
+		Add({ request.sourceId, amount, request.holdDuration, request.decayPerSecond });
+		return amount - previous;
+	}
+
 	float TemporaryOvercapLedger::RemoveSource(const std::string& sourceId)
 	{
 		float removed = 0.f;
@@ -112,7 +120,7 @@ namespace vega
 			std::remove_if(
 				mEntries.begin(),
 				mEntries.end(),
-				[](const Entry& entry) { return entry.amount <= 0.001f; }
+				[this](const Entry& entry) { return entry.amount <= mEmptyThreshold; }
 			),
 			mEntries.end()
 		);

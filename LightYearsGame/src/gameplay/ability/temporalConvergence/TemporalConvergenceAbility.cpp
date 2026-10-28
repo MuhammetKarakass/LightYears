@@ -77,9 +77,7 @@ namespace vega
 				AbilityData::TemporalConvergence::Attribute::TravelSpeed,
 				AbilityData::TemporalConvergence::Attribute::FieldDuration,
 				AbilityData::TemporalConvergence::Attribute::SlowFraction,
-				AbilityData::TemporalConvergence::Attribute::StunDuration,
-				AbilityData::TemporalConvergence::Attribute::OvershieldHoldDuration,
-				AbilityData::TemporalConvergence::Attribute::OvershieldDecayPerSecond
+				AbilityData::TemporalConvergence::Attribute::StunDuration
 		};
 		const bool validAttributes = definition.attributes.size() == requiredAttributes.size() &&
 			std::all_of(

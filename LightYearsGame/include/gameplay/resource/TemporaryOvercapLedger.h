@@ -19,7 +19,10 @@ namespace vega
 	class TemporaryOvercapLedger
 	{
 	public:
+		explicit TemporaryOvercapLedger(float emptyThreshold = 0.001f) : mEmptyThreshold{ emptyThreshold } {}
 		void Add(const TemporaryOvercapRequest& request);
+		// Refresh one source without stacking. Returns the increase in its balance.
+		float RefreshMaximum(const TemporaryOvercapRequest& request);
 		void Consume(float amount);
 		float RemoveSource(const std::string& sourceId);
 		void Reconcile(float currentValue, float normalMaximum);
@@ -40,5 +43,6 @@ namespace vega
 		void RemoveEmptyEntries();
 
 		std::vector<Entry> mEntries;
+		float mEmptyThreshold;
 	};
 }

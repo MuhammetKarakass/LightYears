@@ -1952,7 +1952,7 @@ int main(int argc, char** argv)
 		!NearlyEqual(shieldHarvestIt->definition.cooldown, 14.f) ||
 		!NearlyEqual(shieldHarvestIt->definition.duration, 1.5f) ||
 		shieldHarvestIt->definition.maxCharges != 1 ||
-		shieldHarvestIt->definition.attributes.size() != 5 ||
+		shieldHarvestIt->definition.attributes.size() != 3 ||
 		!shieldHarvestIt->definition.ResolveLevelStep(0) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
@@ -2301,7 +2301,7 @@ int main(int argc, char** argv)
 	{
 		return Fail(loadedEffects.error.c_str()) ? 0 : 1;
 	}
-	if (loadedEffects.definitions.size() != 18 ||
+	if (loadedEffects.definitions.size() != 21 ||
 		barrierEffectIt == loadedEffects.definitions.end() ||
 		!barrierEffectIt->definition.sourceParameterized ||
 		!barrierEffectIt->definition.attributes.empty() ||

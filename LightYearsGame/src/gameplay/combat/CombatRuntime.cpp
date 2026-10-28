@@ -433,7 +433,7 @@ namespace vega
 		conditionContext.ownerHealthFraction = ownerHealth && ownerHealth->GetMaxHealth() > 0.f ? ownerHealth->GetHealth() / ownerHealth->GetMaxHealth() : 1.f;
 		const ShieldComponent* ownerShield = mOwner.FindComponent<ShieldComponent>();
 		conditionContext.ownerShieldFull = ownerShield && ownerShield->GetMaxShield() > 0.f && ownerShield->GetShield() >= ownerShield->GetMaxShield();
-		conditionContext.ownerShieldOverMax = ownerShield && ownerShield->GetMaxShield() > 0.f && ownerShield->GetShield() > ownerShield->GetMaxShield();
+		conditionContext.ownerShieldOverMax = ownerShield && ownerShield->GetOvershield() > 0.f;
 		const auto* targetShip = dynamic_cast<const SpaceShip*>(&target);
 		conditionContext.targetIsBossClass = targetShip && (targetShip->GetControlTargetClass() == ControlTargetClass::MiniBoss || targetShip->GetControlTargetClass() == ControlTargetClass::Boss);
 		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
@@ -583,7 +583,7 @@ namespace vega
 		ModuleDamageConditionContext conditionContext;
 		conditionContext.ownerHealthFraction = health && health->GetMaxHealth() > 0.f ? health->GetHealth() / health->GetMaxHealth() : 1.f;
 		conditionContext.ownerMaxHealth = health ? health->GetMaxHealth() : 0.f;
-		if (const auto* shield = mOwner.FindComponent<ShieldComponent>()) conditionContext.ownerShieldOverMax = shield->GetMaxShield() > 0.f && shield->GetShield() > shield->GetMaxShield();
+		if (const auto* shield = mOwner.FindComponent<ShieldComponent>()) conditionContext.ownerShieldOverMax = shield->GetOvershield() > 0.f;
 		if (const auto* sourceHealth = context.source ? context.source->FindComponent<HealthComponent>() : nullptr)
 			conditionContext.sourceMaxHealth = sourceHealth->GetMaxHealth();
 		if (const auto* sourceCombatant = dynamic_cast<const Combatant*>(context.source))

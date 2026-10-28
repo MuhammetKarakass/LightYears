@@ -2087,12 +2087,8 @@ int main(int argc, char** argv)
 		}
 	}
 	ShieldComponent frameRateIndependentOvershield{ componentOwner, 150.f, 150.f, 3.f };
-	frameRateIndependentOvershield.GrantTemporaryOvershield(
-		"Test.Overshield",
-		100.f,
-		0.f,
-		100.f
-	);
+	frameRateIndependentOvershield.GrantShield("Test.Overshield", 100.f);
+	frameRateIndependentOvershield.TickTemporaryOvershields(5.f);
 	frameRateIndependentOvershield.TickTemporaryOvershields(0.01f);
 	if (!NearlyEqual(frameRateIndependentOvershield.GetShield(), 249.f))
 	{

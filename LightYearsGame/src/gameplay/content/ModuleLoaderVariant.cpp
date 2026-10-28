@@ -268,11 +268,12 @@ namespace vega::content
 				else if (kind == "ApplyNearbyCryo") action.kind = ModuleEventActionKind::ApplyNearbyCryo;
 				else if (kind == "AwardGold") action.kind = ModuleEventActionKind::AwardGold;
 				else throw std::runtime_error(context + " unknown event action: " + kind);
-				if (action.kind == ModuleEventActionKind::GrantTemporaryShield || action.kind == ModuleEventActionKind::RestoreHealthOverTime)
+				if (action.kind == ModuleEventActionKind::RestoreHealthOverTime)
 				{
 					action.durationSeconds = ParseFiniteFloat(entry.at("durationSeconds"), context);
 					if (action.durationSeconds <= 0.f || action.trigger != ModuleTriggerKind::AbilityActivated) throw std::runtime_error(context + " invalid temporary shield timing");
 				}
+				if (action.kind == ModuleEventActionKind::GrantTemporaryShield && entry.contains("durationSeconds")) throw std::runtime_error(context + " shield grants use the shared overshield rule");
 				const bool refund = action.kind == ModuleEventActionKind::RefundUsedCooldown;
 				const bool cryo = action.kind == ModuleEventActionKind::ApplyNearbyCryo;
 				const bool allFraction = action.kind == ModuleEventActionKind::RefundAllCooldownsFraction;

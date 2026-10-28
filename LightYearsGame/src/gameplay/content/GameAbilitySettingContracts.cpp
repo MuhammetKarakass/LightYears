@@ -6,12 +6,15 @@
 #include "gameplay/ability/arcScythes/ArcScythesContracts.h"
 #include "gameplay/ability/closedCircuit/ClosedCircuitContracts.h"
 #include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolContracts.h"
+#include "gameplay/ability/hullShock/HullShockContracts.h"
 
 namespace vega::content
 {
 	bool RegisterGameAbilitySettingContracts(std::string* failureReason)
 	{
 		return NumericSettingContractRegistry::Register(
+			AbilityBehaviorType::HullShock, AbilityData::HullShock::Setting::Contract, failureReason
+		) && NumericSettingContractRegistry::Register(
 			AbilityBehaviorType::Dash,
 			AbilityData::Dash::Setting::Contract,
 			failureReason

@@ -4291,7 +4291,7 @@
         2,
         3
       ],
-      "description": "Defense ability use grants a temporary shield layer equal to {action.0.amountPercent}% of Max Shield; decays over {action.0.durationSeconds}s. Repeat use refreshes without stacking.",
+      "description": "Defense ability use grants {action.0.amountPercent}% of Max Shield: fills missing Shield first, then holds excess for {shield.overshieldHoldSeconds}s and decays it at {shield.overshieldDecayPerSecond}/s. Repeat use refreshes without stacking.",
       "sizeVariants": [
         {
           "shape": [
@@ -4313,7 +4313,6 @@
                 0.23,
                 0.26
               ],
-              "durationSeconds": 6,
               "requiredEventTags": [
                 "Ability.Defense"
               ]
@@ -4344,7 +4343,6 @@
                 0.23,
                 0.26
               ],
-              "durationSeconds": 6,
               "requiredEventTags": [
                 "Ability.Defense"
               ]

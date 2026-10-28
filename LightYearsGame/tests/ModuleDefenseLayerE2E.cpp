@@ -65,17 +65,17 @@ namespace
 			const auto module = f.Install("Module.Defense.OvershieldLayer.Uncommon", 1, level, "Module.SideFeature.OvershieldLayer.ShieldRush");
 			const int effective = level + ModuleResolver::FindZoneLevelBonus(f.ship->GetModuleApplier().GetResolvedEffects(), module);
 			const float layer = maximum * (.2f + .03f * (effective - 1));
-			shield.ChangeShield(maximum); CastOffense(f); f.Equal("Offense cannot grant temporary shield", 0.f, shield.GetModuleTemporaryShield());
-			CastDefense(f); f.Equal("Defense grants its effective-level temporary layer", layer, shield.GetModuleTemporaryShield());
+			shield.ChangeShield(maximum); CastOffense(f); f.Equal("Offense cannot grant temporary shield", 0.f, shield.GetOvershield());
+			CastDefense(f); f.Equal("Defense grants its effective-level temporary layer", layer, shield.GetOvershield());
 			f.Equal("layer can exceed normal maximum", maximum + layer, shield.GetShield());
 			f.Equal("Shield Rush activates immediately", 1.2f, f.ship->GetRuntimeModifiers().GetMovementSpeedMultiplier());
-			shield.TickTemporaryOvershields(3.f); f.Equal("temporary layer decays continuously", layer * .5f, shield.GetModuleTemporaryShield());
-			CastDefense(f); f.Equal("repeat refreshes instead of stacking", layer, shield.GetModuleTemporaryShield());
+			shield.TickTemporaryOvershields(3.f); f.Equal("shared overshield holds for five seconds", layer, shield.GetOvershield());
+			CastDefense(f); f.Equal("repeat refreshes instead of stacking", layer, shield.GetOvershield());
 			shield.AbsorbDamage(layer, 1.f, 0.f); f.Equal("damage consumes layer before normal shield", maximum, shield.GetShield());
 			f.Equal("Shield Rush ends on consumption", 1.f, f.ship->GetRuntimeModifiers().GetMovementSpeedMultiplier());
 			shield.ChangeShield(-maximum); CastDefense(f); f.Equal("empty normal shield still gains temporary layer", layer, shield.GetShield());
-			shield.TickTemporaryOvershields(6.f); f.Equal("layer below maximum still expires", 0.f, shield.GetShield());
-			shield.ChangeShield(maximum); CastDefense(f); shield.GrantTemporaryOvershield("Other.Ability", 10.f, 0.f, 1.f);
+			shield.TickTemporaryOvershields(6.f); f.Equal("normal shield filled by a grant does not expire", layer, shield.GetShield());
+			shield.ChangeShield(maximum); CastDefense(f); shield.GrantShield("Other.Ability", 10.f);
 			f.Remove(module); f.Equal("uninstall removes only this module layer", maximum + 10.f, shield.GetShield());
 			f.Equal("uninstall removes movement modifier", 1.f, f.ship->GetRuntimeModifiers().GetMovementSpeedMultiplier());
 		}
@@ -91,7 +91,9 @@ namespace
 		for (const auto* id : { "Module.Defense.ArmorConversion.Uncommon", "Module.Defense.OvershieldLayer.Uncommon" })
 		{
 			const auto* module = content::ModuleContentCatalog::FindById(id);
-			report.Check(module && module->sizeVariants.size() == 2 && module->sideFeatures.size() == 2 && module->sharedPools.front().allowedFeatureIds.size() == 3, "new module has a complete five-choice ladder");
+			std::size_t sharedChoices = 0;
+			if (module) for (const auto& pool : module->sharedPools) sharedChoices += pool.allowedFeatureIds.size();
+			report.Check(module && module->sizeVariants.size() == 2 && module->sideFeatures.size() == 2 && sharedChoices == 3, "new module has a complete five-choice ladder across its shared pools");
 			report.Check(module->sizeVariants[1].shape.cells == List<sf::Vector2i>{ { 0, 0 }, { 1, 0 }, { 0, 1 } }, "three-cell shape is L");
 		}
 	}

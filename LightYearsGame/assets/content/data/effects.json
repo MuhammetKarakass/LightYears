@@ -215,6 +215,16 @@
       "disposition": "Harmful",
       "category": "Debuff.ArmorBreak",
       "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Defense.HullShock.ReactiveCapacitor.Basic",
+      "behaviorKey": "EffectBehavior.Defense.DamageReduction",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "disposition": "Beneficial",
+      "category": "Defense.DamageReduction",
+      "sourceScopedApplication": true,
+      "sourceParameterized": true
     }
   ]
 }

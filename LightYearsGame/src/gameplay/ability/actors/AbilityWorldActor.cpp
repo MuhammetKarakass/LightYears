@@ -5,6 +5,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/portal/PortalDestinationRebaser.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"
 #include "gameplay/projectile/ProjectileInterceptionService.h"
@@ -115,6 +116,16 @@ namespace vega
 	{
 		if (mCapturedConfiguration) for (const auto& actor : mCapturedConfiguration->actors) if (actor.actorDefinitionId.ToString() == id) return &actor;
 		return AbilityData::FindAbilityActorDefinition(id);
+	}
+
+	std::optional<float> AbilityWorldActor::FindCapturedNumericSetting(const std::string& name) const
+	{
+		if (mCapturedConfiguration)
+		{
+			const auto it = mCapturedConfiguration->numericSettings.find(name);
+			return it == mCapturedConfiguration->numericSettings.end() ? std::nullopt : std::optional<float>{ it->second };
+		}
+		return content::AbilityContentCatalog::FindNumericSetting(GetSourceAbilityId().ToString(), name);
 	}
 
 	GameAbility* AbilityWorldActor::GetSourceAbilityInstance() const

@@ -3,6 +3,7 @@
 #include <framework/reflection/Reflection.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace vega
 {
@@ -14,7 +15,7 @@ namespace vega
 		VEGA_PROPERTY("Max Shield", GetMaxShield, SetMaxShield).Range(0.f, 100000.f);
 		VEGA_PROPERTY("Recharge Delay", GetRechargeDelay, SetRechargeDelay).Range(0.f, 1000.f).Speed(0.1f);
 		VEGA_READONLY("Recharge Delay Remaining", GetRechargeDelayRemaining);
-		VEGA_READONLY("Module Temporary Shield", GetModuleTemporaryShield);
+		VEGA_READONLY("Overshield", GetOvershield);
 		VEGA_READONLY("Front Shield", GetFrontShield);
 		VEGA_READONLY("Rear Shield", GetRearShield);
 		VEGA_READONLY("Passive Regen Blocked", IsPassiveRegenBlocked);
@@ -84,7 +85,6 @@ namespace vega
 			mShield = mFrontShield + rear + excessShield;
 		}
 		mTemporaryOvershields.Reconcile(mShield, mMaxShield);
-		if (mMaxShield == 0.f) { mModuleShieldLayers.Clear(); mModuleTemporaryShield = 0.f; }
 		mBatteryReserve = std::min(mBatteryReserve, GetBatteryCap());
 
 		if (mShield != previousShield || mMaxShield != previousMaxShield)
@@ -111,12 +111,6 @@ namespace vega
 
 		const float previousShield = mShield;
 		const float previousTotalShield = GetShield();
-		if (amount < 0.f)
-		{
-			const float consumed = std::min(mModuleTemporaryShield, -amount);
-			mModuleTemporaryShield -= consumed; mModuleShieldLayers.Consume(consumed); amount += consumed;
-			if (mModuleShieldLayers.IsEmpty()) mModuleTemporaryShield = 0.f;
-		}
 		mShield = std::max(0.f, mShield + amount);
 		if (amount > 0.f)
 		{
@@ -136,7 +130,7 @@ namespace vega
 
 	float ShieldComponent::AbsorbDamage(float sourceDamage, float shieldDamageMultiplier, float extraRechargeDelay, bool moduleGenerated, ShieldImpactSide side)
 	{
-		if (sourceDamage <= 0.f || mMaxShield <= 0.f)
+		if (sourceDamage <= 0.f || (mMaxShield <= 0.f && GetShield() <= 0.f))
 		{
 			return 0.f;
 		}
@@ -166,7 +160,7 @@ namespace vega
 		const float previousOvershield = std::max(0.f, previousShield - mMaxShield);
 		const float normal = std::min(mShield, mMaxShield);
 		const float directional = !mModuleBehavior.frontRearSplit || side == ShieldImpactSide::Shared ? normal : side == ShieldImpactSide::Front ? GetFrontShield() : GetRearShield();
-		const float absorbedShieldDamage = std::min(mModuleTemporaryShield + previousOvershield + directional, sourceDamage * multiplier);
+		const float absorbedShieldDamage = std::min(previousOvershield + directional, sourceDamage * multiplier);
 		struct DamageScope
 		{
 			bool& flag;
@@ -174,11 +168,8 @@ namespace vega
 			~DamageScope() { flag = previous; }
 		} scope{ mAbsorbingModuleDamage, mAbsorbingModuleDamage };
 		mAbsorbingModuleDamage = moduleGenerated;
-		const float layerDamage = std::min(mModuleTemporaryShield, absorbedShieldDamage);
-		mModuleTemporaryShield -= layerDamage; mModuleShieldLayers.Consume(layerDamage);
-		if (mModuleShieldLayers.IsEmpty()) mModuleTemporaryShield = 0.f;
-		const float sharedDamage = std::min(previousOvershield, absorbedShieldDamage - layerDamage);
-		const float normalDamage = absorbedShieldDamage - layerDamage - sharedDamage;
+		const float sharedDamage = std::min(previousOvershield, absorbedShieldDamage);
+		const float normalDamage = absorbedShieldDamage - sharedDamage;
 		if (mModuleBehavior.frontRearSplit)
 		{
 			if (side == ShieldImpactSide::Front) mFrontShield = std::max(0.f, mFrontShield - normalDamage);
@@ -194,62 +185,30 @@ namespace vega
 		return absorbedShieldDamage / multiplier;
 	}
 
-	float ShieldComponent::GrantTemporaryOvershield(
-		const std::string& sourceId,
-		float amount,
-		float holdDuration,
-		float decayPerSecond
-	)
+	float ShieldComponent::GrantShield(const std::string& sourceId, float amount)
 	{
-		const float safeAmount = std::max(0.f, amount);
-		if (safeAmount <= 0.f || mMaxShield <= 0.f)
-		{
-			return 0.f;
-		}
-
-		const float previousShield = mShield;
-		const float previousTotalShield = GetShield();
-		const float previousOvershield = std::max(0.f, previousShield - mMaxShield);
-		mShield += safeAmount;
-		AdjustPolarNormalShield(std::min(previousShield, mMaxShield));
-		const float newOvershield = std::max(0.f, mShield - mMaxShield);
-		const float temporaryPortion = std::max(0.f, newOvershield - previousOvershield);
-		if (temporaryPortion > 0.f)
-		{
-			mTemporaryOvershields.Add(TemporaryOvercapRequest{
-				sourceId,
-				temporaryPortion,
-				std::max(0.f, holdDuration),
-				std::max(0.f, decayPerSecond)
-			});
-		}
-		BroadcastShieldChanged(previousTotalShield);
-		return safeAmount;
+		if (sourceId.empty() || !std::isfinite(amount) || amount <= 0.f) return 0.f;
+		const float previous = mShield;
+		const float fill = std::min(amount, std::max(0.f, mMaxShield - mShield));
+		const float increase = mTemporaryOvershields.RefreshMaximum({ sourceId, amount - fill, OvershieldRule::HoldSeconds, OvershieldRule::DecayPerSecond });
+		mShield += fill + increase;
+		AdjustPolarNormalShield(std::min(previous, mMaxShield));
+		BroadcastShieldChanged(previous);
+		return mShield - previous;
 	}
 
-	void ShieldComponent::GrantModuleTemporaryShield(const std::string& sourceId, float amount, float decaySeconds)
+	void ShieldComponent::RemoveShieldGrant(const std::string& sourceId)
 	{
-		if (sourceId.empty() || amount <= 0.f || decaySeconds <= 0.f || mMaxShield <= 0.f) return;
-		const float previous = GetShield();
-		mModuleTemporaryShield = std::max(0.f, mModuleTemporaryShield - mModuleShieldLayers.RemoveSource(sourceId));
-		mModuleTemporaryShield += amount;
-		mModuleShieldLayers.Add({ sourceId, amount, 0.f, amount / decaySeconds });
+		const float previous = mShield;
+		mShield = std::max(0.f, mShield - mTemporaryOvershields.RemoveSource(sourceId));
 		BroadcastShieldChanged(previous);
 	}
-	void ShieldComponent::RemoveModuleTemporaryShield(const std::string& sourceId)
-	{
-		const float previous = GetShield();
-		mModuleTemporaryShield = std::max(0.f, mModuleTemporaryShield - mModuleShieldLayers.RemoveSource(sourceId));
-		BroadcastShieldChanged(previous);
-	}
+
 	void ShieldComponent::TickTemporaryOvershields(float deltaTime)
 	{
 		const float previous = GetShield();
 		const float decay = mTemporaryOvershields.Tick(deltaTime, mShield, mMaxShield);
-		if (decay > 0.f) mShield = std::max(mMaxShield, mShield - decay);
-		const float layerDecay = mModuleShieldLayers.Tick(deltaTime, mModuleTemporaryShield, 0.f);
-		mModuleTemporaryShield = std::max(0.f, mModuleTemporaryShield - layerDecay);
-		if (mModuleShieldLayers.IsEmpty()) mModuleTemporaryShield = 0.f;
+		if (decay > 0.f) mShield = std::max(0.f, mShield - decay);
 		BroadcastShieldChanged(previous);
 	}
 

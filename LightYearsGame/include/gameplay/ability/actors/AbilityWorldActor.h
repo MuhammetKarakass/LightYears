@@ -72,6 +72,7 @@ namespace vega
 		void CaptureAbilityConfiguration(std::shared_ptr<const AbilityConfigurationContent> content) { mCapturedConfiguration = std::move(content); }
 		const std::shared_ptr<const AbilityConfigurationContent>& GetCapturedAbilityConfiguration() const { return mCapturedConfiguration; }
 		const AbilityActorDefinition* FindCapturedActorDefinition(const std::string& id) const;
+		std::optional<float> FindCapturedNumericSetting(const std::string& name) const;
 
 		void SetProjectileRelayLineage(const ProjectileRelayLineage& lineage)
 		{

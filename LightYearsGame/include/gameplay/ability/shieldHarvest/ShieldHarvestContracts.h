@@ -46,11 +46,5 @@ namespace AbilityData::ShieldHarvest
 		inline static const sas::AttributeId ShieldPerEnemy{
 			"Ability.Defense.ShieldHarvest.ShieldPerEnemy"
 		};
-		inline static const sas::AttributeId OvershieldHoldDuration{
-			"Ability.Defense.ShieldHarvest.OvershieldHoldDuration"
-		};
-		inline static const sas::AttributeId OvershieldDecayPerSecond{
-			"Ability.Defense.ShieldHarvest.OvershieldDecayPerSecond"
-		};
 	};
 }

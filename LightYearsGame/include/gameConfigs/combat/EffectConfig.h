@@ -14,6 +14,7 @@
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
 #include "gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h"
 #include "gameplay/ability/ironcladProtocol/IroncladProtocolContracts.h"
+#include "gameplay/ability/hullShock/HullShockEffectContent.h"
 #include "gameplay/ability/cryostasis/CryostasisContracts.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/effects/EffectBehaviorKeys.h"
@@ -465,7 +466,8 @@ namespace EffectData
 			&ArmorBreakEffect,
 			&DirectionalBarrierActiveEffect,
 			&CryostasisIceShellEffect,
-			&IroncladProtocolDamageReductionEffect
+			&IroncladProtocolDamageReductionEffect,
+			&vega::HullShockReactiveCapacitorEffect
 		};
 		return definitions;
 	}

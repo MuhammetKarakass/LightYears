@@ -2,6 +2,7 @@
 
 namespace vega::HullShockPresentationIds
 {
+	inline constexpr char DirectedDischarge[] = "Presentation.Ability.HullShock.DirectedDischarge.Basic";
 	inline constexpr char FocusBasic[] =
 		"Presentation.Ability.HullShock.Focus.Basic";
 }

@@ -118,7 +118,7 @@ namespace
 		List<const GameAbilityDefinition*> previouslyLoaded;
 		for (const auto& definition : loaded.definitions) previouslyLoaded.push_back(&definition.definition);
 		const auto noInheritedEvolves = content::AbilityLoader::LoadFromJson(shipped, previouslyLoaded, AbilityData::GetBuiltinAbilityActorDefinitions());
-		report.Check(noInheritedEvolves.Succeeded() && std::all_of(noInheritedEvolves.definitions.begin(), noInheritedEvolves.definitions.end(), [](const auto& definition) { return !definition.definition.evolveContent && definition.definition.activeEvolveIds.empty(); }), "absent evolves never inherit previous runtime or fallback selections");
+		report.Check(noInheritedEvolves.Succeeded() && std::all_of(noInheritedEvolves.definitions.begin(), noInheritedEvolves.definitions.end(), [&](const auto& definition) { return definition.definition.activeEvolveIds.empty() && (Record(shipped, definition.id).value("evolves", Json::array()).empty() == !definition.definition.evolveContent); }), "absent evolves never inherit previous runtime or fallback selections; authored evolves remain available");
 		auto variant = shipped;
 		variant["abilities"].push_back({ { "id", "Ability.Offense.Rocket.TestVariant" }, { "baseId", RocketId }, { "evolves", Record(fixture).at("evolves") } });
 		const auto loadedVariant = Load(variant);

@@ -11,6 +11,8 @@ namespace vega
 
 	namespace targeting
 	{
+		List<shared_ptr<Actor>> FindOpposingCombatantsInSector(World& world, const Actor& source, const sf::Vector2f& origin, const sf::Vector2f& direction, float radius, float halfAngleRadians);
+
 		// Finds live opposing Combatant actors inside a configurable targeting
 		// query. The Combatant check deliberately excludes projectiles, pickups,
 		// fields and other non-ship actors without naming any ability family.

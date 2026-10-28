@@ -1,6 +1,7 @@
 #include "gameplay/ability/aegisReaver/AegisReaverFlightState.h"
 
 #include "framework/Actor.h"
+#include "gameplay/ability/aegisReaver/AegisReaverContracts.h"
 #include "spaceShip/SpaceShip.h"
 
 #include <algorithm>
@@ -92,13 +93,7 @@ namespace vega
 		if (SpaceShip* owner = ResolveOwner(); owner && !owner->GetIsPendingDestroy())
 		{
 			// Aegis returns an actual resource payload rather than normal recharge.
-			// A zero hold/decay entry means the overshield remains until damage uses it.
-			owner->GetShieldComponent().GrantTemporaryOvershield(
-				mRegenLockSourceId,
-				mReturnedShield,
-				0.f,
-				0.f
-			);
+			owner->GetShieldComponent().GrantShield(AbilityData::AegisReaver::AbilityId::Basic, mReturnedShield);
 			owner->GetShieldComponent().ClearRechargeDelay();
 		}
 		ReleaseRegenLock();

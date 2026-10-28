@@ -60,11 +60,5 @@ namespace AbilityData::TemporalConvergence
 		inline static const sas::AttributeId StunDuration{
 			"Ability.Defense.TemporalConvergence.StunDuration"
 		};
-		inline static const sas::AttributeId OvershieldHoldDuration{
-			"Ability.Defense.TemporalConvergence.OvershieldHoldDuration"
-		};
-		inline static const sas::AttributeId OvershieldDecayPerSecond{
-			"Ability.Defense.TemporalConvergence.OvershieldDecayPerSecond"
-		};
 	};
 }

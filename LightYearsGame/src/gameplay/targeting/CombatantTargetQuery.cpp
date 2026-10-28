@@ -6,6 +6,8 @@
 #include "spaceShip/SpaceShip.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetRelation.h"
+#include "gameplay/targeting/SectorGeometry.h"
+#include "gameplay/targeting/SweptGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,6 +15,29 @@
 
 	namespace vega::targeting
 {
+	List<shared_ptr<Actor>> FindOpposingCombatantsInSector(World& world, const Actor& source, const sf::Vector2f& origin, const sf::Vector2f& direction, float radius, float halfAngleRadians)
+	{
+		List<shared_ptr<Actor>> result;
+		TargetingQuery query;
+		query.source = &source;
+		query.origin = origin;
+		query.requiredTargetLayers = ResolveOpposingLayer(source);
+		query.requireCollisionCompatibility = true;
+		for (const auto& weak : world.GetActorsInBounds(swept::RadiusBounds(origin, radius)))
+		{
+			const auto actor = weak.lock();
+			if (!actor || actor->GetIsPendingDestroy() || !IsOpposingTarget(source, *actor) || !dynamic_cast<Combatant*>(actor.get())) continue;
+			if (const auto* ship = dynamic_cast<const SpaceShip*>(actor.get()); ship && ship->GetHealthComponent().GetHealth() <= 0.f) continue;
+			const auto bounds = actor->GetActorGlobalBounds();
+			const float targetRadius = std::max(0.f, actor->GetPhysicsCollisionRadius());
+			query.range = radius + targetRadius;
+			if (!AutoTargeting::IsValidTarget(*actor, query)) continue;
+			const auto center = bounds.size.x > 0.f && bounds.size.y > 0.f ? bounds.position + bounds.size * .5f : actor->GetActorLocation();
+			if (CircleOverlapsSector(center, targetRadius, origin, direction, radius, halfAngleRadians)) result.push_back(actor);
+		}
+		return result;
+	}
+
 	List<shared_ptr<Actor>> FindOpposingCombatants(
 		World& world,
 		const Actor& source,

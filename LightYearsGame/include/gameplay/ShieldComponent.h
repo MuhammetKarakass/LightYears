@@ -4,11 +4,19 @@
 #include <framework/Delegate.h>
 #include "gameplay/resource/TemporaryOvercapLedger.h"
 
+#include <algorithm>
 #include <string>
 #include <unordered_set>
 
 namespace vega
 {
+	// All shield grants use these timings. Sources own only the amount.
+	struct OvershieldRule
+	{
+		inline static constexpr float HoldSeconds = 5.f;
+		inline static constexpr float DecayPerSecond = 100.f;
+	};
+
 	enum class ShieldImpactSide { Shared, Front, Rear };
 	// Shield shaping set by equipped modules. The defaults are the unmodified rules.
 	// SpeedScaled and Continuous are applied by SpaceShip::UpdateRegeneration; the
@@ -42,11 +50,13 @@ namespace vega
 	public:
 		explicit ShieldComponent(Actor& owner, float shield = 0.f, float maxShield = 0.f, float rechargeDelay = 3.f);
 
-		float GetShield() const { return mShield + mModuleTemporaryShield; }
+		float GetShield() const { return mShield; }
 		float GetMaxShield() const { return mMaxShield; }
-		float GetModuleTemporaryShield() const { return mModuleTemporaryShield; }
-		void GrantModuleTemporaryShield(const std::string& sourceId, float amount, float decaySeconds);
-		void RemoveModuleTemporaryShield(const std::string& sourceId);
+		float GetOvershield() const { return std::max(0.f, mShield - mMaxShield); }
+		// Fill normal shield first; refresh this source's excess to max(remaining, new).
+		// Each source restarts its hold; different sources stack and decay independently.
+		float GrantShield(const std::string& sourceId, float amount);
+		void RemoveShieldGrant(const std::string& sourceId);
 		float GetRechargeDelay() const { return mRechargeDelay; }
 		float GetRechargeDelayRemaining() const { return mRechargeDelayRemaining; }
 		void SetModuleBehavior(const ShieldModuleBehavior& behavior);
@@ -72,15 +82,6 @@ namespace vega
 		// types spend more or less shield capacity without leaking extra hull damage.
 		float AbsorbDamage(float sourceDamage, float shieldDamageMultiplier, float extraRechargeDelay, bool moduleGenerated = false, ShieldImpactSide side = ShieldImpactSide::Shared);
 		bool IsAbsorbingModuleDamage() const { return mAbsorbingModuleDamage; }
-		// Adds only the portion that reaches above the normal maximum to the
-		// temporary overshield ledger. The normal shield value remains one scalar
-		// so existing damage and recharge rules continue to work unchanged.
-		float GrantTemporaryOvershield(
-			const std::string& sourceId,
-			float amount,
-			float holdDuration,
-			float decayPerSecond
-		);
 		// Advances hold/decay timers independently from normal shield recharge.
 		void TickTemporaryOvershields(float deltaTime);
 		// Resource systems may temporarily suppress passive shield regeneration
@@ -106,9 +107,8 @@ namespace vega
 		float mRechargeDelay = 3.f;
 		float mRechargeDelayRemaining = 0.f;
 		ShieldModuleBehavior mModuleBehavior;
-		TemporaryOvercapLedger mTemporaryOvershields;
-		TemporaryOvercapLedger mModuleShieldLayers;
-		float mModuleTemporaryShield = 0.f;
+		// Even sub-millipoint shield grants must eventually decay. Health keeps its existing ledger tolerance.
+		TemporaryOvercapLedger mTemporaryOvershields{ 0.f };
 		float mBatteryReserve = 0.f;
 		std::unordered_set<std::string> mPassiveRegenBlockers;
 	};

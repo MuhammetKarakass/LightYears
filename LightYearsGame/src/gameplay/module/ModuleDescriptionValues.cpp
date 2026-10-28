@@ -1,4 +1,5 @@
 #include "gameplay/module/ModuleDescriptionValues.h"
+#include "gameplay/ShieldComponent.h"
 #include <set>
 #include <stdexcept>
 
@@ -20,6 +21,8 @@ namespace vega
 	void VisitModuleDescriptionValues(const ModuleRulePackage& rules, int level, const ModuleDescriptionValueVisitor& visitor)
 	{
 		const NumericValues out{ visitor };
+		out.Number("shield.overshieldHoldSeconds", OvershieldRule::HoldSeconds);
+		out.Number("shield.overshieldDecayPerSecond", OvershieldRule::DecayPerSecond);
 		VisitEpicOffenseDescriptionValues(rules.epicOffense, level, visitor);
 		for (std::size_t i = 0; i < rules.cascadeRules.size(); ++i)
 		{

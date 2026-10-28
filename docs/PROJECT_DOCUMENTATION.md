@@ -92,8 +92,19 @@ sahibi olmaya devam eder.
 - Area telegraph presentation, typed profil sınırını koruyarak sabit/takip,
   zamanlı/external progress ve completion feedback fazlarına ayrılmıştır. Hull
   Shock gerçek alan yarıçapını aynı radial resolver'dan türetir.
-- Shield Harvest'in temporary overshield'ı kalıcı ship shield ve Barrier
-  effect'inden ayrı bir runtime katmanıdır.
+- Shield kazançlarının tek sahibi `ShieldComponent::GrantShield(sourceId, amount)`'dır.
+  Kazanç önce eksik normal Shield'ı doldurur; fazlalık aynı component'in tek
+  overshield ledger'ına gider. `OvershieldRule` yalnız burada 5s tutma ve 100/s
+  erimeyi tanımlar. Aynı kaynak `max(kalan, yeni fazlalık)` olarak yenilenir,
+  tutması yeniden başlar; farklı kaynaklar birikir ve bağımsız erir. Damage önce
+  overshield'ı tüketir. Normal Shield'a dönüşen kısım süresiz normal kaynaktır.
+  ShieldHarvest, TemporalConvergence, AegisReaver, TemporalRecall'un pozitif
+  shield düzeltmesi, HullShock ReactiveCapacitor ve modül shield aksiyonları
+  bu API'yi kullanır. Overshield Layer için ayrı modül ledger'ı yoktur;
+  Shield Rush/Reserve Shell ortak Shield > MaxShield koşulunu okur.
+  Barrier effect'i ve Shield Battery reserve ayrı mekaniklerdir; pasif recharge
+  normal Shield tavanında durur. `ChangeShield` kazanç API'si değil, kaynak
+  harcama/aşağı yönlü state düzeltme ve test kurulum sınırıdır.
 - Ion Storm, cursor'a giden hasarsız projectile'ın hedefte süreli Electric alan
   açtığı bir delivery/field family'sidir. Alanın düzensiz sınırı cast başına bir
   kez üretilir; aynı `IonStormBoundary` hem gameplay hedef filtresinde hem de
@@ -978,9 +989,15 @@ Davranış/şekil değiştiren gerçek evolve'un behavior/actor'ı
 `presentation/ability/<family>/` içinde yaşar. Yapısal fark base profile'a optional
 flag yığarak eklenmez; kendi profile/actor/handler'ı kullanılır. Her actor'da tek
 `presentationProfileId` kalır ve registration
-`RegisterGameAbilityPresentationContent()` içindedir (§3.0.1). **Shipped hiçbir
-ability'nin evolve'u yoktur.** Value/scaling/actor swap örnekleri yalnız
-`tests/AbilityEvolveE2E.cpp` içinde üretilen test JSON'undadır.
+`RegisterGameAbilityPresentationContent()` içindedir (§3.0.1). Shipped ilk evolve ailesi HullShock'tur: DirectedDischarge,
+ReactiveCapacitor ve AftershockResonance. Onaylı değerler
+`ABILITY_SCALING_CATALOG.md` içindedir. Value/scaling/actor swap altyapı
+örnekleri `tests/AbilityEvolveE2E.cpp` içinde üretilen test JSON'undadır.
+`AbilityWorldActor::FindCapturedNumericSetting` actor'a taşınan immutable
+`configurationContent` üzerinden okur; scoped ability callback'i bittikten
+sonra catalog'un base değerlerine dönmez. HullShock artçısı bu API'yi kullanır.
+Koni için ayrı typed `HullShockConePresentationProfile` ve feature-local
+presentation actor vardır; temel daire profilinin şekli değişmez.
 
 #### Sayısal veri sahipliği
 

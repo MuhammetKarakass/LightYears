@@ -52,7 +52,7 @@ namespace vega
 		mAbilities.GetAttributes().onAttributeChanged.UnbindAction(mAttributeHandle);
 		if (mShip) { mShip->GetHealthComponent().onHealthChanged.UnbindAction(mHealthHandle); mShip->GetShieldComponent().onShieldChanged.UnbindAction(mShieldHandle); }
 		for (const auto& rule : mConditionalMovement) if (mShip) mShip->GetRuntimeModifiers().Remove(ConditionalMovementSource(rule.instanceId, rule.ruleIndex));
-		for (const auto& state : mActions) if (mShip && state.resolved.rule.kind == ModuleEventActionKind::GrantTemporaryShield) mShip->GetShieldComponent().RemoveModuleTemporaryShield(TemporaryShieldSource(state.resolved.instanceId, state.resolved.ruleIndex));
+		for (const auto& state : mActions) if (mShip && state.resolved.rule.kind == ModuleEventActionKind::GrantTemporaryShield) mShip->GetShieldComponent().RemoveShieldGrant(TemporaryShieldSource(state.resolved.instanceId, state.resolved.ruleIndex));
 		for (AttributeState& state : mAttributes) Remove(state);
 		for (SustainedSpeedState& state : mSustainedSpeed) ClearSustained(state);
 		CancelSmolderFields();
@@ -443,7 +443,7 @@ namespace vega
 	{
 		if (!mShip || mShuttingDown) return;
 		const auto& shield = mShip->GetShieldComponent();
-		const bool active = mShip->GetHealthComponent().GetHealth() > 0.f && shield.GetMaxShield() > 0.f && shield.GetShield() > shield.GetMaxShield();
+		const bool active = mShip->GetHealthComponent().GetHealth() > 0.f && shield.GetOvershield() > 0.f;
 		for (const auto& rule : mConditionalMovement)
 		{
 			const auto key = ConditionalMovementSource(rule.instanceId, rule.ruleIndex);
@@ -517,7 +517,7 @@ namespace vega
 		}
 		for (const auto& previous : mActions)
 			if (previous.resolved.rule.kind == ModuleEventActionKind::GrantTemporaryShield && std::none_of(actions.begin(), actions.end(), [&previous](const ActionState& next) { return previous.resolved.instanceId == next.resolved.instanceId && previous.resolved.ruleIndex == next.resolved.ruleIndex && previous.resolved.rule == next.resolved.rule; }))
-				mShip->GetShieldComponent().RemoveModuleTemporaryShield(TemporaryShieldSource(previous.resolved.instanceId, previous.resolved.ruleIndex));
+				mShip->GetShieldComponent().RemoveShieldGrant(TemporaryShieldSource(previous.resolved.instanceId, previous.resolved.ruleIndex));
 		mActions = std::move(actions);
 		for (auto it = mLastAbility.begin(); it != mLastAbility.end();) { if (std::none_of(mActions.begin(), mActions.end(), [id = it->first](const auto& state) { return state.resolved.instanceId == id; })) it = mLastAbility.erase(it); else ++it; }
 		List<AttributeState> attributes;
@@ -682,18 +682,19 @@ namespace vega
 			else if (rule.kind == ModuleEventActionKind::GrantTemporaryShield)
 			{
 				auto& shield = mShip->GetShieldComponent();
-				shield.GrantModuleTemporaryShield(TemporaryShieldSource(state.resolved.instanceId, state.resolved.ruleIndex), shield.GetMaxShield() * rule.amount, rule.durationSeconds);
+				shield.GrantShield(TemporaryShieldSource(state.resolved.instanceId, state.resolved.ruleIndex), shield.GetMaxShield() * rule.amount);
 			}
 			else if (rule.kind == ModuleEventActionKind::RestoreShield)
 			{
 				auto& shield = mShip->GetShieldComponent();
 				const float grant = shield.GetMaxShield() * rule.amount;
 				const float overflow = std::max(0.f, grant - std::max(0.f, shield.GetMaxShield() - shield.GetShield()));
-				shield.ChangeShield(grant);
 				float conversion = rule.overflowHealthFraction;
 				for (const auto& companion : mActions)
 					if (companion.resolved.instanceId == state.resolved.instanceId && companion.resolved.rule.kind == ModuleEventActionKind::ShieldOverflowToHealth)
 						conversion += companion.resolved.rule.amount;
+				// The converted share of the overflow becomes health; only the rest becomes overshield.
+				shield.GrantShield(TemporaryShieldSource(state.resolved.instanceId, state.resolved.ruleIndex), grant - overflow * std::clamp(conversion, 0.f, 1.f));
 				mShip->GetHealthComponent().Regenerate(overflow * conversion);
 			}
 			else if (rule.kind == ModuleEventActionKind::ShieldOverflowToHealth) continue;

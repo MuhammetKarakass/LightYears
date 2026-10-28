@@ -33,8 +33,6 @@ namespace
 		constexpr float BaseRadius = 700.f;
 		constexpr float BaseShieldPerEnemy = 20.f;
 		constexpr float BasePulseDamage = 10.f;
-		constexpr float BaseOvershieldHoldDuration = 5.f;
-		constexpr float BaseOvershieldDecayPerSecond = 100.f;
 		constexpr float BaseEnergyPowerShieldScale = 0.10f;
 		constexpr float EnergyPowerShieldScalePerLevel = 0.01f;
 		constexpr float EnergyPowerPulseDamageScale = 0.05f;
@@ -138,8 +136,6 @@ namespace
 		for (const sas::AttributeId& required : {
 			AbilityData::ShieldHarvest::Attribute::Radius,
 			AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
-			AbilityData::ShieldHarvest::Attribute::OvershieldHoldDuration,
-			AbilityData::ShieldHarvest::Attribute::OvershieldDecayPerSecond,
 			CommonAttributeIds::Damage
 		})
 		{
@@ -165,29 +161,17 @@ namespace
 			definition.attributes,
 			AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy
 		);
-		const sas::GameplayAttribute* holdDuration = sas::FindAttribute(
-			definition.attributes,
-			AbilityData::ShieldHarvest::Attribute::OvershieldHoldDuration
-		);
-		const sas::GameplayAttribute* decayPerSecond = sas::FindAttribute(
-			definition.attributes,
-			AbilityData::ShieldHarvest::Attribute::OvershieldDecayPerSecond
-		);
 		const sas::GameplayAttribute* pulseDamage = sas::FindAttribute(
 			definition.attributes,
 			CommonAttributeIds::Damage
 		);
 		if (!NearlyEqual(radius->baseValue, BaseRadius) ||
 			!NearlyEqual(shieldPerEnemy->baseValue, BaseShieldPerEnemy) ||
-			!NearlyEqual(pulseDamage->baseValue, BasePulseDamage) ||
-			!NearlyEqual(holdDuration->baseValue, BaseOvershieldHoldDuration) ||
-			!NearlyEqual(decayPerSecond->baseValue, BaseOvershieldDecayPerSecond) ||
-			!IsFiniteNonNegative(holdDuration->baseValue) ||
-			!IsFiniteNonNegative(decayPerSecond->baseValue))
+			!NearlyEqual(pulseDamage->baseValue, BasePulseDamage))
 		{
 			if (failureReason)
 			{
-				*failureReason = "Shield Harvest contains an invalid radius or overshield value.";
+				*failureReason = "Shield Harvest contains an invalid radius or shield value.";
 			}
 			return false;
 		}
@@ -333,14 +317,6 @@ namespace
 			0.f,
 			FindValue(values, AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy, 40.f)
 		);
-		const float holdDuration = std::max(
-			0.f,
-			FindValue(values, AbilityData::ShieldHarvest::Attribute::OvershieldHoldDuration, 5.f)
-		);
-		const float decayPerSecond = std::max(
-			0.f,
-			FindValue(values, AbilityData::ShieldHarvest::Attribute::OvershieldDecayPerSecond, 100.f)
-		);
 		const float pulseDamage = std::max(0.f,
 			FindValue(values, CommonAttributeIds::Damage, BasePulseDamage));
 		const List<shared_ptr<Actor>> targets = targeting::FindOpposingCombatants(
@@ -364,12 +340,7 @@ namespace
 				ApplyStun(context, *combatant, PulseStunDuration);
 			}
 		}
-		ship->GetShieldComponent().GrantTemporaryOvershield(
-			context.definition.abilityId,
-			static_cast<float>(harvestedCount) * shieldPerEnemy,
-			holdDuration,
-			decayPerSecond
-		);
+		ship->GetShieldComponent().GrantShield(context.definition.abilityId, static_cast<float>(harvestedCount) * shieldPerEnemy);
 		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())
 		{
 			// Keep the completed area visible briefly so the player receives

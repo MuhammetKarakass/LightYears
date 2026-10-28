@@ -113,12 +113,7 @@ namespace
 		ResourceChangeRecorder changes;
 		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.onShieldChanged.BindAction(&changes, &ResourceChangeRecorder::Record);
-		const float granted = shield.GrantTemporaryOvershield(
-			"Ability.Utility.TemporalRecall.Basic",
-			40.f,
-			2.f,
-			10.f
-		);
+		const float granted = shield.GrantShield("Ability.Utility.TemporalRecall.Basic", 40.f);
 		if (!Expect(NearlyEqual(granted, 40.f) && NearlyEqual(shield.GetShield(), 140.f),
 			"Temporary overshield grant was not applied"))
 		{
@@ -174,7 +169,7 @@ namespace
 		ResourceChangeRecorder shieldChanges;
 		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.onShieldChanged.BindAction(&shieldChanges, &ResourceChangeRecorder::Record);
-		shield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
+		shield.GrantShield("Recall", 40.f);
 		shieldChanges.Reset();
 		shield.SetMaxShield(80.f);
 		if (!Expect(NearlyEqual(shield.GetShield(), 120.f) && NearlyEqual(shield.GetMaxShield(), 80.f),
@@ -185,7 +180,7 @@ namespace
 		{
 			return false;
 		}
-		shield.TickTemporaryOvershields(1.f);
+		shield.TickTemporaryOvershields(5.1f);
 		shield.AbsorbDamage(25.f, 1.f, 0.f);
 		return Expect(NearlyEqual(shield.GetShield(), 85.f),
 			"Shield decay or damage did not reconcile retained overshield");
@@ -236,7 +231,7 @@ namespace
 		ResourceChangeRecorder shieldChanges;
 		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
 		shield.onShieldChanged.BindAction(&shieldChanges, &ResourceChangeRecorder::Record);
-		shield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
+		shield.GrantShield("Recall", 40.f);
 		shieldChanges.Reset();
 		shield.SetMaxShield(120.f);
 		if (!Expect(NearlyEqual(shield.GetShield(), 160.f),
@@ -247,7 +242,7 @@ namespace
 		{
 			return false;
 		}
-		shield.TickTemporaryOvershields(1.f);
+		shield.TickTemporaryOvershields(5.1f);
 		if (!Expect(NearlyEqual(shield.GetShield(), 150.f),
 			"Shield ledger did not decay the preserved excess after cap growth"))
 		{
@@ -255,9 +250,9 @@ namespace
 		}
 
 		vega::ShieldComponent absorbedShield{ TestOwner(), 100.f, 100.f, 3.f };
-		absorbedShield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
+		absorbedShield.GrantShield("Recall", 40.f);
 		absorbedShield.SetMaxShield(150.f);
-		absorbedShield.TickTemporaryOvershields(1.f);
+		absorbedShield.TickTemporaryOvershields(5.1f);
 		if (!Expect(NearlyEqual(absorbedShield.GetShield(), 180.f),
 			"Large maximum increase lost the preserved overshield ledger"))
 		{
@@ -265,7 +260,7 @@ namespace
 		}
 
 		vega::ShieldComponent scaledShield{ TestOwner(), 100.f, 100.f, 3.f };
-		scaledShield.GrantTemporaryOvershield("Recall", 40.f, 0.f, 10.f);
+		scaledShield.GrantShield("Recall", 40.f);
 		scaledShield.SetMaxShield(80.f, true);
 		return Expect(NearlyEqual(scaledShield.GetShield(), 120.f),
 			"preserveShieldPercent scaled the temporary excess instead of only normal shield");
@@ -298,17 +293,18 @@ namespace
 		}
 
 		vega::ShieldComponent shield{ TestOwner(), 100.f, 100.f, 3.f };
-		shield.GrantTemporaryOvershield("Recall.A", 20.f, 1.f, 10.f);
-		shield.GrantTemporaryOvershield("Recall.B", 30.f, 2.f, 20.f);
+		shield.GrantShield("Recall.A", 20.f);
+		shield.TickTemporaryOvershields(1.f);
+		shield.GrantShield("Recall.B", 30.f);
 		shield.ChangeShield(-10.f);
-		shield.TickTemporaryOvershields(1.5f);
+		shield.TickTemporaryOvershields(4.05f);
 		if (!Expect(NearlyEqual(shield.GetShield(), 135.f),
 			"The first shield source did not decay after its hold expired"))
 		{
 			return false;
 		}
-		shield.TickTemporaryOvershields(0.5f);
-		shield.TickTemporaryOvershields(0.25f);
+		shield.TickTemporaryOvershields(0.95f);
+		shield.TickTemporaryOvershields(0.05f);
 		if (!Expect(NearlyEqual(shield.GetShield(), 125.f),
 			"The second shield source did not retain its independent hold duration"))
 		{

@@ -11,6 +11,7 @@
 #include "presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.h"
 #include "presentation/ability/phaseDrift/PhaseDriftPresentationProfile.h"
 #include "presentation/ability/hullShock/HullShockPresentationProfile.h"
+#include "presentation/ability/hullShock/HullShockConePresentation.h"
 #include "presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
 #include "presentation/ability/relayPrism/RelayPrismPresentationProfile.h"
@@ -64,6 +65,7 @@ namespace vega
 			RegisterPhaseDriftPresentationProfiles() &&
 			RegisterShieldHarvestPresentationProfiles() &&
 			RegisterHullShockPresentationProfiles() &&
+			RegisterHullShockConePresentationProfiles() &&
 			RegisterSunBeamPresentationProfiles() &&
 			RegisterInfernoSprayPresentationProfiles() &&
 			RegisterRelayPrismPresentationProfiles() &&

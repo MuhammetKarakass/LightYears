@@ -110,3 +110,10 @@ MECH-SLIM implementation and verification are tracked in [MECH_SLIM.md](MECH_SLI
 1. Uygulayıcı: aşama başına Sol (ayrı worktree) mi, Claude mı?
 2. Zamanlı stat buff'ları motordaki `GameplayEffect` ile mi, oyunun mevcut tetikli buff çalışma zamanı genelleştirilerek mi yapılsın? Öneri: önce mevcut çalışma zamanını taşı, motor etkisine geçişi ayrı karar yap.
 3. Yetenekler bu turda mekanik katmanına geçirilmez; yalnız aynı katmanı kullanabilecek hale gelir. Yetenek tarafının taşınması ayrı plan.
+
+## 8. HULLSHOCK-EVOLVE ortak sahipler (2026-10-28)
+
+- `ShieldComponent::GrantShield(sourceId, amount)` bütün ayrık Shield kazançlarını sahiplenir: normal eksik önce dolar; fazlalık tek overshield ledger'ına yazılır. `OvershieldRule` tek sabit sahibidir (5s tutma, sonra kaynak başına 100/s erime). Kaynaklar timing vermez. Aynı kaynak `max(kalan, yeni fazlalık)` ile yenilenir ve tutması yeniden başlar; farklı kaynaklar birikir. Modül artık ayrı layer üretmez; kaldırılınca yalnız kendi overshield kaydı silinir, normal doldurma geri alınmaz.
+- `combat/IncomingDamageWindow` gerçek resolve edilmiş gelen hasarı RAII abonelikle kaydeder. Weak actor sahibi ve delegate handle temizliği ile ability veya modülden bağımsızdır; post-reduction Shield kaynak hasarı + gerçek hull kaybını toplar. HullShock yalnız pencerenin açılış/kapanışını ve dönüşüm sayılarını belirler.
+- `targeting/CircleOverlapsSector` ve `FindOpposingCombatantsInSector` ortak daire/sektör örtüşme ve düşman sorgu sahibidir. InfernoSpray'in eski center-only filtresi değiştirilmedi.
+- `AbilityWorldActor::FindCapturedNumericSetting` immutable actor konfigürasyonunu okur. HullShock'un gecikmeli aktörü ability aktif olmasa da patch değerlerini korur; weak owner ölmüş/yok edilmişse güvenle iptal eder. Feature-local aftershock actor yeni use olayı yaymaz; normal combat damage/on-hit hattını kullanır.

@@ -169,16 +169,6 @@ namespace vega
 		mGrantedShield = std::max(0.f, FindValue(
 			values, AbilityData::TemporalConvergence::Attribute::BaseShield, 120.f
 		));
-		mOvershieldHoldDuration = std::max(0.f, FindValue(
-			values,
-			AbilityData::TemporalConvergence::Attribute::OvershieldHoldDuration,
-			4.f
-		));
-		mOvershieldDecayPerSecond = std::max(0.f, FindValue(
-			values,
-			AbilityData::TemporalConvergence::Attribute::OvershieldDecayPerSecond,
-			100.f
-		));
 		ConfigureCircle(mDormantCore, mPresentationProfile.dormantCoreRadius);
 		ConfigureCircle(mDormantGlow, mPresentationProfile.dormantGlowRadius);
 		mPhase = Phase::Dormant;
@@ -471,12 +461,7 @@ namespace vega
 			// A 100 shield/sec decay rate makes the duration data-driven from actual
 			// excess at hold end: 120 excess takes 1.2s, 10 takes 0.1s. The shared
 			// ShieldComponent reconciles damage first, so lost shield never refills.
-			player->GetShieldComponent().GrantTemporaryOvershield(
-				GetSourceAbilityId().ToString(),
-				mGrantedShield,
-				mOvershieldHoldDuration,
-				mOvershieldDecayPerSecond
-			);
+			player->GetShieldComponent().GrantShield(GetSourceAbilityId().ToString(), mGrantedShield);
 		}
 
 		// CloseFieldOnTrigger: the field and its slow end immediately. Destroy() is the

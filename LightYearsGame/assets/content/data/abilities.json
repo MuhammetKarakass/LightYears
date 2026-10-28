@@ -169,16 +169,6 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.ShieldHarvest.OvershieldHoldDuration",
-          "baseValue": 5.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Defense.ShieldHarvest.OvershieldDecayPerSecond",
-          "baseValue": 100.0,
-          "minValue": 0.0
-        },
-        {
           "id": "Common.Damage",
           "baseValue": 10.0,
           "minValue": 0.0
@@ -292,7 +282,105 @@
             }
           ]
         }
-      }
+      },
+      "evolves": [
+        {
+          "id": "Ability.Evolve.HullShock.DirectedDischarge",
+          "name": "Directed Discharge",
+          "description": "Release a 90-degree cone in your activation aim direction, growing from 400 to 800 radius. Damage gains 30% Energy Power scaling and is multiplied by 1.35. Charge time and Electric stacks are unchanged.",
+          "patch": {
+            "settings": {
+              "coneAngleDegrees": 90,
+              "directedDamageMultiplier": 1.35
+            },
+            "attributes": [
+              {
+                "id": "Common.Radius",
+                "baseValue": 800,
+                "minValue": 1
+              },
+              {
+                "id": "Common.Damage",
+                "baseValue": 30,
+                "minValue": 0
+              },
+              {
+                "id": "Ability.Offense.HullShock.FullRadiusDuration",
+                "baseValue": 1.25,
+                "minValue": 0.01
+              },
+              {
+                "id": "Ability.Offense.HullShock.MinimumChargeRadius",
+                "baseValue": 400,
+                "minValue": 1
+              },
+              {
+                "id": "Ability.Offense.HullShock.ElectricChargeThreshold",
+                "baseValue": 1.8,
+                "minValue": 0.01
+              },
+              {
+                "id": "Ability.Offense.HullShock.MinimumChargeDamageMultiplier",
+                "baseValue": 0.25,
+                "minValue": 0,
+                "maxValue": 1
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.3
+              },
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.3
+              }
+            ]
+          }
+        },
+        {
+          "id": "Ability.Evolve.HullShock.ReactiveCapacitor",
+          "name": "Reactive Capacitor",
+          "description": "Take 30% less damage while charging. If the first shock hits an enemy, gain Shield equal to 60% of damage actually taken during charge, capped at 20% of Max Health. Cancelled or stunned charges grant nothing. Excess uses the shared overshield rule.",
+          "patch": {
+            "settings": {
+              "recordedDamageShieldFraction": 0.6,
+              "maxHealthShieldCapFraction": 0.2
+            },
+            "effectSpecs": [
+              {
+                "effectId": "Effect.Defense.HullShock.ReactiveCapacitor.Basic",
+                "useAbilityDuration": true,
+                "maxStacks": 1,
+                "attributes": [
+                  {
+                    "id": "Effect.Defense.DamageReduction.Fraction",
+                    "baseValue": 0.3,
+                    "minValue": 0,
+                    "maxValue": 0.95
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "Ability.Evolve.HullShock.AftershockResonance",
+          "name": "Aftershock Resonance",
+          "description": "After 0.8 seconds, release a second shock from your current position for 45% damage and one Electric stack, retaining the first shock radius. On-hit effects apply; this is not another ability use.",
+          "patch": {
+            "settings": {
+              "aftershockDelay": 0.8,
+              "aftershockDamageFraction": 0.45,
+              "aftershockElectricStacks": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "Ability.Offense.GlacialPressure.Basic",
@@ -3694,16 +3782,6 @@
         {
           "id": "Ability.Defense.TemporalConvergence.StunDuration",
           "baseValue": 2.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Defense.TemporalConvergence.OvershieldHoldDuration",
-          "baseValue": 4.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Defense.TemporalConvergence.OvershieldDecayPerSecond",
-          "baseValue": 100.0,
           "minValue": 0.0
         }
       ],
