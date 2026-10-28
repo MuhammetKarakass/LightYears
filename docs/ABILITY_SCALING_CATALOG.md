@@ -10,6 +10,7 @@ Bu doküman, projedeki 55 yeteneğin hedef denge ve davranış sözleşmesini te
 - **—:** İlgili alanda doğrudan değer veya etki yoktur.
 - Damage tag belirtilmemiş fakat hasar üreten ability'ler runtime'da default Photonic kullanabilir.
 - **Global combat tick:** Tüm periyodik ve sürekli hasar tek bir aralıkla, `CombatTick::Interval = 0.25s` ile uygulanır. Aralık hiçbir ability'nin attribute'u değildir; tabloda yazan "her `0.25s`" ifadeleri bu global değeri anlatır. "Tick hasarı" olarak yazılan değerler her tick'te olduğu gibi uygulanır, DPS olarak yazılan değerler (InfernoSpray, Ignite, ContinuousHeatLaser) tick başına `DPS × 0.25` uygulanır. Aynı hedefe tekrar vurma bekleme süreleri (OrbitalDrones, LanceDrive, CrystalBarricade, InertialWake) tick değildir ve kendi değerlerini korur.
+- **Ortak overshield kuralı (kullanıcı kararı 2026-10-28):** Shield kazandıran her kaynak (ability, evolve, ileride eklenenler) aynı kuralı kullanır: kazanılan miktar önce eksik normal Shield'ı doldurur, fazlası overshield olur; overshield `5s` tutulur, sonra `100/s` erir. Bu iki sayı tek bir ortak yerde tanımlıdır; ability'ler kendi tutma/erime değerini taşımaz ve kendine özel overshield üretmez. Ability veya modülün belirlediği yalnız kazanılan miktardır. İstisna yoktur: ShieldHarvest (eski 5s/100), TemporalConvergence (eski 4s/100), AegisReaver (eski süresiz) ve Overshield Layer modülü (eski 6 sn içinde azalarak) bu kurala taşınır.
 
 ## Evolve'lar
 
@@ -21,6 +22,18 @@ için tier alanı erişilebilir seçim hakkını anlatır; sıralı iki patch'in
 ve güncel level'dan yeniden kurulan progression formülü açıkça belirtilir.
 Data/validation/runtime/UI kontratı için
 [evolve sistemi](PROJECT_DOCUMENTATION.md#ability-baseid-ve-evolve-sistemi-kontratı).
+
+### HullShock (kullanıcı onayı 2026-10-28)
+
+Üç evolve; 8'de biri, 15'te kalan ikisinden biri seçilir. Temel: `Damage = 30 + 4 × (L - 1) + MaxHealth × 0.3`, şarjla yarıçap `300 → 600`, şarja göre `1–4` Electric stack.
+
+| Ability | Tier | Evolve ID | Değişiklik | Formül / kural |
+|---|---|---|---|---|
+| HullShock | 8 veya 15 | Ability.Evolve.HullShock.DirectedDischarge (Yönlendirilmiş Deşarj) | 360° daire yerine nişan yönünde 90° Electric koni, her şarj seviyesinde | `Damage = (30 + 4 × (L - 1) + MaxHealth × 0.3 + EnergyPower × 0.30) × 1.35`; EP katsayısı sabit, seviyeyle artmaz; koni yarıçapı şarjla `400 → 800` (temel oranı korunur); yön yeteneğin nişan yönü (imleç; Autocast'ta hedef); şarj süresi ve Electric stack kuralı aynen korunur |
+| HullShock | 8 veya 15 | Ability.Evolve.HullShock.ReactiveCapacitor (Reaktif Kondansatör) | Şarj sırasında hasar azaltma; şarjda alınan hasar patlamada Shield'a döner | Şarj boyunca gelen hasar `×0.70` (%30 azaltma); kaydedilen hasar = azaltmadan sonra gemiye gelen hasar (Shield'ın emdiği dahil); `Kazanç = min(Kaydedilen × 0.60, MaxHealth × 0.20)`; yalnız patlama en az bir düşmana vurursa verilir; şarj iptal edilirse veya stun yenirse verilmez; kazanç ortak overshield kuralını kullanır |
+| HullShock | 8 veya 15 | Ability.Evolve.HullShock.AftershockResonance (Artçı Rezonans) | İlk patlamadan `0.8s` sonra geminin o anki konumunda ikinci şok | İkinci şok hasarı ilk şok hasarının `%45`'i, `+1` Electric stack; yarıçap ilk şokun şarj yarıçapı; ikinci kullanım sayılmaz (kullanım tetikleri, Echo kaydı, kullanım sayaçları ve Reaktif Kondansatör çalışmaz), vuruş etkileri (Element Core, hasar modifiyerleri) uygulanır |
+
+Kombinasyonlar: **DirectedDischarge + ReactiveCapacitor** azaltmalı şarj, koni saldırı, Shield kazancı. **DirectedDischarge + AftershockResonance** artçı da koni olur, `0.8s` sonraki konum ve o anki nişan yönünden çıkar. **ReactiveCapacitor + AftershockResonance** Shield yalnız ilk patlamada üretilir, artçı yeniden üretmez.
 
 ## Tüm yetenekler
 
